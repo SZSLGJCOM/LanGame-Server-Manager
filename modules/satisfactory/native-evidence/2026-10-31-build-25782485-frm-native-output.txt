@@ -1,0 +1,29 @@
+
+running 1 test
+test commands::tests::manual_runtime_tests::native_lifecycle_tests::native_manual_save ... NATIVE_LIFECYCLE module=satisfactory phase=package_copy bytes=15753927565 elapsed_ms=26265 acquisition=existing_local_package creation_scope=storage source_provenance=unverified
+NATIVE_LIFECYCLE module=satisfactory phase=instance_created elapsed_ms=51071 program_mode=Independent preparation=isolated_copy library=preserved ownership=verified effective_root=fixture/n-a954c7c6a6a74618\runtime creation_scope=storage
+NATIVE_SATISFACTORY_FRM phase=staged fixture_only=true sml=3.12.0 frm=1.5.4 target=owned_runtime source_members=verified_smr_windows_server production_installer=not_claimed
+NATIVE_LIFECYCLE module=satisfactory phase=prestart_update cycle=initial events=pinned persisted_evidence=verified download_bytes=not_measured
+NATIVE_LIFECYCLE module=satisfactory phase=started cycle=initial processes=1 bind=default firewall=non_elevated_policy elapsed_ms=47664
+NATIVE_LIFECYCLE module=satisfactory phase=native_ready cycle=initial declared_probes=passed variant=isolated
+NATIVE_SATISFACTORY_AUTH cycle=initial anonymous_read=rejected invalid_token_read=rejected positive_authorization=separate_native_world_operations insecure_local_access=false
+NATIVE_SATISFACTORY_WORLD cycle=initial fixture_only=true native_world_loaded=true credentials=owned_system_store content_readback=not_claimed
+NATIVE_SATISFACTORY_FRM cycle=initial sml=3.12.0 frm=1.5.4 loaded_versions=current_run_log getPlayer=production_collector_ready response_bytes=2 response_empty_array=true complete=true stale=false online_players=0 source=http_api listener=owned_native_process fixture_only=true client_join=not_tested
+NATIVE_MANUAL_SAVE module=satisfactory cycle=initial phase=receipt attempted_once=true retried=false instance_matches=true run_matches=true session_matches=true managed_generations_alive=true route=managed_process_generation response_present=true response_bytes=152 write_confirmation_pending=false save_completion=confirmed durable_write=not_assessed restart_readback=not_assessed
+NATIVE_STOP_RESULT module=satisfactory cycle=initial run_id=1 process=main exit_code=Some(-1073741510) crash_flag=false status=stopped
+NATIVE_LIFECYCLE module=satisfactory phase=cycle_stopped cycle=initial run_id=1 active_run=none
+NATIVE_LIFECYCLE module=satisfactory phase=prestart_update cycle=restart events=pinned persisted_evidence=verified download_bytes=not_measured
+NATIVE_LIFECYCLE module=satisfactory phase=started cycle=restart processes=1 bind=default firewall=non_elevated_policy elapsed_ms=46816
+NATIVE_LIFECYCLE module=satisfactory phase=native_ready cycle=restart declared_probes=passed variant=isolated
+NATIVE_SATISFACTORY_AUTH cycle=restart anonymous_read=rejected invalid_token_read=rejected positive_authorization=separate_native_world_operations insecure_local_access=false
+NATIVE_SATISFACTORY_WORLD cycle=restart fixture_only=true native_world_loaded=true credentials=owned_system_store content_readback=not_claimed
+NATIVE_SATISFACTORY_FRM cycle=restart sml=3.12.0 frm=1.5.4 loaded_versions=current_run_log getPlayer=production_collector_ready response_bytes=2 response_empty_array=true complete=true stale=false online_players=0 source=http_api listener=owned_native_process fixture_only=true client_join=not_tested
+NATIVE_MANUAL_SAVE module=satisfactory cycle=restart phase=receipt attempted_once=true retried=false instance_matches=true run_matches=true session_matches=true managed_generations_alive=true route=managed_process_generation response_present=true response_bytes=152 write_confirmation_pending=false save_completion=confirmed durable_write=not_assessed restart_readback=not_assessed
+NATIVE_STOP_RESULT module=satisfactory cycle=restart run_id=2 process=main exit_code=Some(-1073741510) crash_flag=false status=stopped
+NATIVE_LIFECYCLE module=satisfactory phase=cycle_stopped cycle=restart run_id=2 active_run=none
+NATIVE_MANUAL_SAVE module=satisfactory phase=restarted fresh_managed_run=true native_readiness=passed content_readback=not_claimed
+NATIVE_SATISFACTORY_WORLD phase=credential_cleanup outcome=passed absence_confirmed=true
+NATIVE_LIFECYCLE module=satisfactory phase=complete scope=production_start_stop cleanup=passed gui=not_tested
+ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 3222 filtered out; finished in 237.95s

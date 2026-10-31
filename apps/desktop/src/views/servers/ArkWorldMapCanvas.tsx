@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { arkPlayerPoint, type ArkMapPlayer, type ArkMapSnapshot } from "../../ark-world-map";
+import { clampArkMapView } from "../../ark-map-view";
 import { selectLocaleText, useI18n } from "../../i18n";
 import { arkArtworkRect, type ArkMapArtwork } from "../../ark-map-artwork-catalog";
 import { openExternalUrl } from "../../api";
@@ -14,7 +15,7 @@ export function ArkWorldMapCanvas({ snapshot, live, selectedId, follow, onSelect
   const drag = useRef<{ id: number; x: number; y: number; cx: number; cy: number; moved: boolean } | null>(null);
   const wheelAction = useRef<(delta: number) => void>(() => undefined);
   const [view, setView] = useState({ zoom: 1, x: 500, y: 500 });
-  const [pixels, setPixels] = useState(1000);
+  const [viewport, setViewport] = useState({ width: 1000, height: 1000 });
   const [failedArtwork, setFailedArtwork] = useState<string | null>(null);
   const [failedLink, setFailedLink] = useState<string | null>(null);
   const [fitRevision, setFitRevision] = useState(0);
@@ -38,19 +39,25 @@ export function ArkWorldMapCanvas({ snapshot, live, selectedId, follow, onSelect
   const normalize = (x: number, y: number) => ({ x: (x - extent.minX) / (extent.maxX - extent.minX) * 1000,
     y: (y - extent.minY) / (extent.maxY - extent.minY) * 1000 });
   const chosen = points.find(point => point.player.playerId === selectedId);
-  const center = follow && chosen && live ? normalize(chosen.x, chosen.y) : view;
-  const size = 1000 / view.zoom, left = center.x - size / 2, top = center.y - size / 2;
+  const center = clampArkMapView({ ...view, ...(follow && chosen && live ? normalize(chosen.x, chosen.y) : {}) }, viewport);
+  const size = 1000 / center.zoom, left = center.x - size / 2, top = center.y - size / 2;
+  const pixels = Math.max(1, Math.min(viewport.width, viewport.height));
   const unit = size / pixels;
   const art = gps && artwork?.url !== failedArtwork ? artwork : null;
   const sourceUrl = art?.sourceUrl;
   useEffect(() => {
     const node = surface.current;
     if (!node) return;
-    const measure = () => { const rect = node.getBoundingClientRect(); setPixels(Math.max(1, Math.min(rect.width, rect.height))); };
+    const measure = () => {
+      const { width, height } = node.getBoundingClientRect();
+      if (width > 0 && height > 0) setViewport(previous => previous.width === width && previous.height === height ? previous : { width, height });
+    };
     measure(); const observer = new ResizeObserver(measure); observer.observe(node);
     return () => observer.disconnect();
   }, []);
-  function zoom(factor: number) { setView(previous => ({ ...previous, x: center.x, y: center.y, zoom: Math.min(12, Math.max(1, previous.zoom * factor)) })); }
+  // Keep the stored center bounded too, so resizing back cannot revive an old off-map pan.
+  useEffect(() => { setView(previous => clampArkMapView(previous, viewport)); }, [viewport]);
+  function zoom(factor: number) { setView(previous => clampArkMapView({ x: center.x, y: center.y, zoom: previous.zoom * factor }, viewport)); }
   wheelAction.current = delta => zoom(delta < 0 ? 1.2 : 1 / 1.2);
   useEffect(() => {
     const node = surface.current;
@@ -66,15 +73,15 @@ export function ArkWorldMapCanvas({ snapshot, live, selectedId, follow, onSelect
       onKeyDown={event => {
         if (["+", "=", "-", "0", "ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(event.key)) event.preventDefault();
         if (event.key === "+" || event.key === "=") zoom(1.2); else if (event.key === "-") zoom(1 / 1.2); else if (event.key === "0") fit();
-        else if (event.key.startsWith("Arrow")) { onStopFollow(); setView(v => ({ ...v, x: center.x + (event.key === "ArrowRight" ? 1 : event.key === "ArrowLeft" ? -1 : 0) * size / 10,
-          y: center.y + (event.key === "ArrowDown" ? 1 : event.key === "ArrowUp" ? -1 : 0) * size / 10 })); }
+        else if (event.key.startsWith("Arrow")) { onStopFollow(); setView(v => clampArkMapView({ ...v, x: center.x + (event.key === "ArrowRight" ? 1 : event.key === "ArrowLeft" ? -1 : 0) * size / 10,
+          y: center.y + (event.key === "ArrowDown" ? 1 : event.key === "ArrowUp" ? -1 : 0) * size / 10 }, viewport)); }
       }}
       onPointerDown={event => { if (event.button !== 0 || (event.target as Element).closest("[data-player-id]")) return;
         drag.current = { id: event.pointerId, x: event.clientX, y: event.clientY, cx: center.x, cy: center.y, moved: false };
         event.currentTarget.setPointerCapture(event.pointerId); }}
       onPointerMove={event => { const d = drag.current, rect = surface.current?.getBoundingClientRect(); if (!d || !rect) return;
         d.moved = true; onStopFollow(); const length = Math.min(rect.width, rect.height);
-        setView(v => ({ ...v, x: d.cx - (event.clientX - d.x) / length * size, y: d.cy - (event.clientY - d.y) / length * size })); }}
+        setView(v => clampArkMapView({ ...v, x: d.cx - (event.clientX - d.x) / length * size, y: d.cy - (event.clientY - d.y) / length * size }, viewport)); }}
       onPointerUp={() => { drag.current = null; }} onPointerCancel={() => { drag.current = null; }}>
       <rect x={left} y={top} width={size} height={size} className="ark-map-background" />
       {art ? <image key={art.url} href={art.url} {...arkArtworkRect(art.bounds)} preserveAspectRatio="none" onError={() => setFailedArtwork(art.url)} /> : null}

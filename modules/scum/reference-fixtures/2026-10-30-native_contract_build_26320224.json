@@ -1,0 +1,292 @@
+{
+  "schema_version": 1,
+  "observed_on": "2026-10-30",
+  "steam_app_id": 3792580,
+  "build_id": "26320224",
+  "game_version": "1.3.5.2.172724+172352",
+  "package": {
+    "source": "SteamCMD anonymous app_update 3792580 validate",
+    "state_flags": 4,
+    "update_result": 0,
+    "depot_id": "3792581",
+    "depot_manifest": "7276695924733020807",
+    "executable_relative_path": "SCUM/Binaries/Win64/SCUMServer.exe",
+    "executable_sha256": "a862d658271f26d082de5df7bba01e8af9c3d051cb9634e908bb94d8a9efbc7a",
+    "executable_bytes": 130064896,
+    "pdb_available": false
+  },
+  "code_identity": {
+    "base_revision": "d58857d32d668a3661261b96134145c6911357a4",
+    "worktree_uncommitted": true,
+    "files_sha256": {
+      "modules/scum/control/bridge.cpp": "e77e790c368943e39141cf8d7e932216d87d011edec2c64703c94371c4902434",
+      "modules/scum/control/tests/bridge_tests.cpp": "b72bb7c232197c61d7a1afdc15ffc30b9ce775146f3b980e47a1b78f723c89c2",
+      "crates/app-storage/src/scum_custom_zones.rs": "a4fdf2de316a4e9f39bf35c510c4969904814916aeba1fedd9d2024c4e3db236",
+      "crates/app-storage/src/scum_custom_zones_io.rs": "8bf98207ca7ce27f774989756ad3ab0b92ec84680d2cd37bae8554ef948339ba",
+      "crates/app-storage/src/scum_custom_zones_db.rs": "2e9ab61035afdc61127c7cad94926306b18555dcd8d1a07d1939b372daadb7ee",
+      "crates/app-storage/src/scum_custom_zones_tests.rs": "634f9e4e42fc2f8f06edfa8221284a27ad47beb1268aeec749541233eac58872"
+    }
+  },
+  "loader": {
+    "version": "3.0.1-1125-g527a483b",
+    "core_sha256": "91d5444f41d19d0bb502f0fbdc15d76421e20359e898caa39e41e134c8f87958",
+    "runtime_ownership": "New ordinary copies; no hard links or production Saved data; no changes to formal server files"
+  },
+  "static_save_contract": {
+    "abi": "void(EntitySystem*, bool force)",
+    "profile": {
+      "save": "0x1bc0530",
+      "save_prologue": "48895c2420574881ecb0000000488b0524f590054833c4488984249000000080",
+      "entity_class": "0x753f010",
+      "entity_vtable": "0x5f13ba0",
+      "get_world": "0x1554920"
+    },
+    "stage_call_targets": {
+      "SaveGlobal": "0x1bd4330",
+      "SaveCoordinates": "0x1bc13d0",
+      "SaveEntities": "0x1bc0740"
+    },
+    "functions": {
+      "SaveEntities": {
+        "rva": "0x1bc0740",
+        "bytes": 2524,
+        "canonical_sha256": "56f12b30f5f8c1e0f30b32405f1b2bcd58a493f0b14e9b3829261787f321d90f",
+        "old_rva": "0x1bb2890"
+      },
+      "AutoSave": {
+        "rva": "0x1bc0530",
+        "bytes": 515,
+        "canonical_sha256": "cb538968fa250bea746986027605767f90da01b7c2a8b7c6370dd97abb1c7cbc",
+        "old_rva": "0x1bb2680"
+      },
+      "SaveGlobal": {
+        "rva": "0x1bd4330",
+        "bytes": 328,
+        "canonical_sha256": "a1d4d0392740b8890c8ef5fecb69e142694e73bb7e710296fe476d61c1f20801",
+        "old_rva": "0x1bc59c0"
+      },
+      "SaveCoordinates": {
+        "rva": "0x1bc13d0",
+        "bytes": 1191,
+        "canonical_sha256": "0c9ad0bc8b5b012c48c25ef51dd4c73f5d3f2278a28a090b33330d25b8cf90e6",
+        "old_rva": "0x1bb3520"
+      },
+      "ActorSetBegunState": {
+        "rva": "0x3f658c0",
+        "bytes": 555,
+        "canonical_sha256": "c1b824dbe752e443e8136d564dca7fc5bf2126ab1a0461ae31a3bc9c643c66a7",
+        "old_rva": "0x3f39b70"
+      },
+      "ActorDispatchBegin": {
+        "rva": "0x3f69a70",
+        "bytes": 413,
+        "canonical_sha256": "d0007f539da5d944706d261cc7372ae1ccc51d86bce3f97482024d5d95556457",
+        "old_rva": "0x3f3dd20"
+      },
+      "EntityVtableReference0": {
+        "rva": "0x27dd460",
+        "bytes": 1650,
+        "canonical_sha256": "6a894c49a825ed28eaafd2c60a46f12ad5ef1810513ba9fce45923fde20ec247",
+        "old_rva": "0x27b8b00"
+      },
+      "EntityClassSingletonReference0": {
+        "rva": "0x27db870",
+        "bytes": 178,
+        "canonical_sha256": "ae50dcf77b26fd8b73af67d4d6de6f777b2e70577f653b6cab870dd3e6931f4f",
+        "old_rva": "0x27b8470"
+      },
+      "EntityGetWorld": {
+        "rva": "0x1554920",
+        "bytes": 22,
+        "canonical_sha256": "53526e2bc8416cae2667b33c6e4b9995bd0c2c4a62586e91cf84b5a9c0bae098",
+        "old_rva": "0x1552cc0"
+      }
+    },
+    "method": "PE x64 unwind-chain bounds; full instruction stream and internal branch targets equal for uniquely matched functions; explicitly reviewed SaveEntities delta recorded separately when present; external branch/RIP relocations normalized; fixed field offsets and literals retained; stage references and vtable accessor checked",
+    "upstream_entity_save_delta": {
+      "old_bytes": 2523,
+      "new_bytes": 2524,
+      "old_raw_sha256": "9cb1c268f9ad48ca2710826e5436a15b5f302004bd87db50ab40d58dab4b18c7",
+      "new_raw_sha256": "12bb504be4f0f41c07c0aa8848791c4b650c7d252764c0be0969d94fc5c09414",
+      "helper_rva": "0x186c250",
+      "helper_bytes": "488b0148ffa090000000",
+      "virtual_slot": "0x90",
+      "call_sites": [
+        "0x1bc0d41",
+        "0x1bc0fa9"
+      ],
+      "interpretation": "The two native virtual calls at slot 0x90 are now made through a tail-dispatch helper; caller RCX/RAX allocation changes and RDX points to the saved force argument. The stage is changed, not byte-equivalent. Our external void(EntitySystem*, bool) entry is separately an exact complete-function match. No new equivalence of the games internal virtual callee is asserted."
+    }
+  },
+  "read_only_owner_observation": {
+    "entity_vtable_rva": "0x5f13ba0",
+    "entity_class_matches_reflection": true,
+    "entity_outer_matches_instance": true,
+    "world_instance_matches": true,
+    "world_game_mode_matches": true,
+    "world_game_state_matches": true,
+    "get_world_rva": "0x1554920",
+    "get_world_first_22_bytes": "488b49204885c9740a488b0148ffa06001000033c0c3",
+    "readiness_raw": {
+      "entity_0x30": 1,
+      "entity_0x798": 0,
+      "entity_0x79a": 0,
+      "entity_0x79b": 0,
+      "game_mode_role_0xf0": 3,
+      "game_mode_actor_state_0x5c": 137,
+      "game_state_actor_state_0x5c": 137
+    },
+    "native_save_invoked": false,
+    "entity_class_singleton_matches": true,
+    "entity_vtable_matches_static": true,
+    "get_world_matches_static": true,
+    "save_prologue_matches_static": true,
+    "object_flags": {
+      "ENTITY": "0x0",
+      "INSTANCE": "0x40",
+      "WORLD": "0x28000b",
+      "GAME_MODE": "0x48",
+      "GAME_STATE": "0x48"
+    },
+    "objects_alive": true
+  },
+  "reflection_observation": {
+    "class_count": 17,
+    "entity_system_reflected_functions": 0,
+    "roster_player_states": 0,
+    "roster_client_connections": 0,
+    "meaning": "Read-only metadata and empty roster counts. The production save calls a native entry, not a reflected UFunction. No populated-player roster or client join is established."
+  },
+  "custom_zone_contract": {
+    "database_user_version": 75,
+    "quick_check": "ok",
+    "configurations": 2,
+    "regions": 4,
+    "schema73_region_table_definitions_equal": true,
+    "source_actor": 5,
+    "pairs_channel_receiver_handling": [
+      [
+        5,
+        1,
+        1
+      ],
+      [
+        4,
+        1,
+        1
+      ],
+      [
+        6,
+        11,
+        1
+      ],
+      [
+        5,
+        11,
+        1
+      ],
+      [
+        4,
+        11,
+        1
+      ]
+    ],
+    "native_npc_packed_values": [
+      {
+        "configuration_id": 1,
+        "packed": 682,
+        "slots": 5
+      },
+      {
+        "configuration_id": 1000,
+        "packed": 341,
+        "slots": 5
+      }
+    ],
+    "source_db_wal_sha256": {
+      "SCUM.db": "2e3162f8ab722d5becb1ca7e03714e152f4f40fab9516bf76104f05dbc0d1900",
+      "SCUM.db-wal": "454ec9df273d7e676a93e2bc5ba73f9998ce2cda4a478c10c72d75ca02d9452f"
+    },
+    "original_database_and_wal_unchanged": true
+  },
+  "process": {
+    "pid": 107736,
+    "stage": "read_only_memory_verified",
+    "exit_code": 113,
+    "task_fixture_reclaimed": true,
+    "elapsed_s": 66.512,
+    "error": null,
+    "native_save_invoked": false
+  },
+  "component_validation": {
+    "command": "modules/scum/control/Build.ps1 -RunComponents",
+    "exit_code": 0,
+    "profiles_checked": 3,
+    "dll_sha256": "d482369a0e4853a42c98098e1b4b15c97711956d76d77b4dcb81965f8aac60f9",
+    "test_sha256": "abee9949879fc4ab91a8bb8a77f370173f3829e03a2aeb6fd6a96a017d6810fd",
+    "scope": "Synthetic object ownership, authority, lifecycle, loading/busy/shutdown rejection, request framing and exactly one force=true ABI call; no game save or persistence asserted."
+  },
+  "evidence_sha256": {
+    "prepared.json": "6a1489adf923baec09c20929f6979f35a959903d36f318b057ad855968692498",
+    "probe.lua": "cd99e0d561efa2e2dba8d088847dc9b33a96fe61993eb356506adb7f518e70f5",
+    "run_probe.py": "cd6a85ae02d560378173b1cf4acedbbabed3a7d751d723d1337d238c73f8e41d",
+    "inspect_save_contract.py": "401311b1f4e662be8bd6199de22289a10c052e8860d54d0d722346d42a6ab813",
+    "derive_save_profile.py": "c7cfec0f58db00941a2e89988c6f50aadc2b43dfb9c6c771962fac82f39afbe2",
+    "save-comparison.json": "53865a00507dcc10d8971376325d47938f834650357093e64e7460c1d9c6c4e8",
+    "save-profile-candidate.json": "540b85c2f09983b1cce78ff1b4d5d7373f41507adaf23fc8b5a642127bbd3c78",
+    "save-entities-review.json": "4df95024319523bdd21687936d143eb72e26b7af1d9e54b21370ed39e83cfde5",
+    "database-schema-comparison.json": "beb5d100c92483b5d22e021ad7792a4b1789a4a9e5fb4eb0c935e2ae8e3028dc",
+    "database-inspection.json": "77d7a1ad434cd0cd4936a15a7b3f68c6ebca2fa589b346314bac012a9023f571",
+    "runs/contract_01/native-matrix.json": "b820820a8cb30778cc5ca42d517475c75c39dd12291c513e33e538992084c17f",
+    "runs/contract_01/native-objects.json": "ba433ecb2c7c21b50b8dfffad6421ed8f09f3dab19d237117dd694a27c390e07",
+    "runs/contract_01/probe-output.txt": "deebf42461cb1ba0ee6b8aa0b4e43ad8217946bf8a67671440b1df2258f910be",
+    "runs/contract_01/result.json": "621200a56e3532420756945636d81383e8f8ff0e62505771f395fcd98c150113",
+    "runs/contract_01/native.log": "20ca5868d33147984ffc76b9cfa9d3c0854742d974cecb86cf68dbff81424a23",
+    "control-components.log": "1fad38bf212a01bbc0de43fcaf9ee0148d53b38a12e10b8d6a1aad27471e80dd",
+    "storage-build-static-sql.json": "0af3c242c7278e2a8539e4478ae203398aa04942aed9a2694b54129d123dbc37",
+    "storage-unit-tests.json": "d06b28199d8611acb9408a33ff3f67efbdc4c6581482d5992943164e71e9f3bc",
+    "storage-unit-tests.log": "be0f0b7711dcac8a12230e44a5b7c097f39cef1a7cf1b6264d8e1f23d04b6c29",
+    "native-database-roundtrips.json": "c29640e33339d7d984ab32a17816c1dd25fcb362ca99d4de2ad9ca2476f55500",
+    "roundtrip-build-25803875.log": "e2dd42208cc884538c0c45b9bb7472487a2b34a43b95a38bc642bcf0a5aa23b6",
+    "roundtrip-build-26320224.log": "032e9a89769f9fc9469ef124044ca41eb9bf3e1c9a8eb4bb79cb8d6efadef0c5",
+    "generated-settings-key-comparison.json": "8b821649534cc957e2f96d4b617f2597dacafed8c1b417e8d0317ad6549250db"
+  },
+  "limits": [
+    "The native probe read process memory and reflection only; it did not invoke AutoSave.",
+    "The fixture process was reclaimed by its owned Windows Job (exit 113), not gracefully shut down.",
+    "The native database schema is 75; schema 73 remains bound only to build 25803875.",
+    "Client joins, populated rosters, combat effects, complete server lifecycle and causal save persistence are separate acceptance requirements."
+  ],
+  "storage_validation": {
+    "build_receipt": "storage-build-static-sql.json",
+    "source_identity_sha256": "ff9a8c64abe416f0877a45fe9aee63b880e1dc0c70e70642718558b8cbf432a6",
+    "test_binary_sha256": "53e0d1651b172dda54d0f7219003b000f385b1a0c1690eac7d4e5aadfa02def9",
+    "unit_tests_passed": 9,
+    "native_schema_roundtrips": [
+      {
+        "build_id": "25803875",
+        "database_user_version": 73,
+        "exit_code": 0,
+        "configurations": 2,
+        "source_db_wal_unchanged": true
+      },
+      {
+        "build_id": "26320224",
+        "database_user_version": 75,
+        "exit_code": 0,
+        "configurations": 2,
+        "source_db_wal_unchanged": true
+      }
+    ],
+    "meaning": "Real owned DB copies passed public instance/executable/schema admission, write, committed reload and pre-change backup readback. Native source DB/WAL files were not changed."
+  },
+  "generated_settings_key_inventory": {
+    "generated_scum_keys": 437,
+    "ledger_keys": 437,
+    "missing_from_ledger": [],
+    "not_generated_now": [],
+    "generated_version": [
+      "7"
+    ]
+  }
+}

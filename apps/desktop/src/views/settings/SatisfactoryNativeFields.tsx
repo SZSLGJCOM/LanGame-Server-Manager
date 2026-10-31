@@ -1,7 +1,9 @@
 import type { ReactNode } from "react";
+import { ActivityNotice } from "../../components/ActivityNotice";
 import { useI18n } from "../../i18n";
 import { satisfactoryRuleCopyKey, satisfactoryRuleId, type SatisfactoryRuleDefinition } from "../../satisfactory-world-settings";
-import { ConfigurationField } from "./ConfigurationField";
+import { buildConfigurationFieldIds, ConfigurationField } from "./ConfigurationField";
+import { ConfigurationValidationNotice } from "./ConfigurationValidationNotice";
 import { buildConfigurationFieldCopy } from "./GuidedSettingsForm";
 import type { GuidedEnumOption, GuidedSectionId, GuidedSettingsField } from "./settings-schema";
 import { useSatisfactoryWorldSettings } from "./SatisfactoryWorldSettingsContext";
@@ -26,14 +28,18 @@ export function SatisfactoryNativeField(props: {
     presentation: { state: "editable", owner: "configuration", sectionId: props.sectionId,
       behavior: kind === "secret" ? "secret" : "plain" }
   };
-  return <ConfigurationField field={field} value={props.value} settings={{ [field.key]: props.value }} t={t}
-    indexed={false}
-    copy={buildConfigurationFieldCopy(t)} idPrefix="configuration-satisfactory" disabled={props.disabled}
-    readOnly={props.readOnly} validationMessage={props.validation}
-    onPatch={(patch) => {
-      const value = patch[field.key];
-      if (!props.disabled && !props.readOnly && (typeof value === "string" || typeof value === "boolean")) props.onChange(value);
-    }} />;
+  return <>
+    <ConfigurationValidationNotice message={props.validation} label={props.title}
+      inputId={buildConfigurationFieldIds(field.key, "configuration-satisfactory", props.readOnly).inputId} />
+    <ConfigurationField field={field} value={props.value} settings={{ [field.key]: props.value }} t={t}
+      indexed={false}
+      copy={buildConfigurationFieldCopy(t)} idPrefix="configuration-satisfactory" disabled={props.disabled}
+      readOnly={props.readOnly} validationMessage={props.validation} validationDisplay="activity"
+      onPatch={(patch) => {
+        const value = patch[field.key];
+        if (!props.disabled && !props.readOnly && (typeof value === "string" || typeof value === "boolean")) props.onChange(value);
+      }} />
+  </>;
 }
 
 export function SatisfactoryRuleField(props: {
@@ -50,7 +56,9 @@ export function SatisfactoryRuleField(props: {
     onChange={(value) => props.onChange(typeof value === "boolean" ? value ? "True" : "False" : value)} />;
 }
 
-export function SatisfactoryNativePanel(props: { sectionId: string; children?: ReactNode; dirty?: boolean }) {
+export function SatisfactoryNativePanel(props: {
+  sectionId: string; children?: ReactNode; dirty?: boolean; onNavigateField?: (fieldKey: string) => void;
+}) {
   const { t } = useI18n();
   const state = useSatisfactoryWorldSettings();
   return <section className="settings-editor-stack" data-satisfactory-native-panel={props.sectionId}
@@ -62,17 +70,28 @@ export function SatisfactoryNativePanel(props: { sectionId: string; children?: R
       <button type="button" className="secondary-button" disabled={state.loading || state.busy}
         onClick={() => void state.refresh()}>{t(`${SATISFACTORY_NATIVE_COPY}.refresh`)}</button>
     </div>
-    {state.loading ? <p className="form-note" role="status">{t(`${SATISFACTORY_NATIVE_COPY}.loading`)}</p> : null}
-    {state.error ? <div className="configuration-workspace__notice" role="alert">
-      <p>{state.error}</p>{props.dirty ? <p>{t(`${SATISFACTORY_NATIVE_COPY}.draftRetained`)}</p> : null}
-    </div> : null}
-    {state.snapshot?.connection_status === "stopped" ? <p className="form-note" role="status">
+    {state.loading ? <ActivityNotice>{t(`${SATISFACTORY_NATIVE_COPY}.loading`)}</ActivityNotice> : null}
+    {state.error ? <ActivityNotice tone="error"
+      details={props.dirty ? t(`${SATISFACTORY_NATIVE_COPY}.draftRetained`) : undefined}
+      action={<button type="button" className="secondary-button" disabled={state.loading || state.busy}
+        onClick={() => void state.refresh()}>{t(`${SATISFACTORY_NATIVE_COPY}.refresh`)}</button>}>
+      {state.error}
+    </ActivityNotice> : null}
+    {state.snapshot?.connection_status === "stopped" ? <ActivityNotice>
       {t(`${SATISFACTORY_NATIVE_COPY}.startRequired`)}
-    </p> : null}
+    </ActivityNotice> : null}
     {state.snapshot?.connection_status === "authorization_required" && props.sectionId !== "access" ?
-      <p className="form-note" role="status">{t(`${SATISFACTORY_NATIVE_COPY}.authorizationRequired`)}</p> : null}
+      <ActivityNotice action={props.onNavigateField ? <button type="button"
+        className="secondary-button configuration-validation-target" data-satisfactory-navigation-field="native_access"
+        aria-controls="configuration-satisfactory-native-access-input" onClick={() => props.onNavigateField?.("native_access")}>
+        {t(`${SATISFACTORY_NATIVE_COPY}.panels.access`)}
+      </button> : undefined}>{t(`${SATISFACTORY_NATIVE_COPY}.authorizationRequired`)}</ActivityNotice> : null}
     {state.snapshot?.connection_status === "unclaimed" && props.sectionId !== "room" ?
-      <p className="form-note" role="status">{t(`${SATISFACTORY_NATIVE_COPY}.setupRequired`)}</p> : null}
+      <ActivityNotice action={props.onNavigateField ? <button type="button"
+        className="secondary-button configuration-validation-target" data-satisfactory-navigation-field="native_room"
+        aria-controls="configuration-satisfactory-native-room-input" onClick={() => props.onNavigateField?.("native_room")}>
+        {t(`${SATISFACTORY_NATIVE_COPY}.panels.room`)}
+      </button> : undefined}>{t(`${SATISFACTORY_NATIVE_COPY}.setupRequired`)}</ActivityNotice> : null}
     {props.children}
   </section>;
 }

@@ -1,0 +1,167 @@
+{
+  "schema_version": 1,
+  "module_id": "dontstarve",
+  "verified_on": "2026-10-31",
+  "evidence_classification": "native_persistence_format_capture_and_failed_restore_diagnosis",
+  "steam_app_id": 343050,
+  "steam_build_id": "26335402",
+  "game_version": "761239",
+  "package_reference": "2026-10-31-world_options_761239.json",
+  "source_identity_sha256": "bdb9ec254ec78270cd246cd60d21ba0d2ead43eec5e2fd68aac5ab657c7e1925",
+  "test_binary_sha256": "7ac5843571203f96e5618719e82093456026c102a1c84bad7c5c60773af51263",
+  "failed_full_lifecycle": {
+    "selector": "commands::tests::manual_runtime_tests::native_lifecycle_tests::native_package_lifecycle",
+    "started_utc": "2026-10-31T04:10:26.491050+00:00",
+    "completed_utc": "2026-10-31T04:15:32.939588+00:00",
+    "exit_code": 101,
+    "cleanup_failures": [],
+    "completed_scope": "Two offline-LAN Master/Caves ready runs, two correlated Requested receipts and four normal process exit-0 stops",
+    "failure": "Backup restore rejected Master/worldgenoverride.lua as not a bounded static return table",
+    "original_failed_world_file_retained": false
+  },
+  "diagnostic_run": {
+    "selector": "commands::tests::manual_runtime_tests::native_lifecycle_tests::native_manual_save",
+    "started_utc": "2026-10-31T04:21:27.043439+00:00",
+    "completed_utc": "2026-10-31T04:24:28.970805+00:00",
+    "exit_code": 0,
+    "cleanup_failures": [],
+    "native_ready_cycles": [
+      "initial",
+      "restart"
+    ],
+    "normal_process_stops": 4,
+    "normal_exit_code": 0,
+    "manual_save_requests": 2,
+    "save_completion": "requested",
+    "save_response_bytes": 90,
+    "settings": {
+      "program_update": {
+        "policy": "pinned"
+      },
+      "allow_persistentstorage_read_sandbox_escape": true,
+      "allow_persistentstorage_write_sandbox_escape": true,
+      "allow_ioopenwrite_sandbox_escape": false
+    },
+    "offline_lan": true,
+    "active_shards": [
+      "Master",
+      "Caves"
+    ],
+    "players": 0,
+    "diagnostic_observe_seconds": 10,
+    "full_lifecycle_selected": false
+  },
+  "retained_artifacts": {
+    "dontstarve-native.json": {
+      "bytes": 2837,
+      "sha256": "48f2ed99bd8d5b6a5c56763ea7fd8649b047cc312f89cadd3477b6ca7ba07c13"
+    },
+    "dontstarve-native.log": {
+      "bytes": 4405,
+      "sha256": "39e060d540a36aea72081cf6e00ccc7d0c41818dbf06233d4ba7768bf76be097"
+    },
+    "dontstarve-envelope-native.json": {
+      "bytes": 2881,
+      "sha256": "6ef437feb6b756cdb45cd6f806c904dfb871007be3ce0e50e873098b534bdc48"
+    },
+    "dontstarve-envelope-native.log": {
+      "bytes": 3976,
+      "sha256": "e4abc35ebafe4c855389979643f90748b7c559dfb21c994bd5a7d986deff8733"
+    },
+    "dst-envelope-capture/direct-index.json": {
+      "bytes": 2509,
+      "sha256": "b0b1e62c0d4927ece685d9ea5143f3ae8beb08cb85e046466d4b918bba2002ae"
+    },
+    "native-build-02.json": {
+      "bytes": 1521,
+      "sha256": "aa6b4b3cd00e5b1751d1ab12c346481d0106388777920b2968f4563e24113de6"
+    },
+    "native-source-proof.json": {
+      "bytes": 791,
+      "sha256": "b5a26b26f64fad98f46637674a68a0c374ac16b24f5f1a5195fc6ced1a4ad41f"
+    }
+  },
+  "captured_variants": [
+    {
+      "captured_utc": "2026-10-31T04:22:59.153101+00:00",
+      "retained": "Caves-ca2bf76f642c.lua",
+      "bytes": 152,
+      "sha256": "ca2bf76f642cf490b7b1680facfab6e634acc790332b59e06b4b1dfa1c3586b3",
+      "prefix_hex": "4b4c4549202020202031207265747572",
+      "format": "native_uncompressed_text_envelope",
+      "utf8": "KLEI     1 return {\n\toverride_enabled = true,\n\tworldgen_preset = \"DST_CAVE\",\n\tsettings_preset = \"DST_CAVE\",\n\toverrides = {\n\t\tworld_size = \"small\",\n\t},\n}"
+    },
+    {
+      "captured_utc": "2026-10-31T04:22:59.153719+00:00",
+      "retained": "Islands-07885a544e25.lua",
+      "bytes": 186,
+      "sha256": "07885a544e250e6761e6a17fdd2e1817d1197c2982f53f88ef4466a62b25942a",
+      "prefix_hex": "72657475726e207b0a20206f76657272",
+      "format": "plain_managed_lua"
+    },
+    {
+      "captured_utc": "2026-10-31T04:22:59.154399+00:00",
+      "retained": "Master-9d93d194e66b.lua",
+      "bytes": 170,
+      "sha256": "9d93d194e66bfbe8dd85de67109c9325b7e3fdffc141cbb058b8e164a6f78305",
+      "prefix_hex": "4b4c4549202020202031207265747572",
+      "format": "native_uncompressed_text_envelope",
+      "utf8": "KLEI     1 return {\n\toverride_enabled = true,\n\tworldgen_preset = \"SURVIVAL_TOGETHER\",\n\tsettings_preset = \"SURVIVAL_TOGETHER\",\n\toverrides = {\n\t\tworld_size = \"small\",\n\t},\n}"
+    },
+    {
+      "captured_utc": "2026-10-31T04:22:59.154942+00:00",
+      "retained": "Volcano-24296e979c83.lua",
+      "bytes": 155,
+      "sha256": "24296e979c8371d6f1c9cc8be912c90b9f9fdd0fed45bd5b8cf01519534db01b",
+      "prefix_hex": "72657475726e207b0a20206f76657272",
+      "format": "plain_managed_lua"
+    },
+    {
+      "captured_utc": "2026-10-31T04:23:11.163280+00:00",
+      "retained": "Caves-716e65f15ccc.lua",
+      "bytes": 3760,
+      "sha256": "716e65f15ccc2e67ced69a536f8f10fecc6f96defc457d2db56901ef83d17ad0",
+      "prefix_hex": "72657475726e207b0a20206f76657272",
+      "format": "plain_managed_lua"
+    },
+    {
+      "captured_utc": "2026-10-31T04:23:11.164504+00:00",
+      "retained": "Master-258eee2ca7cb.lua",
+      "bytes": 5779,
+      "sha256": "258eee2ca7cb70e3da8bb38fc0ed835fa6d320b881ed0709fa96eef55e3abf7c",
+      "prefix_hex": "72657475726e207b0a20206f76657272",
+      "format": "plain_managed_lua"
+    }
+  ],
+  "diagnosis": {
+    "native_source": "scripts/mainfunctions.lua UpdateWorldGenOverride and world-save callback",
+    "native_source_sha256": "53831dfadc029a24a36e0e703c9b3f404ee1a733e1b2e0e22b99abd450642a51",
+    "native_contract": "SetPersistentString(..., false) writes an uncompressed text envelope around the returned Lua table",
+    "missing_boundary": "read_static_world_override removed a BOM but did not unwrap the native text persistence header before static parsing",
+    "fix": "Decode only the fixed KLEI text envelope at the file input boundary; keep the bounded static Lua parser and all dynamic-code rejection",
+    "native_master_regression_sample_matches_capture": true
+  },
+  "scope": "The capture uses the pre-fix frozen binary. Its two-run manual-save probe passed, while the separate full lifecycle failed during restore. Captured bytes establish the native persistence format; they do not prove that a specific save request caused a durable checkpoint. Plain Master/Caves expansion was captured at pre-start rematerialization and is not treated as equivalent to native saved options. These records do not assert that the new fix passed full native backup/restore, archive recovery or clients.",
+  "post_fix_full_lifecycle_attempt": {
+    "source_identity_sha256": "9161f9cdccc644c3bd4dd925ab916220b774eb1c1fcad8c6ddcd3b93686f7255",
+    "test_binary_sha256": "8ddeb8811cd1fd0fd125b4cc286bd0f4e92d171a9ded7b9186219a46d825f183",
+    "started_utc": "2026-10-31T04:47:18.922602+00:00",
+    "completed_utc": "2026-10-31T04:51:14.240421+00:00",
+    "exit_code": 101,
+    "cleanup_failures": [],
+    "native_ready_cycles": [
+      "initial",
+      "restart"
+    ],
+    "normal_process_stops": 4,
+    "normal_exit_code": 0,
+    "manual_save_requests": 2,
+    "save_completion": "requested",
+    "restore_progress": "The original envelope rejection was resolved. The test passed all four exact worldgen normalization comparisons, then rejected a remaining cluster-file inventory difference.",
+    "failure": "DST restore changed native save bytes or unrelated cluster files",
+    "result_sha256": "813078631da70675ff45486488f3e02860bc43998056309b88b9981c4f8ce268",
+    "log_sha256": "dd74141a8a5a6e858848319afc7024a055ff1e4da3dac14b3c86c57d535b5ffc",
+    "native_fixture_data_retained": false,
+    "diagnosis_scope": "Read-only source review found that the generic probe placed a must-delete marker at cluster root, which the formal DST world restore intentionally preserves. The probe now separates post-backup world data from unrelated cluster-root content and checks the declared world-copy statistics. The failed fixture did not retain per-file differences; this diagnosis and the modified probe require separate regression/native acceptance."
+  }
+}

@@ -1,12 +1,11 @@
 .ark-creature-spawner { display: flex; flex-direction: column; gap: 8px; min-width: 0; min-height: 0; flex: 1; }
-.ark-creature-spawner__status { flex: none; color: var(--shell-muted); font-size: var(--text-meta); }
-.ark-creature-spawner__status p { margin: 0; }
 .ark-creature-spawner > .shell-activity-notice { flex: none; }
-.ark-creature-spawner > form, .ark-creature-spawner fieldset { display: flex; flex-direction: column; gap: 8px; flex: 1 1 0; min-width: 0; min-height: 0; }
+.ark-creature-spawner > form, .ark-creature-spawner fieldset { display: flex; flex-direction: column; gap: 6px; flex: 1 1 0; min-width: 0; min-height: 0; }
 .ark-creature-spawner fieldset { border: 0; padding: 0; margin: 0; }
-.ark-creature-spawner fieldset > .gmt-ark-catalog-assist { flex: 1 1 0; }
+/* Keep the search, pager and two complete creature rows visible when options expand. */
+.ark-creature-spawner fieldset > .gmt-ark-catalog-assist { flex: 1 0 0; min-height: calc(var(--control-height-compact) + 86px); }
 .ark-creature-spawner__advanced { display: grid; gap: 10px; padding-block: 8px; }
-.ark-creature-spawner__coordinates { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.ark-creature-spawner__coordinates { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
 .ark-creature-spawner__choices { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
 .ark-creature-spawner__choices button { display: flex; flex-direction: column; align-items: flex-start; text-align: left; overflow-wrap: anywhere; }
 .ark-creature-spawner__choices small { opacity: .7; }
@@ -14,5 +13,12 @@
 .ark-creature-spawner__saved > .gmt-field { flex: 1; min-width: 140px; }
 .ark-creature-spawner__saved > button { align-self: end; }
 .ark-creature-spawner .gmt-field > span { display: block; margin-bottom: 6px; color: var(--shell-muted); }
-.ark-creature-spawner__note { flex: none; max-height: 72px; overflow: auto; margin: 0; font-size: var(--text-meta); line-height: var(--leading-body); color: var(--shell-muted); }
+.ark-creature-spawner__coordinates .gmt-field, .ark-creature-spawner__owner { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.ark-creature-spawner__coordinates .gmt-field > span, .ark-creature-spawner .ark-creature-spawner__owner > span { flex: none; margin-bottom: 0; font-size: var(--text-meta); }
+.ark-creature-spawner__coordinates input, .ark-creature-spawner__owner input { flex: 1; width: 0; min-width: 0; }
+.ark-creature-spawner__coordinates input, .ark-creature-spawner__owner input, .ark-creature-spawner .gmt-ark-catalog-search { height: var(--control-height-compact); min-height: var(--control-height-compact); padding-block: 4px; font-size: var(--text-meta); }
+.ark-creature-spawner .ark-spawn-dock { flex: 0 1 auto; min-height: 0; grid-template-rows: minmax(0, 1fr) auto; gap: 4px; padding-top: 6px; }
+.ark-creature-spawner .ark-spawn-options { min-height: 0; }
+.ark-creature-spawner .gmt-ark-catalog-assist, .ark-creature-spawner .gmt-ark-catalog-toolbar { gap: 4px; }
+.ark-creature-spawner .ark-spawn-tool, .ark-creature-spawner .ark-spawn-setting { min-height: 48px; padding-block: 4px; }
 .ark-creature-spawner__choices [aria-pressed="true"] { border-color: var(--shell-text); }

@@ -14,6 +14,9 @@ from scripts.export_public_snapshot import (
 from scripts.open_source_product_policy import scan_product_payload
 from scripts.tests.project_license_fixtures import write_project_license_fixture
 from scripts.verify_open_source_boundary import (
+    ignored_tracked_paths,
+    tracked_worktree_paths,
+    untracked_worktree_paths,
     verify_boundary,
     verify_public_snapshot_contract,
 )
@@ -124,6 +127,7 @@ class OpenSourceBoundaryTests(unittest.TestCase):
                 repository,
                 tuple(path for path in tracked_paths if path != license_path),
                 frozenset(),
+                untracked_paths=(license_path,),
             )
             self.assertEqual(
                 [(item.rule, item.path) for item in untracked_findings],
@@ -298,6 +302,51 @@ class OpenSourceBoundaryTests(unittest.TestCase):
                         [(item.rule, item.path) for item in findings],
                         [("developer-machine-path", path.as_posix())],
                     )
+
+    def test_checks_nonignored_untracked_publication_candidates(self):
+        with tempfile.TemporaryDirectory() as directory:
+            repository = Path(directory)
+            subprocess.run(["git", "init", "--quiet"], cwd=repository, check=True)
+            self._write_required_files(repository)
+            (repository / ".gitignore").write_text("local/\n", encoding="utf-8")
+            subprocess.run(
+                ["git", "-c", "core.autocrlf=false", "add", "."],
+                cwd=repository,
+                check=True,
+            )
+
+            evidence = Path("modules/game/native-evidence/current.json")
+            private_key = Path("keys/operator.pem")
+            image = Path("docs/capture.png")
+            ignored = Path("local/private.pem")
+            for path in (evidence, private_key, image, ignored):
+                (repository / path).parent.mkdir(parents=True, exist_ok=True)
+                (repository / path).write_bytes(b"fixture\n")
+            (repository / evidence).write_text(
+                '{"entry_point": "'
+                + "/".join(("D:", "LanGame", "scripts", "build.ps1"))
+                + '"}\n',
+                encoding="utf-8",
+            )
+
+            tracked_paths = tracked_worktree_paths(repository)
+            untracked_paths = untracked_worktree_paths(repository)
+            self.assertEqual(set(untracked_paths), {evidence, private_key, image})
+            findings = verify_boundary(
+                repository,
+                tracked_paths,
+                ignored_tracked_paths(repository, tracked_paths),
+                untracked_paths=untracked_paths,
+            )
+
+        self.assertEqual(
+            {(item.rule, item.path) for item in findings},
+            {
+                ("developer-machine-path", evidence.as_posix()),
+                ("untracked-sensitive-path", private_key.as_posix()),
+                ("untracked-media", image.as_posix()),
+            },
+        )
 
     def test_accepts_documented_product_data_paths(self):
         with tempfile.TemporaryDirectory() as directory:

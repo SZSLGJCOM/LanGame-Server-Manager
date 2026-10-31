@@ -1,6 +1,20 @@
 status = "best_effort_verified"
-last_verified = "2026-10-28"
-notes = "Read-only review of installed app 294420 build 25661908, V3.3.0 (b18), confirms the packaged SandboxCode default and native version-A three-letter option framing. All 68 packaged serverconfig.xml properties remain covered; UserDataFolder is the additional instance-isolation property. This static review did not launch a server or repeat the earlier runtime/moderation checks. The V2.6 runtime-generated serveradmin.xml and build 24994542 blacklist-expiry observations remain separately dated below. Duration zero expires immediately; the online command explicitly bans for 10 years and records its confirmed native result. Blacklist removal sends the offline account unban command while running; arbitrary blacklist additions and edits remain restart-scoped."
+last_verified = "2026-10-31"
+notes = "Read-only review on 2026-10-31 of freshly validated public app 294420 build 26237934 confirms V3.4.0 (b9) from its managed assembly. All 68 packaged serverconfig.xml properties/defaults, the startup script and entry executable match build 26167630; the current template covers every property and adds only the instance-isolation UserDataFolder. Native SandboxCode version-A framing and the saveworld/sa command remain present. A separate managed backend lifecycle on build 26237934 passed four native-ready runs, four current-run Telnet save requests, normal exit-0 stops, 70-file backup restoration, archive interruption recovery and final cleanup. Save completion remains requested; no request-caused durable checkpoint, saved player progress or client acceptance is claimed. This verification date covers that package/configuration and lifecycle scope; the build 26167630 lifecycle and historical moderation evidence retain their original dates. Earlier build 25661908/V3.3.0 (b18) SandboxCode observations remain below. The V2.6 runtime-generated serveradmin.xml and build 24994542 blacklist-expiry observations remain separately dated below. Duration zero expires immediately; the online command explicitly bans for 10 years and records its confirmed native result. Blacklist removal sends the offline account unban command while running; arbitrary blacklist additions and edits remain restart-scoped."
+
+[[sources]]
+id = "managed_public_b9_lifecycle_20261031"
+kind = "runtime_probe"
+path = "native-evidence/2026-10-31-managed-lifecycle-build-26237934.json"
+authority = "compiled_manager_backend_with_isolated_official_package"
+description = "2026-10-31 Asia/Shanghai: initial, restart, after-backup-restore and after-archive-restore runs of build 26237934 all reached native readiness, issued one correlated saveworld request and stopped normally with exit 0. All four Telnet receipts remain requested. Backup restore preserved 70 stopped-world files, safeguards and program/configuration; archive restoration recovered a simulated deferred commit failure. Library uninstall preserved the instance program and 70 save files; final instance/library cleanup passed with no runner cleanup failures or remaining owned game process. The full log, successful build-04 binary, source manifest/proof and official package identities were rehashed. This does not establish request-caused durable completion, exact manual checkpoint readback, live clients/moderation, GUI or network program maintenance."
+
+[[sources]]
+id = "public_b9_package_20261031"
+kind = "install_probe"
+path = "native-evidence/2026-10-31-public-package-build-26237934.json"
+authority = "official_steamcmd_public_package_and_read_only_managed_assembly_analysis"
+description = "Fresh anonymous SteamCMD app_update 294420 validate completed build 26237934 with StateFlags 4 and UpdateResult 0. Constants and VersionInformation identify V3.4.0 (b9); this version is read from the new assembly rather than inferred from an older announcement. The 68 native XML properties/defaults and startup files match the dated build 26167630 fixture. SandboxOptionManager retains the A header and three-letter groups; ConsoleCmdSaveWorld retains saveworld/sa. The module already uses native Telnet and does not require a fixed game-build save profile. No runtime or client acceptance is asserted by this static comparison."
 
 [[sources]]
 id = "public_v3_4_configuration_20261028"

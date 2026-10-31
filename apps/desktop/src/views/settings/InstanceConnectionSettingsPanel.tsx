@@ -14,6 +14,7 @@ import {
   resolveVisibleInstancePorts
 } from "./instance-port-presentation";
 import "./InstanceConnectionSettingsPanel.css";
+import { ActivityNotice } from "../../components/ActivityNotice";
 
 interface InstanceConnectionSettingsPanelProps {
   details: InstanceDetails;
@@ -77,13 +78,13 @@ export function InstanceConnectionSettingsPanel(props: InstanceConnectionSetting
   return (
     <div className="instance-connection-settings">
       {runtimeOwnsNetworkSettings ? (
-        <p className="instance-connection-settings__runtime-lock" role="status">
+        <ActivityNotice tone="warning">
           {t(
             "settings.network.runtimeLock",
             undefined,
             "Stop the server before changing its listen address or ports."
           )}
-        </p>
+        </ActivityNotice>
       ) : null}
       <section className="settings-schema-section">
         <div className="instance-connection-settings__grid">

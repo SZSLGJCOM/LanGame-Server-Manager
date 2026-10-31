@@ -78,6 +78,6 @@ export function RomesteadSleepThresholdField(props: ConfigurationSpecializedRend
     <ConfigurationField key={props.details.summary.id} field={field} value={value} settings={props.settings}
       copy={buildConfigurationFieldCopy(t)} disabled={props.disabled} onPatch={props.onPatch}
       idPrefix="configuration-romestead" renderSpecialized={SleepThresholdControl}
-      validationMessage={validationMessage} t={t} />
+      validationMessage={validationMessage} validationDisplay="activity" t={t} />
   </div>;
 }

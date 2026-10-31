@@ -3,6 +3,13 @@ last_verified = "2026-09-08"
 notes = "SteamCMD anonymous app_update 376030 validate succeeded on 2026-07-13; the installed manifest reports buildid 21241282 and depot 376031 manifest 6366771435093287465. On 2026-08-12 the pinned official Server configuration source (SHA256 72b00288f130913ad6dfac1b680c62c159e76e86c70b3f90a2369260d63d5f63) was exhaustively crosswalked: all 432 ASE Yes rows are classified, all 69 No and 15 Unknown rows have explicit exclusions, and every native row is bound to a typed schema field and edition-specific writer. Raw INI and launch fields remain only as explicit escape hatches for third-party or future version-specific settings outside the pinned official catalog. Semantic review on 2026-09-30 compared all 373 settings and both rendered locales with the official ARK wiki crosswalk and native bindings. Corrected the global platform-creature/raft limit, nearby text chat, resource-regrowth delay direction and structure pickup sections; replaced generic field help using canonical bilingual descriptions. No defaults or native keys changed in this semantic pass; gameplay effects were not newly exercised."
 
 [[sources]]
+id = "managed_native_manual_save_20261031"
+kind = "runtime_probe"
+path = "reference-fixtures/2026-10-31-managed_native_manual_save.json"
+authority = "compiled_manager_backend_with_isolated_retained_package"
+description = "2026-10-31 Asia/Shanghai: the immutable manager backend completed native_manual_save acceptance against 21241282, with two isolated managed runs, declared native readiness, normal exits and owned cleanup. Formal save receipt status remains requested. This run does not claim exact saved-content readback. This is manual-save/two-cycle start-stop scope, not full backup/restore/uninstall acceptance, GUI or client gameplay."
+
+[[sources]]
 id = "evolved_native_flush_build_21241282"
 kind = "documentation"
 path = "modules/arksurvivalevolved/runtime-fixtures/2026-10-01-stdout-verbosity.json"

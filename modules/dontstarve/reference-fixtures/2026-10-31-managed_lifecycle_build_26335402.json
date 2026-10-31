@@ -1,0 +1,587 @@
+{
+  "schema_version": 1,
+  "module_id": "dontstarve",
+  "evidence_classification": "isolated_managed_backend_native_requests_world_restore_and_full_lifecycle",
+  "verified_on": "2026-10-31",
+  "verification_timezone": "Asia/Shanghai",
+  "steam_app_id": 343050,
+  "steam_build_id": "26335402",
+  "game_version": "761239",
+  "related_portable_evidence": {
+    "2026-10-31-world_options_761239.json": {
+      "bytes": 2757,
+      "sha256": "c73f0041dc67736eb4cd290e23647e5a85e3a3a6c014862fa4985da2b6cb4674"
+    },
+    "2026-10-31-native_world_options_envelope_761239.json": {
+      "bytes": 8221,
+      "sha256": "659a4489858b8bed4b87d9ba9c03533b35ea16d0ab76642884e4490bec6d2462"
+    },
+    "2026-10-31-native_server_ini_761239.json": {
+      "bytes": 6465,
+      "sha256": "bb068e55f425a3a4bb070a1757ac6ea6e1364d025c3c56786753ef411e91b1f8"
+    }
+  },
+  "environment": {
+    "platform": "Windows x86_64",
+    "offline_lan": true,
+    "shard_layout": "standard",
+    "active_shards": [
+      "Master",
+      "Caves"
+    ],
+    "operator_mods": false,
+    "live_clients": 0,
+    "program_mode": "Independent",
+    "creation_scope": "storage",
+    "acquisition_scope": "existing_local_package; official acquisition independently verified",
+    "settings_overrides": {
+      "program_update": {
+        "policy": "pinned"
+      },
+      "allow_persistentstorage_read_sandbox_escape": true,
+      "allow_persistentstorage_write_sandbox_escape": true,
+      "allow_ioopenwrite_sandbox_escape": false
+    },
+    "native_manual_save": true,
+    "ports_preflight": "clear"
+  },
+  "package": {
+    "acquisition": "fresh official anonymous SteamCMD public app_update validate",
+    "completed_utc": "2026-10-31T03:21:31.623685+00:00",
+    "exit_code": 0,
+    "state_flags": 4,
+    "update_result": 0,
+    "installed_depot_manifests": {
+      "1004": "7604377918839582995",
+      "343051": "4099411213896431867"
+    },
+    "copied_source_bytes": 4663038509,
+    "files": {
+      "version.txt": {
+        "bytes": 8,
+        "sha256": "6acb826310fce8099612f311b0684f86c7540c37b39db9900ca90aa9f3b2ebe4"
+      },
+      "data/databundles/scripts.zip": {
+        "bytes": 56627637,
+        "sha256": "4d905828318646db65b064f3774583f82d7e868d2ad276d8ab592a6249fd5cc7"
+      },
+      "bin64/dontstarve_dedicated_server_nullrenderer_x64.exe": {
+        "bytes": 6535168,
+        "sha256": "62977346b0b0085bb3d6e69bfbde36b75f4bcec44d2fc36f2d1bd4573cd64c57"
+      },
+      "steamapps/appmanifest_343050.acf": {
+        "bytes": 990,
+        "sha256": "2cc9c516346b46c82262627b981b2bccf03c42cd70bdfcbb1ed5b7852c30417a"
+      }
+    },
+    "provenance_note": "The native copy log explicitly labels source provenance unverified. Separate official acquisition, matching source path and manifest/executable/scripts/version identities establish package provenance. This storage creation selector does not itself exercise installation."
+  },
+  "source_identity_sha256": "14c9d1607fdf4c83eaa5fefec9777aba6446a1aa26e79035aa80d0d7a08ce885",
+  "test_binary_sha256": "b4dc3fbd98ca9d11092c6ed18e041e1a6f8dfe1cb35a28973530027726ff857f",
+  "source_manifest_sha256": "fa722c8a3e54190d3828e01467f995b968496396ba5f4cd55cfc1f07de7b100d",
+  "build": {
+    "receipt": "native-build-12.json",
+    "entry_point": "workspace-managed Cargo wrapper (local path and filename omitted)",
+    "entry_point_sha256": "a49fe85bfed0b558354bc5a605e84b5a2f9a30c251c2bc57ff4ddc51503223b2",
+    "cargo_command": "test",
+    "cargo_arguments": [
+      "-p",
+      "langame-desktop",
+      "--bin",
+      "langame-desktop",
+      "--all-features",
+      "--locked",
+      "--no-run",
+      "--message-format=json"
+    ],
+    "captured_utc": "2026-10-31T07:01:04.7267560Z",
+    "base_revision": "d58857d32d668a3661261b96134145c6911357a4",
+    "working_tree_clean": false,
+    "frozen_files_rehashed": 4255,
+    "test_binary_bytes": 193546752,
+    "frontend_or_packaged_gui_claimed": false
+  },
+  "reviewed_current_and_frozen_source_files_sha256": {
+    "apps/desktop/src-tauri/src/commands_dst_import_operation.rs": "81c0e88e54dc018c2bc5c43b4c3d03ba3ab07a75aa81ff9930b10552fbb09d44",
+    "apps/desktop/src-tauri/src/commands_dst_import.rs": "0d2cb0ad5eea11e06cc2591c50bd8924f0d44bab8a1c7a5a500bc2c64ddec950",
+    "apps/desktop/src-tauri/src/commands_dst_import_validation.rs": "21cd4a60066e4f9df1e3109b7179d2cd0d22733f301d075d93cf084e4b6ae577",
+    "apps/desktop/src-tauri/src/dst_import_mods.rs": "66151d3dc002406c9565c299f149b1016daa790229196bb38a11ea1315cbb6bd",
+    "apps/desktop/src-tauri/src/commands_native_maintenance.rs": "7af6ffcf78cabff98d6c4c6f654caf3367212668ac14f85315392529c9a9fe5b",
+    "apps/desktop/src-tauri/src/commands_native_dst_restore.rs": "9e8f1c08d105e25d3e1256eb7f214e2b37fcf7f5c57470aaf337f3b6d93083a4",
+    "apps/desktop/src-tauri/src/commands_native_dst_restore_tests.rs": "a86e92287ca3a866d59ecbb041c47a6f55d1161d632a51d983cb4b058108ac85",
+    "apps/desktop/src-tauri/src/commands_native_dst_restore_readback_tests.rs": "0777b8cdc3fa0a5d62b6a6cdd993c3c3135afcb0bba0e953ffcd5043a348db7b",
+    "apps/desktop/src-tauri/src/dst_import_world_options_tests.rs": "503114482d9deab51f2c42e28d0349461d21b0b7a9a73cbded3e3066060e166f",
+    "apps/desktop/src-tauri/src/commands_native_lifecycle_tests.rs": "1572c566503964bd7d846f6886bcf41d7a2751cf4372168944caa4046008af85",
+    "apps/desktop/src-tauri/src/commands_native_settings_readback.rs": "12bd7919cb0670875092bdbb17463cd5ee69e2ccfc7c18c7a4755384aad4ece9",
+    "apps/desktop/src-tauri/src/commands_native_archive.rs": "a5c03cc0dc8b044ca1b9e3036a03a57e526118d41b65ab898488b41a61c63827",
+    "apps/desktop/src-tauri/src/commands_native_inventory.rs": "00e60befec03d8ddc75805943c643e444127dc45c2ea22baa0cfa3ed261cb61e",
+    "crates/app-storage/src/dst_world_lua.rs": "262945b8f933ced05648b140833f21a4708e7eb155e2300693f8e7348467e077",
+    "crates/app-storage/src/instances.rs": "8d14ce8afb1b0c6fe382550d8c107f228d0753d2551ad8d7f6b121687ed8eba5"
+  },
+  "test": {
+    "selector": "commands::tests::manual_runtime_tests::native_lifecycle_tests::native_package_lifecycle",
+    "started_utc": "2026-10-31T07:01:27.568856+00:00",
+    "completed_utc": "2026-10-31T07:10:36.477893+00:00",
+    "started_local": "2026-10-31T15:01:27.568856+08:00",
+    "completed_local": "2026-10-31T15:10:36.477893+08:00",
+    "status": "passed",
+    "exit_code": 0,
+    "rust_harness_elapsed_seconds": 548.85,
+    "portable_raw_log": "2026-10-31-managed_lifecycle_build_26335402.log.txt"
+  },
+  "manual_save_requests": {
+    "count": 4,
+    "attempts_per_cycle": 1,
+    "retried": false,
+    "route": "native_master_cluster_request",
+    "completion": "requested",
+    "response_bytes_each": 90,
+    "instance_run_session_correlation": true,
+    "managed_generations_alive": true,
+    "durable_write": "not_assessed",
+    "request_caused_checkpoint": "not_assessed",
+    "saved_gameplay_content_readback": "not_assessed"
+  },
+  "cycles": [
+    {
+      "cycle": "initial",
+      "native_ready": "passed",
+      "active_shards": [
+        "Master",
+        "Caves"
+      ],
+      "native_process_run_ids": [
+        1,
+        2
+      ],
+      "normal_process_exit_codes": [
+        0,
+        0
+      ],
+      "active_run_after_stop": null,
+      "save_receipt_reported_cycle": "initial"
+    },
+    {
+      "cycle": "restart",
+      "native_ready": "passed",
+      "active_shards": [
+        "Master",
+        "Caves"
+      ],
+      "native_process_run_ids": [
+        3,
+        4
+      ],
+      "normal_process_exit_codes": [
+        0,
+        0
+      ],
+      "active_run_after_stop": null,
+      "save_receipt_reported_cycle": "restart"
+    },
+    {
+      "cycle": "after_restore",
+      "native_ready": "passed",
+      "active_shards": [
+        "Master",
+        "Caves"
+      ],
+      "native_process_run_ids": [
+        5,
+        6
+      ],
+      "normal_process_exit_codes": [
+        0,
+        0
+      ],
+      "active_run_after_stop": null,
+      "save_receipt_reported_cycle": "other"
+    },
+    {
+      "cycle": "after_archive_restore",
+      "native_ready": "passed",
+      "active_shards": [
+        "Master",
+        "Caves"
+      ],
+      "native_process_run_ids": [
+        7,
+        8
+      ],
+      "normal_process_exit_codes": [
+        0,
+        0
+      ],
+      "active_run_after_stop": null,
+      "save_receipt_reported_cycle": "other"
+    }
+  ],
+  "empty_player_observation": {
+    "complete_current_run_collector_overview_global_checks": 4,
+    "players_each_cycle": 0,
+    "queryable_instances_each_cycle": 1,
+    "stale": false,
+    "populated_player_or_client_behavior": "not_tested"
+  },
+  "storage_lifecycle": {
+    "retirement_with_library": {
+      "archive_program_storage": "full",
+      "omitted_bytes": 0,
+      "permanent_delete": "passed",
+      "library_and_retained_peer": "preserved"
+    },
+    "backup_restore": {
+      "status": "passed",
+      "restored_world_data_files": 40,
+      "copied_file_and_byte_counts": "checked against independently enumerated declared world-data scope",
+      "real_nonempty_world_snapshot": "one byte changed after backup; restored inventory matched the backup",
+      "post_backup_marker": "removed from Master/save",
+      "unrelated_cluster_root_addition": "preserved",
+      "safeguard": "matched the changed pre-restore inventory",
+      "worldgen_files": {
+        "count": 4,
+        "comparison": "fs::read actual bytes equal independently predicted envelope decoding and template newline output; the saved body is not replaced by expanded defaults"
+      },
+      "server_ini_files": {
+        "count": 4,
+        "before_restore": "exact manager baseline or proven stopped-native form for active Master/Caves only; altered/extra/missing fields and live ACCOUNT variants rejected",
+        "after_restore": "fs::read actual bytes equal all four original pre-start manager baselines"
+      },
+      "other_cluster_files": "remaining relative paths, byte lengths and DefaultHasher64 content fingerprints matched, including world snapshots, four unchanged modoverrides.lua files and leveldataoverride.lua; only the explicit cluster-root addition was added to the expected inventory",
+      "canonical_configuration": "four worldgen raw fields and four empty-Mod raw fields independently predicted from backup; all other JSON values unchanged; generated_at_unix_ms bounded by this restore call",
+      "post_restore_details": "independently predicted pretty settings JSON plus ownership, ports and storage-path checks; carried into subsequent readback/archive verification",
+      "program_files": "preserved by the existing program inventory comparison",
+      "following_native_restart": "separately passed readiness and normal stop; no causal persistence attribution to a save request"
+    },
+    "library_uninstall": {
+      "outcome": "library_only_instance_program_unchanged",
+      "saved_inventory_entries_preserved": 66,
+      "retained_native_config_entries_outside_declared_saves": 0
+    },
+    "archive_recovery": {
+      "archive": "verified",
+      "fault_injection": "real deferred foreign-key failure at COMMIT",
+      "interrupted_boundary": "journal restoring, instance row absent, configuration and saves/program inventories preserved",
+      "recovery_after_fault_removal": "formal archive restore completed; stopped ownership/settings/ports, configuration and saves/program inventories preserved",
+      "following_native_cycle": "after_archive_restore passed"
+    },
+    "final_instance_delete": "independent program removed; library record preserved; cleanup verified",
+    "final_library_uninstall": "unused programs removed; retained data paths zero",
+    "network_program_update_or_validate": "not_tested; not selected in this native run"
+  },
+  "comparison_mechanisms": {
+    "worldgen_and_ini": "full fs::read byte equality for four files of each type",
+    "remaining_saved_files": "relative path inventory, file length and DefaultHasher64 content fingerprint; not a per-world SHA256 inventory",
+    "artifact_identity": "SHA256 for logs, source manifests/files and package artifacts; separate from runtime save comparisons"
+  },
+  "cleanup": {
+    "native_log_complete_cleanup": "passed",
+    "runner_cleanup_failures": [],
+    "owned_fixture_id": "n-a8c12478b7685a47",
+    "owned_fixture_directory_absent": true,
+    "runner_runtime_directory_absent": true,
+    "post_run_owned_dst_processes": 0,
+    "process_check_scope": "owned disposable test paths and this fixture/runtime identity only"
+  },
+  "regressions": {
+    "same_source_and_binary_as_native": true,
+    "passed_tests": 18,
+    "groups": [
+      {
+        "label": "dst-import-restore",
+        "selector": "commands::commands_dst_import_operation::tests::",
+        "exit_code": 0,
+        "passed": true,
+        "tests": 7,
+        "log_sha256": "b22a9c6a4bafd9229e5ff161a1079e38df4d4997e92d0044250bbfe6c3095ec1",
+        "log": "dst-import-restore-build12.log"
+      },
+      {
+        "label": "dst-native-restore-prediction",
+        "selector": "commands::tests::manual_runtime_tests::native_lifecycle_tests::maintenance::dst_restore::tests::",
+        "exit_code": 0,
+        "passed": true,
+        "tests": 5,
+        "log_sha256": "be4bc87a7f99ba0601503212b99490631cf480b55c18b4b24d8bce699bbebdc9",
+        "log": "dst-native-restore-prediction-build12.log"
+      },
+      {
+        "label": "portable-storage",
+        "selector": "commands::tests::manual_runtime_tests::native_lifecycle_tests::storage_fixture::tests::",
+        "exit_code": 0,
+        "passed": true,
+        "tests": 1,
+        "log_sha256": "ae8c5e08f6e5f3adf2fde20bd97b26bba07fa635775bf959bf5f71a1ed71d856",
+        "log": "portable-storage-build12.log"
+      },
+      {
+        "label": "satisfactory-manual-family",
+        "selector": "commands::tests::manual_runtime_tests::native_lifecycle_tests::satisfactory_isolation::manual_save_family_",
+        "exit_code": 0,
+        "passed": true,
+        "tests": 1,
+        "log_sha256": "cc8b6255cc8d4f917debc3b34d37f6f91cb64c0b69bc64492aad9137b391f7fc",
+        "log": "satisfactory-manual-family-build12.log"
+      },
+      {
+        "label": "dst-restored-state-readback",
+        "selector": "commands::tests::manual_runtime_tests::native_lifecycle_tests::maintenance::dst_restore::readback_tests::",
+        "exit_code": 0,
+        "passed": true,
+        "tests": 1,
+        "log_sha256": "ddc780d5101facfd351d5a96c34733ec397af3531089fdd918c2ff9afdc6b117",
+        "log": "dst-restored-state-readback-build12.log"
+      },
+      {
+        "label": "cleanup-unpublished",
+        "selector": "commands::tests::manual_runtime_tests::native_lifecycle_tests::native_cleanup_does_not_assume_failed_start_was_stopped",
+        "exit_code": 0,
+        "passed": true,
+        "tests": 1,
+        "log_sha256": "079774ca7fe0730f1dca022f1b328e013bd37863f83bdf379e33c0351f7d1e98",
+        "log": "cleanup-unpublished-build12.log"
+      },
+      {
+        "label": "cleanup-pair",
+        "selector": "commands::tests::manual_runtime_tests::native_lifecycle_tests::native_pair_cleanup_requires_both_owned_process_trees_to_finish",
+        "exit_code": 0,
+        "passed": true,
+        "tests": 1,
+        "log_sha256": "638439c6b31d28e77013ef4209675b6bfbeaff1fe826e1eab44177a95de12290",
+        "log": "cleanup-pair-build12.log"
+      },
+      {
+        "label": "cleanup-isolation",
+        "selector": "commands::tests::manual_runtime_tests::native_lifecycle_tests::isolation_cleanup_accepts_only_proven_unattempted_missing_instances",
+        "exit_code": 0,
+        "passed": true,
+        "tests": 1,
+        "log_sha256": "6116fa5b1070838173c13fb0096bccf6d7f2c48f554c6db4c125d0c0ac1958ed",
+        "log": "cleanup-isolation-build12.log"
+      }
+    ],
+    "scope": "Seven formal DST restore tests, five exact prediction tests, one real storage restore/readback, one portable-source fixture, one Satisfactory save-family test and three cleanup tests. The portable-storage child entry is intentionally ignored at top level and invoked by its parent test."
+  },
+  "earlier_full_lifecycle_failures": [
+    {
+      "attempt": "dontstarve",
+      "status": "failed",
+      "exit_code": 101,
+      "started_utc": "2026-10-31T04:10:26.491050+00:00",
+      "completed_utc": "2026-10-31T04:15:32.939588+00:00",
+      "source_identity_sha256": "bdb9ec254ec78270cd246cd60d21ba0d2ead43eec5e2fd68aac5ab657c7e1925",
+      "test_binary_sha256": "7ac5843571203f96e5618719e82093456026c102a1c84bad7c5c60773af51263",
+      "cleanup_failures": [],
+      "native_ready_cycles": 2,
+      "requested_receipts": 2,
+      "normal_process_exits": 4,
+      "category": "production_native_text_envelope",
+      "diagnosis_and_limit": "The production restore boundary rejected the native KLEI uncompressed-text envelope. Separate actual byte capture established the fixed prefix; only that prefix is decoded before the unchanged bounded static Lua parser. Dynamic Lua remains rejected.",
+      "result_artifact": {
+        "dontstarve-native.json": {
+          "bytes": 2837,
+          "sha256": "48f2ed99bd8d5b6a5c56763ea7fd8649b047cc312f89cadd3477b6ca7ba07c13"
+        }
+      },
+      "log_artifact": {
+        "dontstarve-native.log": {
+          "bytes": 4405,
+          "sha256": "39e060d540a36aea72081cf6e00ccc7d0c41818dbf06233d4ba7768bf76be097"
+        }
+      }
+    },
+    {
+      "attempt": "dontstarve-fixed",
+      "status": "failed",
+      "exit_code": 101,
+      "started_utc": "2026-10-31T04:47:18.922602+00:00",
+      "completed_utc": "2026-10-31T04:51:14.240421+00:00",
+      "source_identity_sha256": "9161f9cdccc644c3bd4dd925ab916220b774eb1c1fcad8c6ddcd3b93686f7255",
+      "test_binary_sha256": "8ddeb8811cd1fd0fd125b4cc286bd0f4e92d171a9ded7b9186219a46d825f183",
+      "cleanup_failures": [],
+      "native_ready_cycles": 2,
+      "requested_receipts": 2,
+      "normal_process_exits": 4,
+      "category": "test_world_data_scope",
+      "diagnosis_and_limit": "The test reported a generic cluster inventory difference after exact worldgen checks. Source review found its must-delete marker at cluster root, which formal world restore intentionally retains. Per-file differences from that failed fixture were not retained. The corrected test mutates a real world snapshot, places the removal marker inside Master/save, preserves a separate unrelated cluster-root addition and independently counts declared world data.",
+      "result_artifact": {
+        "dontstarve-fixed-native.json": {
+          "bytes": 2846,
+          "sha256": "813078631da70675ff45486488f3e02860bc43998056309b88b9981c4f8ce268"
+        }
+      },
+      "log_artifact": {
+        "dontstarve-fixed-native.log": {
+          "bytes": 4226,
+          "sha256": "dd74141a8a5a6e858848319afc7024a055ff1e4da3dac14b3c86c57d535b5ffc"
+        }
+      }
+    },
+    {
+      "attempt": "dontstarve-restored",
+      "status": "failed",
+      "exit_code": 101,
+      "started_utc": "2026-10-31T05:54:33.530359+00:00",
+      "completed_utc": "2026-10-31T05:58:31.224031+00:00",
+      "source_identity_sha256": "35dad74ce3f62c87c35eb2a1d8db7ac258eac26a759d3d3a9e0a7b2525fbd9c0",
+      "test_binary_sha256": "1e753f3091f46fa40239404f19fcfacf4d98abdec35c3daa80d41c9d3deda2ab",
+      "cleanup_failures": [],
+      "native_ready_cycles": 2,
+      "requested_receipts": 2,
+      "normal_process_exits": 4,
+      "category": "test_native_ini_serialization",
+      "diagnosis_and_limit": "Exact diagnostics identified stopped-native Master/Caves server.ini lengths 147/164 versus manager-rematerialized 133/149. The oracle incorrectly expected native whitespace after canonical rematerialization.",
+      "result_artifact": {
+        "dontstarve-restored-native.json": {
+          "bytes": 2849,
+          "sha256": "0a699596f85e675544f7bb74aa7b3e8a5c451bd025cff24c405fcb7e30d8e8f2"
+        }
+      },
+      "log_artifact": {
+        "dontstarve-restored-native.log": {
+          "bytes": 4376,
+          "sha256": "4a79140ab90113f848ee86eb05c0b9fa950ff503955bc617f03fdedbebe81202"
+        }
+      }
+    },
+    {
+      "attempt": "dontstarve-ini-diagnostic",
+      "status": "failed",
+      "exit_code": 101,
+      "started_utc": "2026-10-31T06:08:22.467547+00:00",
+      "completed_utc": "2026-10-31T06:12:24.875434+00:00",
+      "source_identity_sha256": "35dad74ce3f62c87c35eb2a1d8db7ac258eac26a759d3d3a9e0a7b2525fbd9c0",
+      "test_binary_sha256": "1e753f3091f46fa40239404f19fcfacf4d98abdec35c3daa80d41c9d3deda2ab",
+      "cleanup_failures": [],
+      "native_ready_cycles": 2,
+      "requested_receipts": 2,
+      "normal_process_exits": 4,
+      "category": "unchanged_build10_diagnostic",
+      "diagnosis_and_limit": "Unchanged build10 failed at the same INI mismatch. The main-instance capture retained eight byte variants and excluded the retirement peer. Stopped native fields are identical with CRLF and one added blank line at each section boundary. Live ACCOUNT/encode_user_path variants remain rejected. First-seen path/digest deduplication does not prove an after-restore transition back to a previously captured baseline.",
+      "result_artifact": {
+        "dontstarve-ini-diagnostic-native.json": {
+          "bytes": 2855,
+          "sha256": "49e2775b04c953b81150b25a5c98118c7d59672702af8a4587d94a2e00a93ebf"
+        }
+      },
+      "log_artifact": {
+        "dontstarve-ini-diagnostic-native.log": {
+          "bytes": 4376,
+          "sha256": "3809025659df4b353bf3fc24d9c2a52980cd77655c2cd82f2e952656cbdb6c2f"
+        }
+      }
+    },
+    {
+      "attempt": "dontstarve-complete",
+      "status": "failed",
+      "exit_code": 101,
+      "started_utc": "2026-10-31T06:31:01.746936+00:00",
+      "completed_utc": "2026-10-31T06:36:09.591124+00:00",
+      "source_identity_sha256": "710a19c275303f51f5a09334dc647be4839dbe4afb21db86779f2e2fad273980",
+      "test_binary_sha256": "142cd6b840ec5283d388669c3b2aea541264f5cf525296fd871b6820c96b57b5",
+      "cleanup_failures": [],
+      "native_ready_cycles": 3,
+      "requested_receipts": 3,
+      "normal_process_exits": 6,
+      "category": "test_stale_canonical_settings_baseline",
+      "diagnosis_and_limit": "Build11 passed real backup restore and the following native restart, then compared creation-time settings before archive. Build12 carries independently predicted and ownership/ports/path-verified restored InstanceDetails into later phases; the generic settings verifier and strict archive checks remain unchanged.",
+      "result_artifact": {
+        "dontstarve-complete-native.json": {
+          "bytes": 3237,
+          "sha256": "d0d5ab162437d8024f42dffd9e7f5f8c17a750fb067596d4777c546d8b2a6204"
+        }
+      },
+      "log_artifact": {
+        "dontstarve-complete-native.log": {
+          "bytes": 6492,
+          "sha256": "5180e644a310b17c6c4220ea6a5fcf3faa1d30c813a53becea27cb54d75b2bdf"
+        }
+      }
+    }
+  ],
+  "separate_windows_access_denied_observation": {
+    "observation_artifact": "regression-access-denied-observation.json",
+    "build": "native-build-11.json",
+    "test": "commands::commands_dst_import_operation::tests::dst_import_backup_restores_canonical_mods_and_options_across_rematerialization",
+    "initial_result": "6 passed,1 failed at first fs::rename(current cluster, rollback) with Windows os error5 before staging publication",
+    "initial_log_sha256": "7a642e5dde10067e935a6b54f54b99f320732b9fc3eb2e37732c3e87aeb7348d",
+    "same_binary_source_parameters_unchanged": true,
+    "confirmation": "One independent rerun of same seven tests passed; all17 affected regressions passed in new-regressions-build11-confirm.json",
+    "confirmation_log_sha256": "db1acbdbbbd3ccfbeb6b4174ea7c920c1da43490771787916f06c1c9c99ac5ff",
+    "assessment": "Not reproduced. Read-only review found no proven retained source handle; fixture cleanup prevents identifying the original holder. Cause undetermined. No claim fixed, no AV attribution, no added retries/delays/ignored tests."
+  },
+  "artifacts": {
+    "dontstarve-final-native.json": {
+      "bytes": 3620,
+      "sha256": "848fc4e2c5b3c51480e2c400aed02defdc823eed204b22095b12dceddf30a603"
+    },
+    "dontstarve-final-native.log": {
+      "bytes": 8931,
+      "sha256": "8dd48317ee0e536d6189fd87c45ad4dc236652d77789cfd5960d248620aa0872"
+    },
+    "native-build-12.json": {
+      "bytes": 1521,
+      "sha256": "7822b93079b7d8b8c6718fca545eadd4ad54273e1efed8fdf008eb81d4fa3ac5"
+    },
+    "native-build-12.artifacts/source-manifest.json": {
+      "bytes": 870364,
+      "sha256": "fa722c8a3e54190d3828e01467f995b968496396ba5f4cd55cfc1f07de7b100d"
+    },
+    "native-source-12-proof.json": {
+      "bytes": 794,
+      "sha256": "f001fa6b971bf1795e89e100d0b6b0ea5b968b4243a63f481081683d818a3706"
+    },
+    "new-regressions-build12.json": {
+      "bytes": 2872,
+      "sha256": "4ce332cc1c7a2f978ee01a85e2e1bb3f12e0ffe8f20b9c033b9ce72035b118a0"
+    },
+    "rust-fmt-build12.log": {
+      "bytes": 58,
+      "sha256": "da939b8766d4527a3feab65b7da12dd731152b2f293845eeb98d72edca0abe63"
+    },
+    "dontstarve-acquisition.json": {
+      "bytes": 1119,
+      "sha256": "78169410892fc1c98cb14fde9446e4fcb67dbe313e8e9dacda81d573dd17b549"
+    },
+    "dontstarve-acquisition.log": {
+      "bytes": 6152,
+      "sha256": "c81a7555aec35d5fe67e2958a6c8f6e9711f8a6c28b416fff1a33c2ab52d8828"
+    },
+    "dontstarve-steam-console.log": {
+      "bytes": 123837,
+      "sha256": "2250aeab43db99ec6aa08ce0d95f8fc5609a4661d194bc9193e700fb620f775f"
+    },
+    "dst-ini-capture/index.json": {
+      "bytes": 7437,
+      "sha256": "ffaa5aa6cb4f93d33da598abf36e4526c1d8d5126acf50b9d0cf9f2da07a2cde"
+    },
+    "dst-ini-byte-diagnosis.json": {
+      "bytes": 5777,
+      "sha256": "9949b50019ee9264a266631a7cc124156c7a9e15d471507daa2d595383ecbed2"
+    },
+    "regression-access-denied-observation.json": {
+      "bytes": 1887,
+      "sha256": "f54e31b399133d48e08bdf7981e7f90dae4f10c5232edc1aa773bc190a805d2b"
+    },
+    "dst-import-restore-build11.log": {
+      "bytes": 2569,
+      "sha256": "7a642e5dde10067e935a6b54f54b99f320732b9fc3eb2e37732c3e87aeb7348d"
+    },
+    "dst-import-restore-build11-confirm.log": {
+      "bytes": 1282,
+      "sha256": "db1acbdbbbd3ccfbeb6b4174ea7c920c1da43490771787916f06c1c9c99ac5ff"
+    },
+    "new-regressions-build11-confirm.json": {
+      "bytes": 2529,
+      "sha256": "a9d1e51a711c8476ac8f7dcb81a7eab8da1ba5377c9305f648294e6c138a5327"
+    }
+  },
+  "scope_limits": [
+    "No game client, online account session, populated roster or gameplay outcome was tested.",
+    "Only standard offline-LAN Master/Caves processes ran. Islands/Volcano configuration bytes were checked, but their native operation and Island Adventures Mods were not tested.",
+    "Requested receipts demonstrate correlated single request dispatch and response, not causal durable commit, power-loss durability or saved gameplay content readback.",
+    "Stopped world-file restoration used the stated byte/fingerprint mechanisms; native readiness after restoration is separate evidence.",
+    "No GUI/frontend acceptance, native Mod permission behavior or network program update was claimed. Official acquisition and storage-based native creation are separately scoped.",
+    "The five earlier full-lifecycle failures remain failed historical attempts. The Windows OS5 observation remains unexplained; no retry policy, delay or production fix is claimed for it."
+  ]
+}

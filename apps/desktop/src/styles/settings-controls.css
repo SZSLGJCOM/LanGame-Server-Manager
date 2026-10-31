@@ -43,6 +43,8 @@
   box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 16%, transparent);
 }
 
+.settings-schema-input[aria-invalid="true"],
+.settings-toggle-card:has(input[aria-invalid="true"]),
 .settings-schema-input.is-invalid,
 .settings-schema-select.is-invalid,
 .settings-schema-textarea.is-invalid,

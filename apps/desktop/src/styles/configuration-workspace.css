@@ -368,7 +368,6 @@
   line-height: var(--leading-body);
 }
 
-.configuration-workspace__validation,
 .configuration-workspace__notice,
 .configuration-workspace__local-state {
   display: grid;
@@ -408,12 +407,6 @@
   white-space: nowrap;
 }
 
-.configuration-workspace__validation {
-  border-color: var(--theme-danger-border);
-  background: var(--theme-danger-bg);
-  color: var(--theme-danger-text);
-}
-
 .configuration-workspace__local-state[data-configuration-state="disabled"] {
   border-color: var(--theme-warning-border);
   background: var(--theme-warning-bg);
@@ -430,32 +423,16 @@
   overflow-wrap: anywhere;
 }
 
-.configuration-workspace__validation-list {
-  display: grid;
-  gap: 4px;
-  margin: 0;
-  padding: 0;
-  list-style: none;
+.shell-activity-notice-actions:has(> .configuration-validation-target) {
+  flex-shrink: 1;
+  min-width: 0;
+  max-width: 60%;
 }
 
-.configuration-workspace__validation-button {
-  width: 100%;
-  padding: 6px 8px;
-  border: 0;
-  border-radius: 7px;
-  background: transparent;
-  color: inherit;
-  font: inherit;
-  font-size: var(--text-body);
-  font-weight: var(--font-weight-medium);
-  text-align: left;
-  cursor: pointer;
-}
-
-.configuration-workspace__validation-button:hover,
-.configuration-workspace__validation-button:focus-visible {
-  background: color-mix(in srgb, currentColor 9%, transparent);
-  outline: none;
+.shell-activity-notice-actions > .configuration-validation-target {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .configuration-workspace__save-error {

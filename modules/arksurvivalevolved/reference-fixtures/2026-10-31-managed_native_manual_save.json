@@ -1,0 +1,118 @@
+{
+  "schema_version": 1,
+  "module_id": "arksurvivalevolved",
+  "evidence_classification": "isolated_managed_backend_native_manual_save_two_cycles",
+  "verified_on": "2026-10-31",
+  "verification_timezone": "Asia/Shanghai",
+  "source_identity_sha256": "9161f9cdccc644c3bd4dd925ab916220b774eb1c1fcad8c6ddcd3b93686f7255",
+  "test_binary_sha256": "8ddeb8811cd1fd0fd125b4cc286bd0f4e92d171a9ded7b9186219a46d825f183",
+  "source_manifest_sha256": "8b3635b2c7ae5f05d86c8c6a808bfb9e6f960b2dd47784d0b1e8d85eb461b9e3",
+  "source_file_count": 4227,
+  "package": {
+    "classification": "existing_local_package",
+    "steam_build_id": "21241282",
+    "appmanifest_sha256": "f2494772f187def70d85fad93d251e6c5cf4e6f3465f8ff22648259f0b8a947e",
+    "version_label": null,
+    "source_total_bytes": 23060007348,
+    "copied_payload_bytes": 22944301923,
+    "primary_file": {
+      "relative_path": "ShooterGame/Binaries/Win64/ShooterGameServer.exe",
+      "size_bytes": 80055808,
+      "sha256": "6470c61c2329dc5139b663aa1112ece3f5c7d22648bcf13151a336661d06c336"
+    },
+    "public_branch_metadata": {
+      "build": "21241282",
+      "updated_local": "2025-12-19T12:04:05+08:00",
+      "matches_supplied_package": true,
+      "metadata_artifact_sha256": "59cf844a74d07a620c499079cf9d676b3c6a2a64941cdf4721593010f915966b"
+    }
+  },
+  "test": {
+    "selector": "commands::tests::manual_runtime_tests::native_lifecycle_tests::native_manual_save",
+    "production_scope": "manual_save_start_stop_two_cycles",
+    "started_utc": "2026-10-31T05:12:49.460229+00:00",
+    "completed_utc": "2026-10-31T05:22:23.005342+00:00",
+    "started_local": "2026-10-31T13:12:49.460229+08:00",
+    "completed_local": "2026-10-31T13:22:23.005342+08:00",
+    "exit_code": 0,
+    "tests_passed": 1,
+    "duration_seconds": 573.49,
+    "settings": {
+      "program_update": {
+        "policy": "pinned"
+      }
+    },
+    "ports_preflight": "clear",
+    "flags": {
+      "LANGAME_NATIVE_MANUAL_SAVE": "true",
+      "LANGAME_NATIVE_MANUAL_SAVE_RESTART": "true"
+    },
+    "save_receipt_completions": [
+      "requested"
+    ],
+    "exact_checkpoint_readback_requested": false
+  },
+  "observed_native_receipts": [
+    "NATIVE_LIFECYCLE module=arksurvivalevolved phase=instance_created elapsed_ms=184362 program_mode=Independent preparation=isolated_copy library=preserved ownership=verified effective_root=fixture/n-b55841275f42f153\\runtime creation_scope=storage",
+    "NATIVE_LIFECYCLE module=arksurvivalevolved phase=prestart_update cycle=initial events=pinned persisted_evidence=verified download_bytes=not_measured",
+    "NATIVE_LIFECYCLE module=arksurvivalevolved phase=started cycle=initial processes=1 bind=default firewall=non_elevated_policy elapsed_ms=52571",
+    "NATIVE_LIFECYCLE module=arksurvivalevolved phase=native_ready cycle=initial declared_probes=passed variant=isolated",
+    "NATIVE_MANUAL_SAVE module=arksurvivalevolved cycle=initial phase=receipt attempted_once=true retried=false instance_matches=true run_matches=true session_matches=true managed_generations_alive=true route=declared_network_transport_current_run response_present=true response_bytes=47 write_confirmation_pending=false save_completion=requested durable_write=not_assessed restart_readback=not_assessed",
+    "NATIVE_STOP_RESULT module=arksurvivalevolved cycle=initial run_id=1 process=main exit_code=Some(0) crash_flag=false status=stopped",
+    "NATIVE_LIFECYCLE module=arksurvivalevolved phase=cycle_stopped cycle=initial run_id=1 active_run=none",
+    "NATIVE_LIFECYCLE module=arksurvivalevolved phase=prestart_update cycle=restart events=pinned persisted_evidence=verified download_bytes=not_measured",
+    "NATIVE_LIFECYCLE module=arksurvivalevolved phase=started cycle=restart processes=1 bind=default firewall=non_elevated_policy elapsed_ms=49276",
+    "NATIVE_LIFECYCLE module=arksurvivalevolved phase=native_ready cycle=restart declared_probes=passed variant=isolated",
+    "NATIVE_MANUAL_SAVE module=arksurvivalevolved cycle=restart phase=receipt attempted_once=true retried=false instance_matches=true run_matches=true session_matches=true managed_generations_alive=true route=declared_network_transport_current_run response_present=true response_bytes=47 write_confirmation_pending=false save_completion=requested durable_write=not_assessed restart_readback=not_assessed",
+    "NATIVE_STOP_RESULT module=arksurvivalevolved cycle=restart run_id=2 process=main exit_code=Some(0) crash_flag=false status=stopped",
+    "NATIVE_LIFECYCLE module=arksurvivalevolved phase=cycle_stopped cycle=restart run_id=2 active_run=none",
+    "NATIVE_MANUAL_SAVE module=arksurvivalevolved phase=restarted fresh_managed_run=true native_readiness=passed content_readback=not_claimed",
+    "NATIVE_LIFECYCLE module=arksurvivalevolved phase=complete scope=production_start_stop cleanup=passed gui=not_tested"
+  ],
+  "cleanup": {
+    "test_reported": "passed",
+    "cleanup_failures": [],
+    "owned_processes_absent_after_test": true,
+    "owned_fixture_removed_after_test": true
+  },
+  "artifacts": [
+    {
+      "name": "arksurvivalevolved-native.json",
+      "size_bytes": 2461,
+      "sha256": "e88922f2345b0743441d53b33a15798e8cd21a0c1da00e7b6af6af9abce8d79e"
+    },
+    {
+      "name": "arksurvivalevolved-native.log",
+      "size_bytes": 2972,
+      "sha256": "7c983b8000b4b88daf8982e0d7335839218ad3b03ca8131a3ab3cc0bcd53fe08"
+    },
+    {
+      "name": "native-build-04.json",
+      "size_bytes": 1521,
+      "sha256": "3e18af616ed7ecaf2605010bb415ed16987facb09950fb65573a6b52a6c73eb4"
+    },
+    {
+      "name": "native-source-04-proof.json",
+      "size_bytes": 794,
+      "sha256": "df2b926151424d2f8a5fc6dfb8bdf501669266e6b4d022378deacae6a5d92b19"
+    }
+  ],
+  "scope_limits": [
+    "This is production backend manual-save acceptance with two fresh managed runs, not the full backup/restore/uninstall/archive lifecycle.",
+    "Save receipts retain their emitted status. Requested does not establish native completion or durable writes; any independent checkpoint/readback evidence is separately identified in the emitted native receipts.",
+    "No GUI, client join, multiplayer gameplay, populated existing-world migration or power-loss durability was tested.",
+    "The test copied a retained local package into a disposable independent instance; it did not acquire the game from upstream or independently establish public-branch recency.",
+    "Source and executable identities refer to the immutable 4227-file snapshot used for this run. Adding this evidence afterward does not change that tested identity.",
+    "Only the fixture map and declared Source RCON saveworld path were exercised. Optional ArkApi/AsaApi tools, cross-map partial failures, public listing and multi-map transfer were not tested.",
+    "The earlier existing-instance catalog failure settings_unchanged=false remains preserved and unexplained. This disposable manual-save fixture does not establish equality of the older full existing-instance configuration or invalidate that failure."
+  ],
+  "historical_acceptance_boundary": {
+    "date": "2026-10-24",
+    "scope": "existing_formal_instance_catalog",
+    "receipt_sha256": "428917ed8c78d1207f81d70bd6a54148295f433fab1ce44e4086731fa621ffaa",
+    "passed": false,
+    "settings_unchanged": false,
+    "preserved": true,
+    "superseded_by_this_manual_fixture": false
+  }
+}

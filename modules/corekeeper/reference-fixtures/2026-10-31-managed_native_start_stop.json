@@ -1,0 +1,114 @@
+{
+  "schema_version": 1,
+  "module_id": "corekeeper",
+  "evidence_classification": "isolated_managed_backend_native_start_stop_without_manual_save",
+  "verified_on": "2026-10-31",
+  "verification_timezone": "Asia/Shanghai",
+  "source_identity_sha256": "bdb9ec254ec78270cd246cd60d21ba0d2ead43eec5e2fd68aac5ab657c7e1925",
+  "test_binary_sha256": "7ac5843571203f96e5618719e82093456026c102a1c84bad7c5c60773af51263",
+  "source_manifest_sha256": "38af891de1a2c3b3876a1b0abb95d5c891c67a5bf54d971f9691748131ff351b",
+  "source_file_count": 4202,
+  "package": {
+    "classification": "existing_local_package",
+    "steam_build_id": "25825323",
+    "appmanifest_sha256": "69bf38dd32f867acbc15b3c3ec6957e1b83a2dad78e1ac1dd0563001eaef5145",
+    "copied_payload_bytes": 486527617,
+    "primary_file": {
+      "relative_path": "CoreKeeperServer_Data/Managed/Pug.Other.dll",
+      "size_bytes": 6215168,
+      "sha256": "631b58cfb806e838bc0c770963b3ec13edeba368007e2ad91e280bd7bf8ad2b0"
+    },
+    "public_branch_metadata": {
+      "build": "25825323",
+      "updated_local": "2026-10-09T18:01:40+08:00",
+      "matches_supplied_package": true,
+      "metadata_artifact_sha256": "59cf844a74d07a620c499079cf9d676b3c6a2a64941cdf4721593010f915966b"
+    }
+  },
+  "test": {
+    "selector": "commands::tests::manual_runtime_tests::native_lifecycle_tests::native_start_stop",
+    "production_scope": "single_start_stop_cycle_without_manual_save",
+    "started_utc": "2026-10-31T04:04:15.675165+00:00",
+    "completed_utc": "2026-10-31T04:05:37.978240+00:00",
+    "completed_local": "2026-10-31T12:05:37.978240+08:00",
+    "duration_seconds": 82.26,
+    "exit_code": 0,
+    "tests_passed": 1,
+    "settings": {
+      "program_update": {
+        "policy": "pinned"
+      }
+    },
+    "smoke_fixture_settings": {
+      "direct_connection_enabled": true
+    },
+    "ports_preflight": "clear",
+    "manual_save": false,
+    "restart": false
+  },
+  "observed_native_receipts": [
+    "NATIVE_LIFECYCLE module=corekeeper phase=instance_created elapsed_ms=916 program_mode=Independent preparation=isolated_copy library=preserved ownership=verified effective_root=fixture/n-b04b96c2d4d5abc1\\runtime creation_scope=storage",
+    "NATIVE_LIFECYCLE module=corekeeper phase=prestart_update cycle=initial events=pinned persisted_evidence=verified download_bytes=not_measured",
+    "NATIVE_LIFECYCLE module=corekeeper phase=started cycle=initial processes=1 bind=default firewall=non_elevated_policy elapsed_ms=45695",
+    "NATIVE_LIFECYCLE module=corekeeper phase=native_ready cycle=initial declared_probes=passed variant=isolated",
+    "NATIVE_STOP_RESULT module=corekeeper cycle=initial run_id=1 process=main exit_code=Some(0) crash_flag=false status=stopped",
+    "NATIVE_LIFECYCLE module=corekeeper phase=cycle_stopped cycle=initial run_id=1 active_run=none",
+    "NATIVE_LIFECYCLE module=corekeeper phase=complete scope=production_start_stop cleanup=passed gui=not_tested"
+  ],
+  "prior_manual_save_attempt": {
+    "status": "failed",
+    "exit_code": 101,
+    "reason": "world_not_ready",
+    "formal_save_receipt": "none",
+    "exact_checkpoint_readback": "not_performed",
+    "cleanup_failures": [],
+    "retained": true,
+    "scope": "Native empty-server readiness was reached, then the native save guard rejected before claiming completion. This remains a failed manual-save acceptance attempt."
+  },
+  "cleanup": {
+    "test_reported": "passed",
+    "cleanup_failures": [],
+    "owned_processes_absent_after_test": true,
+    "owned_fixture_removed_after_test": true
+  },
+  "artifacts": [
+    {
+      "name": "corekeeper-start-stop-native.json",
+      "size_bytes": 1611,
+      "sha256": "c69d3605704552df23270ba3941b119cc880068d4190a98bad57d2bb6fb32701"
+    },
+    {
+      "name": "corekeeper-start-stop-native.log",
+      "size_bytes": 1323,
+      "sha256": "0eafc6d5dd97b8051628f347070a587df34a971786d2637f42f84a9ba9d0ceef"
+    },
+    {
+      "name": "corekeeper-native.json",
+      "size_bytes": 1652,
+      "sha256": "ae80b2f4b9d0abc0a6650bb5ef44e41e5666cfe4eb8d66e64ce549ff79ca17ae"
+    },
+    {
+      "name": "corekeeper-native.log",
+      "size_bytes": 25052,
+      "sha256": "f4535e537d3d1f10e874af9c78d758131bef3ea81efd02965779e6c118fda834"
+    },
+    {
+      "name": "native-build-02.json",
+      "size_bytes": 1521,
+      "sha256": "aa6b4b3cd00e5b1751d1ab12c346481d0106388777920b2968f4563e24113de6"
+    },
+    {
+      "name": "native-source-proof.json",
+      "size_bytes": 791,
+      "sha256": "b5a26b26f64fad98f46637674a68a0c374ac16b24f5f1a5195fc6ced1a4ad41f"
+    }
+  ],
+  "scope_limits": [
+    "This successful run establishes one native empty-server readiness and normal-stop cycle only.",
+    "The earlier manual-save attempt remains rejected with world_not_ready; no initialized-world manual save, saved-content readback or client gameplay is claimed.",
+    "The native adapter rejects an empty ObjectDataSerializedCD query before serialization; its existing readiness guard was not relaxed.",
+    "No full backup/restore/uninstall/archive lifecycle, GUI, existing user-world migration or power-loss durability was tested.",
+    "Package recency is separately bound to the retained public-branch metadata; this test does not download or certify an upstream package.",
+    "The immutable tested source identity predates this evidence addition."
+  ]
+}

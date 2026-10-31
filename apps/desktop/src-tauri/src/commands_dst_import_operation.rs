@@ -422,7 +422,15 @@ fn read_static_world_override(path: &Path) -> Result<Option<String>, String> {
         .and_then(|file| file.take(120 * 1024 + 1).read_to_end(&mut bytes))
         .map_err(|error| error.to_string())?;
     let raw = String::from_utf8(bytes).map_err(|error| error.to_string())?;
-    let raw = raw.trim_start_matches('\u{feff}').to_owned();
+    let raw = raw.trim_start_matches('\u{feff}');
+    // Native saves rewrite worldgenoverride.lua through SetPersistentString
+    // with Klei's uncompressed text envelope. Store its Lua body as canonical
+    // configuration; unknown envelopes and executable Lua still fail below.
+    let raw = raw
+        .strip_prefix("KLEI     1")
+        .map(str::trim_start)
+        .unwrap_or(raw)
+        .to_owned();
     app_storage::extract_dst_static_lua_table(&raw, "overrides").map_err(|error| {
         format!(
             "Cannot restore saved world options {}: {error}",

@@ -1,0 +1,119 @@
+{
+  "schema_version": 1,
+  "module_id": "terraria",
+  "evidence_classification": "isolated_managed_backend_native_manual_save_two_cycles",
+  "verified_on": "2026-10-31",
+  "verification_timezone": "Asia/Shanghai",
+  "source_identity_sha256": "bdb9ec254ec78270cd246cd60d21ba0d2ead43eec5e2fd68aac5ab657c7e1925",
+  "test_binary_sha256": "7ac5843571203f96e5618719e82093456026c102a1c84bad7c5c60773af51263",
+  "source_manifest_sha256": "38af891de1a2c3b3876a1b0abb95d5c891c67a5bf54d971f9691748131ff351b",
+  "source_file_count": 4202,
+  "package": {
+    "classification": "existing_local_package",
+    "steam_build_id": null,
+    "appmanifest_sha256": null,
+    "version_label": "1.4.5.8",
+    "source_total_bytes": 146844341,
+    "copied_payload_bytes": 146844341,
+    "primary_file": {
+      "relative_path": "1458/Windows/TerrariaServer.exe",
+      "size_bytes": 26028032,
+      "sha256": "d87e3faf08637f6be8882c63e7f11fb7e792b0230006309618473ece0f863e1e"
+    }
+  },
+  "test": {
+    "selector": "commands::tests::manual_runtime_tests::native_lifecycle_tests::native_manual_save",
+    "production_scope": "manual_save_start_stop_two_cycles",
+    "started_utc": "2026-10-31T04:06:27.085700+00:00",
+    "completed_utc": "2026-10-31T04:08:44.512028+00:00",
+    "started_local": "2026-10-31T12:06:27.085700+08:00",
+    "completed_local": "2026-10-31T12:08:44.512028+08:00",
+    "exit_code": 0,
+    "tests_passed": 1,
+    "duration_seconds": 137.37,
+    "settings": {
+      "program_update": {
+        "policy": "pinned"
+      },
+      "managed_save_interval_seconds": 0
+    },
+    "ports_preflight": "clear",
+    "flags": {
+      "LANGAME_NATIVE_MANUAL_SAVE": "true",
+      "LANGAME_NATIVE_MANUAL_SAVE_RESTART": "true",
+      "LANGAME_NATIVE_EXACT_SAVE_READBACK": "true"
+    },
+    "save_receipt_completions": [
+      "requested"
+    ],
+    "exact_checkpoint_readback_requested": true
+  },
+  "observed_native_receipts": [
+    "NATIVE_LIFECYCLE module=terraria phase=instance_created elapsed_ms=304 program_mode=Independent preparation=isolated_copy library=preserved ownership=verified effective_root=fixture/n-8a65e2d0782b4c13\\runtime creation_scope=storage",
+    "NATIVE_LIFECYCLE module=terraria phase=prestart_update cycle=initial events=pinned persisted_evidence=verified download_bytes=not_measured",
+    "NATIVE_LIFECYCLE module=terraria phase=started cycle=initial processes=1 bind=default firewall=non_elevated_policy elapsed_ms=46679",
+    "NATIVE_LIFECYCLE module=terraria phase=native_ready cycle=initial declared_probes=passed variant=isolated",
+    "NATIVE_MANUAL_SAVE module=terraria cycle=initial phase=receipt attempted_once=true retried=false instance_matches=true run_matches=true session_matches=true managed_generations_alive=true route=managed_process_generation response_present=false response_bytes=0 write_confirmation_pending=false save_completion=requested durable_write=not_assessed restart_readback=not_assessed",
+    "NATIVE_SAVE_OBSERVATION module=terraria receipt=requested primary_revision=2 previous_revision=1 stored_minute=0 writer_closed=true periodic_autosave_excluded=true production_completion=not_claimed",
+    "NATIVE_SAVE_CHECKPOINT module=terraria phase=captured run_id=1 files=2 captured_before_stop=true scope=isolated_world",
+    "NATIVE_SAVE_CHECKPOINT_FILE relative=world.wld bytes=6945309 sha256=f0507f1bb79baca4b7589b5c6a531a0c16c92058b34a264e6dc39278afb96b8e",
+    "NATIVE_SAVE_CHECKPOINT_FILE relative=world.wld.bak bytes=6944934 sha256=8abe32bd50a98af105f8ef63014541537646cc99681807a513b935bec11b7134",
+    "NATIVE_STOP_RESULT module=terraria cycle=initial run_id=1 process=main exit_code=Some(0) crash_flag=false status=stopped",
+    "NATIVE_SAVE_CHECKPOINT module=terraria phase=restored after_normal_stop=true shutdown_snapshot_excluded=true sha256_verified=true",
+    "NATIVE_LIFECYCLE module=terraria phase=cycle_stopped cycle=initial run_id=1 active_run=none",
+    "NATIVE_LIFECYCLE module=terraria phase=prestart_update cycle=restart events=pinned persisted_evidence=verified download_bytes=not_measured",
+    "NATIVE_LIFECYCLE module=terraria phase=started cycle=restart processes=1 bind=default firewall=non_elevated_policy elapsed_ms=46037",
+    "NATIVE_LIFECYCLE module=terraria phase=native_ready cycle=restart declared_probes=passed variant=isolated",
+    "NATIVE_CONTENT_READBACK module=terraria cycle=restart stored_revision=2 stored_minute=0 loaded_minute=0 fresh_time_query=true clock_reset_sent=false second_save_sent=false",
+    "NATIVE_SAVE_READBACK module=terraria phase=verified initial_run=1 restart_run=2 exact_manual_checkpoint=true native_load=passed second_save_sent=false scope=isolated_world",
+    "NATIVE_STOP_RESULT module=terraria cycle=restart run_id=2 process=main exit_code=Some(0) crash_flag=false status=stopped",
+    "NATIVE_LIFECYCLE module=terraria phase=cycle_stopped cycle=restart run_id=2 active_run=none",
+    "NATIVE_MANUAL_SAVE module=terraria phase=restarted fresh_managed_run=true native_readiness=passed content_readback=not_claimed",
+    "NATIVE_LIFECYCLE module=terraria phase=complete scope=production_start_stop cleanup=passed gui=not_tested"
+  ],
+  "cleanup": {
+    "test_reported": "passed",
+    "cleanup_failures": [],
+    "owned_processes_absent_after_test": true,
+    "owned_fixture_removed_after_test": true
+  },
+  "artifacts": [
+    {
+      "name": "terraria-exact-native.json",
+      "size_bytes": 1999,
+      "sha256": "da4597a46ade40faa64059fe1b6de67129f011cf4bd60f0f81894b9e7511adf0"
+    },
+    {
+      "name": "terraria-exact-native.log",
+      "size_bytes": 3462,
+      "sha256": "09a6d0fa6a083ce6ac4fd033c7f7a9d0a1cfe494fc08b227ef1cfa36e3b92e5a"
+    },
+    {
+      "name": "native-build-02.json",
+      "size_bytes": 1521,
+      "sha256": "aa6b4b3cd00e5b1751d1ab12c346481d0106388777920b2968f4563e24113de6"
+    },
+    {
+      "name": "native-source-proof.json",
+      "size_bytes": 791,
+      "sha256": "b5a26b26f64fad98f46637674a68a0c374ac16b24f5f1a5195fc6ced1a4ad41f"
+    }
+  ],
+  "scope_limits": [
+    "This is production backend manual-save acceptance with two fresh managed runs, not the full backup/restore/uninstall/archive lifecycle.",
+    "Save receipts retain their emitted status. Requested does not establish native completion or durable writes; any independent checkpoint/readback evidence is separately identified in the emitted native receipts.",
+    "No GUI, client join, multiplayer gameplay, populated existing-world migration or power-loss durability was tested.",
+    "The test copied a retained local package into a disposable independent instance; it did not acquire the game from upstream or independently establish public-branch recency.",
+    "Source and executable identities refer to the immutable 4202-file snapshot used for this run. Adding this evidence afterward does not change that tested identity."
+  ],
+  "prior_attempt": {
+    "status": "failed",
+    "log_sha256": "d69ead6f0dda97d5be58e5678fd69dd8da7f7b456c629069e3f8a22d09d42c8c",
+    "result_sha256": "d7e148dde53b4d5d89bfe3a47d56bc00452ae93f07c0d5b95baf91a845ea3d01",
+    "retained": true,
+    "superseded_only_for_this_corrected_test_input": true,
+    "reason": "Terraria manual checkpoint requires managed periodic saves disabled",
+    "classification": "test_input_precondition",
+    "correction": "Only the disposable test settings set managed_save_interval_seconds to 0; production defaults and assertions were unchanged."
+  }
+}

@@ -2,6 +2,7 @@ import { useId, useState } from "react";
 import { useI18n } from "../../i18n";
 import { ARK_EDITORS_EN } from "../../i18n/games/ark-editors.en";
 import { ArkCommitInput, arkText } from "./ArkEditorFrame";
+import { ConfigurationValidationNotice } from "./ConfigurationValidationNotice";
 import { addArkEntry, arkScalarText, quoteArkString, removeArkEntry, replaceArkNode, type ArkGroup, type ArkScalar } from "./ark-native-ast";
 import { arkClassCatalogKind, searchArkClasses, type ArkCatalogKind } from "./ark-class-catalog";
 
@@ -24,8 +25,12 @@ export interface ArkRuleNodeEditorProps { group: ArkGroup; text: string; path: s
 
 export function ArkRuleNodeEditor(props: ArkRuleNodeEditorProps) {
   const { t } = useI18n();
+  const propertyId = useId();
   const [newKey, setNewKey] = useState("");
   const [invalid, setInvalid] = useState(false);
+  const newPropertyId = props.group.entries.length === 0 && props.inputId ? props.inputId : propertyId;
+  const propertyLabel = `${props.path} ${arkText(t, "propertyName")}`;
+  const error = invalid ? arkText(t, "propertyError") : null;
   const isArray = props.group.entries.length > 0 && props.group.entries.every((entry) => !entry.key);
   const depth = props.depth ?? 0;
   // Large or deeply nested documents remain accessible through native text without building a huge DOM.
@@ -66,10 +71,13 @@ export function ArkRuleNodeEditor(props: ArkRuleNodeEditorProps) {
       const last = props.group.entries[props.group.entries.length - 1].value;
       props.onChange(addArkEntry(props.text, props.group, props.text.slice(last.start, last.end)));
     }}>{arkText(t, "addEntry")}</button> : <div className="ark-editor__toolbar">
-      <input id={props.group.entries.length === 0 ? props.inputId : undefined} className="settings-schema-input" aria-label={`${props.path} ${arkText(t, "propertyName")}`}
-        placeholder={arkText(t, "propertyName")} disabled={props.disabled} value={newKey} onChange={(event) => setNewKey(event.target.value)} />
+      <input id={newPropertyId} className="settings-schema-input" aria-label={propertyLabel}
+        aria-invalid={invalid || undefined} aria-errormessage={invalid ? `${newPropertyId}-error` : undefined}
+        placeholder={arkText(t, "propertyName")} disabled={props.disabled} value={newKey}
+        onChange={(event) => { setNewKey(event.target.value); setInvalid(false); }} />
       <button className="secondary-button" type="button" disabled={props.disabled || !newKey} onClick={addProperty}>{arkText(t, "addProperty")}</button>
     </div>}
-    {invalid ? <p className="ark-editor__error" role="alert">{arkText(t, "propertyError")}</p> : null}
+    {error ? <span id={`${newPropertyId}-error`} className="configuration-field-error-a11y">{error}</span> : null}
+    <ConfigurationValidationNotice message={error} inputId={newPropertyId} label={propertyLabel} />
   </div>;
 }

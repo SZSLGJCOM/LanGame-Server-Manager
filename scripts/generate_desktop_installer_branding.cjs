@@ -85,12 +85,19 @@ async function makeTraySource() {
   assert.doesNotMatch(source, /<(?:text|image|script)\b/i, "Tray geometry must remain self-contained vector paths");
   const body = source.slice(source.indexOf(">") + 1, source.lastIndexOf("</svg>"))
     .replace(/\s*<(title|desc)\b[^>]*>[\s\S]*?<\/\1>/g, "");
+  // Outline the silhouette only, so the original mask keeps every cutout transparent.
+  const silhouette = body.replace(/<defs>[\s\S]*?<\/defs>/, "").replace(/\s+mask="[^"]*"/g, "");
   return {
     name: "tray-windows", width: 64, height: 64,
     sourceSha256: createHash("sha256").update(source).digest("hex"),
     svg: '<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 512 512" color-interpolation="sRGB">'
-      // Use the existing installer background so the light symbol remains legible on either taskbar theme.
-      + '<rect width="512" height="512" fill="#181818"/>' + body + '</svg>',
+      // A one-pixel contour at 64 px keeps the light symbol visible on a light taskbar.
+      + '<defs><filter id="tray-outline" x="-10%" y="-20%" width="120%" height="140%" color-interpolation-filters="sRGB">'
+      + '<feMorphology in="SourceAlpha" operator="dilate" radius="8" result="expanded"/>'
+      + '<feComposite in="expanded" in2="SourceAlpha" operator="out" result="outline"/>'
+      + '<feFlood flood-color="#181818"/><feComposite in2="outline" operator="in"/></filter></defs>'
+      + '<g filter="url(#tray-outline)">' + silhouette + '</g>'
+      + body + '</svg>',
   };
 }
 
@@ -206,9 +213,16 @@ async function main() {
     for (const source of sources) {
       const rendered = result.images.find(image => image.name===source.name);
       assert.equal(rendered.width, source.width); assert.equal(rendered.height, source.height);
-      const bitmap = encodeBitmap(source.width, source.height, Buffer.from(rendered.rgba,"base64"));
+      const pixels = Buffer.from(rendered.rgba,"base64");
+      if (options.trayOnly) {
+        assert.equal(pixels.length, source.width * source.height * 4);
+        for (const [x,y] of [[0,0], [source.width-1,0], [0,source.height-1], [source.width-1,source.height-1]]) {
+          assert.equal(pixels[(y*source.width+x)*4+3], 0, "Windows tray artwork must have a transparent background");
+        }
+        assert.ok(pixels.some((value,index) => index % 4 === 3 && value === 255), "Windows tray artwork must retain an opaque symbol");
+      }
       const outputs = options.trayOnly ? [["png",Buffer.from(rendered.png,"base64")]]
-        : [["svg",Buffer.from(source.svg)], ["bmp",bitmap]];
+        : [["svg",Buffer.from(source.svg)], ["bmp",encodeBitmap(source.width,source.height,pixels)]];
       for (const [extension, bytes] of outputs) {
         const destination=path.join(options.trayOnly ? iconsRoot : brandingRoot,`${source.name}.${extension}`);
         if (options.check) assert.ok((await fs.readFile(destination)).equals(bytes), `${source.name}.${extension} is stale; regenerate with the same Chromium renderer`);
@@ -219,7 +233,7 @@ async function main() {
     await fs.writeFile(path.join(options.workDir,`${prefix}-preview.png`),Buffer.from(result.preview,"base64"));
     await fs.writeFile(path.join(options.workDir,`${prefix}-renderer.json`),JSON.stringify({renderer:result.renderer,
       dimensions:sources.map(({name,width,height,sourceSha256})=>({name,width,height,sourceSha256}))},null,2)+"\n");
-    console.log(`${options.check ? "Verified" : "Generated"} ${options.trayOnly ? "Windows tray icon 64x64 (opaque PNG)" : "NSIS header 150x57 and sidebar 164x314 (opaque 24-bit BMP)"}.`);
+    console.log(`${options.check ? "Verified" : "Generated"} ${options.trayOnly ? "Windows tray icon 64x64 (transparent PNG)" : "NSIS header 150x57 and sidebar 164x314 (opaque 24-bit BMP)"}.`);
   } finally {
     assert.equal(path.dirname(scratch),options.workDir);
     assert.ok(path.basename(scratch).startsWith("installer-branding-render-"));

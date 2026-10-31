@@ -1,6 +1,8 @@
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { selectLocaleText, useI18n } from "../../i18n";
 import { ConfigurationHelp } from "./ConfigurationFieldHelp";
+import { ActivityNotice } from "../../components/ActivityNotice";
+import { focusConfigurationControl } from "./configuration-workspace-state";
 import type { ModulePortRole, PortBinding } from "../../types";
 import {
   formatInstancePortName,
@@ -44,13 +46,14 @@ export function InstancePortFields(props: InstancePortFieldsProps) {
     previousPortsRef.current = portsToEdit;
   }, [portsSignature]);
 
-  const hasInvalidDrafts = portsToEdit.some((port) => {
+  const invalidPorts = portsToEdit.filter((port) => {
     const key = instancePortBindingKey(port);
     return parseInstancePortDraft(
       portDrafts[key] ?? String(port.port),
       minimumInstancePortValue(props.role ?? null, key === primaryPortKey, props.nonzeroPortNames?.includes(port.name))
     ) === null;
   });
+  const hasInvalidDrafts = invalidPorts.length > 0;
 
   useEffect(() => {
     props.onPortDraftDirtyChange?.(hasInvalidDrafts);
@@ -72,13 +75,13 @@ export function InstancePortFields(props: InstancePortFieldsProps) {
 
   return (
     <div className="settings-schema-grid instance-port-fields">
-      {portsToEdit.map((port) => {
+      {portsToEdit.map((port, index) => {
         const key = instancePortBindingKey(port);
         const isPrimaryPort = key === primaryPortKey;
         const isPrimaryPlayerPort = props.role === "player" && isPrimaryPort;
         const value = portDrafts[key] ?? String(port.port);
         const minimumPort = minimumInstancePortValue(props.role ?? null, isPrimaryPort, props.nonzeroPortNames?.includes(port.name));
-        const invalid = parseInstancePortDraft(value, minimumPort) === null;
+        const invalid = invalidPorts.includes(port);
 
         // Tooltip only when the group caption adds information beyond the field label.
         const helpText = props.caption
@@ -97,6 +100,7 @@ export function InstancePortFields(props: InstancePortFieldsProps) {
                   {formatInstancePortName(port.name)} / {String(port.protocol).toUpperCase()}
                 </span>
                 <input
+                  id={`${validationId}-${index}`}
                   className="instance-port-fields__input settings-schema-input"
                   type="number"
                   min={minimumPort}
@@ -112,9 +116,21 @@ export function InstancePortFields(props: InstancePortFieldsProps) {
           </ConfigurationHelp>
         );
       })}
-      {hasInvalidDrafts ? <p id={validationId} className="instance-port-fields__error" role="alert">
-        {selectLocaleText(locale, "端口必须是有效范围内的整数。", "Ports must be whole numbers within the allowed range.")}
-      </p> : null}
+      {hasInvalidDrafts ? <>
+        <span id={validationId} className="configuration-field-error-a11y">
+          {selectLocaleText(locale, "端口必须是有效范围内的整数。", "Ports must be whole numbers within the allowed range.")}
+        </span>
+        <ActivityNotice key={JSON.stringify(invalidPorts.map(instancePortBindingKey).sort())} tone="error" action={<>{portsToEdit.map((port, index) => {
+          const key = instancePortBindingKey(port);
+          if (!invalidPorts.includes(port)) return null;
+          return <button key={key} type="button" className="secondary-button configuration-validation-target"
+            aria-controls={`${validationId}-${index}`} onClick={() => focusConfigurationControl(`${validationId}-${index}`)}>
+            {formatInstancePortName(port.name)} / {String(port.protocol).toUpperCase()}
+          </button>;
+        })}</>}>
+          {selectLocaleText(locale, "端口必须是有效范围内的整数。", "Ports must be whole numbers within the allowed range.")}
+        </ActivityNotice>
+      </> : null}
     </div>
   );
 }

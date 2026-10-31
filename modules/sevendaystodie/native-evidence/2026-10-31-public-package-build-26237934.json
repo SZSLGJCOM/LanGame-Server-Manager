@@ -1,0 +1,79 @@
+{
+  "module_id": "sevendaystodie",
+  "reviewed_on": "2026-10-31",
+  "status": "static_native_contract_verified",
+  "steam_app_id": 294420,
+  "branch": "public",
+  "build_id": "26237934",
+  "native_version": "V3.4.0 (b9)",
+  "version_evidence": {
+    "method": "Read-only ILSpy 11.1.0.9782 decompilation; no game assembly executed",
+    "type": "Constants",
+    "release_type": "V",
+    "major": 3,
+    "minor": 40,
+    "build": 9,
+    "formatting_type": "VersionInformation",
+    "minor_format": "Minor / 10 and Minor % 10 form the two minor components for release V and Major >= 3"
+  },
+  "acquisition": {
+    "method": "Fresh official anonymous SteamCMD public app_update 294420 validate",
+    "started_utc": "2026-10-31T04:03:28.100984+00:00",
+    "completed_utc": "2026-10-31T04:15:02.458466+00:00",
+    "exit_code": 0,
+    "state_flags": 4,
+    "update_result": 0,
+    "depot": "294421",
+    "depot_manifest": "4801417336161383035",
+    "size_on_disk": 17896522262,
+    "appmanifest_sha256": "04475d878ac6fa4ac4969895f1f058c3f95af6ff7a283acbcce9ae8a1def872c",
+    "result_sha256": "f737272bf5aa0ab083c0f94db567a5996fcdcfbaca3e0708f9bc5a05f6877837",
+    "log_sha256": "158bc8bdedcba020bb99ea197f9de229b764b67b4f79015921a5d721be6b8d6b",
+    "steam_console_sha256": "4deebfb6eaebfd7847e2c29449a51a4fbd651f16cb7435691cfa02752dcb57c2"
+  },
+  "files": {
+    "serverconfig.xml": {
+      "size": 13731,
+      "sha256": "21dd90603e12c2aa88c73edf4d1c44ee1bc60358b94275259c4aa24970a8d879"
+    },
+    "startdedicated.bat": {
+      "size": 1979,
+      "sha256": "fabe81fbd61eafc0aa4fb5a517c834e376001874b7dada45ac5f4fd8830f7aa9"
+    },
+    "7DaysToDieServer.exe": {
+      "size": 666624,
+      "sha256": "9062c57f7c742dd175d78934941d2f30beeddd70b01dd8ccc95ec73f22e21ab3"
+    },
+    "7DaysToDieServer_Data/Managed/Assembly-CSharp.dll": {
+      "size": 11958272,
+      "sha256": "45f88c1d13d6963c1ec6ba288d68365312a335edeb9806bf06b5d86d652ddbd4"
+    }
+  },
+  "configuration_comparison": {
+    "previous_fixture": "2026-10-28-public-build-26167630.json",
+    "native_property_count": 68,
+    "added_properties": {},
+    "removed_properties": {},
+    "changed_defaults": {},
+    "missing_template_properties": [],
+    "additional_template_properties": ["UserDataFolder"],
+    "config_start_script_and_entry_executable_hashes_unchanged": true,
+    "managed_assembly_changed": true,
+    "sandbox_code_default": "AAAJABJACJADJARFBNC"
+  },
+  "static_contracts": {
+    "sandbox_type": "SandboxOptions.SandboxOptionManager",
+    "sandbox_method": "LoadOptionsFromCode(string)",
+    "version_header": "A",
+    "option_group_length": 3,
+    "header_only_uses_native_defaults": true,
+    "wrong_header_resets_defaults_and_returns_false": true,
+    "trailing_incomplete_group_is_ignored": true,
+    "save_type": "ConsoleCmdSaveWorld",
+    "save_commands": ["saveworld", "sa"],
+    "save_calls": ["GameManager.SaveLocalPlayerData", "GameManager.SaveWorld"],
+    "manager_route": "Declared native Telnet saveworld; completion remains requested",
+    "manager_requires_fixed_game_build_for_save": false
+  },
+  "scope": "Fresh official package identity, read-only managed-assembly version/command inspection and unchanged 68-property/default comparison. No new server, client, save, stop, restart or restore test was run for build 26237934 in this review. The separate build 26167630 native lifecycle evidence retains its original date and scope. Static command existence does not establish Telnet execution, durable checkpoint completion or player progress on this build."
+}

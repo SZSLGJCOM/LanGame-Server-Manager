@@ -46,7 +46,8 @@ function receipt(input: ArkMapScope & { command: string }): InstanceRuntimeComma
 }
 Object.assign(window, { isTauri: true, __TAURI_INTERNALS__: { invoke: async (command: string, args: { input: ArkMapScope & ArkSpawnInput & { command: string } }) => {
   const input = args.input;
-  if (command === "read_ark_tools_status") { statusCalls++; return { installed, connected: installed, issue: null }; }
+  if (command === "read_ark_tools_status") { statusCalls++; return { installed, connected: installed,
+    issue: installed ? null : "Prepare the ARK server extension while this instance is stopped" }; }
   if (command === "read_ark_map") {
     mapCalls.push(input); activeMaps++; maximumMaps = Math.max(maximumMaps, activeMaps);
     try {
@@ -78,6 +79,33 @@ async function tool(value: string) { await input(element<HTMLSelectElement>('.ar
 async function restartMain(runId: number) { details = { ...details, active_run: { ...details.active_run!, processes: details.active_run!.processes!.map(p => p.process_key === "main" ? { ...p, run_id: runId } : p) } }; await render(); }
 const live = () => fixture.querySelector('.ark-map-canvas')?.getAttribute('data-live') === 'true';
 async function refresh() { await click(button("刷新")); }
+async function dragMap(deltaX: number, deltaY: number) {
+  const surface = element<SVGSVGElement>('.ark-map-surface'), bounds = surface.getBoundingClientRect();
+  let trustedMove = false;
+  const moved = (event: PointerEvent) => { if (event.buttons === 1) trustedMove = event.isTrusted; };
+  surface.addEventListener('pointermove', moved);
+  try {
+    await act(async () => {
+      const response = await fetch(`/__reliability_pointer/${nonce}`, { method: 'POST', body: JSON.stringify({
+        type: 'drag', x: bounds.left + bounds.width * .2, y: bounds.top + bounds.height * .3, deltaX, deltaY,
+      }) });
+      if (!response.ok) throw new Error('Native drag injection failed');
+    });
+  } finally { surface.removeEventListener('pointermove', moved); }
+  check(trustedMove, 'Map dragging uses trusted browser input, including pointer capture outside the viewport');
+}
+async function mapKey(key: string) {
+  await act(async () => element('.ark-map-surface').dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true })));
+}
+function checkMapBounds(message: string) {
+  const viewport = element('.ark-map-surface').getBoundingClientRect(), map = element('.ark-map-grid').getBoundingClientRect();
+  for (const [start, end, length] of [['left', 'right', 'width'], ['top', 'bottom', 'height']] as const) {
+    check(map[length] <= viewport[length] + 1
+      ? Math.abs((map[start] + map[end]) / 2 - (viewport[start] + viewport[end]) / 2) < 1
+      : map[start] <= viewport[start] + 1 && map[end] >= viewport[end] - 1,
+    `${message}: the rendered ${length} stays centered when fitted, otherwise covers the viewport`);
+  }
+}
 async function run() {
   await act(prepareBrowserLocaleCatalogs);
   const oversized = new Uint8Array(33);
@@ -100,7 +128,24 @@ async function run() {
   check(fixture.querySelectorAll('[data-player-id]').length === 2 && fixture.querySelectorAll('.ark-map-roster-list button').length === 3, "Unspawned players remain listed without fake origin markers");
   check(fixture.textContent?.includes("坐标网格 · 底图不可用") && !fixture.querySelector('svg image'), "No artwork means an explicitly labelled coordinate grid");
   const beforeView = element('svg.ark-map-surface').getAttribute('viewBox');
+  await dragMap(80, 60);
+  check(element('svg.ark-map-surface').getAttribute('viewBox') === beforeView, 'Dragging at the minimum zoom cannot displace the full map');
+  for (const key of ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown']) await mapKey(key);
+  check(element('svg.ark-map-surface').getAttribute('viewBox') === beforeView, 'Arrow keys cannot displace a fully visible map');
+  checkMapBounds('Minimum zoom');
   await click(element('[aria-label="放大"]')); check(element('svg.ark-map-surface').getAttribute('viewBox') !== beforeView, "Zoom changes the real map viewport");
+  const centeredZoom = element('svg.ark-map-surface').getAttribute('viewBox');
+  await dragMap(30, 20);
+  check(element('svg.ark-map-surface').getAttribute('viewBox') !== centeredZoom, 'A zoomed map can still pan');
+  checkMapBounds('Zoomed drag');
+  for (const distance of [2048, -2048]) { await dragMap(distance, distance); checkMapBounds('Drag beyond the map edge'); }
+  for (const key of ['ArrowLeft', 'ArrowUp', 'ArrowRight', 'ArrowDown']) {
+    for (let step = 0; step < 12; step++) await mapKey(key);
+    checkMapBounds(`Repeated ${key}`);
+  }
+  await click(element('[aria-label="缩小"]'));
+  check(element('svg.ark-map-surface').getAttribute('viewBox') === beforeView, 'Zooming out to 100% recenters an edge-panned map');
+  await click(element('[aria-label="放大"]'));
   await click(button("适配")); check(element('svg.ark-map-surface').getAttribute('viewBox') === beforeView, "Fit restores the map extent");
   const wheelSurface = element<SVGSVGElement>('svg.ark-map-surface'), wheelRect = wheelSurface.getBoundingClientRect();
   let trustedWheel = false;
@@ -112,6 +157,9 @@ async function run() {
   check(trustedWheel && document.scrollingElement!.scrollTop === scrollBefore, 'Trusted native wheel zooms without scrolling the surrounding page');
   await click(button('适配'));
   await click(element('.ark-map-roster-list button')); await tool('ark_give_item_to_player');
+  check(element('svg.ark-map-surface').getAttribute('viewBox') === beforeView, 'Following a player at 100% does not move the map outside its fitted bounds');
+  await click(element('[aria-label="放大"]')); checkMapBounds('Following a player near the zoomed edge');
+  await click(button('适配'));
   await click(element('.gmt-form .ark-map-use-player'));
   check(element<HTMLInputElement>('#gm-ark_give_item_to_player-playerId-input').value === '123', "Player selection uses PlayerID rather than Steam/EOS ID");
   await tool('ark_set_time'); await click(button('取消选择'));
@@ -154,6 +202,7 @@ async function run() {
   check(fixture.textContent?.includes('当前地图没有在线玩家'), 'An empty roster has a useful state');
   installed = false; await restartMain(12); await settle(() => fixture.textContent?.includes('服务端扩展未安装') ?? false, 'Missing extension state');
   check(!live(), 'Missing extension never implies live player data');
+  check(!fixture.textContent?.includes('Prepare the ARK server extension'), 'The map rail does not repeat the native setup message above the creature tool');
   installed = true; mode = 'error'; await restartMain(13); await settle(() => fixture.textContent?.includes('Fixture native map query failed') ?? false, 'Native map failures remain visible');
   check(!live(), 'Failed map reads disable live selection');
   mode = 'live'; await refresh(); await settle(live, 'Retry recovers the map');
@@ -217,7 +266,8 @@ async function run() {
   await switchMap('main');
   mode = 'live'; await restartMain(15); await settle(live, 'Final live map');
   await click(element('.ark-map-roster-list button')); await tool('ark_spawn_creature');
-  await click(element('.ark-creature-spawner .ark-map-use-player'));
+  check(!fixture.querySelector('.ark-creature-spawner .ark-map-use-player, .ark-creature-spawner__coordinates'),
+    'Selecting a map player supplies the default spawn target without an extra button or coordinate fields');
   const creatureList = element('.ark-creature-spawner .gmt-ark-catalog-results').getBoundingClientRect();
   const creatureAction = element('.ark-creature-spawner button[type="submit"]').getBoundingClientRect();
   check(creatureList.height >= 52 && creatureList.bottom < creatureAction.top && creatureAction.bottom <= innerHeight - 16,
@@ -283,6 +333,25 @@ async function run() {
   check(itemName.textContent === '石头' && itemName.getBoundingClientRect().width >= 70,
     'The narrow tool rail retains readable localized item names rather than squeezing them behind blueprint codes');
   check(mapBox.width > 300 && mapBox.height > 400 && railBox.width >= 280 && mapBox.right <= railBox.left, 'Map and tool rail occupy distinct usable regions');
+  await tool('ark_spawn_creature');
+  await settle(() => Number(fixture.querySelector('.ark-creature-spawner .gmt-ark-catalog-results')?.getAttribute('data-page-size')) >= 4,
+    'Default player targeting leaves room for at least four complete creature rows');
+  const creatureCatalogBox = element('.ark-creature-spawner .gmt-ark-catalog-results').getBoundingClientRect();
+  const creatureSubmitBox = element('.ark-creature-spawner button[type="submit"]').getBoundingClientRect();
+  check(!fixture.querySelector('.ark-creature-spawner__coordinates, .ark-creature-spawner__owner')
+    && !element<HTMLDetailsElement>('.ark-creature-spawner .ark-spawn-options').open
+    && creatureCatalogBox.height >= 110 && creatureCatalogBox.bottom < creatureSubmitBox.top && creatureSubmitBox.bottom <= innerHeight - 16,
+    `The default creature catalog has priority over optional form fields: ${JSON.stringify({ catalog: creatureCatalogBox.toJSON(), action: creatureSubmitBox.toJSON() })}`);
+  await click(element('.ark-creature-spawner .ark-spawn-options summary'));
+  await input(element<HTMLSelectElement>('[aria-label="生成位置来源"]'), 'manual');
+  const expandedCatalog = element('.ark-creature-spawner .gmt-ark-catalog-results').getBoundingClientRect();
+  const expandedOptions = element('.ark-creature-spawner .ark-spawn-options').getBoundingClientRect();
+  const expandedAction = element('.ark-creature-spawner button[type="submit"]').getBoundingClientRect();
+  check(expandedCatalog.height >= 54 && expandedCatalog.bottom <= expandedOptions.top && expandedOptions.bottom <= expandedAction.top
+    && expandedAction.bottom <= innerHeight - 16,
+    `Even expanded manual options retain two creature rows and reachable actions: ${JSON.stringify({ catalog: expandedCatalog.toJSON(), options: expandedOptions.toJSON(), action: expandedAction.toJSON() })}`);
+  await input(element<HTMLSelectElement>('[aria-label="生成位置来源"]'), 'player');
+  await click(element('.ark-creature-spawner .ark-spawn-options summary'));
   check(document.documentElement.scrollWidth <= innerWidth + 1, 'Map workbench has no horizontal overflow');
   check(errors.length === 0, `Browser errors: ${errors.join('; ')}`);
   return { status: 'passed', checks, browser_errors: errors, maximum_map_requests: maximumMaps, map_calls: mapCalls.length,

@@ -61,6 +61,8 @@ mod readiness;
 mod runtime;
 #[path = "commands_native_satisfactory_frm.rs"]
 mod satisfactory_frm;
+#[path = "commands_native_satisfactory_isolation.rs"]
+mod satisfactory_isolation;
 #[path = "commands_native_save_failure_probe.rs"]
 mod save_failure_probe;
 #[path = "commands_native_save_guard_probe.rs"]
@@ -75,6 +77,8 @@ mod sons_backup_probe;
 mod sons_world_fixture;
 #[path = "commands_native_squad_probe.rs"]
 mod squad_probe;
+#[path = "commands_native_storage_fixture.rs"]
+mod storage_fixture;
 #[path = "commands_native_theforest_probe.rs"]
 mod theforest_probe;
 
@@ -90,11 +94,25 @@ fn moria_console_exit_helper_entry() {
 struct NativeCleanup<'a> {
     state: &'a DesktopState,
     instance_ids: Vec<String>,
+    // Populated only by the dedicated isolation scope. Remove an ID before
+    // attempting start: an unpublished failed start must remain unknown.
+    never_started_instance_ids: std::collections::BTreeSet<String>,
     cleanup_allowed: Arc<AtomicBool>,
+}
+
+impl NativeCleanup<'_> {
+    fn mark_start_attempted(&mut self, instance_id: &str) -> Result<(), &'static str> {
+        if !self.instance_ids.iter().any(|owned| owned == instance_id) {
+            return Err("Native startup has no fixture cleanup owner");
+        }
+        self.never_started_instance_ids.remove(instance_id);
+        Ok(())
+    }
 }
 
 impl Drop for NativeCleanup<'_> {
     fn drop(&mut self) {
+        let pending_starts = self.state.pending_runtime_start_instance_ids();
         let Ok(mut supervisor) = self.state.runtime_supervisor.lock() else {
             self.cleanup_allowed.store(false, Ordering::SeqCst);
             return;
@@ -102,7 +120,7 @@ impl Drop for NativeCleanup<'_> {
         let previously_allowed = self.cleanup_allowed.load(Ordering::SeqCst);
         let mut stopped = Vec::with_capacity(self.instance_ids.len());
         for instance_id in &self.instance_ids {
-            stopped.push(supervisor.take_running_for_stop(instance_id).map(|mut running| match stop_managed_instance(&mut running) {
+            let stopped_tree = supervisor.take_running_for_stop(instance_id).map(|mut running| match stop_managed_instance(&mut running) {
                 Ok(processes) => {
                     for process in processes.iter().take(8) {
                         let code = process.exit_code.map(|value| format!("0x{:08X}", value as u32));
@@ -118,7 +136,22 @@ impl Drop for NativeCleanup<'_> {
                     true
                 }
                 Err(_) => false,
-            }));
+            });
+            let pending = pending_starts
+                .as_ref()
+                .ok()
+                .map(|ids| ids.iter().any(|pending| pending == instance_id));
+            let evidence = cleanup_stop_evidence(
+                stopped_tree,
+                self.never_started_instance_ids.contains(instance_id),
+                pending,
+            );
+            if stopped_tree.is_none() && evidence == Some(true) {
+                eprintln!(
+                    "NATIVE_CLEANUP phase=not_started start_attempted=false pending_start=false"
+                );
+            }
+            stopped.push(evidence);
         }
         // A failed startup may have never published a supervisor entry. Its
         // absence alone cannot establish that every spawned child was stopped.
@@ -130,6 +163,16 @@ impl Drop for NativeCleanup<'_> {
             eprintln!("NATIVE_LIFECYCLE cleanup=process_stop_failed");
         }
     }
+}
+
+fn cleanup_stop_evidence(
+    stopped: Option<bool>,
+    never_started: bool,
+    pending_start: Option<bool>,
+) -> Option<bool> {
+    // A known stop failure wins. A missing or attempted startup never gains
+    // permission from an absent supervisor entry or failed pending-start read.
+    stopped.or_else(|| (never_started && pending_start == Some(false)).then_some(true))
 }
 
 fn cleanup_confirmed(stopped: &[Option<bool>], previously_allowed: bool) -> bool {
@@ -146,6 +189,7 @@ fn native_cleanup_does_not_assume_failed_start_was_stopped() {
     drop(NativeCleanup {
         state: &state,
         instance_ids: vec!["not-published-start".into()],
+        never_started_instance_ids: Default::default(),
         cleanup_allowed: Arc::clone(&cleanup_allowed),
     });
     assert!(!cleanup_allowed.load(Ordering::SeqCst));
@@ -166,11 +210,39 @@ fn native_pair_cleanup_requires_both_owned_process_trees_to_finish() {
     assert!(!cleanup_confirmed(&[Some(false), None], true));
 }
 
+#[test]
+fn isolation_cleanup_accepts_only_proven_unattempted_missing_instances() {
+    let untouched = cleanup_stop_evidence(None, true, Some(false));
+    assert!(cleanup_confirmed(&[untouched, Some(true)], false));
+    for evidence in [
+        cleanup_stop_evidence(None, false, Some(false)),
+        cleanup_stop_evidence(None, true, Some(true)),
+        cleanup_stop_evidence(None, true, None),
+        cleanup_stop_evidence(Some(false), true, Some(false)),
+    ] {
+        assert!(!cleanup_confirmed(&[evidence, Some(true)], false));
+    }
+    let state = DesktopState::default();
+    let cleanup_allowed = Arc::new(AtomicBool::new(false));
+    let mut cleanup = NativeCleanup {
+        state: &state,
+        instance_ids: vec!["owned".into()],
+        never_started_instance_ids: ["owned".into()].into_iter().collect(),
+        cleanup_allowed: Arc::clone(&cleanup_allowed),
+    };
+    assert!(cleanup.mark_start_attempted("foreign").is_err());
+    cleanup.mark_start_attempted("owned").unwrap();
+    assert!(!cleanup.never_started_instance_ids.contains("owned"));
+    drop(cleanup);
+    assert!(!cleanup_allowed.load(Ordering::SeqCst));
+}
+
 #[derive(Clone, Copy, PartialEq, Eq)]
 enum NativeScope {
     FullLifecycle,
     StartStop,
     TwoInstanceLifecycle,
+    SatisfactoryIsolation,
 }
 
 #[tokio::test(flavor = "current_thread")]
@@ -220,6 +292,24 @@ async fn native_two_instance_lifecycle() -> Result<(), Box<dyn std::error::Error
         .await?;
     }
     Ok(())
+}
+
+#[tokio::test(flavor = "current_thread")]
+#[ignore = "opt-in: two independent Satisfactory instances, real HTTPS worlds/saves and credential isolation; no clients, FRM or downloads"]
+async fn native_satisfactory_instance_isolation() -> Result<(), Box<dyn std::error::Error>> {
+    let _guard = command_smoke_lock().lock().await;
+    let descriptors = discover_modules(workspace_root().join("modules"))?;
+    let mut cases = catalog::from_env(&descriptors)?;
+    if cases.len() != 1 || cases[0].0 != "satisfactory" {
+        return Err("Satisfactory isolation requires exactly its one local package".into());
+    }
+    let (module_id, source) = cases.remove(0);
+    Box::pin(run_native_package(
+        module_id,
+        source,
+        NativeScope::SatisfactoryIsolation,
+    ))
+    .await
 }
 
 #[tokio::test(flavor = "current_thread")]
@@ -353,6 +443,9 @@ async fn run_native_package(
     let descriptors = discover_modules(workspace_root().join("modules"))?;
     let descriptor = find_descriptor(&descriptors, &module_id)?;
     let creation_mode = creation::CreationMode::from_env(descriptor)?;
+    if scope == NativeScope::SatisfactoryIsolation {
+        satisfactory_isolation::validate(&module_id, &creation_mode, observation_seconds)?;
+    }
     if scope == NativeScope::TwoInstanceLifecycle
         && !matches!(
             creation_mode.instances,
@@ -456,7 +549,7 @@ async fn run_native_package(
         creation_mode.creation_scope(),
     );
     let env_guard = environment::NativeEnvironment::set(&package.root)?;
-    save_app_settings(AppSettings {
+    let (storage, desktop) = storage_fixture::prepare(AppSettings {
         archives_root: String::new(),
         // A full lifecycle keeps the library outside the instances root so
         // uninstall can enforce the same boundary as a normal installation.
@@ -484,7 +577,6 @@ async fn run_native_package(
             None => package.root.join("steamcmd").to_string_lossy().into_owned(),
         },
     })?;
-    let storage = bootstrap_storage()?;
     initialize_database(&storage.paths).await?;
     sync_modules(&storage.paths, &descriptors).await?;
     app_storage::sync_game_installs(
@@ -498,8 +590,6 @@ async fn run_native_package(
         }],
     )
     .await?;
-    let desktop = DesktopState::default();
-    desktop.app_state.write().unwrap().settings = storage.settings.clone();
     let app = tauri::test::mock_builder()
         .manage(desktop)
         .build(tauri::test::mock_context(tauri::test::noop_assets()))?;
@@ -536,22 +626,42 @@ async fn run_native_package(
     // Declared first so error unwinding stops the server before removing rules.
     let mut firewall_cleanup = None;
     // Declared before cleanup: error unwinding stops the owned game before the
-    // guard considers deleting this fixture's newly allocated system accounts.
+    // guard considers deleting this fixture's newly allocated credential entries.
     let mut satisfactory_world = NativeWorld::new(
         &initial,
         &package.root,
         Arc::clone(&package.cleanup_allowed),
     )?;
-    let cleanup = NativeCleanup {
+    let mut satisfactory_peer_world = if scope == NativeScope::SatisfactoryIsolation {
+        let (peer, ..) = first_instance
+            .as_ref()
+            .ok_or("Satisfactory isolation has no independent peer")?;
+        NativeWorld::new(peer, &package.root, Arc::clone(&package.cleanup_allowed))?
+    } else {
+        None
+    };
+    let instance_ids: Vec<_> = std::iter::once(id.clone())
+        .chain(
+            first_instance
+                .as_ref()
+                .filter(|_| {
+                    matches!(
+                        scope,
+                        NativeScope::TwoInstanceLifecycle | NativeScope::SatisfactoryIsolation
+                    )
+                })
+                .map(|(peer, ..)| peer.summary.id.clone()),
+        )
+        .collect();
+    let never_started_instance_ids = if scope == NativeScope::SatisfactoryIsolation {
+        instance_ids.iter().cloned().collect()
+    } else {
+        Default::default()
+    };
+    let mut cleanup = NativeCleanup {
         state: &state,
-        instance_ids: std::iter::once(id.clone())
-            .chain(
-                first_instance
-                    .as_ref()
-                    .filter(|_| scope == NativeScope::TwoInstanceLifecycle)
-                    .map(|(peer, ..)| peer.summary.id.clone()),
-            )
-            .collect(),
+        instance_ids,
+        never_started_instance_ids,
         cleanup_allowed: Arc::clone(&package.cleanup_allowed),
     };
     let mut settings: serde_json::Map<String, Value> =
@@ -562,6 +672,13 @@ async fn run_native_package(
             .ok()
             .as_deref(),
     )?);
+    if scope == NativeScope::SatisfactoryIsolation {
+        // This fixture forbids settings overrides and tests isolated worlds,
+        // so explicitly pin its package instead of inheriting automatic update.
+        settings.insert("program_update".into(), json!({"policy": "pinned"}));
+        settings.insert("auto_pause_when_empty".into(), json!(true));
+        settings.insert("allow_insecure_local_api".into(), json!(false));
+    }
     for name in ["public_server", "list_on_steam", "list_on_eos"] {
         if let Some(value) = settings.get_mut(name) {
             *value = if value.is_boolean() {
@@ -653,6 +770,42 @@ async fn run_native_package(
         );
         return Ok(());
     }
+    if scope == NativeScope::SatisfactoryIsolation {
+        let (peer, ..) = first_instance
+            .as_ref()
+            .ok_or("Satisfactory isolation has no peer instance")?;
+        let peer_world = satisfactory_peer_world
+            .as_ref()
+            .ok_or("Satisfactory isolation has no peer native world")?;
+        Box::pin(satisfactory_isolation::run(
+            &runtime,
+            &details,
+            peer,
+            peer_world,
+            &mut cleanup,
+        ))
+        .await?;
+        drop(cleanup);
+        if let Some(world) = &mut satisfactory_world {
+            world.finish()?;
+        }
+        if let Some(world) = &mut satisfactory_peer_world {
+            world.finish()?;
+        }
+        drop(app);
+        drop(env_guard);
+        let disposable_root = package.root.clone();
+        drop(package);
+        if disposable_root.exists() {
+            return Err(
+                "Satisfactory isolation passed but disposable directory cleanup failed".into(),
+            );
+        }
+        println!(
+            "NATIVE_SATISFACTORY_ISOLATION phase=complete owned_process_cleanup=passed credential_cleanup=passed disposable_cleanup=passed gui=not_tested"
+        );
+        return Ok(());
+    }
     if cycle_only {
         // This selector has its own explicit scope. It neither invokes nor
         // weakens the separate archive/restore/uninstall lifecycle acceptance.
@@ -700,6 +853,9 @@ async fn run_native_package(
     // invalidates its original package inventory. Later phases still archive,
     // restore, launch and delete the actual maintained instance.
     Box::pin(archive::verify_retirement_with_library(&runtime, &details)).await?;
+    // Native DST rewrites its INI whitespace. Keep the exact manager output
+    // before the first native run for the later canonical restore check.
+    let dst_managed_ini = maintenance::capture_dst_managed_ini(&details)?;
     // Keep independent lifecycle phases out of this long fixture's state. A
     // cycle includes production startup and observation futures; embedding two
     // cycles exhausted the default Windows test stack in the native run.
@@ -739,12 +895,23 @@ async fn run_native_package(
     println!(
         "NATIVE_LIFECYCLE module={module_id} phase=restarted persisted_readback=verified fresh_run=verified"
     );
-    if Box::pin(maintenance::verify_backup_restore(&runtime, &reloaded)).await? {
-        let restored_run = Box::pin(runtime.run_cycle(&reloaded, "after_restore", 0)).await?;
+    let reloaded = if let Some(restored) = Box::pin(maintenance::verify_backup_restore(
+        &runtime,
+        &reloaded,
+        dst_managed_ini.as_ref(),
+    ))
+    .await?
+    {
+        let restored_run = Box::pin(runtime.run_cycle(&restored, "after_restore", 0)).await?;
         if restored_run == second_run {
             return Err("native restore restart reused its previous persisted run identity".into());
         }
-    }
+        // Restoration can intentionally publish canonical settings. Carry only
+        // the independently verified readback into the remaining lifecycle.
+        restored
+    } else {
+        reloaded
+    };
     if Box::pin(maintenance::verify_program_maintenance(
         &runtime,
         &reloaded,
@@ -754,7 +921,7 @@ async fn run_native_package(
     {
         Box::pin(runtime.run_cycle(&reloaded, "after_program_maintenance", 0)).await?;
     }
-    let saves = save_inventory(Path::new(&details.saves_path))?;
+    let saves = save_inventory(Path::new(&reloaded.saves_path))?;
     // Some servers wait for a player before creating a world. Still exercise
     // their empty-data uninstall path, without claiming native save generation.
     let observation = if saves.is_empty() {
@@ -776,7 +943,7 @@ async fn run_native_package(
         }
         Some(backup)
     };
-    let stopped_config = fs::read(&details.config_file_path)?;
+    let stopped_config = fs::read(&reloaded.config_file_path)?;
     let native_configs = descriptor
         .storage
         .retained_paths
@@ -786,7 +953,7 @@ async fn run_native_package(
             save_inventory(&path).map(|inventory| (path, inventory))
         })
         .collect::<Result<Vec<_>, _>>()?;
-    let retained_root = creation::instance_root(&details)?.join("installation-retained");
+    let retained_root = creation::instance_root(&reloaded)?.join("installation-retained");
     let retained_installation = save_inventory(&retained_root)?;
     let programs = inventory::program_files(descriptor, &effective_install_root)?;
     let library = app_storage::read_library_program_install(&storage.paths, &module_id)
@@ -819,10 +986,10 @@ async fn run_native_package(
             "library uninstall changed an instance program or retained installation data".into(),
         );
     }
-    if save_inventory(Path::new(&details.saves_path))? != saves {
+    if save_inventory(Path::new(&reloaded.saves_path))? != saves {
         return Err("native uninstallation changed declared save data".into());
     }
-    if fs::read(&details.config_file_path)? != stopped_config {
+    if fs::read(&reloaded.config_file_path)? != stopped_config {
         return Err("native uninstallation changed instance configuration".into());
     }
     for (path, inventory) in &native_configs {
@@ -847,7 +1014,7 @@ async fn run_native_package(
     // during the last run. Archive restoration must match this exact snapshot;
     // comparing creation-time settings would reject valid native projections.
     let stopped_details = read_instance_details_from_storage(state.clone(), id.clone()).await?;
-    settings_readback::verify_stopped(&details, &stopped_details, &effective_install_root)?;
+    settings_readback::verify_stopped(&reloaded, &stopped_details, &effective_install_root)?;
     if fs::read(&stopped_details.config_file_path)? != stopped_config {
         return Err("native configuration changed before archive capture".into());
     }
@@ -861,7 +1028,7 @@ async fn run_native_package(
     archive::verify_archived_native_data(
         &storage.paths,
         &deleted.archive_id,
-        Path::new(&details.saves_path),
+        Path::new(&reloaded.saves_path),
         Path::new(&deleted.previous_instance_root),
         &archive,
         &saves,

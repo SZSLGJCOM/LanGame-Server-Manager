@@ -1,6 +1,21 @@
 status = "best_effort_verified"
 last_verified = "2026-09-28"
-notes = "SteamCMD anonymous app_update 1829350 validate succeeded against the validated package on 2026-07-13. The installed public manifest reports V Rising Dedicated Server buildid 23401381, TargetBuildID 23401381, SizeOnDisk 2021415384, and depots 1004/1829351. The validated package includes the current ServerHostSettings.json and ServerGameSettings.json defaults plus GameDifficultyPresets and GameSettingPresets. The official Stunlock instructions currently document the 1.1.x PC server surface. Native verification on 2026-09-08 confirmed that empty admin/ban overrides must be omitted, and that ListOnSteam=false disables the A2S endpoint. Enabling ListOnSteam returned a complete zero-player list; the original visibility setting was restored. LanGame crosswalks every leaf in the installed host/game defaults: scalar paths are typed, and the three open-ended arrays remain editable through the validated specialized JSON editor."
+notes = "SteamCMD anonymous app_update 1829350 validate succeeded against the validated package on 2026-07-13. The 2026-07-13 validated public manifest recorded V Rising Dedicated Server buildid 23401381, TargetBuildID 23401381, SizeOnDisk 2021415384, and depots 1004/1829351. That historical validated package includes its ServerHostSettings.json and ServerGameSettings.json defaults plus GameDifficultyPresets and GameSettingPresets. The official Stunlock instructions currently document the 1.1.x PC server surface. Native verification on 2026-09-08 confirmed that empty admin/ban overrides must be omitted, and that ListOnSteam=false disables the A2S endpoint. Enabling ListOnSteam returned a complete zero-player list; the original visibility setting was restored. LanGame crosswalks every leaf in the installed host/game defaults: scalar paths are typed, and the three open-ended arrays remain editable through the validated specialized JSON editor."
+
+[[sources]]
+id = "managed_native_manual_save_20261031"
+kind = "runtime_probe"
+path = "reference-fixtures/2026-10-31-managed_native_manual_save.json"
+authority = "compiled_manager_backend_with_isolated_retained_package"
+description = "2026-10-31 Asia/Shanghai: the immutable manager backend completed native_manual_save acceptance against 25169871, with two isolated managed runs, declared native readiness, normal exits and owned cleanup. Formal save receipt status remains requested. The exact-checkpoint opt-in was enabled; the portable fixture preserves the independent native completion, capture and restart-readback markers rather than upgrading the formal receipt. This is manual-save/two-cycle start-stop scope, not full backup/restore/uninstall acceptance, GUI or client gameplay."
+
+[[sources]]
+id = "package_identity_review_20261031"
+kind = "documentation"
+path = "Steam app 1829350 build 25169871 / VERSION and GameAssembly.dll"
+authority = "first_party_release_metadata_and_read_only_retained_package_identity"
+url = "https://store.steampowered.com/news/app/1604030/view/689768324345626995"
+description = "2026-10-31 read-only review: the latest published gameplay patch observed remains 1.1 Hot Fix 12, dated 2026-09-11 Asia/Shanghai, adding a server-side castle ownership permission check. October Halloween announcements concern cosmetic DLC, not a newly established dedicated-server contract. The retained manifest has StateFlags 4 and buildid/TargetBuildID 25169871; VERSION is 1.1.15.0-r101082-b2 (202609071358); GameAssembly.dll SHA256 ff366577fb0c707c42b8bde242304653aaa37f6ff0665ab9520150ceb692aed1 matches the already admitted primary fingerprint. Both GameAssembly.dll and global-metadata.dat were SHA256-compared with the existing admitted tuple and matched. Current packaged JSON was inventoried again: all 166 ServerGameSettings leaves map to existing controls; 20 of 23 ServerHostSettings leaves map to controls and the remaining Port, QueryPort and Rcon.Port are instance-owned. No leaf is unmapped. No new configuration delta was established. This is retained-package identity evidence, not a new public-depot check or native lifecycle/client acceptance."
 
 [[sources]]
 id = "configuration_review_20260930"

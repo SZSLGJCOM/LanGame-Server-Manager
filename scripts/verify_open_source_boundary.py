@@ -164,6 +164,12 @@ def tracked_worktree_paths(repository_root: Path) -> tuple[Path, ...]:
     )
 
 
+def untracked_worktree_paths(repository_root: Path) -> tuple[Path, ...]:
+    return _git_paths(
+        repository_root, ["ls-files", "-z", "--others", "--exclude-standard"]
+    )
+
+
 def ignored_tracked_paths(
     repository_root: Path, tracked_paths: tuple[Path, ...]
 ) -> frozenset[str]:
@@ -235,6 +241,8 @@ def verify_boundary(
     repository_root: Path,
     tracked_paths: tuple[Path, ...],
     ignored_paths: frozenset[str],
+    *,
+    untracked_paths: tuple[Path, ...] = (),
 ) -> list[BoundaryFinding]:
     findings = [
         BoundaryFinding(item.rule, item.path, item.message)
@@ -318,12 +326,13 @@ def verify_boundary(
         if (finding.rule, finding.path) not in existing_findings
     )
 
-    for path in tracked_paths:
+    for path in (*tracked_paths, *untracked_paths):
         normalized_path = path.as_posix()
+        path_status = "tracked" if normalized_path in tracked_path_names else "untracked"
         if is_unapproved_asset_path(path):
             findings.append(
                 BoundaryFinding(
-                    "tracked-media",
+                    f"{path_status}-media",
                     normalized_path,
                     "asset or binary is not approved for source distribution",
                 )
@@ -339,9 +348,9 @@ def verify_boundary(
         elif is_sensitive_or_private_path(path):
             findings.append(
                 BoundaryFinding(
-                    "tracked-sensitive-path",
+                    f"{path_status}-sensitive-path",
                     normalized_path,
-                    "sensitive or private artifact remains tracked",
+                    f"sensitive or private artifact is {path_status}",
                 )
             )
         source_path = repository_root / path
@@ -432,8 +441,11 @@ def verify_public_snapshot_contract(
 def main() -> int:
     try:
         tracked_paths = tracked_worktree_paths(REPOSITORY_ROOT)
+        untracked_paths = untracked_worktree_paths(REPOSITORY_ROOT)
         ignored_paths = ignored_tracked_paths(REPOSITORY_ROOT, tracked_paths)
-        findings = verify_boundary(REPOSITORY_ROOT, tracked_paths, ignored_paths)
+        findings = verify_boundary(
+            REPOSITORY_ROOT, tracked_paths, ignored_paths, untracked_paths=untracked_paths
+        )
         findings.extend(verify_public_snapshot_contract(tracked_paths))
     except (OSError, RuntimeError) as error:
         print(f"source-publication boundary verification failed: {error}", file=sys.stderr)

@@ -1,0 +1,189 @@
+{
+  "schema_version": 1,
+  "verified_on": "2026-10-31",
+  "verification_timezone": "Asia/Shanghai",
+  "module_id": "soulmask",
+  "evidence_classification": "isolated_managed_backend_full_native_lifecycle",
+  "status": "passed",
+  "steam_app_id": 3017310,
+  "public_build_id": "26241597",
+  "package_identity": {
+    "static_evidence": "2026-10-31-public-build-26241597-static.json",
+    "static_evidence_sha256": "7c9bb88b1bc197b68ea33c358005ea45954ba7deb75ac46d19b77a0477fab3aa",
+    "manifest_sha256": "32dc0afd70f6fd7463a8ce439f1dbcf531bf0262d3bc6b7ae24fa8c3406062a3",
+    "manifest_state_flags": 4,
+    "executable": {
+      "path": "WS/Binaries/Win64/WSServer-Win64-Shipping.exe",
+      "size": 53139296,
+      "sha256": "e39cecdf0f0c50d7dc93c090eb592dd436f6513b16b5120dfa44f5fca7f2b215"
+    },
+    "source_bytes": 5885669091,
+    "public_branch_updated_utc": "2026-10-27T11:37:11+00:00",
+    "public_metadata_sha256": "59cf844a74d07a620c499079cf9d676b3c6a2a64941cdf4721593010f915966b",
+    "acquisition": "Fresh official SteamCMD acquisition was separately verified by the static evidence. This native fixture imported that local package and pinned updates; it did not exercise official installation or network update."
+  },
+  "tested_source": {
+    "git_revision": "d58857d32d668a3661261b96134145c6911357a4",
+    "working_tree_clean": false,
+    "source_identity_sha256": "9161f9cdccc644c3bd4dd925ab916220b774eb1c1fcad8c6ddcd3b93686f7255",
+    "source_manifest_sha256": "8b3635b2c7ae5f05d86c8c6a808bfb9e6f960b2dd47784d0b1e8d85eb461b9e3",
+    "build_receipt": {
+      "artifact": "native-build-04.json",
+      "sha256": "3e18af616ed7ecaf2605010bb415ed16987facb09950fb65573a6b52a6c73eb4"
+    },
+    "test_binary": {
+      "artifact": "langame_desktop-cc643bc7d723c665.exe",
+      "size": 193284608,
+      "sha256": "8ddeb8811cd1fd0fd125b4cc286bd0f4e92d171a9ded7b9186219a46d825f183"
+    },
+    "relevant_files": [
+      {
+        "path": "apps/desktop/src-tauri/src/commands_world_save.rs",
+        "length": 12039,
+        "sha256": "cdcc7a689f6b2cedbc61fa757355bd078069406698b984b9bd376ba8502a1c80"
+      },
+      {
+        "path": "apps/desktop/src-tauri/src/live_players/soulmask_console.rs",
+        "length": 14110,
+        "sha256": "1905390d37faea84978a986e6162576a4d68e15d481cc026b541c60fc30012b5"
+      },
+      {
+        "path": "apps/desktop/src-tauri/src/live_players/soulmask_save.rs",
+        "length": 6457,
+        "sha256": "d6479ae67dc19e82f3dc9dae95f808a7e2d0fad9723195640dd0ea012cd8a44b"
+      },
+      {
+        "path": "modules/soulmask/module.toml",
+        "length": 6671,
+        "sha256": "b51552e5363f5cc32a151ee063d3bb4f77d67740c4181e5887cf90861b8059d6"
+      },
+      {
+        "path": "modules/soulmask/schema.json",
+        "length": 157883,
+        "sha256": "fb0c616802aff1891317c177e59726fccba88f50219ea7c17ee422c16455db43"
+      },
+      {
+        "path": "modules/soulmask/smoke.toml",
+        "length": 242,
+        "sha256": "fef30ee190eb9f3aee06275c15a89b79dfae57c5e603766e8054eec45e335b6b"
+      },
+      {
+        "path": "modules/soulmask/templates/GameXishu.profile-0.json.hbs",
+        "length": 21216,
+        "sha256": "446e717236adad8c3f9b755bb71db34ff1482cbb26e53598e0044a9e027d9727"
+      },
+      {
+        "path": "modules/soulmask/templates/GameXishu.profile-1.json.hbs",
+        "length": 21216,
+        "sha256": "90e7793d4edb1c03f00099b17c6b5b004f84953de85666cdc56374d0e16b5931"
+      },
+      {
+        "path": "modules/soulmask/templates/GameXishu.profile-2.json.hbs",
+        "length": 21216,
+        "sha256": "6500c1c0b8cd9ba32b9c0b50b3211b1aa3b6f84eaf3867bd2b90c280e4fe29a3"
+      }
+    ],
+    "reuse_condition": "The listed module, template and production save/console files independently match the immutable build04 manifest. Subsequent evidence-only changes do not extend runtime coverage. Later relevant behavior changes require affected checks to be rerun."
+  },
+  "invocation": {
+    "selector": "commands::tests::manual_runtime_tests::native_lifecycle_tests::native_package_lifecycle",
+    "test_arguments": [
+      "--exact",
+      "--ignored",
+      "--test-threads=1",
+      "--nocapture"
+    ],
+    "environment": {
+      "LANGAME_NATIVE_MODULE_ID": "soulmask",
+      "LANGAME_NATIVE_PACKAGE_ROOT": "<isolated-official-package>",
+      "LANGAME_SMOKE_SOURCE_ROOT": "<matching-build04-source-snapshot>",
+      "LANGAME_SMOKE_RUNTIME_ROOT": "<owned-isolated-runtime>",
+      "LANGAME_NATIVE_STEAMCMD_ROOT": "<task-steamcmd-root>",
+      "LANGAME_NATIVE_SETTINGS_JSON": "{\"program_update\":{\"policy\":\"pinned\"}}",
+      "LANGAME_NATIVE_MANUAL_SAVE": "true",
+      "LANGAME_NATIVE_MANUAL_SAVE_RESTART": "true"
+    },
+    "started_utc": "2026-10-31T05:22:26.398768+00:00",
+    "completed_utc": "2026-10-31T05:33:52.815808+00:00",
+    "test_elapsed_seconds": 686.37,
+    "exit_code": 0,
+    "ports_preflight": "clear",
+    "run_report": {
+      "artifact": "soulmask-native.json",
+      "sha256": "2eada958bbfac1685441c3a326a6ebad48b6552c9169e0d8651a1c8425bba36c"
+    },
+    "log": {
+      "path": "2026-10-31-public-build-26241597-native-output.txt",
+      "size": 6454,
+      "sha256": "3a8a39e7c97a582a92307bcaaaea26f0e6f2a182fe7ff2c6396e2ac6d0f3ad20"
+    }
+  },
+  "observations": {
+    "cycles": [
+      "initial",
+      "restart",
+      "after_restore",
+      "after_archive_restore"
+    ],
+    "native_ready_cycles": 4,
+    "declared_readiness_probe": {
+      "id": "a2s-query",
+      "kind": "player_query",
+      "protocol": "a2s_info",
+      "port_name": "query"
+    },
+    "normal_exit_zero_cycles": 4,
+    "manual_save": {
+      "receipt_count": 4,
+      "completion": "Requested",
+      "command": "SaveWorld 1",
+      "response_bytes_each": 85,
+      "attempted_once": true,
+      "retried": false,
+      "current_instance_run_session_and_managed_process_generation_verified": true,
+      "route": "managed_process_generation",
+      "write_confirmation_pending": false,
+      "durable_write": "not_assessed",
+      "restart_readback_of_manual_saved_content": "not_assessed",
+      "raw_receipt_cycle_labels": [
+        "initial",
+        "restart",
+        "other",
+        "other"
+      ],
+      "cycle_label_note": "The bounded log formatter uses other for both after_restore and after_archive_restore receipts; their enclosing lifecycle events identify the actual cycles."
+    },
+    "backup_restore": {
+      "restored_files": 25,
+      "restored_save_bytes_match_stopped_snapshot": true,
+      "safeguard_verified": true,
+      "program_config_preserved": true
+    },
+    "library_uninstall": {
+      "instance_program_preserved": true,
+      "save_files_preserved": 27,
+      "additional_native_config_files_preserved": 0
+    },
+    "archive_restore": {
+      "deferred_commit_failure_simulated": true,
+      "restoring_journal_observed": true,
+      "instance_row_absent_before_recovery": true,
+      "config_save_program_bytes_preserved": true,
+      "recovered": true
+    },
+    "cleanup": {
+      "independent_instance_program_removed": true,
+      "library_record_preserved_until_final_uninstall": true,
+      "final_unused_programs_removed": true,
+      "retained_data_paths": 0,
+      "reported_failures": []
+    }
+  },
+  "scope": [
+    "Public build 26241597 passed four declared native A2S_INFO readiness checks, current-run native Echo save requests, SaveAndExit normal stops, restart, byte-preserving backup/restore, library uninstall preservation, interrupted archive-commit recovery and owned cleanup.",
+    "The production save receipt remains Requested. The 85-byte response is the managed acknowledgement after the native console exchange, not an independent exact-world-content or durability proof. Generated files and successful reload do not strengthen that completion state.",
+    "Backup and archive byte comparisons concern stopped file snapshots, separately from the manual-save request. No populated world contents, power-loss durability or migration of an existing user world was tested.",
+    "The fixture did not exercise general RCON administration, populated Echo player lists, player admission, real-client joins, gameplay, GUI or network installation/update/repair. Historical Echo/RCON tests retain their original builds and dates.",
+    "The fixture used storage-scoped creation and an independent local package copy with pinned updates. Its source_provenance=unverified marker describes fixture acquisition, separately linked to the verified official package identity."
+  ]
+}

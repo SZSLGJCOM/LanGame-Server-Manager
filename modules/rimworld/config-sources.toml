@@ -3,6 +3,21 @@ last_verified = "2026-10-25"
 notes = "Official release 26.10.20.1 (1) package integrity and tagged server-source changes were verified on 2026-10-23. The executable, configuration and save paths, password object and existing console commands remain compatible. New ServerImageURL is optional and IPBans.json is stored under the already retained Assets root. The official archive contains a self-contained RTServer.exe targeting .NET 10. The 117-field semantic inventory remains dated to the 26.8.31.1 review below; this update does not relabel that historical evidence or claim a player-join test. Retired whitelist settings/files remain preserved and formerly restricted instances require a password before starting."
 
 [[sources]]
+id = "official_latest_release_recheck_20261031"
+kind = "release"
+path = "reference-fixtures/2026-10-31-official_latest_release.json"
+url = "https://api.github.com/repos/RimWorld-Together/Rimworld-Together/releases/latest"
+authority = "official_github_latest_release_api"
+description = "2026-10-31 13:34:48 Asia/Shanghai: a fresh successful official GitHub releases/latest response still resolves to stable tag 26.10.20.1_(1), published 2026-10-21 20:32:55 Asia/Shanghai, draft=false and prerelease=false. Server-win-x64.zip remains 31766123 bytes with SHA256 ebffcd587bac87405d8d5f2e671d8fce0d5db3a0872a3d14699395ece512790d. This matches the release used by the separate two-cycle managed no-client guard. This metadata fetch did not download or run the archive and adds no client-join or saved-world-persistence claim."
+
+[[sources]]
+id = "managed_native_no_client_guard_20261031"
+kind = "runtime_probe"
+path = "reference-fixtures/2026-10-31-managed_native_no_client_guard.json"
+authority = "compiled_manager_backend_with_isolated_retained_package"
+description = "2026-10-31 Asia/Shanghai: the immutable backend completed native_no_client_save_guard against official RimWorld Together 26.10.20.1_(1), with two isolated managed runs. Each formal dispatch returned the exact no-connected-clients rejection before native forcesave, with no formal save receipt. Both normal stops and owned cleanup passed. This is not world-ready, client upload, saved-content, GUI, client-join or full backup/restore acceptance."
+
+[[sources]]
 id = "release_game_version_20261025"
 kind = "release"
 path = "https://github.com/RimWorld-Together/Rimworld-Together/releases/tag/26.10.20.1"

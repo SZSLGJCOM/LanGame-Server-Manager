@@ -1,6 +1,14 @@
 status = "best_effort_verified"
-last_verified = "2026-10-10"
-notes = "The configuration inventory was originally verified against build 23473323. Native TCP player collection was additionally verified against the installed app 728470 build 24411584 on 2026-09-08 in an isolated package copy with a fresh Saved tree: DSListPlayers returned complete empty JSON and DSServerShutdown exited normally. ConsolePort is now managed instance network state and is disabled when console_password is empty. Online identity fields and inGame filtering are cross-checked against the AstroLauncher protocol implementation and synthetic fixtures; non-empty real-player collection was not exercised."
+last_verified = "2026-10-31"
+notes = "Public build 25599296 passed isolated production start/save-request/normal-stop/restart acceptance on 2026-10-31. Both saves remain Requested. The default-empty public IP was discovered by the product, persisted and rendered, then reused on restart without reporting the address. This two-cycle test does not renew backup/restore, GUI, real-client or populated-roster evidence; historical configuration and protocol sources retain their original scope."
+
+[[sources]]
+id = "public_build_25599296_native_manual_save"
+kind = "runtime_probe"
+path = "native-evidence/2026-10-31-public-build-25599296-native.json; native-evidence/2026-10-31-public-build-25599296-native-output.txt"
+authority = "isolated_production_backend_native_two_cycle_acceptance_with_build02_identity"
+description = "2026-10-31: public app 728470 build 25599296 passed native_manual_save in 137.67 seconds. Both fresh managed runs passed native readiness, one Requested save receipt and normal exit 0, followed by owned cleanup. The product discovered the initially empty public IP, persisted/rendered it and reused it on restart. The portable evidence binds the package, public metadata, build02 source/binary, runtime module files and raw output. Exact content readback, full backup/restore/uninstall/archive lifecycle, GUI and real-client behavior were not tested. Earlier sources keep their original scope."
+
 
 [[sources]]
 id = "manual_current_world_save_adapter_2026_10_19"

@@ -1,0 +1,30 @@
+{
+  "reviewed_on": "2026-10-31",
+  "steam_app_id": 1690800,
+  "installed_build_id": "25782485",
+  "manifest_state_flags": 4,
+  "manifest_update_result": 0,
+  "source": "Existing installed package; read-only inspection, without SteamCMD or native game execution",
+  "executable": {
+    "path": "Engine/Binaries/Win64/FactoryServer-Win64-Shipping-Cmd.exe",
+    "size": 231424,
+    "sha256": "98c44cca4a152e332970462fab74677b8bc24ea299c553df53d7c99165619a8a",
+    "product_version": "++FactoryGame+rel-main-anniversary-2026-CL-513885",
+    "module_launch_entry_exists": true
+  },
+  "latest_publisher_announcement": {
+    "title": "1.2 Update Fixes v1.2.4.1",
+    "published_utc": "2026-10-12T14:39:03Z",
+    "url": "https://steamstore-a.akamaihd.net/news/externalpost/steam_community_announcements/1846018067941164",
+    "server_changes": [
+      "Fixes dedicated-server crash when placing a Conveyor Throughput Monitor",
+      "Restores Engine.ini and enables Audio Routing/Metasound after updating Wwise to 2025.1.6"
+    ]
+  },
+  "managed_configuration_review": {
+    "template": "modules/satisfactory/templates/Engine.ini.hbs",
+    "audio_overrides_present": false,
+    "complete_native_option_inventory_compared": false
+  },
+  "scope": "Confirms the existing module console entry in the installed CL 513885 package and the absence of audio overrides in the managed Engine.ini template. This does not establish current public-branch identity, native startup, HTTPS world creation/save, instance isolation, backup recovery or SML/FRM compatibility. Existing CL 502094 runtime results retain their original build and date."
+}

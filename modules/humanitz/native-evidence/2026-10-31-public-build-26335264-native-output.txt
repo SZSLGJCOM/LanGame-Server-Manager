@@ -1,0 +1,68 @@
+
+running 1 test
+test commands::tests::manual_runtime_tests::native_lifecycle_tests::native_package_lifecycle ... NATIVE_CATALOG module=humanitz phase=begin
+NATIVE_LIFECYCLE module=humanitz phase=package_copy bytes=1354025799 elapsed_ms=744 acquisition=existing_local_package creation_scope=storage source_provenance=unverified
+NATIVE_LIFECYCLE module=humanitz phase=instance_created elapsed_ms=608 program_mode=Independent preparation=isolated_copy library=preserved ownership=verified effective_root=fixture/i\n-96d90686d4e88a8d\runtime creation_scope=storage
+NATIVE_LIFECYCLE module=humanitz phase=archive_with_library program_storage=full omitted_bytes=0 library=preserved
+NATIVE_LIFECYCLE module=humanitz phase=permanent_delete library=installed peer=preserved owned_files=removed
+NATIVE_LIFECYCLE module=humanitz phase=prestart_update cycle=initial events=pinned persisted_evidence=verified download_bytes=not_measured
+NATIVE_LIFECYCLE module=humanitz phase=started cycle=initial processes=1 bind=default firewall=non_elevated_policy elapsed_ms=45382
+NATIVE_LIFECYCLE module=humanitz phase=native_ready cycle=initial declared_probes=passed variant=isolated
+NATIVE_MANUAL_SAVE module=humanitz cycle=initial phase=receipt attempted_once=true retried=false instance_matches=true run_matches=true session_matches=true managed_generations_alive=true route=declared_network_transport_current_run response_present=true response_bytes=11 write_confirmation_pending=false save_completion=requested durable_write=not_assessed restart_readback=not_assessed
+NATIVE_PLAYER_COUNT module=humanitz phase=identity
+NATIVE_PLAYER_COUNT module=humanitz phase=collect
+NATIVE_PLAYER_COUNT module=humanitz phase=overview
+NATIVE_PLAYER_COUNT module=humanitz phase=global
+NATIVE_PLAYER_COUNT module=humanitz source=player_list collector=ready overview=ready players=0 global_total=0 queried_instances=1 queryable_instances=1 complete=true stale=false same_run=true
+NATIVE_STOP_RESULT module=humanitz cycle=initial run_id=1 process=main exit_code=Some(0) crash_flag=false status=stopped
+NATIVE_LIFECYCLE module=humanitz phase=cycle_stopped cycle=initial run_id=1 active_run=none
+NATIVE_LIFECYCLE module=humanitz phase=prestart_update cycle=restart events=pinned persisted_evidence=verified download_bytes=not_measured
+NATIVE_LIFECYCLE module=humanitz phase=started cycle=restart processes=1 bind=default firewall=non_elevated_policy elapsed_ms=45299
+NATIVE_LIFECYCLE module=humanitz phase=native_ready cycle=restart declared_probes=passed variant=isolated
+NATIVE_MANUAL_SAVE module=humanitz cycle=restart phase=receipt attempted_once=true retried=false instance_matches=true run_matches=true session_matches=true managed_generations_alive=true route=declared_network_transport_current_run response_present=true response_bytes=11 write_confirmation_pending=false save_completion=requested durable_write=not_assessed restart_readback=not_assessed
+NATIVE_PLAYER_COUNT module=humanitz phase=identity
+NATIVE_PLAYER_COUNT module=humanitz phase=collect
+NATIVE_PLAYER_COUNT module=humanitz phase=overview
+NATIVE_PLAYER_COUNT module=humanitz phase=global
+NATIVE_PLAYER_COUNT module=humanitz source=player_list collector=ready overview=ready players=0 global_total=0 queried_instances=1 queryable_instances=1 complete=true stale=false same_run=true
+NATIVE_STOP_RESULT module=humanitz cycle=restart run_id=2 process=main exit_code=Some(0) crash_flag=false status=stopped
+NATIVE_LIFECYCLE module=humanitz phase=cycle_stopped cycle=restart run_id=2 active_run=none
+NATIVE_LIFECYCLE module=humanitz phase=restarted persisted_readback=verified fresh_run=verified
+NATIVE_LIFECYCLE module=humanitz phase=backup_restore outcome=passed restored_files=27 safeguard=verified program_config=preserved
+NATIVE_LIFECYCLE module=humanitz phase=prestart_update cycle=after_restore events=pinned persisted_evidence=verified download_bytes=not_measured
+NATIVE_LIFECYCLE module=humanitz phase=started cycle=after_restore processes=1 bind=default firewall=non_elevated_policy elapsed_ms=44861
+NATIVE_LIFECYCLE module=humanitz phase=native_ready cycle=after_restore declared_probes=passed variant=isolated
+NATIVE_MANUAL_SAVE module=humanitz cycle=other phase=receipt attempted_once=true retried=false instance_matches=true run_matches=true session_matches=true managed_generations_alive=true route=declared_network_transport_current_run response_present=true response_bytes=11 write_confirmation_pending=false save_completion=requested durable_write=not_assessed restart_readback=not_assessed
+NATIVE_PLAYER_COUNT module=humanitz phase=identity
+NATIVE_PLAYER_COUNT module=humanitz phase=collect
+NATIVE_PLAYER_COUNT module=humanitz phase=overview
+NATIVE_PLAYER_COUNT module=humanitz phase=global
+NATIVE_PLAYER_COUNT module=humanitz source=player_list collector=ready overview=ready players=0 global_total=0 queried_instances=1 queryable_instances=1 complete=true stale=false same_run=true
+NATIVE_STOP_RESULT module=humanitz cycle=after_restore run_id=3 process=main exit_code=Some(0) crash_flag=false status=stopped
+NATIVE_LIFECYCLE module=humanitz phase=cycle_stopped cycle=after_restore run_id=3 active_run=none
+NATIVE_LIFECYCLE module=humanitz phase=program_maintenance outcome=not_tested reason=network_update_not_selected
+NATIVE_LIFECYCLE module=humanitz phase=stopped save_observation=generated
+NATIVE_LIFECYCLE module=humanitz phase=library_uninstall outcome=library_only_instance_program_unchanged program_entries=preserved saves_preserved=29 native_config_files_preserved=5
+NATIVE_LIFECYCLE module=humanitz phase=archived archive=verified
+NATIVE_LIFECYCLE module=humanitz phase=archive_recovery_begin
+NATIVE_LIFECYCLE module=humanitz phase=archive_restore_interrupted simulation=deferred_commit_failure journal=restoring instance_row=absent config_saves_program_bytes=preserved
+NATIVE_LIFECYCLE module=humanitz phase=archive_restored
+NATIVE_LIFECYCLE module=humanitz phase=archive_readback state=stopped ownership=verified interrupted_commit=recovered config_saves_program_bytes=preserved
+NATIVE_LIFECYCLE module=humanitz phase=prestart_update cycle=after_archive_restore events=pinned persisted_evidence=verified download_bytes=not_measured
+NATIVE_LIFECYCLE module=humanitz phase=started cycle=after_archive_restore processes=1 bind=default firewall=non_elevated_policy elapsed_ms=45148
+NATIVE_LIFECYCLE module=humanitz phase=native_ready cycle=after_archive_restore declared_probes=passed variant=isolated
+NATIVE_MANUAL_SAVE module=humanitz cycle=other phase=receipt attempted_once=true retried=false instance_matches=true run_matches=true session_matches=true managed_generations_alive=true route=declared_network_transport_current_run response_present=true response_bytes=11 write_confirmation_pending=false save_completion=requested durable_write=not_assessed restart_readback=not_assessed
+NATIVE_PLAYER_COUNT module=humanitz phase=identity
+NATIVE_PLAYER_COUNT module=humanitz phase=collect
+NATIVE_PLAYER_COUNT module=humanitz phase=overview
+NATIVE_PLAYER_COUNT module=humanitz phase=global
+NATIVE_PLAYER_COUNT module=humanitz source=player_list collector=ready overview=ready players=0 global_total=0 queried_instances=1 queryable_instances=1 complete=true stale=false same_run=true
+NATIVE_STOP_RESULT module=humanitz cycle=after_archive_restore run_id=4 process=main exit_code=Some(0) crash_flag=false status=stopped
+NATIVE_LIFECYCLE module=humanitz phase=cycle_stopped cycle=after_archive_restore run_id=4 active_run=none
+NATIVE_LIFECYCLE module=humanitz phase=instance_deleted program=independent_program_removed library_record=preserved cleanup=verified
+NATIVE_LIFECYCLE module=humanitz phase=library_final_uninstall unused_programs=removed retained_data_paths=0
+NATIVE_LIFECYCLE module=humanitz phase=complete cleanup=passed lifecycle_scope=production_start_stop_restart creation_scope=storage acquisition=existing_local_package gui=not_tested
+NATIVE_CATALOG module=humanitz phase=passed elapsed_ms=250238
+ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 3215 filtered out; finished in 250.26s

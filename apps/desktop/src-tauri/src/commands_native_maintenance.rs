@@ -1,5 +1,9 @@
 use super::*;
+use std::collections::BTreeMap;
 use std::io::{Read, Seek, SeekFrom, Write};
+
+#[path = "commands_native_dst_restore.rs"]
+mod dst_restore;
 
 type ProbeResult<T> = Result<T, Box<dyn std::error::Error>>;
 
@@ -74,17 +78,36 @@ impl MaintenanceRefusal {
     }
 }
 
+pub(super) fn capture_dst_managed_ini(
+    details: &InstanceDetails,
+) -> ProbeResult<Option<BTreeMap<PathBuf, Vec<u8>>>> {
+    if details.summary.module_id == "dontstarve" {
+        Ok(Some(dst_restore::capture_managed_ini(Path::new(
+            &details.saves_path,
+        ))?))
+    } else {
+        Ok(None)
+    }
+}
+
 pub(super) async fn verify_backup_restore<R: tauri::Runtime>(
     runtime: &runtime::NativeRuntime<'_, '_, R>,
     details: &InstanceDetails,
-) -> ProbeResult<bool> {
+    dst_managed_ini: Option<&BTreeMap<PathBuf, Vec<u8>>>,
+) -> ProbeResult<Option<InstanceDetails>> {
     let original = save_inventory(Path::new(&details.saves_path))?;
-    let Some((relative, _)) = original.iter().find(|(_, (bytes, _))| *bytes > 0) else {
+    let is_dst = details.summary.module_id == "dontstarve";
+    let Some((relative, _)) = original.iter().find(|(relative, (bytes, _))| {
+        *bytes > 0 && (!is_dst || dst_restore::is_native_save_file(relative))
+    }) else {
+        if is_dst {
+            return Err("DST native backup acceptance requires a nonempty world snapshot".into());
+        }
         println!(
             "NATIVE_LIFECYCLE module={} phase=backup_restore outcome=not_tested reason=no_nonempty_native_save",
             details.summary.module_id
         );
-        return Ok(false);
+        return Ok(None);
     };
     let fixture = &runtime.package.root;
     let saves = seed_probe::checked_path(fixture, Path::new(&details.saves_path), true)?;
@@ -97,7 +120,50 @@ pub(super) async fn verify_backup_restore<R: tauri::Runtime>(
     if save_inventory(&backup_root.join("saves"))? != original {
         return Err("native restore source does not contain the stopped save bytes".into());
     }
-    let marker = saves.join(format!("native-restore-probe-{}.txt", uuid::Uuid::new_v4()));
+    let dst = if is_dst {
+        Some(dst_restore::NoModsRestore::capture(
+            &backup_root.join("saves"),
+            &config,
+            &runtime
+                .storage
+                .paths
+                .modules_root
+                .join("dontstarve/templates/clusters/main"),
+            dst_managed_ini.ok_or("DST native restore lacks its pre-start managed INI baseline")?,
+        )?)
+    } else {
+        None
+    };
+    let expected_copy = if is_dst {
+        dst_restore::copied_world_data(&original)
+    } else {
+        (
+            original.len(),
+            original.values().map(|(bytes, _)| *bytes).sum::<u64>(),
+        )
+    };
+    let mut expected_saves = original.clone();
+    if is_dst {
+        // Cluster-level files belong to the operator. DST restores shard
+        // worlds while preserving these, including post-backup additions.
+        let retained = PathBuf::from(format!("native-retained-root-{}.txt", uuid::Uuid::new_v4()));
+        let path = saves.join(&retained);
+        fs::OpenOptions::new()
+            .create_new(true)
+            .write(true)
+            .open(&path)?
+            .write_all(b"unrelated cluster-root data must survive world restoration")?;
+        let entry = save_inventory(&path)?
+            .remove(Path::new(""))
+            .ok_or("native retained cluster-root probe is missing")?;
+        expected_saves.insert(retained, entry);
+    }
+    let marker_root = if is_dst {
+        saves.join("Master/save")
+    } else {
+        saves.clone()
+    };
+    let marker = marker_root.join(format!("native-restore-probe-{}.txt", uuid::Uuid::new_v4()));
     fs::OpenOptions::new()
         .create_new(true)
         .write(true)
@@ -118,6 +184,7 @@ pub(super) async fn verify_backup_restore<R: tauri::Runtime>(
     if changed_inventory == original {
         return Err("native restore probe did not change its disposable save data".into());
     }
+    let restore_started = std::time::SystemTime::now();
     let restored = restore_instance_backup(
         (*runtime.state).clone(),
         details.summary.id.clone(),
@@ -125,25 +192,59 @@ pub(super) async fn verify_backup_restore<R: tauri::Runtime>(
         None,
     )
     .await?;
+    let restore_finished = std::time::SystemTime::now();
+    let restored_details =
+        read_instance_details_from_storage((*runtime.state).clone(), details.summary.id.clone())
+            .await?;
+    let configuration_check = if let Some(expected) = dst {
+        expected.verify_saves(&saves, &expected_saves)?;
+        expected.verify_configuration(
+            &fs::read(&details.config_file_path)?,
+            restore_started,
+            restore_finished,
+        )?;
+        expected.verify_stopped_details(
+            details,
+            &restored_details,
+            runtime.effective_install_root,
+        )?;
+        "dst_canonical_restore_verified"
+    } else {
+        if save_inventory(&saves)? != original || fs::read(&details.config_file_path)? != config {
+            return Err("native backup restore changed saved bytes or configuration".into());
+        }
+        settings_readback::verify_stopped(
+            details,
+            &restored_details,
+            runtime.effective_install_root,
+        )?;
+        "preserved"
+    };
     let safeguard =
         seed_probe::checked_path(fixture, Path::new(&restored.safeguard_backup_path), true)?;
     if restored.instance_id != details.summary.id
         || restored.backup_id != backup.backup_id
-        || restored.restored_file_count != original.len()
-        || restored.restored_total_bytes != original.values().map(|(bytes, _)| *bytes).sum::<u64>()
-        || save_inventory(&saves)? != original
+        || restored.restored_file_count != expected_copy.0
+        || restored.restored_total_bytes != expected_copy.1
         || marker.exists()
         || save_inventory(&safeguard.join("saves"))? != changed_inventory
-        || fs::read(&details.config_file_path)? != config
         || inventory::program_files(runtime.descriptor, runtime.effective_install_root)? != programs
     {
-        return Err("native backup restore did not restore exact save bytes, retain its safeguard, or preserve program/configuration".into());
+        return Err(format!(
+            "native backup restore did not restore exact save bytes, retain its safeguard, or preserve program/configuration: copied_files={} expected_files={} copied_bytes={} expected_bytes={}",
+            restored.restored_file_count, expected_copy.0, restored.restored_total_bytes, expected_copy.1
+        ).into());
+    }
+    if is_dst {
+        println!(
+            "NATIVE_DST_RESTORE scope=world_data world_save_bytes=verified normalized_worldgen_files=4 managed_ini_baseline_files=4 unchanged_mod_files=4 cluster_root_addition=preserved post_backup_world_marker=removed"
+        );
     }
     println!(
-        "NATIVE_LIFECYCLE module={} phase=backup_restore outcome=passed restored_files={} safeguard=verified program_config=preserved",
-        details.summary.module_id, restored.restored_file_count
+        "NATIVE_LIFECYCLE module={} phase=backup_restore outcome=passed restored_files={} safeguard=verified program_config={configuration_check}",
+        details.summary.module_id, restored.restored_file_count,
     );
-    Ok(true)
+    Ok(Some(restored_details))
 }
 
 pub(super) async fn verify_program_maintenance<R: tauri::Runtime>(

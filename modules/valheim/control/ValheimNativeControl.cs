@@ -17,6 +17,9 @@ namespace Lgsm.Valheim.Control
         internal const string UtilitiesSha256 = "0d66bd029bf753e2721304c775126b34af329bfcd6e632d8d38edaa96b5cf1a5";
         internal const string LocalProofUtilitiesSha256 = "63e114e7cfdcc38e4f4391c18b91f774290274d2b9200e6d85d757cbe3673e18";
         internal const string PlatformSha256 = "8953c24a2f2af7ae257cc64fb36dde9d102c871c29b4cdd97d0c3c001de5bd5a";
+        internal const string Build26266951GameSha256 = "648f3f8ed7b44c3d3cd612acd782743d9e03af7e60b7fe72d5827523e95505fd";
+        internal const string Build26266951UtilitiesSha256 = "9658619e34e456b88639f6cc6e7d0fd186432f63bf1033e3e04e98e8fac2be9e";
+        internal const string Build26266951PlatformSha256 = "1924e4c348616fbd754a8f688d3dc65cde5a741cfef57e80474fcdd0121013b5";
         private const BindingFlags PublicInstance = BindingFlags.Public | BindingFlags.Instance;
         private const BindingFlags PrivateInstance = BindingFlags.NonPublic | BindingFlags.Instance;
         private sealed class ReferenceIdentity : IEqualityComparer<object>
@@ -65,17 +68,21 @@ namespace Lgsm.Valheim.Control
 
         internal static bool SupportedProfile(string game, string utilities, string platform)
         {
-            return platform == PlatformSha256 && ((game == GameSha256 && utilities == UtilitiesSha256) ||
-                (game == LocalProofGameSha256 && utilities == LocalProofUtilitiesSha256));
+            return (platform == PlatformSha256 && ((game == GameSha256 && utilities == UtilitiesSha256) ||
+                (game == LocalProofGameSha256 && utilities == LocalProofUtilitiesSha256))) ||
+                (game == Build26266951GameSha256 && utilities == Build26266951UtilitiesSha256 &&
+                    platform == Build26266951PlatformSha256);
         }
 
         internal static bool SupportedWorldSaveProfile(string game, string utilities, string platform)
         {
-            // Save admission is reviewed separately from player control. Both
-            // pinned builds retain the dedicated disk check and commit counter;
-            // build 25909431 writes the native version-42 world format.
-            return platform == PlatformSha256 && ((game == GameSha256 && utilities == UtilitiesSha256) ||
-                (game == LocalProofGameSha256 && utilities == LocalProofUtilitiesSha256));
+            // Save admission is reviewed separately from player control. Build
+            // 26266951 retains the reviewed disk check/commit contract and passed
+            // native saving plus pre-stop snapshot reload (world format 42).
+            return (platform == PlatformSha256 && ((game == GameSha256 && utilities == UtilitiesSha256) ||
+                (game == LocalProofGameSha256 && utilities == LocalProofUtilitiesSha256))) ||
+                (game == Build26266951GameSha256 && utilities == Build26266951UtilitiesSha256 &&
+                    platform == Build26266951PlatformSha256);
         }
 
         private static string Digest(Assembly assembly)

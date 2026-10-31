@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { ActivityNotice } from "../../components/ActivityNotice";
 import { useI18n } from "../../i18n";
 import { authorizeSatisfactoryServer, loadSatisfactorySave, readSatisfactoryAdminPassword,
   setupSatisfactoryServer, writeSatisfactoryRoom, type SatisfactoryWorldSnapshot } from "../../satisfactory-world-settings";
@@ -52,7 +53,7 @@ export function SatisfactoryRoomSettings(props: ConfigurationSpecializedRenderer
       if (sent.values.client_password !== undefined && !Object.prototype.hasOwnProperty.call(values, "client_password")) { setChangePassword(false); setPassword(""); }
     }
   });
-  return <SatisfactoryNativePanel sectionId="room" dirty={dirty}>
+  return <SatisfactoryNativePanel sectionId="room" dirty={dirty} onNavigateField={props.onNavigateField}>
     {snapshot?.connection_status === "unclaimed" ? <>
       <p className="form-note">{t(`${COPY}.setupHelp`)}</p>
       <div className="settings-schema-grid configuration-field-grid">
@@ -94,16 +95,16 @@ export function SatisfactoryRoomSettings(props: ConfigurationSpecializedRenderer
           return writeSatisfactoryRoom({ instance_id: props.details.summary.id, expected_revision: native.revision,
             server_name: null, client_password: "", auto_load_session_name: null });
         })}>{t(`${COPY}.clearJoinPassword`)}</button>
-      {hasWorldChanged ? <div className="configuration-workspace__notice" role="status">
-        <span>{t(`${COPY}.changedSinceEdit`)}</span>
+      {hasWorldChanged ? <ActivityNotice tone="warning" action={
         <button type="button" className="secondary-button" disabled={state.busy}
-          onClick={() => { updateDraft(null); setChangePassword(false); setPassword(""); }}>{t(`${COPY}.discardDraft`)}</button>
-      </div> : null}
-      {autosave.saving ? <p className="form-note" role="status">{t(`${COPY}.saving`)}</p> : null}
-      {autosave.failed ? <div className="panel-head panel-head--compact panel-head--spread">
-        <span className="form-note form-note--error" role="status">{t(`${COPY}.autosaveFailed`)}</span>
-        <button type="button" className="secondary-button" disabled={!draft || !canSave(draft)} onClick={autosave.retry}>{t(`${COPY}.retryAutosave`)}</button>
-      </div> : null}
+          onClick={() => { updateDraft(null); setChangePassword(false); setPassword(""); }}>{t(`${COPY}.discardDraft`)}</button>}>
+        {t(`${COPY}.changedSinceEdit`)}
+      </ActivityNotice> : null}
+      {autosave.saving ? <ActivityNotice>{t(`${COPY}.saving`)}</ActivityNotice> : null}
+      {autosave.failed ? <ActivityNotice tone="error" action={
+        <button type="button" className="secondary-button" disabled={!draft || !canSave(draft)} onClick={autosave.retry}>{t(`${COPY}.retryAutosave`)}</button>}>
+        {t(`${COPY}.autosaveFailed`)}
+      </ActivityNotice> : null}
       <section className="guided-field-group">
         <div className="guided-field-group-head"><h5 className="guided-field-group-title">{t(`${COPY}.loadSave`)}</h5></div>
         <p className="form-note">{t(`${COPY}.currentSession`, { name: snapshot.active_session_name || t(`${COPY}.noWorld`) })}</p>
@@ -127,8 +128,8 @@ export function SatisfactoryRoomSettings(props: ConfigurationSpecializedRenderer
             expected_revision: snapshot.revision, save_name: save })).then((accepted) => { if (accepted) setConfirmLoad(false); })}>
           {t(`${COPY}.loadSelectedSave`)}
         </button>
-        {state.result === "accepted" || state.result === "loaded" ? <p className="form-note" role="status">
-          {t(`${COPY}.${state.result === "loaded" ? "loaded" : "accepted"}`)}</p> : null}
+        {state.result === "accepted" || state.result === "loaded" ? <ActivityNotice tone={state.result === "loaded" ? "success" : "info"}>
+          {t(`${COPY}.${state.result === "loaded" ? "loaded" : "accepted"}`)}</ActivityNotice> : null}
       </section>
     </> : null}
   </SatisfactoryNativePanel>;
@@ -159,7 +160,7 @@ export function SatisfactoryAuthorizationSettings(props: ConfigurationSpecialize
     } catch (error) { if (current === credentialGeneration.current) setCredentialError(error instanceof Error ? error.message : String(error)); }
     finally { if (current === credentialGeneration.current) setReadingPassword(false); }
   }
-  return <SatisfactoryNativePanel sectionId="access">
+  return <SatisfactoryNativePanel sectionId="access" onNavigateField={props.onNavigateField}>
     {state.snapshot?.connection_status === "authorization_required" ? <>
       <p className="form-note">{t(`${COPY}.authorizeHelp`)}</p>
       <div className="settings-schema-grid configuration-field-grid">
@@ -171,7 +172,7 @@ export function SatisfactoryAuthorizationSettings(props: ConfigurationSpecialize
           admin_password: password || null })).then((accepted) => { if (accepted) setPassword(""); })}>{t(`${COPY}.authorize`)}</button>
     </> : null}
     {state.snapshot?.connection_status === "ready" ? <>
-      <p className="form-note" role="status">{t(`${COPY}.authorized`)}</p>
+      <ActivityNotice tone="success">{t(`${COPY}.authorized`)}</ActivityNotice>
       {revealed !== null ? <div className="settings-schema-grid configuration-field-grid">
         <Field fieldKey="satisfactory_admin_password" sectionId="access" title={t(`${COPY}.adminPassword`)} kind="secret"
           value={revealed} readOnly onChange={() => {}} />
@@ -180,7 +181,11 @@ export function SatisfactoryAuthorizationSettings(props: ConfigurationSpecialize
         onClick={() => { if (revealed !== null) setRevealed(null); else void showPassword(); }}>
         {revealed !== null ? t(`${COPY}.hideAdminPassword`) : t(`${COPY}.showAdminPassword`)}
       </button>
-      {credentialError ? <p className="form-note form-note--error" role="alert">{credentialError}</p> : null}
+      {credentialError ? <ActivityNotice tone="error" action={
+        <button type="button" className="secondary-button" disabled={disabled || readingPassword}
+          onClick={() => void showPassword()}>{t(`${COPY}.showAdminPassword`)}</button>}>
+        {credentialError}
+      </ActivityNotice> : null}
     </> : null}
   </SatisfactoryNativePanel>;
 }

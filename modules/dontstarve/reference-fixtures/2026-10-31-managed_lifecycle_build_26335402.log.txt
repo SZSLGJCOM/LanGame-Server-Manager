@@ -1,0 +1,73 @@
+
+running 1 test
+test commands::tests::manual_runtime_tests::native_lifecycle_tests::native_package_lifecycle ... NATIVE_CATALOG module=dontstarve phase=begin
+NATIVE_LIFECYCLE module=dontstarve phase=package_copy bytes=4663038509 elapsed_ms=6604 acquisition=existing_local_package creation_scope=storage source_provenance=unverified
+NATIVE_LIFECYCLE module=dontstarve phase=instance_created elapsed_ms=21065 program_mode=Independent preparation=isolated_copy library=preserved ownership=verified effective_root=fixture/i\n-a8c12478b7685a47\runtime creation_scope=storage
+NATIVE_LIFECYCLE module=dontstarve phase=archive_with_library program_storage=full omitted_bytes=0 library=preserved
+NATIVE_LIFECYCLE module=dontstarve phase=permanent_delete library=installed peer=preserved owned_files=removed
+NATIVE_LIFECYCLE module=dontstarve phase=prestart_update cycle=initial events=pinned persisted_evidence=verified download_bytes=not_measured
+NATIVE_LIFECYCLE module=dontstarve phase=started cycle=initial processes=2 bind=default firewall=non_elevated_policy elapsed_ms=95686
+NATIVE_LIFECYCLE module=dontstarve phase=native_ready cycle=initial declared_probes=passed variant=offline_lan
+NATIVE_MANUAL_SAVE module=dontstarve cycle=initial phase=receipt attempted_once=true retried=false instance_matches=true run_matches=true session_matches=true managed_generations_alive=true route=native_master_cluster_request response_present=true response_bytes=90 write_confirmation_pending=false save_completion=requested durable_write=not_assessed restart_readback=not_assessed
+NATIVE_PLAYER_COUNT module=dontstarve phase=identity
+NATIVE_PLAYER_COUNT module=dontstarve phase=collect
+NATIVE_PLAYER_COUNT module=dontstarve phase=overview
+NATIVE_PLAYER_COUNT module=dontstarve phase=global
+NATIVE_PLAYER_COUNT module=dontstarve source=player_list collector=ready overview=ready players=0 global_total=0 queried_instances=1 queryable_instances=1 complete=true stale=false same_run=true
+NATIVE_STOP_RESULT module=dontstarve cycle=initial run_id=1 process=master exit_code=Some(0) crash_flag=false status=stopped
+NATIVE_STOP_RESULT module=dontstarve cycle=initial run_id=2 process=caves exit_code=Some(0) crash_flag=false status=stopped
+NATIVE_LIFECYCLE module=dontstarve phase=cycle_stopped cycle=initial run_id=1 active_run=none
+NATIVE_LIFECYCLE module=dontstarve phase=prestart_update cycle=restart events=pinned persisted_evidence=verified download_bytes=not_measured
+NATIVE_LIFECYCLE module=dontstarve phase=started cycle=restart processes=2 bind=default firewall=non_elevated_policy elapsed_ms=74794
+NATIVE_LIFECYCLE module=dontstarve phase=native_ready cycle=restart declared_probes=passed variant=offline_lan
+NATIVE_MANUAL_SAVE module=dontstarve cycle=restart phase=receipt attempted_once=true retried=false instance_matches=true run_matches=true session_matches=true managed_generations_alive=true route=native_master_cluster_request response_present=true response_bytes=90 write_confirmation_pending=false save_completion=requested durable_write=not_assessed restart_readback=not_assessed
+NATIVE_PLAYER_COUNT module=dontstarve phase=identity
+NATIVE_PLAYER_COUNT module=dontstarve phase=collect
+NATIVE_PLAYER_COUNT module=dontstarve phase=overview
+NATIVE_PLAYER_COUNT module=dontstarve phase=global
+NATIVE_PLAYER_COUNT module=dontstarve source=player_list collector=ready overview=ready players=0 global_total=0 queried_instances=1 queryable_instances=1 complete=true stale=false same_run=true
+NATIVE_STOP_RESULT module=dontstarve cycle=restart run_id=3 process=master exit_code=Some(0) crash_flag=false status=stopped
+NATIVE_STOP_RESULT module=dontstarve cycle=restart run_id=4 process=caves exit_code=Some(0) crash_flag=false status=stopped
+NATIVE_LIFECYCLE module=dontstarve phase=cycle_stopped cycle=restart run_id=3 active_run=none
+NATIVE_LIFECYCLE module=dontstarve phase=restarted persisted_readback=verified fresh_run=verified
+NATIVE_DST_RESTORE scope=world_data world_save_bytes=verified normalized_worldgen_files=4 managed_ini_baseline_files=4 unchanged_mod_files=4 cluster_root_addition=preserved post_backup_world_marker=removed
+NATIVE_LIFECYCLE module=dontstarve phase=backup_restore outcome=passed restored_files=40 safeguard=verified program_config=dst_canonical_restore_verified
+NATIVE_LIFECYCLE module=dontstarve phase=prestart_update cycle=after_restore events=pinned persisted_evidence=verified download_bytes=not_measured
+NATIVE_LIFECYCLE module=dontstarve phase=started cycle=after_restore processes=2 bind=default firewall=non_elevated_policy elapsed_ms=84285
+NATIVE_LIFECYCLE module=dontstarve phase=native_ready cycle=after_restore declared_probes=passed variant=offline_lan
+NATIVE_MANUAL_SAVE module=dontstarve cycle=other phase=receipt attempted_once=true retried=false instance_matches=true run_matches=true session_matches=true managed_generations_alive=true route=native_master_cluster_request response_present=true response_bytes=90 write_confirmation_pending=false save_completion=requested durable_write=not_assessed restart_readback=not_assessed
+NATIVE_PLAYER_COUNT module=dontstarve phase=identity
+NATIVE_PLAYER_COUNT module=dontstarve phase=collect
+NATIVE_PLAYER_COUNT module=dontstarve phase=overview
+NATIVE_PLAYER_COUNT module=dontstarve phase=global
+NATIVE_PLAYER_COUNT module=dontstarve source=player_list collector=ready overview=ready players=0 global_total=0 queried_instances=1 queryable_instances=1 complete=true stale=false same_run=true
+NATIVE_STOP_RESULT module=dontstarve cycle=after_restore run_id=5 process=master exit_code=Some(0) crash_flag=false status=stopped
+NATIVE_STOP_RESULT module=dontstarve cycle=after_restore run_id=6 process=caves exit_code=Some(0) crash_flag=false status=stopped
+NATIVE_LIFECYCLE module=dontstarve phase=cycle_stopped cycle=after_restore run_id=5 active_run=none
+NATIVE_LIFECYCLE module=dontstarve phase=program_maintenance outcome=not_tested reason=network_update_not_selected
+NATIVE_LIFECYCLE module=dontstarve phase=stopped save_observation=generated
+NATIVE_LIFECYCLE module=dontstarve phase=library_uninstall outcome=library_only_instance_program_unchanged program_entries=preserved saves_preserved=66 native_config_files_preserved=0
+NATIVE_LIFECYCLE module=dontstarve phase=archived archive=verified
+NATIVE_LIFECYCLE module=dontstarve phase=archive_recovery_begin
+NATIVE_LIFECYCLE module=dontstarve phase=archive_restore_interrupted simulation=deferred_commit_failure journal=restoring instance_row=absent config_saves_program_bytes=preserved
+NATIVE_LIFECYCLE module=dontstarve phase=archive_restored
+NATIVE_LIFECYCLE module=dontstarve phase=archive_readback state=stopped ownership=verified interrupted_commit=recovered config_saves_program_bytes=preserved
+NATIVE_LIFECYCLE module=dontstarve phase=prestart_update cycle=after_archive_restore events=pinned persisted_evidence=verified download_bytes=not_measured
+NATIVE_LIFECYCLE module=dontstarve phase=started cycle=after_archive_restore processes=2 bind=default firewall=non_elevated_policy elapsed_ms=73545
+NATIVE_LIFECYCLE module=dontstarve phase=native_ready cycle=after_archive_restore declared_probes=passed variant=offline_lan
+NATIVE_MANUAL_SAVE module=dontstarve cycle=other phase=receipt attempted_once=true retried=false instance_matches=true run_matches=true session_matches=true managed_generations_alive=true route=native_master_cluster_request response_present=true response_bytes=90 write_confirmation_pending=false save_completion=requested durable_write=not_assessed restart_readback=not_assessed
+NATIVE_PLAYER_COUNT module=dontstarve phase=identity
+NATIVE_PLAYER_COUNT module=dontstarve phase=collect
+NATIVE_PLAYER_COUNT module=dontstarve phase=overview
+NATIVE_PLAYER_COUNT module=dontstarve phase=global
+NATIVE_PLAYER_COUNT module=dontstarve source=player_list collector=ready overview=ready players=0 global_total=0 queried_instances=1 queryable_instances=1 complete=true stale=false same_run=true
+NATIVE_STOP_RESULT module=dontstarve cycle=after_archive_restore run_id=7 process=master exit_code=Some(0) crash_flag=false status=stopped
+NATIVE_STOP_RESULT module=dontstarve cycle=after_archive_restore run_id=8 process=caves exit_code=Some(0) crash_flag=false status=stopped
+NATIVE_LIFECYCLE module=dontstarve phase=cycle_stopped cycle=after_archive_restore run_id=7 active_run=none
+NATIVE_LIFECYCLE module=dontstarve phase=instance_deleted program=independent_program_removed library_record=preserved cleanup=verified
+NATIVE_LIFECYCLE module=dontstarve phase=library_final_uninstall unused_programs=removed retained_data_paths=0
+NATIVE_LIFECYCLE module=dontstarve phase=complete cleanup=passed lifecycle_scope=production_start_stop_restart creation_scope=storage acquisition=existing_local_package gui=not_tested
+NATIVE_CATALOG module=dontstarve phase=passed elapsed_ms=548818
+ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 3227 filtered out; finished in 548.85s

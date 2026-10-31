@@ -59,6 +59,13 @@ fn install(fixture: &Fixture, files: &BTreeMap<String, Vec<u8>>) -> Result<Insta
 fn save_image_admission_preserves_game_and_provider_pairing() {
     let current_conan = "d0ea317e7e037e68454414f12828d5995cc9e519b9c34eda264be1954d352b14";
     let current_scum = "070fcad918ba04eb9797db29674cadbd6691427b936fe354bca23b008c8c9971";
+    let scum_evidence: serde_json::Value = serde_json::from_str(include_str!(
+        "../../../../../modules/scum/reference-fixtures/2026-10-30-native_contract_build_26320224.json"
+    ))
+    .unwrap();
+    let latest_scum = scum_evidence["package"]["executable_sha256"]
+        .as_str()
+        .unwrap();
     assert_eq!(
         verify_game_image(
             "conanexiles",
@@ -71,11 +78,20 @@ fn save_image_admission_preserves_game_and_provider_pairing() {
         verify_game_image("conanexiles", current_conan).unwrap(),
         Some("2eec9aa9aa443fb476db583cfdc5044285ccc246df0a60e93155fb37e14324b6")
     );
-    for image in [Profile::get("scum").unwrap().game_hash, current_scum] {
+    for image in [
+        Profile::get("scum").unwrap().game_hash,
+        current_scum,
+        latest_scum,
+    ] {
         assert_eq!(verify_game_image("scum", image).unwrap(), None);
+        assert!(verify_game_image("scum", &image[..image.len() - 1]).is_err());
+        let mut changed = image.as_bytes().to_vec();
+        changed[0] = if changed[0] == b'0' { b'1' } else { b'0' };
+        assert!(verify_game_image("scum", std::str::from_utf8(&changed).unwrap()).is_err());
     }
     for (module_id, image) in [
         ("conanexiles", current_scum),
+        ("conanexiles", latest_scum),
         ("scum", current_conan),
         ("returntomoria", current_conan),
         ("conanexiles", "unreviewed-image"),
@@ -561,26 +577,32 @@ fn game_profiles_use_the_native_verified_import_proxies() {
 }
 
 #[test]
-fn abiotic_modding_update_admits_the_reviewed_image_and_rejects_image_changes() {
-    let evidence: serde_json::Value = serde_json::from_str(include_str!(
-        "../../../../../modules/abioticfactor/reference-fixtures/2026-10-27-save_factory_build_26092453.json"
-    ))
-    .unwrap();
-    let current = evidence["executable_sha256"].as_str().unwrap();
+fn abiotic_reviewed_builds_admit_exact_images_and_reject_image_changes() {
     let profile = Profile::get("abioticfactor").unwrap();
-    assert_eq!(profile.verify_game_image(current).unwrap(), None);
-    let mut changed = current.as_bytes().to_vec();
-    changed[0] = if changed[0] == b'0' { b'1' } else { b'0' };
-    assert!(
-        profile
-            .verify_game_image(std::str::from_utf8(&changed).unwrap())
-            .is_err()
-    );
-    assert!(
-        profile
-            .verify_game_image(&current[..current.len() - 1])
-            .is_err()
-    );
+    for fixture in [
+        include_str!(
+            "../../../../../modules/abioticfactor/reference-fixtures/2026-10-27-save_factory_build_26092453.json"
+        ),
+        include_str!(
+            "../../../../../modules/abioticfactor/reference-fixtures/2026-10-30-save_factory_build_26315119.json"
+        ),
+    ] {
+        let evidence: serde_json::Value = serde_json::from_str(fixture).unwrap();
+        let current = evidence["executable_sha256"].as_str().unwrap();
+        assert_eq!(profile.verify_game_image(current).unwrap(), None);
+        let mut changed = current.as_bytes().to_vec();
+        changed[0] = if changed[0] == b'0' { b'1' } else { b'0' };
+        assert!(
+            profile
+                .verify_game_image(std::str::from_utf8(&changed).unwrap())
+                .is_err()
+        );
+        assert!(
+            profile
+                .verify_game_image(&current[..current.len() - 1])
+                .is_err()
+        );
+    }
     assert_eq!(
         profile
             .verify_game_image("2563f8d798c8277400acd28eefde604c0ac7d77601627296211af48b30dba25f")

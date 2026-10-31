@@ -14,3 +14,10 @@ node scripts/generate_desktop_installer_branding.cjs --work-dir C:\ReleaseStagin
 On a managed development host, run those Node arguments through its required process guard with the `e2e` profile. `--browser <executable>` selects an installed Chromium browser explicitly; otherwise the existing `LANGAME_RELIABILITY_BROWSER` override or standard Windows Chrome/Edge locations are used.
 
 The generator uses only Node's standard library and the installed browser. `--check` renders again and compares the complete SVG and BMP bytes without rewriting the inputs. Chromium rasterization can change across browser versions, so use the same renderer for byte-for-byte reproduction. The work directory receives a 3x nearest-neighbor pixel preview and a renderer-version receipt; temporary browser profiles are removed. These files are previews of the supplied images, not screenshots of the actual installer wizard.
+
+For the Windows tray, the same generator uses `apps/desktop/src-tauri/icons/icon.svg` to produce `icons/tray-windows.png` at 64 x 64. The PNG preserves the symbol's transparent background and cutouts, with a one-pixel dark outline around its silhouette for light taskbars; the installer's opaque background requirement does not apply to it. The preview shows 16, 20, 24 and 32 px samples on light and dark backgrounds.
+
+```powershell
+node scripts/generate_desktop_installer_branding.cjs --work-dir C:\ReleaseStaging\branding --tray-only
+node scripts/generate_desktop_installer_branding.cjs --work-dir C:\ReleaseStaging\branding --tray-only --check
+```

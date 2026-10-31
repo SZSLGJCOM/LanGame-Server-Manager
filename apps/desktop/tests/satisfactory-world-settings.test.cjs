@@ -50,6 +50,33 @@ test("Satisfactory native confirmations and rules render explicit two-state swit
   }
 });
 
+test("Satisfactory native validation keeps the invalid control and accessible message without an inline error row", () => {
+  const React = require("react");
+  const { renderToStaticMarkup } = require("react-dom/server");
+  const { I18nContext } = require("../src/i18n-context.ts");
+  const { ActivityNoticeTarget } = require("../src/components/ActivityNotice.tsx");
+  const { buildConfigurationFieldIds } = require("../src/views/settings/ConfigurationField.tsx");
+  const fieldKey = "satisfactory_new_session_name";
+  const ids = buildConfigurationFieldIds(fieldKey, "configuration-satisfactory");
+  const error = "A world with this name already exists. Choose another name.";
+  const control = React.createElement(SatisfactoryNativeField, {
+    fieldKey, sectionId: "world_generation", title: "New world name", value: "Retained", validation: error, onChange() {}
+  });
+  const translate = { locale: "en-US", t: (key, _params, fallback) => fallback ?? key };
+  const render = (children) => renderToStaticMarkup(React.createElement(I18nContext.Provider, { value: translate }, children));
+  const html = render(React.createElement(ActivityNoticeTarget.Provider, {
+    value: { element: null, dismissLabel: "Close" }
+  }, control));
+  assert.match(html, /class="configuration-field[^\"]* is-invalid"/);
+  assert.match(html, new RegExp(`id="${ids.inputId}"[^>]*aria-invalid="true"[^>]*aria-errormessage="${ids.errorId}"`));
+  assert.ok(html.includes(`<span id="${ids.errorId}" class="configuration-field-error-a11y">${error}</span>`));
+  assert.doesNotMatch(html, /form-note--error|configuration-field-feedback|shell-activity-notice/);
+  const isolated = render(control);
+  assert.ok(isolated.includes(`data-configuration-validation-target="${ids.inputId}"`));
+  assert.ok(isolated.includes(`aria-controls="${ids.inputId}"`));
+  assert.match(isolated, /class="shell-activity-notice is-error"/);
+});
+
 test("Satisfactory retains native percentages and the nonsequential purity enum", () => {
   assert.deepEqual(rule(energy).options.map((entry) => entry.value), ["25", "50", "75", "100", "200", "500"]);
   assert.deepEqual(rule(purity).options.map((entry) => entry.value), ["0", "1", "5", "2", "6", "3", "4"]);

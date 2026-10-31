@@ -12,6 +12,7 @@ import { listConfigurationSpecializedRenderers, resolveSettingsModuleDefinition 
 import { initializeDontStarveWorldSettings } from "../../src/views/settings/modules/dontstarve-world-lua";
 import type { GuidedSettingsSchema } from "../../src/views/settings/settings-schema";
 import { CANONICAL_GAME_CONFIG_ACCEPTANCE_MODULE_IDS } from "./configuration-module-acceptance";
+import { ConfigurationActivityHost } from "./configuration-activity-host";
 import "../../src/app.css";
 
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
@@ -94,9 +95,9 @@ async function mount(moduleId: string, settingsOverrides: Record<string, unknown
   activeSchema = null;
   await act(async () => {
     root.render(<I18nProvider><InstanceSettingsSaveProvider key={moduleId}>
-      <main className="server-detail-panel" style={{ height: "calc(100vh - 32px)", margin: 16 }}>
+      <ConfigurationActivityHost><main className="server-detail-panel" style={{ height: "calc(100% - 32px)", margin: 16 }}>
         <Workspace key={`${moduleId}-${saves.length}`} descriptor={descriptor} initial={initial} />
-      </main>
+      </main></ConfigurationActivityHost>
     </InstanceSettingsSaveProvider></I18nProvider>);
     await frame();
   });
@@ -169,6 +170,8 @@ function verifySection(moduleId: string, sectionId: string, schema: GuidedSettin
     `${moduleId}.${sectionId}: specialized editors must render exactly once`);
   check(document.documentElement.scrollWidth <= innerWidth + 1,
     `${moduleId}.${sectionId}: configuration overflows the viewport horizontally`);
+  check(!fixture.querySelector(".configuration-workspace__main .shell-activity-notice"),
+    `${moduleId}.${sectionId}: dynamic feedback still occupies configuration space`);
   return { fields: expected.length, specialized: renderers.length };
 }
 
@@ -228,7 +231,52 @@ async function run() {
   check(!Object.hasOwn(window, "__TAURI_INTERNALS__"), "Catalogue acceptance must not access a native backend");
   await Promise.all([import("../../src/i18n-messages"), import("../../src/i18n-messages-zh-cn")]);
   const { mode } = await fetch("/__configuration_review_mode").then((response) => response.json()) as { mode: string };
-  check(["catalog", "corekeeper-password", "conan-semantics", "barotrauma-campaign", "barotrauma-network", "enshrouded-1-0", "enshrouded-sections", "dontstarve-cursed-confrontation"].includes(mode), "Unknown configuration review mode");
+  check(["catalog", "corekeeper-password", "conan-semantics", "barotrauma-campaign", "barotrauma-network", "enshrouded-1-0", "enshrouded-sections", "dontstarve-cursed-confrontation", "configuration-status-notices"].includes(mode), "Unknown configuration review mode");
+  if (mode === "configuration-status-notices") {
+    const activity = () => fixture.querySelector<HTMLElement>(".shell-activity-bar")!;
+    async function clickNoticeAction(label: string) {
+      await act(async () => {
+        if (!fixture.querySelector(".shell-activity-panel")) fixture.querySelector<HTMLButtonElement>(".shell-activity-expand")!.click();
+      });
+      const action = [...activity().querySelectorAll<HTMLButtonElement>(".shell-activity-panel .shell-activity-notice-actions button")]
+        .find((button) => button.textContent?.trim() === label);
+      check(action && !action.disabled, `Missing enabled activity action: ${label}`);
+      await act(async () => { action.focus(); action.click(); await frame(); });
+    }
+    await mount("dontstarve", { enable_caves: false });
+    await selectSection("cavessettings");
+    check(!fixture.querySelector(".configuration-workspace__main .shell-activity-notice"), "Caves notice occupies the form");
+    await clickNoticeAction("启用洞穴");
+    const deadline = performance.now() + 5000;
+    while (!saves.some((input) => JSON.parse(input.settings_json).enable_caves === true)) {
+      check(performance.now() < deadline, "Enabling Caves from activity did not save");
+      await act(async () => { await frame(); });
+    }
+    check(!activity().textContent?.includes("启用洞穴"), "Enabled Caves retained its stale notice");
+    persisted.delete("dontstarve");
+    const script = "local size='huge'; return {overrides={world_size=size}}";
+    await mount("dontstarve", { master_worldgenoverride_lua: script });
+    await selectSection("mastersettings");
+    await clickNoticeAction("编辑 Lua");
+    const lua = fixture.querySelector<HTMLTextAreaElement>("#configuration-dontstarve-master-worldgenoverride-lua-input");
+    check(lua && document.activeElement === lua && lua.value === script,
+      "Lua notice did not navigate to the exact retained script");
+    check(!fixture.querySelector(".shell-activity-panel"), "Lua action left activity details over the editor");
+    await mount("windrose", { world_island_id: "" });
+    await selectSection("world");
+    const state = fixture.querySelector('[data-windrose-world-state="selection-required"]');
+    check(state && !state.querySelector(".configuration-workspace__notice,.shell-activity-notice"),
+      "World selection notice occupies the form");
+    const title = (activeSchema as GuidedSettingsSchema | null)?.fields.find((field) => field.key === "world_island_id")?.title;
+    check(title, "World navigation target has no label");
+    await clickNoticeAction(title);
+    const world = fixture.querySelector<HTMLElement>("#configuration-windrose-world-island-id-input");
+    check(world && document.activeElement === world, "World notice did not navigate to Room settings");
+    check(!fixture.querySelector(".shell-activity-panel"), "World action left activity details over the target");
+    await act(async () => { world.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true })); });
+    check(errors.length === 0, "Browser and React must report no errors");
+    return { status: "passed", notice_actions: 3, browser_errors: errors };
+  }
   if (mode === "dontstarve-cursed-confrontation") {
     const fields = [["caves_bat_boss", "猎犬蝙蝠"], ["caves_rocky_boss", "岩石大师"]] as const;
     const values = ["never", "rare", "default", "often", "always"];

@@ -17,6 +17,9 @@ constexpr GameProfile PROFILES[]{
     {"070fcad918ba04eb9797db29674cadbd6691427b936fe354bca23b008c8c9971",
      "48895c2420574881ecb0000000488b0594eb8d054833c4488984249000000080",
      0x1bb2680, 0x7500180, 0x5edfe20, 0x1552cc0},
+    {"a862d658271f26d082de5df7bba01e8af9c3d051cb9634e908bb94d8a9efbc7a",
+     "48895c2420574881ecb0000000488b0524f590054833c4488984249000000080",
+     0x1bc0530, 0x753f010, 0x5f13ba0, 0x1554920},
 };
 const GameProfile* selected_profile{};
 bool select_game_profile(std::string_view identity) {
@@ -57,8 +60,8 @@ void entity_contract(uintptr_t image, uintptr_t system, uintptr_t instance, uint
     auto game_state = read<uintptr_t>(world + 0x120);
     alive(game_mode, 0xf1); alive(game_state, 0x5d);
     require(read<uint8_t>(game_mode + 0xf0) == 3, "world_authority");
-    // AActor::EndPlay (3ec3aa0) accepts 0x80 in this two-bit native state,
-    // then immediately clears it. This is not GameState's replication flag.
+    // AActor's native lifecycle stores begun play as 0x80 in this two-bit
+    // field. This is not GameState's replication flag.
     require((read<uint8_t>(game_mode + 0x5c) & 0xc0) == 0x80
         && (read<uint8_t>(game_state + 0x5c) & 0xc0) == 0x80, "world_not_begun_play");
     require(read<uint8_t>(system + 0x30) == 1

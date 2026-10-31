@@ -58,7 +58,7 @@ test("Windrose keeps world identity in Room and per-world rules in their special
 
 test("world controls remain visibly disabled until an existing world ID is selected", () => {
   assert.match(panelSource, /selectedWorldId\.length === 0/);
-  assert.match(panelSource, /data-windrose-world-state="selection-required"/);
+  assert.match(panelSource, /!selectedWorldId \? "selection-required"/);
   assert.match(panelSource, /disabled=\{disabled\}/);
   assert.match(panelSource, /settings remain unavailable until one world can be identified/i);
   assert.doesNotMatch(panelSource, /exact native world|native match/i);
@@ -78,7 +78,7 @@ test("world controls require a fully stopped server and explain when changes tak
   assert.match(panelSource, /props\.details\.summary\.status/);
   assert.match(panelSource, /\["starting", "running", "stopping"\]/);
   assert.match(panelSource, /serverMustStop/);
-  assert.match(panelSource, /data-windrose-world-state="server-stop-required"/);
+  assert.match(panelSource, /data-windrose-world-state=\{serverMustStop \? "server-stop-required"/);
   assert.match(englishMessages, /Saved changes take effect on the next start/i);
   assert.doesNotMatch(englishMessages, /official Windrose updater/i);
   assert.match(chineseMessages, /保存后的改动会在下次启动时生效/);

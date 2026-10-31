@@ -1,0 +1,419 @@
+{
+  "schema_version": 1,
+  "module_id": "valheim",
+  "evidence_classification": "isolated_managed_backend_native_save_readback_and_lifecycle",
+  "verified_on": "2026-10-31",
+  "verification_timezone": "Asia/Shanghai",
+  "steam_app_id": 896660,
+  "steam_build_id": "26266951",
+  "prior_contract_and_standalone_fixture": "2026-10-30-native_build_26266951.json",
+  "environment": "Windows host; the compiled manager backend owns an isolated Independent instance and disposable world from a fixed official package. The test log records default binding and non-elevated firewall policy.",
+  "official_acquisition": {
+    "source": "Valve public anonymous incremental app_update validate, Windows; independent old official data seed",
+    "expected_build": "26266951",
+    "actual_build": "26266951",
+    "state_flags": 4,
+    "update_result": 0,
+    "exit_code": 0,
+    "official_success_marker": true,
+    "started_utc": "2026-10-30T14:01:59.5325350+00:00",
+    "completed_utc": "2026-10-30T14:02:38.9446215+00:00",
+    "steamcmd_sha256": "7baf77927639793e11b2a02ec2fd6d9114c95432be2f23a3225e274732255cf4",
+    "steamcmd_signature_status": "Valid",
+    "installed_size_bytes": 2112248548,
+    "depot_manifests": {
+      "1004": "7604377918839582995",
+      "896662": "171106503873955013"
+    },
+    "appmanifest_sha256": "29f3456db43d22f7263ffb73fa867d2d07fd5d93493d81d618e4e2a5e00e8c72"
+  },
+  "executable": {
+    "relative_path": "valheim_server.exe",
+    "size_bytes": 672256,
+    "sha256": "e5e761c580992aefe1242695a69f406eb3e8e81f81197764804caa699981a665"
+  },
+  "game_assembly": {
+    "relative_path": "valheim_server_Data/Managed/assembly_valheim.dll",
+    "size_bytes": 2569216,
+    "sha256": "648f3f8ed7b44c3d3cd612acd782743d9e03af7e60b7fe72d5827523e95505fd"
+  },
+  "source_identity_sha256": "ae4c888070c4f6aa88d66f6cac952d90ed8f9f4a2a19a2aeb39ccbf87fccb7b1",
+  "test_binary_sha256": "d3110fe6352af83e0dcb13262e9fff67f1e2313496a7800db0487bab96bc432b",
+  "source_manifest_sha256": "7d2e61775417ec8671be20d81a934d321153a27264f7890f7afa3929d48867ee",
+  "build": {
+    "entry_point": "workspace-managed Cargo wrapper (local path and filename omitted)",
+    "entry_point_sha256": "a49fe85bfed0b558354bc5a605e84b5a2f9a30c251c2bc57ff4ddc51503223b2",
+    "cargo_command": "test",
+    "cargo_arguments": [
+      "--no-run",
+      "--workspace",
+      "--all-features",
+      "--locked",
+      "--message-format=json"
+    ],
+    "source_manifest_file_count": 4191,
+    "source_proof_verified_file_count": 4191,
+    "clippy_matching_file_count": 4191,
+    "clippy_source_mismatch_count": 0,
+    "test_binary_size_bytes": 197889536,
+    "binary_and_manifest_hashes_match_receipt": true,
+    "test_build_manifest_and_source_proof_identity_match": true
+  },
+  "reviewed_snapshot_files_sha256": {
+    "apps/desktop/src-tauri/src/commands_native_lifecycle_tests.rs": "fb5a95cebd3e2e290ff7ced4bffb23d6fc4feca0634575fd3ce99ecdbef54ba3",
+    "apps/desktop/src-tauri/src/commands_native_runtime.rs": "de2cff2c728f7346db4d0b0aa46b1019c33a2d88572dab454b9480971ee8327e",
+    "apps/desktop/src-tauri/src/commands_native_manual_save_probe.rs": "fb30ac9c789a232283d8d4539b3a2388d7b671fecb9e4b480311f3c1c5469f0f",
+    "apps/desktop/src-tauri/src/commands_native_save_checkpoint.rs": "bba222870d0dfb6772791858be8d8851996d1727384a131a40fce417289eaa70",
+    "apps/desktop/src-tauri/src/commands_native_save_checkpoint_profiles.rs": "b954ce7a5ba164cb25a4f98962aff972bf3d77875f593f1372cf9886b131ef4f",
+    "apps/desktop/src-tauri/src/commands_native_restored_world.rs": "f42aaddcb3094feba1d344d85245e8f46b95d5ef6c39e5c39e0649bdadcf766f",
+    "apps/desktop/src-tauri/src/commands_valheim_control.rs": "4ab4ed7eb1a1cd24dfb7dadf248e1860a4b0c0c5a796a75d2946dc0c4b91674a",
+    "modules/valheim/control/ValheimNativeControl.cs": "6d4865f7a79f35a43b53e89745a002654ec1063719c59bf3fc1dcc106b472cd5"
+  },
+  "test": {
+    "selector": "commands::tests::manual_runtime_tests::native_lifecycle_tests::native_package_lifecycle",
+    "started_utc": "2026-10-30T16:10:46.6376812+00:00",
+    "completed_utc": "2026-10-30T16:15:34.6335537+00:00",
+    "started_local": "2026-10-31T00:10:46.637681+08:00",
+    "completed_local": "2026-10-31T00:15:34.633553+08:00",
+    "test_exit_code": 0,
+    "tests_passed": 1,
+    "tests_failed": 0,
+    "tests_ignored": 0,
+    "tests_filtered_out": 3213,
+    "duration_seconds": 287.95,
+    "copied_payload_bytes": 2112256355,
+    "production_scope": "full_native_package_lifecycle",
+    "native_test_package_classification": "existing_local_package; source_provenance=unverified",
+    "acquisition_provenance": "The independent official acquisition receipt and rehashed package image establish supplied package identity; this lifecycle test itself does not acquire or certify an upstream package."
+  },
+  "manual_save_requests": {
+    "total": 3,
+    "cycles": [
+      "initial",
+      "after_restore",
+      "after_archive_restore"
+    ],
+    "restart_requests": 0,
+    "later_receipt_attribution": "The two raw cycle=other receipts are attributed by their position after the corresponding restored-world load and before its stop; the compiled safe_cycle formatter maps these later cycle names to other. Each restored-world second_save_sent=false refers to the readback point before its later one-time save."
+  },
+  "cycles": [
+    {
+      "cycle": "initial",
+      "managed_run_id": 1,
+      "prestart_update_policy": "pinned",
+      "persisted_update_policy_evidence": "verified",
+      "native_start": {
+        "managed_process_count": 1,
+        "elapsed_ms": 48068,
+        "bind": "default",
+        "firewall": "non_elevated_policy"
+      },
+      "native_readiness": "passed",
+      "manual_save_requests": 1,
+      "save_receipt": {
+        "raw_log_cycle_label": "initial",
+        "attempted_once": true,
+        "retried": false,
+        "instance_run_and_session_matched": true,
+        "managed_generations_alive": true,
+        "route": "managed_process_generation",
+        "response_present": true,
+        "response_bytes": 52,
+        "write_confirmation_pending": false,
+        "save_completion": "confirmed",
+        "durable_write_at_receipt": "not_assessed",
+        "restart_readback_at_receipt": "not_assessed"
+      },
+      "stop": {
+        "process": "main",
+        "exit_code": 0,
+        "crash_flag": false,
+        "status": "stopped"
+      },
+      "active_run_after_stop": null
+    },
+    {
+      "cycle": "restart",
+      "managed_run_id": 2,
+      "prestart_update_policy": "pinned",
+      "persisted_update_policy_evidence": "verified",
+      "native_start": {
+        "managed_process_count": 1,
+        "elapsed_ms": 45044,
+        "bind": "default",
+        "firewall": "non_elevated_policy"
+      },
+      "native_readiness": "passed",
+      "save_readback": {
+        "initial_run": 1,
+        "restart_run": 2,
+        "exact_manual_checkpoint": true,
+        "native_load": "passed",
+        "second_save_sent": false,
+        "scope": "isolated_world"
+      },
+      "manual_save_requests": 0,
+      "stop": {
+        "process": "main",
+        "exit_code": 0,
+        "crash_flag": false,
+        "status": "stopped"
+      },
+      "active_run_after_stop": null
+    },
+    {
+      "cycle": "after_restore",
+      "managed_run_id": 3,
+      "prestart_update_policy": "pinned",
+      "persisted_update_policy_evidence": "verified",
+      "native_start": {
+        "managed_process_count": 1,
+        "elapsed_ms": 45543,
+        "bind": "default",
+        "firewall": "non_elevated_policy"
+      },
+      "native_readiness": "passed",
+      "manual_save_requests": 1,
+      "save_receipt": {
+        "raw_log_cycle_label": "other",
+        "attempted_once": true,
+        "retried": false,
+        "instance_run_and_session_matched": true,
+        "managed_generations_alive": true,
+        "route": "managed_process_generation",
+        "response_present": true,
+        "response_bytes": 52,
+        "write_confirmation_pending": false,
+        "save_completion": "confirmed",
+        "durable_write_at_receipt": "not_assessed",
+        "restart_readback_at_receipt": "not_assessed"
+      },
+      "restored_world_readback_before_save": {
+        "prior_run_id": 2,
+        "captured_files": 5,
+        "captured_while_stopped": true,
+        "restored_bytes": "unchanged",
+        "native_saved_identity": "matched",
+        "fresh_logs": true,
+        "save_sent_before_readback": false,
+        "subsequent_manual_save_requests": 1
+      },
+      "stop": {
+        "process": "main",
+        "exit_code": 0,
+        "crash_flag": false,
+        "status": "stopped"
+      },
+      "active_run_after_stop": null
+    },
+    {
+      "cycle": "after_archive_restore",
+      "managed_run_id": 4,
+      "prestart_update_policy": "pinned",
+      "persisted_update_policy_evidence": "verified",
+      "native_start": {
+        "managed_process_count": 1,
+        "elapsed_ms": 45285,
+        "bind": "default",
+        "firewall": "non_elevated_policy"
+      },
+      "native_readiness": "passed",
+      "manual_save_requests": 1,
+      "save_receipt": {
+        "raw_log_cycle_label": "other",
+        "attempted_once": true,
+        "retried": false,
+        "instance_run_and_session_matched": true,
+        "managed_generations_alive": true,
+        "route": "managed_process_generation",
+        "response_present": true,
+        "response_bytes": 52,
+        "write_confirmation_pending": false,
+        "save_completion": "confirmed",
+        "durable_write_at_receipt": "not_assessed",
+        "restart_readback_at_receipt": "not_assessed"
+      },
+      "restored_world_readback_before_save": {
+        "prior_run_id": 3,
+        "captured_files": 5,
+        "captured_while_stopped": true,
+        "restored_bytes": "unchanged",
+        "native_saved_identity": "matched",
+        "fresh_logs": true,
+        "save_sent_before_readback": false,
+        "subsequent_manual_save_requests": 1
+      },
+      "stop": {
+        "process": "main",
+        "exit_code": 0,
+        "crash_flag": false,
+        "status": "stopped"
+      },
+      "active_run_after_stop": null
+    }
+  ],
+  "initial_manual_checkpoint": {
+    "run_id": 1,
+    "captured_before_stop": true,
+    "file_count": 5,
+    "files": [
+      {
+        "relative_path": "worlds_local/n/00_00__0_1.chunk",
+        "size_bytes": 636,
+        "sha256": "2b29be36cd44b696340c29459d2d93f6ea2b62bcd785131c9b834a5625a48735"
+      },
+      {
+        "relative_path": "worlds_local/n/_main.1.chunks",
+        "size_bytes": 21,
+        "sha256": "c233f294dea51defd67890268bac996ff04899eb78511e1bc5815192b2e01a0d"
+      },
+      {
+        "relative_path": "worlds_local/n/_main.1.db2",
+        "size_bytes": 146957,
+        "sha256": "a715d31bfe344ed7fd3374867c03779dddb2cd517d562b18e82e9b40322ccf39"
+      },
+      {
+        "relative_path": "worlds_local/n/_main.1.fwl2",
+        "size_bytes": 46,
+        "sha256": "f3ed62451fe7544e31eeea5d2514460bf4cbffb1260e9a62ae431e97e93a7644"
+      },
+      {
+        "relative_path": "worlds_local/n/_main.1.ok",
+        "size_bytes": 4,
+        "sha256": "e8a4b2ee7ede79a3afb332b5b6cc3d952a65fd8cffb897f5d18016577c33d7cc"
+      }
+    ],
+    "restored_after_normal_stop": true,
+    "shutdown_snapshot_excluded": true,
+    "restored_inventory_sha256_verified": true,
+    "exact_restart_readback": true,
+    "readback_run_id": 2,
+    "readback_sent_no_second_save": true,
+    "native_load_contract": "Fresh native logs match the unique saved world and completed save number and report DB2 unpacking plus completed ZDO loading, without recognized world-load failures.",
+    "file_hash_evidence": "Hashes are recorded in the lifecycle log and were verified by in-test checkpoint copy/restore checks; the disposable runtime has been cleaned up."
+  },
+  "storage_lifecycle": {
+    "archive_with_installed_library": {
+      "program_storage": "full",
+      "omitted_bytes": 0,
+      "library": "preserved"
+    },
+    "preflight_permanent_delete": {
+      "library": "installed",
+      "peer": "preserved",
+      "owned_files": "removed"
+    },
+    "backup_restore": {
+      "outcome": "passed",
+      "restored_files": 8,
+      "safeguard": "verified",
+      "program_config": "preserved",
+      "subsequent_native_load": "passed"
+    },
+    "program_maintenance": {
+      "outcome": "not_tested",
+      "reason": "network_update_not_selected"
+    },
+    "library_uninstall": {
+      "outcome": "library_only_instance_program_unchanged",
+      "program_entries": "preserved",
+      "save_files_preserved": 8,
+      "native_config_files_preserved": 0
+    },
+    "archive": {
+      "archive": "verified",
+      "interrupted_restore_simulation": "deferred_commit_failure",
+      "journal_during_interruption": "restoring",
+      "instance_row_during_interruption": "absent",
+      "interrupted_commit": "recovered",
+      "restored_state": "stopped",
+      "ownership": "verified",
+      "config_saves_program_bytes": "preserved",
+      "subsequent_native_load": "passed"
+    },
+    "instance_delete": {
+      "independent_program": "removed",
+      "library_record": "preserved",
+      "cleanup": "verified"
+    },
+    "final_library_uninstall": {
+      "unused_programs": "removed",
+      "retained_data_paths": 0
+    }
+  },
+  "cleanup": {
+    "four_managed_runs_stopped": true,
+    "all_process_exit_codes_zero": true,
+    "all_crash_flags_false": true,
+    "active_and_tracked_runs_cleared": true,
+    "disposable_fixture_directory_removed": true,
+    "log_result": "passed"
+  },
+  "artifacts": [
+    {
+      "name": "managed_native_lifecycle_result",
+      "size_bytes": 536,
+      "sha256": "287124f6abdfeff72c334ae6a9120abb8e94a7cedfda44a79102131da96a3064"
+    },
+    {
+      "name": "managed_native_lifecycle_log",
+      "size_bytes": 7854,
+      "sha256": "3ccdc788e65ce9917f274ee7085bdfc9f4d8c58cead19534d2b67446a6e3e251"
+    },
+    {
+      "name": "final_workspace_build_receipt",
+      "size_bytes": 1647,
+      "sha256": "a512993f0b35697f773e60af60c96b608eed5746a53c86308176caddab7ffa69"
+    },
+    {
+      "name": "final_workspace_source_proof",
+      "size_bytes": 274,
+      "sha256": "4205f24aa09433a775c57937b027cef7a8cb1c9daf5bcac19e732e7b5b20b156"
+    },
+    {
+      "name": "source_manifest",
+      "size_bytes": 855794,
+      "sha256": "7d2e61775417ec8671be20d81a934d321153a27264f7890f7afa3929d48867ee"
+    },
+    {
+      "name": "frontend_manifest",
+      "size_bytes": 14731,
+      "sha256": "eead864da97311fa5594724ab74a9139085c57cbd893626c326426e1c1731309"
+    },
+    {
+      "name": "managed_backend_test_binary",
+      "size_bytes": 197889536,
+      "sha256": "d3110fe6352af83e0dcb13262e9fff67f1e2313496a7800db0487bab96bc432b"
+    },
+    {
+      "name": "official_package_acquisition_receipt",
+      "size_bytes": 4253,
+      "sha256": "fcc9b7b42c8c1a83fc16342caa3f858475a915f1ae193647845bdb658ef37617"
+    },
+    {
+      "name": "official_appmanifest",
+      "size_bytes": 876,
+      "sha256": "29f3456db43d22f7263ffb73fa867d2d07fd5d93493d81d618e4e2a5e00e8c72"
+    },
+    {
+      "name": "official_server_executable",
+      "size_bytes": 672256,
+      "sha256": "e5e761c580992aefe1242695a69f406eb3e8e81f81197764804caa699981a665"
+    },
+    {
+      "name": "official_game_assembly",
+      "size_bytes": 2569216,
+      "sha256": "648f3f8ed7b44c3d3cd612acd782743d9e03af7e60b7fe72d5827523e95505fd"
+    }
+  ],
+  "scope_limits": [
+    "This fixture exercises the formal manager backend, separate from the earlier independent native contract/save probe.",
+    "Three distinct formal manual save requests returned confirmed. Receipt lines alone retain durable_write=not_assessed; the separate five-file pre-stop snapshot and exact second-run load establish the tested persistence/readback result.",
+    "The readback-only restart sends no save. The two later restored-world checks occur before their own additional save requests; they are not additional readbacks of the initial pre-stop checkpoint.",
+    "This uses a disposable world and does not establish old-world migration, multiplayer/client progress, crossplay, public listing or third-party Mod compatibility.",
+    "Exact native world identity/save-number loading and preserved file hashes do not establish every gameplay subsystem or every possible saved-object state.",
+    "Backup, archive interruption recovery and uninstall preservation apply to this isolated fixture; crash/power-loss durability was not tested.",
+    "GUI and live network program update/repair were not tested; the package update policy was pinned.",
+    "The 4191-file frozen-source/clippy correspondence comes from the hashed source-proof receipt. This preparation independently rehashes the eight listed source files, binary, manifests, official image/assembly and input evidence."
+  ]
+}

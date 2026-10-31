@@ -22,6 +22,7 @@ interface GuidedSettingsFormProps {
   idPrefix?: string;
   defaultContext?: GuidedFieldDefaultContext;
   validationIssues?: GuidedSettingsValidationIssue[];
+  validationDisplay?: "inline" | "activity";
   onChange: (field: GuidedSettingsField, value: unknown) => void;
   onBatchChange: (changes: GuidedFieldChange[]) => void;
 }
@@ -140,6 +141,7 @@ export function GuidedSettingsForm(props: GuidedSettingsFormProps) {
         settings={props.settings}
         t={t}
         validationMessage={schemaValidationMessage ?? moduleMessage}
+        validationDisplay={props.validationDisplay}
         value={value}
       />
     );

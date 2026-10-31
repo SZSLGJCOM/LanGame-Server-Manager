@@ -1,6 +1,34 @@
-status = "download_verified_requires_elevation"
-last_verified = "2026-09-08"
-notes = "The archived generated v7 baseline plus four official August 2026 additions provide 436 specialized controls and one generated version key. The four new keys and default values also match the existing installed build 25187656 configuration inspected read-only on 2026-09-28; this is not a new clean-launch verification. Three generated JSON contracts are structured. Player identity rosters remain in Player Access. Runtime still requires elevation. The later authorized elevated startup observation is separately dated below; it does not replace the configuration acceptance baseline."
+status = "best_effort_verified"
+last_verified = "2026-10-31"
+notes = "The archived generated v7 baseline plus four official August 2026 additions remains the configuration/default acceptance baseline: 436 specialized controls and one generated version key. The four additions and default values match the existing installed build 25187656 configuration inspected read-only on 2026-09-28; that historical fixture and its defaults remain unchanged. The current review adds official build 26320224 ordinary-permission execution via RunAsInvoker, generated key presence, and the separately scoped save/checkpoint/reload evidence below. The 2026-10-31 managed backend acceptance additionally covers four native-ready cycles with normal exits 0, four save requests, stopped-world backup restore, interrupted archive recovery and final cleanup. Save completion remains requested. It does not re-approve all configuration defaults, populated-player behavior, custom-zone edit rollback or every subsystem's durable completion. Three generated JSON contracts are structured. Player identity rosters remain in Player Access. Earlier direct-launch elevation failures and authorized elevated observations are historical evidence, not the current runtime permission requirement."
+
+[[sources]]
+id = "managed_native_lifecycle_build_26320224_20261031"
+kind = "runtime_probe"
+path = "reference-fixtures/2026-10-31-managed_lifecycle_build_26320224.json"
+authority = "compiled_manager_backend_with_isolated_official_package"
+description = "2026-10-31 Asia/Shanghai: the managed backend completed initial, restart, after-restore and after-archive-restore runs of official build 26320224. Each run reached native readiness, issued one correlated AutoSave(true) request with ready/invoked/call_returned=true and write_confirmed=false, and stopped normally with exit 0 and crash_flag=false. All four receipts remain requested, not durable-completion confirmations. Backup restore preserved 59 stopped-world files, safeguards and program/config bytes; archive restoration recovered a simulated deferred commit failure. Library-only uninstall preserved 81 save files and the instance program; final instance/library cleanup passed with no runner cleanup failures. The 4202-file frozen source, test binary, receipt and complete log were independently rehashed. No exact manual-save checkpoint readback, custom-zone edit rollback, clients, gameplay semantics, power-loss durability, GUI or network program maintenance is established by this run."
+
+[[sources]]
+id = "native_save_reload_build_26320224_20261030"
+kind = "runtime_probe"
+path = "reference-fixtures/2026-10-30-save_reload_build_26320224.json"
+authority = "unchanged_production_lua_and_bridge_on_isolated_official_package"
+description = "2026-10-30: one production AutoSave(true) request returned ready/invoked/call_returned=true with write_confirmed=false. A schema-75 SQLite Backup API snapshot was captured before stopping; a fresh process restored that exact snapshot with the native Saved/Metadata.json and loaded 3730 entities. The first standalone reload omitted metadata and rebuilt the database; the manager's existing checkpoint implementation already preserves that metadata. Ctrl+C exits were 0xC000013A without owned-Job termination, not normal exit 0. No clients were connected; the Auto-save log reported zero objects, so changed internal active-entity branches and causal persistence of every subsystem are not claimed. The response remains requested/returned, not a durable-completion receipt."
+
+[[sources]]
+id = "native_contract_build_26320224_20261030"
+kind = "runtime_probe"
+path = "reference-fixtures/2026-10-30-native_contract_build_26320224.json"
+authority = "steamcmd_validated_package_and_independent_native_world"
+description = "2026-10-30: official app 3792580 build 26320224, depot 3792581 manifest 7276695924733020807, EXE SHA256 a862d658271f26d082de5df7bba01e8af9c3d051cb9634e908bb94d8a9efbc7a. Independent ordinary copies loaded game 1.3.5.2.172724+172352 in a task-owned runtime. Read-only native registry retained ArmedNPC 5, Vehicle 11, channels 6/5/4, slots 2/3/4 and Ignore/Allow/Block 0/1/2. The generated database is schema 75, not 73; three custom-zone table definitions, columns, foreign keys, indexes and triggers match the prior schema-73 world. Exact build/schema pairs 25803875/73 and 26320224/75 passed separate public stopped-world read/write and pre-change backup roundtrips, with original DB/WAL hashes unchanged; crossed pairs and unknown versions are rejected. Nine local storage regressions and all three save-bridge component profiles passed. Static AutoSave ABI and runtime owner guards were checked; two internal entity-save virtual dispatch sites changed and are recorded explicitly. The read-only probe did not invoke save and was reclaimed by its owned Windows Job (113), so it does not establish graceful shutdown, causal save persistence, populated-player behavior or combat."
+
+[[sources]]
+id = "generated_settings_keys_build_26320224_20261030"
+kind = "runtime_probe"
+path = "reference-fixtures/2026-10-30-native_contract_build_26320224.json"
+authority = "independent_native_generated_configuration_key_inventory"
+description = "2026-10-30: the new build 26320224 world generated 437 scum-prefixed ServerSettings.ini keys, exactly matching the current ledger, including generated ServerSettingsVersion=7. This comparison checks key presence only; it does not re-approve all default values or alter the older configuration acceptance baseline."
 
 [[sources]]
 id = "custom_zone_npc_vehicle_damage_20261028"
@@ -146,7 +174,7 @@ id = "non_elevated_runtime_probe"
 kind = "runtime_probe"
 path = "<validated-instance-root>/logs/scum-nonadmin-direct-test.err.log"
 authority = "local_runtime_smoke"
-description = "Non-admin process creation failed with Windows elevation-required error; runtime.requires_admin remains true."
+description = "Historical direct-launch observation: non-admin process creation failed with Windows elevation-required error before the current RunAsInvoker policy. The runtime.requires_admin=true declaration recorded then is not the current runtime policy."
 
 [[items]]
 source = "generated_current_server_settings"

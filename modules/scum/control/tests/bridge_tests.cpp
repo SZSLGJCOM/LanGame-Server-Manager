@@ -24,7 +24,9 @@ void check_profile(const GameProfile& profile) {
     calls = 0;
     // Zero-filled private memory represents only documented object fields. No
     // game function pointer, DLL loader or persistence routine is executed.
-    auto allocated = VirtualAlloc(nullptr, 0x7510000, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
+    // The class singleton is the highest image address touched by this fixture.
+    const auto image_size = profile.entity_class + sizeof(uintptr_t);
+    auto allocated = VirtualAlloc(nullptr, image_size, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
     assert(allocated);
     auto image = reinterpret_cast<uintptr_t>(allocated);
     std::array<unsigned char, 0x800> system_bytes{};

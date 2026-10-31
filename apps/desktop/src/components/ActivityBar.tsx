@@ -53,6 +53,12 @@ export function ActivityBar({ store, entries: suppliedEntries, progress }: Activ
   // Keep keyboard users in the bar instead of leaving focus on the document.
   useLayoutEffect(() => {
     if (focused && !container.current?.contains(document.activeElement)) {
+      // Navigation actions deliberately focus a control in another workspace.
+      if (document.activeElement && document.activeElement !== document.body) {
+        setFocused(false);
+        setExpanded(false);
+        return;
+      }
       const target = expanded ? panelClose.current : expandButton.current;
       if (target) target.focus();
       else setFocused(false);
@@ -119,7 +125,10 @@ export function ActivityBar({ store, entries: suppliedEntries, progress }: Activ
   return <div className={`shell-activity-content${progress ? " has-progress" : ""}`} ref={container}
     onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)}
     onFocusCapture={() => setFocused(true)} onBlurCapture={(event) => {
-      if (!event.currentTarget.contains(event.relatedTarget)) setFocused(false);
+      if (!event.currentTarget.contains(event.relatedTarget)) {
+        setFocused(false);
+        if (event.relatedTarget) setExpanded(false);
+      }
     }} onKeyDown={(event) => {
       if (event.key === "Escape" && expanded) { event.stopPropagation(); closePanel(); }
     }}>

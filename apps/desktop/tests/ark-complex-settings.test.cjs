@@ -123,7 +123,7 @@ test("full workspace excludes the generic copy of each structured ARK field", ()
       const loaded = new Module(filename, module); loaded.filename = filename;
       const originalRequire = Module.createRequire(filename);
       loaded.require = (key) => key === "react" ? {
-        ...React, useState, useMemo: (compute) => compute(), useLayoutEffect() {},
+        ...React, useState, useMemo: (compute) => compute(), useLayoutEffect() {}, useContext: () => undefined,
         useRef: (initial) => useState(() => ({ current: initial }))[0]
       }
         : key === "../../i18n" ? { ...originalRequire(key), useI18n: () => ({ locale: "en-US", t }) }

@@ -19,7 +19,7 @@ function load(name, exportName, props, catalog = ARK_EDITORS_EN) {
   loaded.require = (id) => id === "react" ? { ...React,
     useState(initial) { const slot = cursor++; if (!(slot in slots)) slots[slot] = typeof initial === "function" ? initial() : initial;
       return [slots[slot], (next) => { slots[slot] = typeof next === "function" ? next(slots[slot]) : next; }]; },
-    useEffect() {}, useId: () => "test-id"
+    useEffect() {}, useMemo: (compute) => compute(), useId: () => `test-id-${cursor++}`
   } : id === "../../i18n" ? { useI18n: () => ({ t: (key, params, fallback) => Object.entries(params ?? {}).reduce((text, [key, value]) => text.replaceAll(`{${key}}`, String(value)), catalog[key] ?? fallback ?? key), locale: "en-US" }) } : originalRequire(id);
   loaded._compile(transpileTypeScript(fs.readFileSync(filename, "utf8"), filename), filename);
   return { props, render() { cursor = 0; return descendants(loaded.exports[exportName](props)); } };
@@ -30,6 +30,18 @@ function editor(name, exportName, key, raw) {
     moduleDetails: { summary: { id: "arksurvivalascended" } }, disabled: false, settings: { [key]: raw, server_name: "Keep", mod_ids_csv: "321" },
     onPatch(patch) { patches.push(patch); props.settings = { ...props.settings, ...patch }; } };
   return { ...load(name, exportName, props), patches };
+}
+function localError(nodes, input) {
+  const notice = nodes.find((node) => node.type.name === "ConfigurationValidationNotice" && node.props.message);
+  assert.ok(notice, "local failure is published to the activity bar");
+  assert.equal(notice.props.inputId, input.props.id, "activity action targets the failed draft control");
+  assert.equal(input.props["aria-invalid"], true, "failed input retains its red error state");
+  const description = nodes.find((node) => node.props.id === input.props["aria-errormessage"]);
+  assert.equal(description?.props.className, "configuration-field-error-a11y");
+  assert.equal(description.props.children, notice.props.message);
+  assert.equal(nodes.some((node) => node.props.role === "alert" || node.props.className === "ark-editor__error"), false,
+    "local error copy must not take up space in the configuration editor");
+  return notice;
 }
 
 test("attribute edits preserve unrelated values and malformed numbers reach the save barrier", () => {
@@ -45,6 +57,11 @@ test("attribute edits preserve unrelated values and malformed numbers reach the 
   const frame = load("ArkEditorFrame", "ArkEditorFrame", { ...view.props, children: "table" });
   const recovery = frame.render().find((node) => node.type === "textarea");
   assert.match(recovery.props.value, /\[0\]=-/);
+  assert.equal(recovery.props["aria-invalid"], true);
+  assert.ok(frame.render().some((node) => node.props.id === recovery.props["aria-errormessage"]
+    && node.props.className === "configuration-field-error-a11y"));
+  assert.equal(frame.render().some((node) => ["ActivityNotice", "ConfigurationValidationNotice"].includes(node.type.name)), false,
+    "raw validation is already published by the configuration workspace");
   recovery.props.onChange({ target: { value: raw } });
   assert.equal(validateArkComplexField(key, view.props.settings[key]), undefined);
 });
@@ -63,7 +80,9 @@ test("level UI appends without changing dino data and rejects CSV conflicts atom
   view.render().find((node) => node.type === "textarea").props.onChange({ target: { value: "curve,level,xp\nplayer,1,200" } });
   view.render().find((node) => node.type === "button" && node.props.children === "Append CSV rows").props.onClick();
   assert.equal(view.props.settings[key], before);
-  assert.ok(view.render().some((node) => node.props.role === "alert"));
+  const rejectedCsv = view.render().find((node) => node.type === "textarea");
+  localError(view.render(), rejectedCsv);
+  assert.equal(rejectedCsv.props.value, "curve,level,xp\nplayer,1,200");
   view.render().find((node) => node.type.name === "ArkCommitInput" && node.props.label === "Player 1 Cumulative XP").props.onCommit("-9");
   assert.ok(validateArkComplexField(key, view.props.settings[key]));
 });
@@ -96,19 +115,126 @@ test("tuple edits retain mod properties and invalid native numeric edits are not
   }
 });
 
-test("a failed commit keeps the typed draft, displays an error, and a retry can apply it", () => {
+test("a failed commit retains its draft and publishes a precise activity action until retry succeeds", () => {
   let fail = true; const committed = [];
   const view = load("ArkEditorFrame", "ArkCommitInput", { value: "1", label: "Health", onCommit(value) { if (fail) throw new Error("source changed"); committed.push(value); } });
   view.render().find((node) => node.type === "input").props.onChange({ target: { value: "2.5" } });
   assert.doesNotThrow(() => view.render().find((node) => node.type === "input").props.onBlur());
   assert.equal(view.render().find((node) => node.type === "input").props.value, "2.5");
-  assert.ok(view.render().some((node) => node.props.role === "alert"));
+  localError(view.render(), view.render().find((node) => node.type === "input"));
   assert.deepEqual(committed, []);
   view.props.value = "3";
   assert.equal(view.render().find((node) => node.type === "input").props.value, "2.5", "background refresh preserves the local draft");
   fail = false;
   view.render().find((node) => node.type === "input").props.onBlur();
   assert.deepEqual(committed, ["2.5"]);
+  assert.equal(view.render().find((node) => node.type === "input").props["aria-invalid"], undefined);
+  assert.equal(view.render().some((node) => node.type.name === "ConfigurationValidationNotice" && node.props.message), false);
+});
+
+test("invalid nested property names publish their own target and preserve the rule", () => {
+  const { parseArkRule } = require("../src/views/settings/ark-native-ast.ts");
+  const text = '(Existing="keep")';
+  const changes = [];
+  const view = load("ArkRuleNodeEditor", "ArkRuleNodeEditor", {
+    group: parseArkRule(text, "Rule"), text, path: "Rule 1 / Future", disabled: false, onChange: (next) => changes.push(next)
+  });
+  const propertyInput = () => view.render().find((node) => node.type === "input");
+  propertyInput().props.onChange({ target: { value: "Existing" } });
+  view.render().find((node) => node.type === "button" && node.props.children === "Add property").props.onClick();
+  assert.equal(localError(view.render(), propertyInput()).props.label, "Rule 1 / Future New property name");
+  assert.deepEqual(changes, []);
+  assert.equal(propertyInput().props.value, "Existing");
+  propertyInput().props.onChange({ target: { value: "Extra" } });
+  view.render().find((node) => node.type === "button" && node.props.children === "Add property").props.onClick();
+  assert.equal(changes[0], '(Existing="keep",Extra="")');
+  assert.equal(view.render().some((node) => node.type.name === "ConfigurationValidationNotice" && node.props.message), false);
+});
+
+test("level append errors target the invalid parameter or required player action", () => {
+  const view = editor("ArkLevelsEditor", "ArkLevelsEditor", "level_experience_ramp_overrides", "");
+  const append = (kind) => view.render().find((node) => node.type === "button" && node.props["aria-label"] === `Append levels · ${kind}`);
+  append("Tamed creature").props.onClick();
+  assert.match(localError(view.render(), append("Player")).props.message, /Create the player curve first/);
+  const count = () => view.render().find((node) => node.type === "input" && node.props.max === 500);
+  count().props.onChange({ target: { value: "501" } });
+  append("Player").props.onClick();
+  localError(view.render(), count());
+  assert.equal(view.patches.length, 0);
+  count().props.onChange({ target: { value: "1" } });
+  append("Player").props.onClick();
+  assert.equal(view.patches.length, 1);
+  assert.equal(view.render().some((node) => node.type.name === "ConfigurationValidationNotice" && node.props.message), false);
+});
+
+test("engram CSV failures retain the paste and target its editor without partial writes", () => {
+  const view = editor("ArkLevelsEditor", "ArkEngramPointsEditor", "override_player_level_engram_points", "0\n5");
+  const csvInput = () => view.render().find((node) => node.type === "textarea");
+  csvInput().props.onChange({ target: { value: "level,points\n2,10\n3,-5" } });
+  view.render().find((node) => node.type === "button" && node.props.children === "Append CSV rows").props.onClick();
+  localError(view.render(), csvInput());
+  assert.equal(csvInput().props.value, "level,points\n2,10\n3,-5");
+  assert.equal(view.patches.length, 0);
+  assert.equal(view.props.settings.override_player_level_engram_points, "0\n5");
+});
+
+test("map draft errors target their local control while saved validation is left to the workspace", () => {
+  const settings = { map_name: "TheIsland_WP", additional_maps: [] };
+  const props = { settings, sectionId: "transfer", disabled: false, moduleDetails: { schema_json: "{}" },
+    details: { settings_json: JSON.stringify(settings), summary: { id: "test", status: "Stopped" }, ports: [] },
+    onPatch() { throw new Error("Invalid map must not write"); } };
+  const view = load("ArkClusterMapsEditor", "ArkClusterMapsEditor", props);
+  view.render().find((node) => node.type === "input" && node.props.maxLength === 128).props.onChange({ target: { value: "../bad" } });
+  view.render().find((node) => node.type === "button").props.onClick();
+  localError(view.render(), view.render().find((node) => node.type === "input" && node.props.maxLength === 128));
+
+  props.settings = { ...settings, additional_maps: [{ id: "world", map_name: "TheIsland_WP", name: "Bad?Name", enabled: true }] };
+  const saved = load("ArkClusterMapsEditor", "ArkClusterMapsEditor", props);
+  const nodes = saved.render();
+  assert.equal(nodes.some((node) => node.type.name === "ConfigurationValidationNotice"), false);
+  assert.equal(nodes.some((node) => node.props.role === "alert"), false);
+  const name = nodes.find((node) => node.type === "input" && node.props.value === "Bad?Name");
+  assert.equal(name.props["aria-invalid"], true);
+  assert.ok(nodes.some((node) => node.props.id === name.props["aria-errormessage"]));
+  saved.render().find((node) => node.type === "button").props.onClick();
+  assert.equal(saved.render().some((node) => node.type.name === "ConfigurationValidationNotice" && node.props.message), false,
+    "an add attempt must not repeat an existing workspace validation error");
+});
+
+test("map operation failures use stable map targets and clear after a successful removal", () => {
+  const settings = { map_name: "TheIsland_WP", additional_maps: [
+    { id: "first", map_name: "TheIsland_WP", name: "First", enabled: true },
+    { id: "second", map_name: "TheIsland_WP", name: "Second", enabled: true }
+  ], ark_mod_map_overrides: "malformed" };
+  const patches = [];
+  const props = { settings, sectionId: "transfer", disabled: false, moduleDetails: { schema_json: "{}" },
+    details: { settings_json: JSON.stringify(settings), summary: { id: "test", module_id: "arksurvivalascended", status: "Stopped" }, ports: [] },
+    onPatch(patch) { patches.push(patch); props.settings = { ...props.settings, ...patch }; } };
+  const view = load("ArkClusterMapsEditor", "ArkClusterMapsEditor", props);
+  const second = () => view.render().find((node) => node.type === "input" && node.props.value === "Second");
+  const targetId = second().props.id;
+  second().props.onChange({ target: { value: "Retried" } });
+  localError(view.render(), second());
+  assert.equal(patches.length, 0);
+  props.settings = { ...props.settings, ark_mod_map_overrides: {} };
+  view.render().find((node) => node.type.name === "InlineConfirmAction").props.onConfirm();
+  assert.equal(patches.length, 1);
+  assert.equal(second().props.id, targetId, "removing an earlier row must not change the retained map target");
+  assert.equal(view.render().some((node) => node.type.name === "ConfigurationValidationNotice" && node.props.message), false);
+});
+
+test("map inventory failures retain details and retry in the activity bar", () => {
+  let reads = 0;
+  const view = load("ArkMapAvailabilityNotice", "ArkMapAvailabilityNotice", {
+    availability: { status: "failed", choices: [], error: new Error("Inventory unavailable"), refresh() { reads++; } }
+  });
+  const nodes = view.render();
+  const notice = nodes.find((node) => node.type.name === "ActivityNotice");
+  assert.equal(notice.props.tone, "error");
+  assert.match(notice.props.details, /Inventory unavailable/);
+  notice.props.action.props.onClick();
+  assert.equal(reads, 1);
+  assert.equal(nodes.some((node) => node.type === "details" || node.props.className === "ark-editor__error"), false);
 });
 
 test("native toggle changes no setting and restoring a valid raw value restores table access", () => {

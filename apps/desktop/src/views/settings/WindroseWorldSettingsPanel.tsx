@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { ActivityNotice } from "../../components/ActivityNotice";
 import { useI18n, type TranslateFn } from "../../i18n";
 import { buildConfigurationFieldIds } from "./ConfigurationField";
 import { useConfigurationFieldHelp } from "./ConfigurationFieldHelp";
@@ -121,7 +122,9 @@ export function WindroseWorldSettingsPanel(props: ConfigurationSpecializedRender
   );
 
   return (
-    <section className="guided-field-group guided-field-group--windrose-world-parameters">
+    <section className="guided-field-group guided-field-group--windrose-world-parameters"
+      data-windrose-world-state={serverMustStop ? "server-stop-required"
+        : !selectedWorldId ? "selection-required" : "selection-pending-verification"}>
       <div className="guided-field-group-head">
         <div>
           <h5 className="guided-field-group-title">
@@ -130,29 +133,32 @@ export function WindroseWorldSettingsPanel(props: ConfigurationSpecializedRender
         </div>
       </div>
       {serverMustStop ? (
-        <div className="configuration-workspace__notice" role="status" data-windrose-world-state="server-stop-required">
+        <ActivityNotice tone="warning">
           {t(
             "windrose.settings.worldParameters.stopRequired",
             undefined,
             "Stop this server before changing world settings. Saved changes take effect on the next start."
           )}
-        </div>
+        </ActivityNotice>
       ) : !selectedWorldId ? (
-        <div className="configuration-workspace__notice" role="status" data-windrose-world-state="selection-required">
+        <ActivityNotice tone="warning" action={props.onNavigateField ?
+          <button type="button" className="secondary-button" onClick={() => props.onNavigateField?.("world_island_id")}>
+            {title("world_island_id", "World")}
+          </button> : undefined}>
           {t(
             "windrose.settings.worldParameters.selectionRequired",
             undefined,
             "Choose an existing world in Room settings. These settings remain unavailable until one world can be identified."
           )}
-        </div>
+        </ActivityNotice>
       ) : (
-        <div className="configuration-workspace__notice" role="status" data-windrose-world-state="selection-pending-verification">
+        <ActivityNotice>
           {t(
             "windrose.settings.worldParameters.selectionPendingVerification",
             { worldId: selectedWorldId },
             "Selected {worldId}. Saved changes take effect on the next server start."
           )}
-        </div>
+        </ActivityNotice>
       )}
       <div className="settings-schema-grid">
         <FieldFrame fieldKey="world_preset_type" t={t} title={title("world_preset_type", "World Preset")}

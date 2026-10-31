@@ -19,7 +19,7 @@ use crate::{InstanceStatus, StorageError, StoragePaths};
 mod db;
 #[path = "scum_custom_zones_io.rs"]
 mod io;
-use io::{DatabaseAnchor, invalid};
+use io::{DatabaseAnchor, NativeLayout, invalid};
 
 #[cfg(test)]
 #[path = "scum_custom_zones_tests.rs"]
@@ -98,7 +98,7 @@ fn unavailable(
     }
 }
 
-async fn check_layout(context: &ZoneContext) -> Result<bool, StorageError> {
+async fn check_layout(context: &ZoneContext) -> Result<Option<NativeLayout>, StorageError> {
     let install = context.install.clone();
     tokio::task::spawn_blocking(move || io::verified_layout(&install))
         .await
@@ -128,25 +128,26 @@ pub async fn read_scum_custom_zones(
     {
         return Ok(unavailable(instance_id, ScumCustomZonesStatus::Empty, None));
     }
-    if !check_layout(&context).await? {
+    let Some(layout) = check_layout(&context).await? else {
         return Ok(unavailable(
             instance_id,
             ScumCustomZonesStatus::Unsupported,
             Some("The installed server layout has not been verified for custom-zone edits."),
         ));
-    }
-    read_snapshot(instance_id, &context).await
+    };
+    read_snapshot(instance_id, &context, layout).await
 }
 
 async fn read_snapshot(
     instance_id: &str,
     context: &ZoneContext,
+    layout: NativeLayout,
 ) -> Result<ScumCustomZonesSnapshot, StorageError> {
     let anchor = DatabaseAnchor::open(&context.database, false)?;
     let mut connection = db::connect(&anchor, false).await?;
     let result = async {
         let mut transaction = connection.begin().await?;
-        let mut result = db::read(&mut transaction, &anchor)
+        let mut result = db::read(&mut transaction, &anchor, layout)
             .await?
             .snapshot(instance_id, &anchor)?;
         if std::fs::metadata(&context.database)
@@ -174,13 +175,13 @@ pub async fn write_scum_custom_zone_damage(
     lease
         .complete_mutation("saving SCUM custom-zone damage", async move {
             let context = load_context(&paths, &input.instance_id, true).await?;
-            if !check_layout(&context).await? {
+            let Some(layout) = check_layout(&context).await? else {
                 return Err(invalid(
                     &context.database,
                     "The installed server layout has not been verified for custom-zone edits.",
                 ));
-            }
-            write_stopped(&paths, &context, input).await
+            };
+            write_stopped(&paths, &context, layout, input).await
         })
         .await
 }
@@ -188,6 +189,7 @@ pub async fn write_scum_custom_zone_damage(
 async fn write_stopped(
     paths: &StoragePaths,
     context: &ZoneContext,
+    layout: NativeLayout,
     input: WriteScumCustomZoneDamageInput,
 ) -> Result<ScumCustomZonesSnapshot, StorageError> {
     let anchor = DatabaseAnchor::open(&context.database, true)?;
@@ -196,7 +198,7 @@ async fn write_stopped(
         // A writer reservation and read snapshot protect the complete WAL-backed
         // database while the existing backup facility captures the pre-change save.
         let mut transaction = connection.begin_with("BEGIN IMMEDIATE").await?;
-        let prepared = db::prepare(&mut transaction, &anchor, &input).await?;
+        let prepared = db::prepare(&mut transaction, &anchor, &input, layout).await?;
         let backup_id = if prepared.changed() {
             let backup = crate::backups::create_instance_backup(paths, &input.instance_id).await?;
             let current = load_context(paths, &input.instance_id, true).await?;
@@ -209,7 +211,7 @@ async fn write_stopped(
         let expected = db::apply(&mut transaction, &anchor, &input, prepared).await?;
         transaction.commit().await?;
         // Observe the committed state, rather than reporting an uncommitted readback.
-        let mut actual = db::read(&mut connection, &anchor).await?.snapshot(&input.instance_id, &anchor)?;
+        let mut actual = db::read(&mut connection, &anchor, layout).await?.snapshot(&input.instance_id, &anchor)?;
         if actual.revision != expected.revision {
             return Err(invalid(&context.database, "The committed custom-zone result changed. A pre-change backup is available in Maintenance; reload before retrying."));
         }

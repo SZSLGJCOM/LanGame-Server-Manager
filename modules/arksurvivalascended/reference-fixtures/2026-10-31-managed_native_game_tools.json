@@ -1,0 +1,221 @@
+{
+  "schema_version": 1,
+  "module_id": "arksurvivalascended",
+  "evidence_classification": "isolated_managed_backend_native_game_tools_no_client",
+  "verified_on": "2026-10-31",
+  "verification_timezone": "Asia/Shanghai",
+  "source_identity_sha256": "9161f9cdccc644c3bd4dd925ab916220b774eb1c1fcad8c6ddcd3b93686f7255",
+  "test_binary_sha256": "8ddeb8811cd1fd0fd125b4cc286bd0f4e92d171a9ded7b9186219a46d825f183",
+  "source_manifest_sha256": "8b3635b2c7ae5f05d86c8c6a808bfb9e6f960b2dd47784d0b1e8d85eb461b9e3",
+  "source_file_count": 4227,
+  "reviewed_current_and_frozen_source_files_sha256": {
+    "apps/desktop/src-tauri/src/commands_native_ark_creatures.rs": "2a9675556a454f73949ec36b1f9838a1fddd9fb1086b33ece3e306f9254947e6",
+    "apps/desktop/src-tauri/src/commands_ark_map.rs": "b82071bf4f99553fa497ed2eb2987256449c7af7b6ae3c32bac43b1fa7d05d21",
+    "apps/desktop/src-tauri/src/commands_ark_tools.rs": "da443856b6efda691f7542754a37957c044377faba904e678820ee534753480d",
+    "apps/desktop/src-tauri/src/ark_map_protocol.rs": "1653d22aee4687b67344535a6bb0b6438f5e8efc87c62718218e5f48b89efe96"
+  },
+  "package": {
+    "steam_app_id": 2430930,
+    "steam_public_build_id": "26334129",
+    "public_metadata_sha256": "59cf844a74d07a620c499079cf9d676b3c6a2a64941cdf4721593010f915966b",
+    "appmanifest_sha256": "4a32c795f8a2960ea1314afa6d749a83b832b7dac64d401e9321ec80a5cedf85",
+    "source_bytes": 12227544575,
+    "copied_payload_bytes": 12227544575,
+    "executable": {
+      "relative_path": "ShooterGame/Binaries/Win64/ArkAscendedServer.exe",
+      "size_bytes": 197020264,
+      "sha256": "9bbd9bfefb732ede1294aa15da941f7198b1570c272e5deca8909e9a1ce3374b"
+    },
+    "official_acquisition_reference": {
+      "relative_fixture": "2026-10-31-public_package_build_26334129.json",
+      "sha256": "a4108e13fa1f46d6f5a1cc833a91b4a3456afd983ea6236f03f0446c2e1750e0"
+    }
+  },
+  "test": {
+    "selector": "commands::tests::manual_runtime_tests::native_lifecycle_tests::native_game_tools",
+    "status": "passed",
+    "exit_code": 0,
+    "tests_passed": 1,
+    "duration_seconds": 252.29,
+    "started_utc": "2026-10-31T05:46:16.564425+00:00",
+    "completed_utc": "2026-10-31T05:50:29.648300+00:00",
+    "started_local": "2026-10-31T13:46:16.564425+08:00",
+    "completed_local": "2026-10-31T13:50:29.648300+08:00",
+    "settings": {
+      "program_update": {
+        "policy": "pinned"
+      }
+    },
+    "ports_preflight": "clear",
+    "flags": {
+      "LANGAME_NATIVE_GM_TOOLS": "true",
+      "LANGAME_NATIVE_ARK_CREATURES": "true",
+      "LANGAME_NATIVE_OBSERVE_SECONDS": "0"
+    },
+    "gm_cases_artifact": "asa-native-gm-cases.json",
+    "selected_gm_cases": [
+      {
+        "moduleId": "arksurvivalascended",
+        "toolId": "ark_set_time",
+        "values": {
+          "time": "12:30"
+        },
+        "commands": [
+          "SetTimeOfDay 12:30"
+        ],
+        "processKey": null,
+        "dispatchOptions": {
+          "transport": "source_rcon",
+          "portName": "rcon",
+          "passwordSettingKey": "admin_password",
+          "enabledSettingKey": "rcon_enabled",
+          "throwOnError": true
+        }
+      },
+      {
+        "moduleId": "arksurvivalascended",
+        "toolId": "ark_destroy_wild_dinos",
+        "values": {},
+        "commands": [
+          "DestroyWildDinos"
+        ],
+        "processKey": null,
+        "dispatchOptions": {
+          "transport": "source_rcon",
+          "portName": "rcon",
+          "passwordSettingKey": "admin_password",
+          "enabledSettingKey": "rcon_enabled",
+          "throwOnError": true
+        }
+      }
+    ]
+  },
+  "observations": {
+    "extension_automatic_install": "passed_on_current_executable",
+    "status_handshake": {
+      "operation": "LgsmArkTools.Status",
+      "outcome": "connected",
+      "evidence": "compiled fixture requires status.connected before map or spawn checks"
+    },
+    "map_and_empty_players_snapshot": {
+      "operation": "read_ark_map through LgsmArkTools.Players",
+      "outcome": "snapshot_validated",
+      "evidence": "production parser validates module, request identity and native map name; no populated-player observation",
+      "separate_map_wire_command_claimed": false
+    },
+    "gm_receipts": [
+      {
+        "tool_id": "ark_set_time",
+        "command": "SetTimeOfDay 12:30",
+        "native_response": "Server received, But no response!!",
+        "evidence": "native_rcon_response_no_client_world_observation"
+      },
+      {
+        "tool_id": "ark_destroy_wild_dinos",
+        "command": "DestroyWildDinos",
+        "native_response": "All Wild Dinos Destroyed",
+        "evidence": "native_rcon_response_no_client_world_observation"
+      }
+    ],
+    "creature_readbacks": [
+      {
+        "class_name": "Dodo_Character_BP_C",
+        "level": 37,
+        "id1": 27952830,
+        "id2": 23909695,
+        "x": 0,
+        "y": 0,
+        "z": 10000,
+        "wild_state_asserted_by_fixture": true
+      },
+      {
+        "class_name": "Rex_Character_BP_C",
+        "level": 150,
+        "id1": 375001750,
+        "id2": 470172248
+      }
+    ],
+    "duplicate_nonce": {
+      "same_native_entity_identity_read_back": true,
+      "logged_result": "one_entity",
+      "assertion": "second request reuses the exact nonce; returned id1/id2 equal the first entity"
+    },
+    "negative_paths": {
+      "unknown_class": "native invalid_dino_class rejection required by compiled fixture",
+      "missing_online_owner": "native owner_not_online rejection required by compiled fixture"
+    },
+    "tamed_live_player": "not_available",
+    "normal_stop": {
+      "native_exit_code": -1,
+      "crash_flag": false,
+      "active_run": "none"
+    }
+  },
+  "observed_native_receipts": [
+    "NATIVE_LIFECYCLE module=arksurvivalascended phase=package_copy bytes=12227544575 elapsed_ms=26699 acquisition=existing_local_package creation_scope=storage source_provenance=unverified",
+    "NATIVE_LIFECYCLE module=arksurvivalascended phase=instance_created elapsed_ms=33560 program_mode=Independent preparation=isolated_copy library=preserved ownership=verified effective_root=fixture/n-8359e5b084fa61e4\\runtime creation_scope=storage",
+    "NATIVE_ARK_CREATURE module=arksurvivalascended phase=extension_installed isolated=true",
+    "NATIVE_LIFECYCLE module=arksurvivalascended phase=prestart_update cycle=initial events=pinned persisted_evidence=verified download_bytes=not_measured",
+    "NATIVE_LIFECYCLE module=arksurvivalascended phase=started cycle=initial processes=1 bind=default firewall=non_elevated_policy elapsed_ms=49905",
+    "NATIVE_LIFECYCLE module=arksurvivalascended phase=native_ready cycle=initial declared_probes=passed variant=isolated",
+    "NATIVE_GM module=arksurvivalascended phase=rcon_endpoint ownership=verified",
+    "NATIVE_GM module=arksurvivalascended phase=read_only_rcon_preflight elapsed_ms=159 outcome=passed",
+    "NATIVE_DIAGNOSTIC phase=gm_preflight_response stream=0",
+    "NATIVE_GM module=arksurvivalascended tool=ark_set_time phase=begin",
+    "NATIVE_DIAGNOSTIC phase=gm_response stream=0",
+    "NATIVE_GM module=arksurvivalascended tool=ark_set_time outcome=passed evidence=native_rcon_response_no_client_world_observation",
+    "NATIVE_GM module=arksurvivalascended tool=ark_destroy_wild_dinos phase=begin",
+    "NATIVE_DIAGNOSTIC phase=gm_response stream=0",
+    "NATIVE_GM module=arksurvivalascended tool=ark_destroy_wild_dinos outcome=passed evidence=native_rcon_response_no_client_world_observation",
+    "NATIVE_ARK_MAP module=arksurvivalascended phase=snapshot_validated evidence=native_world",
+    "NATIVE_ARK_CREATURE module=arksurvivalascended phase=spawn_readback class=Dodo_Character_BP_C level=37 id1=27952830 id2=23909695 x=0 y=0 z=10000 evidence=native_entity",
+    "NATIVE_ARK_CREATURE module=arksurvivalascended phase=default_creature class=Rex_Character_BP_C level=150 id1=375001750 id2=470172248 evidence=native_entity",
+    "NATIVE_ARK_CREATURE module=arksurvivalascended phase=complete duplicate=one_entity unknown_class=rejected missing_owner=rejected tamed_live_player=not_available",
+    "NATIVE_STOP_RESULT module=arksurvivalascended cycle=initial run_id=1 process=main exit_code=Some(-1) crash_flag=false status=stopped",
+    "NATIVE_LIFECYCLE module=arksurvivalascended phase=cycle_stopped cycle=initial run_id=1 active_run=none",
+    "NATIVE_LIFECYCLE module=arksurvivalascended phase=complete scope=production_start_stop cleanup=passed gui=not_tested",
+    "NATIVE_GM_CATALOG module=arksurvivalascended phase=passed elapsed_ms=252264"
+  ],
+  "cleanup": {
+    "test_reported": "passed",
+    "runner_cleanup_failures": [],
+    "this_fixture_directory_absent_independently": true,
+    "this_fixture_owned_processes_absent_independently": true
+  },
+  "artifacts": [
+    {
+      "name": "asa-tools-native.json",
+      "size_bytes": 1875,
+      "sha256": "aa1713c9fa8af2e1c2716fe54701df4eeebb57d7e5dce231efacf5e5dae6ef0d"
+    },
+    {
+      "name": "asa-tools-native.log",
+      "size_bytes": 3007,
+      "sha256": "255944d3a04cd48b62c0a9f1fc869965507ce8fe517704ffcbb6709b79f13fb1"
+    },
+    {
+      "name": "native-build-04.json",
+      "size_bytes": 1521,
+      "sha256": "3e18af616ed7ecaf2605010bb415ed16987facb09950fb65573a6b52a6c73eb4"
+    },
+    {
+      "name": "native-source-04-proof.json",
+      "size_bytes": 794,
+      "sha256": "df2b926151424d2f8a5fc6dfb8bdf501669266e6b4d022378deacae6a5d92b19"
+    },
+    {
+      "name": "asa-native-gm-cases.json",
+      "size_bytes": 14796,
+      "sha256": "62121b5aa1d768adb7aee12df4c25851d4df611a052c69dcda9057555b6df465"
+    }
+  ],
+  "scope_limits": [
+    "This is one disposable current-build managed game-tools cycle, separate from the earlier two-cycle Requested manual-save acceptance.",
+    "GM native RCON responses do not establish client-observed time changes or a complete before/after wild-population census.",
+    "Status and map/Players snapshot are validated through the production APIs; the no-player response does not establish populated player identity or moderation.",
+    "Dodo 37 and Rex 150 native entities and same-nonce entity identity were read back. Other creature classes, Mods and all optional framework APIs were not tested.",
+    "Missing-owner rejection is covered; successful ownership transfer/taming for an online player requires a client and was not available.",
+    "No GUI, client join, multiplayer gameplay, save-content persistence or power-loss durability is claimed by this tools run.",
+    "Source and executable identities bind the immutable 4227-file build04 snapshot; later evidence changes do not extend that tested code identity."
+  ]
+}

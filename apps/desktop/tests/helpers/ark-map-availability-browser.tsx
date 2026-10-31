@@ -9,13 +9,18 @@ import type { InstalledArkMap, InstanceArkMapAvailability } from "../../src/ark-
 import { ConfigurationWorkspace } from "../../src/views/settings/ConfigurationWorkspace";
 import { InstanceSettingsSaveProvider } from "../../src/views/settings/InstanceSettingsSaveContext";
 import { projectArkModSettings } from "../../src/views/servers/ark-map-mods";
+import { ActivityBar } from "../../src/components/ActivityBar";
+import { ActivityNoticeTarget } from "../../src/components/ActivityNotice";
+import { createActivityNoticeStore } from "../../src/components/activity-notice-store";
 import "../../src/app.css";
 
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
 localStorage.setItem("langame.locale", "zh-CN");
 document.documentElement.dataset.theme = "dark";
 const fixture = document.getElementById("fixture")!;
+fixture.style.cssText = "height:100dvh;display:grid;grid-template-rows:minmax(0,1fr) 40px;padding:16px;gap:12px";
 const root = createRoot(fixture);
+const store = createActivityNoticeStore();
 const descriptor = buildMockModuleDetails("arksurvivalascended");
 const nonce = new URLSearchParams(location.search).get("nonce");
 const errors: string[] = [], commands: string[] = [], saves: UpdateInstanceInput[] = [];
@@ -82,9 +87,11 @@ function Host({ details: initialDetails }: { details: InstanceDetails }) {
 }
 async function mount(instanceId: string, overrides: Record<string, unknown> = {}) {
   await act(async () => root.render(<I18nProvider><InstanceSettingsSaveProvider key={++generation}>
-    <main className="server-detail-panel" style={{ height: "calc(100vh - 32px)", margin: 16 }}>
+    <ActivityNoticeTarget.Provider value={{ element: null, store, dismissLabel: "Close" }}>
+    <main className="server-detail-panel" style={{ height: "100%", minHeight: 0 }}>
       <Host details={initial(instanceId, overrides)} />
-    </main></InstanceSettingsSaveProvider></I18nProvider>));
+    </main><footer className="shell-activity-bar"><span className="shell-activity-label">动态</span><ActivityBar store={store} entries={[]} /></footer>
+    </ActivityNoticeTarget.Provider></InstanceSettingsSaveProvider></I18nProvider>));
   await settle(() => Boolean(fixture.querySelector('.settings-schema-field--field-map-name input')), "Main map control did not render");
 }
 const mainInput = () => node<HTMLInputElement>('.settings-schema-field--field-map-name input');
@@ -105,10 +112,15 @@ async function section(id: string) {
 }
 const addPicker = () => node<HTMLSelectElement>('.ark-map-editor__add select');
 const addButton = () => node<HTMLButtonElement>('.ark-map-editor__add button');
+const missingMap = (map: string) => store.getSnapshot().some((notice) => notice.tone === "warning"
+  && React.isValidElement<{ "data-ark-map-unavailable"?: string }>(notice.action) && notice.action.props["data-ark-map-unavailable"] === map);
+async function openActivityDetails() {
+  if (!fixture.querySelector(".shell-activity-panel")) await click(node<HTMLElement>(".shell-activity-expand"));
+}
 
 async function run() {
   await mount("first");
-  await settle(() => Boolean(fixture.querySelector('[data-ark-map-unavailable="MissingMain_WP"]')), "Missing primary map warning did not appear");
+  await settle(() => missingMap("MissingMain_WP"), "Missing primary map warning did not appear");
   check(mainInput().value === "MissingMain_WP", "Inventory read changed the saved primary map");
   await openMainChoices();
   check(mainChoices().length === 10 && !mainChoices().some((choice) => /Atlantis|Club ARK|RealAuthorPackage/.test(choice.textContent ?? "")),
@@ -116,7 +128,12 @@ async function run() {
   await section("transfer");
   check([...addPicker().options].length === 11 && ![...addPicker().options].some((option) => option.value === installed.map_name),
     "The additional map initially offers official native maps and the custom input only");
-  check(fixture.querySelector('[data-ark-map-unavailable="MissingAdditional_WP"]'), "A retained missing additional world needs a warning");
+  check(missingMap("MissingAdditional_WP"), "A retained missing additional world needs a warning");
+  check(!fixture.querySelector('.ark-map-editor .shell-activity-notice, .ark-map-editor .ark-editor__error'), "Map warnings still occupy the editor");
+  await openActivityDetails();
+  await click(node<HTMLElement>('.shell-activity-panel [data-ark-map-unavailable="MissingAdditional_WP"]'));
+  check(document.activeElement?.textContent === "MissingAdditional_WP" && !fixture.querySelector(".shell-activity-panel"),
+    "Missing-map activity action must focus the retained map and dismiss details");
   check(saves.length === 0, "Reading legacy missing maps must not save or enable Mods");
 
   maps = [installed];
@@ -134,7 +151,7 @@ async function run() {
     && !projectArkModSettings(saved, "arksurvivalascended", "map-retained").mod_ids_csv?.toString().includes(installed.mod_id),
     "Choosing the primary map preserves shared defaults and does not activate its Mod on another map");
   check(saved.additional_maps[0].map_name === "MissingAdditional_WP", "Choosing the primary map changed a retained additional world");
-  check(!fixture.querySelector(`[data-ark-map-unavailable="${installed.map_name}"]`), "A discovered selected map is incorrectly marked missing");
+  check(!missingMap(installed.map_name), "A discovered selected map is incorrectly marked missing");
 
   await mount("additional"); await section("transfer");
   await settle(() => [...addPicker().options].some((option) => option.value === installed.map_name), "Additional map query did not complete");
@@ -154,19 +171,31 @@ async function run() {
   await mount("raw", { custom_launch_flags: "-mods=100" });
   await settle(() => fixture.querySelector('.ark-map-availability')?.getAttribute("aria-busy") === "false", "Raw-conflict map query did not complete");
   await openMainChoices(); await click(mainChoices().find((choice) => choice.textContent?.includes("已下载作者地图"))!);
-  check(mainInput().value === "MissingMain_WP" && fixture.textContent?.includes("-mods"), "A raw Mod flag conflict must block the primary selection with an explanation");
+  check(mainInput().value === "MissingMain_WP" && store.getSnapshot().some((notice) => notice.tone === "error" && notice.text.includes("-mods")),
+    "A raw Mod flag conflict must block the primary selection with an explanation");
   await section("transfer"); await change(addPicker(), installed.map_name); await click(addButton());
-  check(fixture.querySelector('.ark-map-editor > [role="alert"]')?.textContent?.includes("-mods"), "A raw Mod flag conflict must block additional map creation with an explanation");
+  check(store.getSnapshot().some((notice) => notice.tone === "error" && notice.text.includes("-mods")),
+    "A raw Mod flag conflict must block additional map creation with an explanation");
+  check(addPicker().getAttribute("aria-invalid") === "true" && !fixture.querySelector('.ark-map-editor > [role="alert"]'),
+    "The rejected map selection needs a red frame without an inline error row");
+  await openActivityDetails();
+  await click(node<HTMLElement>(`.shell-activity-panel [data-configuration-validation-target="${CSS.escape(addPicker().id)}"]`));
+  check(document.activeElement === addPicker() && !fixture.querySelector(".shell-activity-panel"), "Map failure action did not focus the rejected selection");
   check(fixture.querySelectorAll('.ark-map-editor tbody tr').length === 2, "Rejected addition leaked a partial map change");
 
   maps = []; failRead = true;
   await mount("failure");
-  await settle(() => fixture.textContent?.includes("未能读取已下载的模组地图") === true, "Read failure was silently treated as empty inventory");
-  check(fixture.querySelector('.ark-map-availability details')?.textContent?.includes("Controlled inventory read failure"),
+  await settle(() => store.getSnapshot().some((notice) => notice.text.includes("未能读取已下载的模组地图")), "Read failure was silently treated as empty inventory");
+  await openActivityDetails();
+  check(fixture.querySelector('.shell-activity-panel .shell-activity-notice-diagnostics')?.textContent?.includes("Controlled inventory read failure"),
     "Read failure details retain the actual cause for troubleshooting");
-  check(mainInput().value === "MissingMain_WP" && !fixture.querySelector('[data-ark-map-unavailable="MissingMain_WP"]'),
+  check(mainInput().value === "MissingMain_WP" && !missingMap("MissingMain_WP"),
     "An unavailable inventory cannot claim the selected package is missing or replace it");
   failRead = false;
+  await click(node<HTMLElement>('.shell-activity-panel .shell-activity-notice.is-error .shell-activity-notice-actions button'));
+  await settle(() => fixture.querySelector('.ark-map-availability')?.getAttribute("aria-busy") === "false"
+    && !store.getSnapshot().some((notice) => notice.tone === "error"), "Inventory retry did not clear its activity failure");
+  check(missingMap("MissingMain_WP"), "A successful retry did not restore accurate missing-map feedback");
   pendingInstance = "stale";
   await mount("stale");
   await settle(() => finishPending !== null, "Deferred old-instance inventory request was not issued");

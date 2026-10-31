@@ -1,0 +1,114 @@
+{
+  "schema_version": 1,
+  "module_id": "arksurvivalascended",
+  "evidence_classification": "isolated_managed_backend_native_manual_save_two_cycles",
+  "verified_on": "2026-10-31",
+  "verification_timezone": "Asia/Shanghai",
+  "source_identity_sha256": "9161f9cdccc644c3bd4dd925ab916220b774eb1c1fcad8c6ddcd3b93686f7255",
+  "test_binary_sha256": "8ddeb8811cd1fd0fd125b4cc286bd0f4e92d171a9ded7b9186219a46d825f183",
+  "source_manifest_sha256": "8b3635b2c7ae5f05d86c8c6a808bfb9e6f960b2dd47784d0b1e8d85eb461b9e3",
+  "source_file_count": 4227,
+  "package": {
+    "classification": "existing_local_package",
+    "steam_build_id": "26334129",
+    "appmanifest_sha256": "4a32c795f8a2960ea1314afa6d749a83b832b7dac64d401e9321ec80a5cedf85",
+    "version_label": null,
+    "source_total_bytes": 12227544575,
+    "copied_payload_bytes": 12227544575,
+    "primary_file": {
+      "relative_path": "ShooterGame/Binaries/Win64/ArkAscendedServer.exe",
+      "size_bytes": 197020264,
+      "sha256": "9bbd9bfefb732ede1294aa15da941f7198b1570c272e5deca8909e9a1ce3374b"
+    },
+    "public_branch_metadata": {
+      "build": "26334129",
+      "updated_local": "2026-10-31T07:30:06+08:00",
+      "matches_supplied_package": true,
+      "metadata_artifact_sha256": "59cf844a74d07a620c499079cf9d676b3c6a2a64941cdf4721593010f915966b"
+    },
+    "official_acquisition_reference": {
+      "relative_fixture": "2026-10-31-public_package_build_26334129.json",
+      "fixture_sha256": "a4108e13fa1f46d6f5a1cc833a91b4a3456afd983ea6236f03f0446c2e1750e0",
+      "acquisition_receipt_sha256": "b7ab6fa97776a1270e0756a594eb7e5bfdc9b657f3a53f1eac4533f688b28f08"
+    }
+  },
+  "test": {
+    "selector": "commands::tests::manual_runtime_tests::native_lifecycle_tests::native_manual_save",
+    "production_scope": "manual_save_start_stop_two_cycles",
+    "started_utc": "2026-10-31T05:05:13.973022+00:00",
+    "completed_utc": "2026-10-31T05:11:47.553568+00:00",
+    "started_local": "2026-10-31T13:05:13.973022+08:00",
+    "completed_local": "2026-10-31T13:11:47.553568+08:00",
+    "exit_code": 0,
+    "tests_passed": 1,
+    "duration_seconds": 393.53,
+    "settings": {
+      "program_update": {
+        "policy": "pinned"
+      }
+    },
+    "ports_preflight": "clear",
+    "flags": {
+      "LANGAME_NATIVE_MANUAL_SAVE": "true",
+      "LANGAME_NATIVE_MANUAL_SAVE_RESTART": "true"
+    },
+    "save_receipt_completions": [
+      "requested"
+    ],
+    "exact_checkpoint_readback_requested": false
+  },
+  "observed_native_receipts": [
+    "NATIVE_LIFECYCLE module=arksurvivalascended phase=instance_created elapsed_ms=57025 program_mode=Independent preparation=isolated_copy library=preserved ownership=verified effective_root=fixture/n-a42ae81a0efb5ffa\\runtime creation_scope=storage",
+    "NATIVE_LIFECYCLE module=arksurvivalascended phase=prestart_update cycle=initial events=pinned persisted_evidence=verified download_bytes=not_measured",
+    "NATIVE_LIFECYCLE module=arksurvivalascended phase=started cycle=initial processes=1 bind=default firewall=non_elevated_policy elapsed_ms=49298",
+    "NATIVE_LIFECYCLE module=arksurvivalascended phase=native_ready cycle=initial declared_probes=passed variant=isolated",
+    "NATIVE_MANUAL_SAVE module=arksurvivalascended cycle=initial phase=receipt attempted_once=true retried=false instance_matches=true run_matches=true session_matches=true managed_generations_alive=true route=declared_network_transport_current_run response_present=true response_bytes=47 write_confirmation_pending=false save_completion=requested durable_write=not_assessed restart_readback=not_assessed",
+    "NATIVE_STOP_RESULT module=arksurvivalascended cycle=initial run_id=1 process=main exit_code=Some(-1) crash_flag=false status=stopped",
+    "NATIVE_LIFECYCLE module=arksurvivalascended phase=cycle_stopped cycle=initial run_id=1 active_run=none",
+    "NATIVE_LIFECYCLE module=arksurvivalascended phase=prestart_update cycle=restart events=pinned persisted_evidence=verified download_bytes=not_measured",
+    "NATIVE_LIFECYCLE module=arksurvivalascended phase=started cycle=restart processes=1 bind=default firewall=non_elevated_policy elapsed_ms=46660",
+    "NATIVE_LIFECYCLE module=arksurvivalascended phase=native_ready cycle=restart declared_probes=passed variant=isolated",
+    "NATIVE_MANUAL_SAVE module=arksurvivalascended cycle=restart phase=receipt attempted_once=true retried=false instance_matches=true run_matches=true session_matches=true managed_generations_alive=true route=declared_network_transport_current_run response_present=true response_bytes=47 write_confirmation_pending=false save_completion=requested durable_write=not_assessed restart_readback=not_assessed",
+    "NATIVE_STOP_RESULT module=arksurvivalascended cycle=restart run_id=2 process=main exit_code=Some(-1) crash_flag=false status=stopped",
+    "NATIVE_LIFECYCLE module=arksurvivalascended phase=cycle_stopped cycle=restart run_id=2 active_run=none",
+    "NATIVE_MANUAL_SAVE module=arksurvivalascended phase=restarted fresh_managed_run=true native_readiness=passed content_readback=not_claimed",
+    "NATIVE_LIFECYCLE module=arksurvivalascended phase=complete scope=production_start_stop cleanup=passed gui=not_tested"
+  ],
+  "cleanup": {
+    "test_reported": "passed",
+    "cleanup_failures": [],
+    "owned_processes_absent_after_test": true,
+    "owned_fixture_removed_after_test": true
+  },
+  "artifacts": [
+    {
+      "name": "arksurvivalascended-native.json",
+      "size_bytes": 2546,
+      "sha256": "2fe15a333be26789ac1dcc61a39ed3505387b69decb655c331254f3a50a1f9b6"
+    },
+    {
+      "name": "arksurvivalascended-native.log",
+      "size_bytes": 2987,
+      "sha256": "9ec8fec5579c5135b253890036d3c5b07ffbcecd1907b28e9cbaed06c2a58791"
+    },
+    {
+      "name": "native-build-04.json",
+      "size_bytes": 1521,
+      "sha256": "3e18af616ed7ecaf2605010bb415ed16987facb09950fb65573a6b52a6c73eb4"
+    },
+    {
+      "name": "native-source-04-proof.json",
+      "size_bytes": 794,
+      "sha256": "df2b926151424d2f8a5fc6dfb8bdf501669266e6b4d022378deacae6a5d92b19"
+    }
+  ],
+  "scope_limits": [
+    "This is production backend manual-save acceptance with two fresh managed runs, not the full backup/restore/uninstall/archive lifecycle.",
+    "Save receipts retain their emitted status. Requested does not establish native completion or durable writes; any independent checkpoint/readback evidence is separately identified in the emitted native receipts.",
+    "No GUI, client join, multiplayer gameplay, populated existing-world migration or power-loss durability was tested.",
+    "The test copied a retained local package into a disposable independent instance; it did not acquire the game from upstream or independently establish public-branch recency.",
+    "Source and executable identities refer to the immutable 4227-file snapshot used for this run. Adding this evidence afterward does not change that tested identity.",
+    "Only the fixture map and declared Source RCON saveworld path were exercised. Optional ArkApi/AsaApi tools, cross-map partial failures, public listing and multi-map transfer were not tested.",
+    "The separate public-package comparison retains its static-only scope. This later native run adds readiness, RCON request and normal-stop evidence for 26334129 without renewing historical setting/default coverage."
+  ]
+}

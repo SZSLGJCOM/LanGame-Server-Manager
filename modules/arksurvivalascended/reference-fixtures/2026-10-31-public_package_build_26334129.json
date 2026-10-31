@@ -1,0 +1,118 @@
+{
+  "schema_version": 1,
+  "module_id": "arksurvivalascended",
+  "evidence_classification": "official_public_acquisition_and_read_only_static_comparison",
+  "reviewed_on": "2026-10-31",
+  "verification_timezone": "Asia/Shanghai",
+  "steam_app_id": 2430930,
+  "branch": "public",
+  "steam_build_id": "26334129",
+  "publisher_game_version": null,
+  "publisher_game_version_reason": "The current EXE has no PE FileVersion or ProductVersion. An older publisher patch-note version is not assigned to this newer Steam build.",
+  "official_acquisition": {
+    "method": "fresh official anonymous SteamCMD public app_update 2430930 validate; forced Windows platform",
+    "started_utc": "2026-10-31T03:37:20.781789+00:00",
+    "completed_utc": "2026-10-31T03:43:19.452266+00:00",
+    "status": "passed",
+    "exit_code": 0,
+    "state_flags": 4,
+    "update_result": 0,
+    "build_id": "26334129",
+    "target_build_id": "26334129",
+    "official_success_marker": "Success! App '2430930' fully installed.",
+    "size_on_disk_bytes": 12227543642,
+    "depot_manifests": {
+      "1004": "7604377918839582995",
+      "2430931": "6604340029022292600"
+    },
+    "appmanifest_sha256": "4a32c795f8a2960ea1314afa6d749a83b832b7dac64d401e9321ec80a5cedf85"
+  },
+  "executable": {
+    "relative_path": "ShooterGame/Binaries/Win64/ArkAscendedServer.exe",
+    "size_bytes": 197020264,
+    "sha256": "9bbd9bfefb732ede1294aa15da941f7198b1570c272e5deca8909e9a1ce3374b",
+    "pe_file_version": "",
+    "pe_product_version": "",
+    "declared_module_entry_exists": true,
+    "observed_engine_version_literal": "5.5.4",
+    "engine_literal_scope": "A UTF-16 literal also present in the prior EXE, not a runtime engine-version observation."
+  },
+  "comparison": {
+    "prior_build_id": "26258656",
+    "prior_executable_size_bytes": 197028968,
+    "prior_executable_sha256": "e44d4b59cfd9aa895698dab9c3e562daf0e3ef783ccd28541482fee7351ac7c5",
+    "current_non_steamapps_file_count": 173,
+    "all_current_relative_paths_present_in_prior_package": true,
+    "common_path_size_changes": [
+      "ShooterGame/Binaries/Win64/ArkAscendedServer.exe"
+    ],
+    "prior_runtime_extra_files_absent_from_fresh_package": 14,
+    "runtime_extra_scope": "Prior Sentry data, generated access lists, Mod user data and Steam config were not treated as removed official game files. Prior ShooterGame/Saved and both steamapps directories were excluded from the file-size comparison.",
+    "selected_equal_files_sha256": {
+      "Engine/Config/StagedBuild_ShooterGame.ini": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "Manifest_NonUFSFiles_Win64.txt": "7a104120524a063ec40935ac10d6c1637e81ea69625773e6d35c8126ca76a46d",
+      "Manifest_UFSFiles_Win64.txt": "e607a96f99fe575d3a7d8723ea8d98ebf6dfe10876ecb249f6fccdec21be1197",
+      "Manifest_DebugFiles_Win64.txt": "85df44d12a22a08e4ccf70805e46425ee13908c502a1093fa0702b3d00c85c6a",
+      "ShooterGame/Binaries/Win64/steam_appid.txt": "1b64131dfcf3498c5be24f88983e967a60ad3d17fb2d381eaef6fbd1512f95b7"
+    },
+    "all_payload_bytes_compared": false
+  },
+  "configuration_observation": {
+    "staged_build_ini_bytes": 0,
+    "fresh_saved_directory_exists": false,
+    "fresh_game_user_settings_ini_count": 0,
+    "literals_present_in_both_executables": [
+      "ServerAdminPassword", "ServerPassword", "RCONEnabled", "RCONPort",
+      "SessionName", "MaxPlayers", "QueryPort", "MultiHome",
+      "AltSaveDirectoryName", "SaveWorld", "DoExit", "ListPlayers",
+      "AllowVariantDinoPacks", "GameUserSettings.ini", "Game.ini"
+    ],
+    "literal_scan": "ASCII and UTF-16LE byte presence; MultiHome matched without case sensitivity. Presence does not establish active parsing, defaults or command behavior.",
+    "schema_or_default_changes_made": false
+  },
+  "manager_contract_review": {
+    "launch_entry_changed": false,
+    "manual_save_transport": "source_rcon",
+    "manual_save_command": "saveworld",
+    "rcon_enable_setting": "rcon_enabled",
+    "rcon_password_setting": "admin_password",
+    "shutdown_commands": ["saveworld", "DoExit"],
+    "shutdown_fallback_transport": "stdin",
+    "shutdown_grace_period_ms": 45000,
+    "fixed_game_executable_hash_gate_for_core_launch_or_rcon_save": false,
+    "optional_native_framework": "AsaApi 2.03",
+    "optional_framework_pins_changed": false,
+    "optional_framework_requirement": "The existing framework obtains an offset cache matched to the server EXE hash. The new EXE hash requires a separately matching cache; availability, compatibility and native tool behavior were not tested.",
+    "production_code_changes_made": false
+  },
+  "reviewed_source_files_sha256": {
+    "modules/arksurvivalascended/module.toml": "50b8958004b753d4a7027209c148dcddb1024814d8bc6f15330daece49cb91e0",
+    "modules/arksurvivalascended/schema.json": "9e8e7d3699910d71c4ef6b0746a718c69190653efd8093fd69a2adc5843c0086",
+    "apps/desktop/src-tauri/src/ark_tools_install.rs": "746358eca43442c4c218d6d549c90ea5edca109d7311d3a105597184ffe09506",
+    "modules/ark-tools/SOURCE.md": "8827ff8b17c340e48888efb4c0f85cac7d0fe9fa7ed24f9e3c4d9ff662aa6603"
+  },
+  "artifacts": [
+    {
+      "name": "arksurvivalascended-acquisition.json",
+      "size_bytes": 1147,
+      "sha256": "b7ab6fa97776a1270e0756a594eb7e5bfdc9b657f3a53f1eac4533f688b28f08"
+    },
+    {
+      "name": "arksurvivalascended-acquisition.log",
+      "size_bytes": 14031,
+      "sha256": "6c0e75380138aab2b9728515c6a121ca78fb6ff2d9fdd7e29fa8d3a85b9ab086"
+    },
+    {
+      "name": "appmanifest_2430930.acf",
+      "size_bytes": 933,
+      "sha256": "4a32c795f8a2960ea1314afa6d749a83b832b7dac64d401e9321ec80a5cedf85"
+    }
+  ],
+  "scope_limits": [
+    "No server process, SteamCMD update, build or native plugin preparation was run by this static comparison; the acquisition receipt was produced separately by the authorized acquisition workflow.",
+    "The 2026-10-30 native lifecycle fixture remains evidence for build 26258656 only. It is not relabeled as a native acceptance of 26334129.",
+    "Unchanged staged manifest bytes and equal file sizes do not prove all payload contents or compiled behavior are unchanged.",
+    "An empty shipped StagedBuild INI and binary literals do not renew historical configuration/default verification or establish RCON authentication, responses or save completion.",
+    "Native readiness, normal stop, exact saved-content readback, connected clients, public listing, cross-server transfer and optional AsaApi tools remain unverified on this build."
+  ]
+}

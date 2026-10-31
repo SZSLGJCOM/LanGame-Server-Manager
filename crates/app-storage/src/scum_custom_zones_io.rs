@@ -8,7 +8,32 @@ use crate::StorageError;
 use crate::instance_file_patch::io::{guard_directories, is_link};
 use crate::managed_console_log::owned_fs::identity;
 
-const VERIFIED_IMAGE: &str = "070fcad918ba04eb9797db29674cadbd6691427b936fe354bca23b008c8c9971";
+#[derive(Clone, Copy)]
+pub(super) enum NativeLayout {
+    Build25803875,
+    Build26320224,
+}
+
+impl NativeLayout {
+    pub fn database_version(self) -> i64 {
+        match self {
+            Self::Build25803875 => 73,
+            Self::Build26320224 => 75,
+        }
+    }
+
+    fn from_image_digest(digest: &str) -> Option<Self> {
+        match digest {
+            "070fcad918ba04eb9797db29674cadbd6691427b936fe354bca23b008c8c9971" => {
+                Some(Self::Build25803875)
+            }
+            "a862d658271f26d082de5df7bba01e8af9c3d051cb9634e908bb94d8a9efbc7a" => {
+                Some(Self::Build26320224)
+            }
+            _ => None,
+        }
+    }
+}
 
 pub(super) fn invalid(path: &Path, message: impl Into<String>) -> StorageError {
     StorageError::WriteConfig {
@@ -53,13 +78,13 @@ fn open_regular(path: &Path, write: bool) -> Result<File, StorageError> {
     Ok(file)
 }
 
-pub(super) fn verified_layout(install: &Path) -> Result<bool, StorageError> {
+pub(super) fn verified_layout(install: &Path) -> Result<Option<NativeLayout>, StorageError> {
     let path = install.join("SCUM/Binaries/Win64/SCUMServer.exe");
     if !path
         .try_exists()
         .map_err(|error| invalid(&path, error.to_string()))?
     {
-        return Ok(false);
+        return Ok(None);
     }
     let _directories = guard_directories(
         path.parent()
@@ -82,7 +107,7 @@ pub(super) fn verified_layout(install: &Path) -> Result<bool, StorageError> {
         .iter()
         .map(|byte| format!("{byte:02x}"))
         .collect();
-    Ok(digest == VERIFIED_IMAGE)
+    Ok(NativeLayout::from_image_digest(&digest))
 }
 
 pub(super) struct DatabaseAnchor {

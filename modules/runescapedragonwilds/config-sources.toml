@@ -1,6 +1,14 @@
 status = "best_effort_verified"
-last_verified = "2026-10-15"
-notes = "2026-10-15 bounded recheck of official build 25811348: the existing Custom-world copy loaded, applied BuildingMaterialCostScale=1.5, completed a native autosave and restarted with the same world/rule. The host now rejects online OwnerId values above 32 UTF-16 units and uses owned Unreal-console quit for orderly teardown, with no additional save-on-exit guarantee. These new sources do not renew every configuration or multiplayer claim. Historical evidence follows. Installed Steam build 24574222 was launched in an isolated copy on 2026-09-08 with fresh DedicatedServer.ini and no original saves. UE 5.6.1 loaded L_World, reached ReadyToJoin=1 and honored the explicit loopback game port. The independent LgsmPlayerQuery extension returned current complete empty rosters through the production bootstrap and native file-IPC reader. Existing configuration keys remain based on the official guide and earlier configuration-specific probes below; this player-query test does not claim a new acceptance run for every setting. Native A2S and moderation remain unavailable."
+last_verified = "2026-10-31"
+notes = "Public build 26161880 passed isolated production start/save-request/normal-stop/restart acceptance on 2026-10-31. The initial save receipt remains Requested. A separate observer verified a fresh native write before the periodic autosave window, captured the exact two-file checkpoint before stop, restored it after stop and verified native loading on restart without a second save. This does not confirm arbitrary player progress, owner permissions, native A2S, GUI or full backup/restore behavior. Earlier configuration, player-query and shutdown evidence retains its original build and scope."
+
+[[sources]]
+id = "public_build_26161880_native_checkpoint_restart"
+kind = "runtime_probe"
+path = "native-evidence/2026-10-31-public-build-26161880-native.json; native-evidence/2026-10-31-public-build-26161880-native-output.txt"
+authority = "isolated_production_backend_with_independent_native_save_and_checkpoint_readback"
+description = "2026-10-31: app 4019830 public build 26161880 passed native_manual_save with exact checkpoint readback in 136.43 seconds. Both fresh runs reached native readiness and normal exit 0. One initial production Requested save was independently observed as a fresh native write with periodic autosave excluded; its two-file checkpoint was captured before stop, restored and hash-verified after stop, then loaded on restart without a second save. The production receipt was not promoted to Confirmed. Owned cleanup passed. Portable evidence binds public/package metadata, build02 source/binary, runtime module files and raw output. Full backup/restore/uninstall/archive, GUI and real-client behavior were not tested."
+
 
 [[sources]]
 id = "dragonwilds_production_stop_backup_restart_build_25811348"

@@ -1,6 +1,35 @@
 status = "best_effort_verified"
-last_verified = "2026-10-10"
-notes = "Installed Steam build 24656085 (CL 502094) was started and its HTTPS API exercised on 2026-09-08. -UserDir selects instance-owned INI files; process-scoped USERPROFILE, LOCALAPPDATA and APPDATA separately isolate the native server identity and saves. CreateNewGame requires bSkipOnboarding and GameModeSettings in NewGameData on this build. Claim, credentials and active-world selection remain game API state. Native save creation was verified without changing another server profile. The formal instance environment loaded and saved its world without changing the global server identities. SML 3.12.0 and FRM 1.5.3 loaded. The game HTTPS frm/getPlayer extension returned HTTP 404 bad_function, while the independently enabled FRM HTTP service returned HTTP 200 and a complete empty player array. Its native autostart and port options are persisted in the instance GameUserSettings.ini; client joins were not part of this probe."
+last_verified = "2026-10-31"
+notes = "2026-10-31: public build 25782485 (1.2.4.1 / CL 513885) passed build10 two-instance native isolation: two distinct HTTPS worlds, four Confirmed save acknowledgements and normal stops, live-peer world/config/manual-save preservation, distinct credentials with cross-token rejection, each instance restarting its own checkpoint and final credential/disposable cleanup. Separately, build04 passed SML 3.12.0 / FRM 1.5.4 loading and complete non-stale empty getPlayer collection across two cycles. Mod staging remains fixture-only; real players, exact gameplay checkpoint contents, the full backup lifecycle and network updates were not tested by these runs. The failed first isolation attempt remains recorded separately. Historical runtime evidence: Installed Steam build 24656085 (CL 502094) was started and its HTTPS API exercised on 2026-09-08. -UserDir selects instance-owned INI files; process-scoped USERPROFILE, LOCALAPPDATA and APPDATA separately isolate the native server identity and saves. CreateNewGame requires bSkipOnboarding and GameModeSettings in NewGameData on this build. Claim, credentials and active-world selection remain game API state. Native save creation was verified without changing another server profile. The formal instance environment loaded and saved its world without changing the global server identities. SML 3.12.0 and FRM 1.5.3 loaded. The game HTTPS frm/getPlayer extension returned HTTP 404 bad_function, while the independently enabled FRM HTTP service returned HTTP 200 and a complete empty player array. Its native autostart and port options are persisted in the instance GameUserSettings.ini; client joins were not part of this probe."
+
+[[sources]]
+id = "native_two_instance_isolation_build_25782485"
+kind = "install_probe"
+path = "native-evidence/2026-10-31-build-25782485-isolation-native.json"
+authority = "isolated_managed_native_concurrent_worlds_with_immutable_build_and_package_identity"
+description = "2026-10-31: build10 passed the dedicated no-Mod two-instance test on public build 25782485 in 461.60 seconds. Two distinct owned HTTPS worlds completed two cycles each with four Confirmed save receipts and normal product stops. While the primary cycled, its live peer retained the same managed run, HTTPS world, stable configuration, manual-save family and credentials; both servers rejected the other's token. Each restart loaded its own existing manual checkpoint, and the stopped primary stayed unchanged through the peer restart. Two credential namespaces were confirmed absent and final owned/disposable cleanup passed. This does not claim exact gameplay-content readback, clients, full backup/archive lifecycle or simultaneous FRM. The failed build04 attempt and separate FRM acceptance retain their own results and hashes."
+
+[[sources]]
+id = "native_frm_two_cycles_build_25782485"
+kind = "install_probe"
+path = "native-evidence/2026-10-31-build-25782485-frm-native.json"
+authority = "isolated_managed_native_fixture_with_immutable_build_and_verified_mod_inputs"
+description = "2026-10-31: build04 passed 237.95 seconds of two-cycle native HTTPS world/save/restart and FRM acceptance on CL 513885 (1.2.4.1). SML 3.12.0 and FRM 1.5.4 loaded in each current run; production getPlayer returned Ready, complete, non-stale zero players with the listener owned by the current native process, independently checked against the real 2-byte HTTP [] response. Both save receipts were Confirmed, both console stops were normal 0xC000013A exits with crash_flag=false, and credential absence/final cleanup passed. Reviewed Mod archives and all 277 seed members are hash-bound; seven game identity/content-manifest files match installed public build 25782485, while the seed itself has no appmanifest. This does not claim product Mod installation, client joins, exact checkpoint readback or simultaneous pair isolation."
+
+[[sources]]
+id = "native_isolation_first_attempt_build_25782485"
+kind = "install_probe"
+path = "native-evidence/2026-10-31-isolation-build-25782485-first-attempt.json"
+authority = "failed_isolated_managed_native_attempt_and_retained_diagnostics"
+description = "2026-10-31: build04 isolation attempt failed before world preparation: automatic update readiness returned steamcmd_not_ready for the externally bootstrapped, unverified SteamCMD directory, then the product explicitly used the verified installed program. No game app_update/download was reached and no production updater defect was established. Cleanup conservatively retained the fixture because the unstarted primary had no supervisor stop evidence; the peer raw cleanup exit was not a normal-stop result. Exact credential absence and independent process checks subsequently allowed diagnostic retention and cleanup of the owned disposable fixture. Original failed_cleanup status, immutable code/binary identity and retained log hashes are preserved. This failure prompted test-only pinning and explicit never-started cleanup tracking. It remains a failed attempt; the later build10 pair result is recorded separately."
+
+[[sources]]
+id = "installed_console_entry_build_25782485"
+kind = "documentation"
+path = "native-evidence/2026-10-31-installed-build-25782485.json"
+authority = "first_party_release_notes_and_read_only_installed_executable_identity"
+url = "https://steamstore-a.akamaihd.net/news/externalpost/steam_community_announcements/1846018067941164"
+description = "2026-10-31: the publisher's latest versioned announcement is 1.2.4.1 (2026-10-12 UTC), fixing a dedicated-server Conveyor Throughput Monitor crash and restoring Engine.ini plus Audio Routing/Metasound. The installed app 1690800 manifest reports build 25782485; its existing direct console entry identifies CL 513885. The managed Engine.ini template contains no audio overrides. This does not establish an exhaustive current native-option inventory, public-branch identity or successful native API/lifecycle/FRM behavior; historical CL 502094 runtime evidence remains separately scoped."
 
 [[sources]]
 id = "native_console_entry_build_24656085"

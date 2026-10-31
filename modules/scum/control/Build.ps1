@@ -5,12 +5,6 @@ $source = [IO.Path]::GetFullPath($PSScriptRoot)
 $repository = [IO.Path]::GetFullPath((Join-Path $source '../../..'))
 . (Join-Path $repository 'scripts/build_control_output.ps1')
 $output = Resolve-ControlBuildOutput -OutDir $OutputDirectory -ProjectRoot $repository -CargoLeaf 'scum-save-control'
-$package = [IO.Path]::GetFullPath('D:/LanGame/server-files')
-foreach ($protected in @($package)) {
-    if ($output -eq $protected -or $output.StartsWith($protected+[IO.Path]::DirectorySeparatorChar,[StringComparison]::OrdinalIgnoreCase)) {
-        throw 'SCUM build output must be outside source and original server packages.'
-    }
-}
 $vswhere = Join-Path ${env:ProgramFiles(x86)} 'Microsoft Visual Studio/Installer/vswhere.exe'
 if (-not (Test-Path -LiteralPath $vswhere -PathType Leaf)) { throw 'MSVC C++ Build Tools are required to build the bundled SCUM control.' }
 [IO.Directory]::CreateDirectory($output) | Out-Null

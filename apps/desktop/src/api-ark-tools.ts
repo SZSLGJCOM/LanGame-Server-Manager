@@ -26,7 +26,11 @@ function status(value: unknown): ArkToolsStatus {
   if (typeof response.installed !== "boolean" || typeof response.connected !== "boolean"
     || response.issue !== null && (typeof response.issue !== "string" || response.issue.length > 8192)
     || response.connected && !response.installed) throw new Error("Invalid ARK extension status.");
-  return { installed: response.installed, connected: response.connected, issue: response.issue as string | null };
+  // The native installer reports ordinary absence as a message. Present that
+  // prerequisite through localized action help; retain actual repair/connection diagnostics.
+  const issue = !response.installed && response.issue === "Prepare the ARK server extension while this instance is stopped"
+    ? null : response.issue as string | null;
+  return { installed: response.installed, connected: response.connected, issue };
 }
 export async function readArkToolsStatus(instanceId: string, processKey = "main"): Promise<ArkToolsStatus> {
   requireHost();

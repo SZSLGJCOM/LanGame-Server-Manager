@@ -1,0 +1,155 @@
+{
+  "schema_version": 1,
+  "module_id": "sevendaystodie",
+  "evidence_classification": "isolated_managed_backend_native_lifecycle",
+  "verified_on": "2026-10-31",
+  "verification_timezone": "Asia/Shanghai",
+  "steam_app_id": 294420,
+  "steam_build_id": "26237934",
+  "native_version": "V3.4.0 (b9)",
+  "package_reference": "2026-10-31-public-package-build-26237934.json",
+  "package_reference_sha256": "d2b0c2d96e84aec0d07a0608263b55fb7651cf1da21da8c9f2fcbe942e8dd0e3",
+  "environment": "Windows; the compiled manager backend owns a disposable Independent instance copied from the freshly validated official package. Native logs report default binding and non-elevated firewall policy. Program update policy is pinned.",
+  "official_package_identity": {
+    "appmanifest_sha256": "04475d878ac6fa4ac4969895f1f058c3f95af6ff7a283acbcce9ae8a1def872c",
+    "depot_id": 294421,
+    "depot_manifest": "4801417336161383035",
+    "executable_sha256": "9062c57f7c742dd175d78934941d2f30beeddd70b01dd8ccc95ec73f22e21ab3",
+    "assembly_csharp_sha256": "45f88c1d13d6963c1ec6ba288d68365312a335edeb9806bf06b5d86d652ddbd4",
+    "serverconfig_sha256": "21dd90603e12c2aa88c73edf4d1c44ee1bc60358b94275259c4aa24970a8d879",
+    "startdedicated_sha256": "fabe81fbd61eafc0aa4fb5a517c834e376001874b7dada45ac5f4fd8830f7aa9",
+    "rehashed_after_lifecycle": true,
+    "acquisition_scope": "The separate official SteamCMD acquisition completed with exit 0, StateFlags 4 and UpdateResult 0. This lifecycle consumes that existing package and does not itself acquire or certify upstream content."
+  },
+  "source_identity_sha256": "9161f9cdccc644c3bd4dd925ab916220b774eb1c1fcad8c6ddcd3b93686f7255",
+  "test_binary_sha256": "8ddeb8811cd1fd0fd125b4cc286bd0f4e92d171a9ded7b9186219a46d825f183",
+  "source_manifest_sha256": "8b3635b2c7ae5f05d86c8c6a808bfb9e6f960b2dd47784d0b1e8d85eb461b9e3",
+  "build": {
+    "receipt": "native-build-04.json",
+    "entry_point": "workspace-managed Cargo wrapper (local path and filename omitted)",
+    "entry_point_sha256": "a49fe85bfed0b558354bc5a605e84b5a2f9a30c251c2bc57ff4ddc51503223b2",
+    "cargo_command": "test",
+    "cargo_arguments": ["-p", "langame-desktop", "--bin", "langame-desktop", "--all-features", "--locked", "--no-run", "--message-format=json"],
+    "source_manifest_file_count": 4227,
+    "source_proof_verified_file_count": 4227,
+    "test_binary_size_bytes": 193284608,
+    "binary_manifest_receipt_and_source_proof_rehashed": true,
+    "scope": "This evidence is bound to the successful build-04 export. Later test-source changes and builds are not covered by this run."
+  },
+  "reviewed_module_files_sha256": {
+    "modules/sevendaystodie/module.toml": "bb85f9353acf94f886677445eaaed4e798673e92508cb38dc1c0ae25feb2838a",
+    "modules/sevendaystodie/schema.json": "00442e80e186a7eb160767fa985aba65e3c511eb45a3204858553f18ac9f3b63",
+    "modules/sevendaystodie/templates/serverconfig.xml.hbs": "3ba26352613ba705f1eb8b705b9431e470ef3f811968083d64d8bb6a6490dd02"
+  },
+  "test": {
+    "selector": "commands::tests::manual_runtime_tests::native_lifecycle_tests::native_package_lifecycle",
+    "started_utc": "2026-10-31T05:33:56.443521+00:00",
+    "completed_utc": "2026-10-31T05:46:12.283396+00:00",
+    "started_local": "2026-10-31T13:33:56.443521+08:00",
+    "completed_local": "2026-10-31T13:46:12.283396+08:00",
+    "status": "passed",
+    "exit_code": 0,
+    "tests_passed": 1,
+    "tests_failed": 0,
+    "tests_ignored": 0,
+    "tests_filtered_out": 3222,
+    "duration_seconds": 735.79,
+    "copied_payload_bytes": 17970676497,
+    "creation_scope": "storage",
+    "production_scope": "full_native_package_lifecycle",
+    "ports_preflight": "clear"
+  },
+  "manual_save_requests": {
+    "total": 4,
+    "route": "declared_network_transport_current_run",
+    "native_command": "saveworld",
+    "save_completion": "requested",
+    "attempted_once_per_cycle": true,
+    "retried": false,
+    "instance_run_and_session_matched": true,
+    "managed_generations_alive": true,
+    "durable_write_at_receipt": "not_assessed",
+    "saved_content_readback_at_receipt": "not_assessed",
+    "later_receipt_attribution": "The two raw cycle=other lines are attributed by their position between the matching restored-world readiness and stop; the test's safe_cycle formatter maps these later names to other."
+  },
+  "cycles": [
+    {
+      "cycle": "initial", "managed_run_id": 1, "managed_process_count": 1,
+      "native_start_elapsed_ms": 46234, "native_readiness": "passed",
+      "manual_save_requests": 1, "raw_receipt_cycle": "initial", "response_bytes": 696,
+      "exit_code": 0, "crash_flag": false, "status": "stopped", "active_run_after_stop": null
+    },
+    {
+      "cycle": "restart", "managed_run_id": 2, "managed_process_count": 1,
+      "native_start_elapsed_ms": 47069, "native_readiness": "passed",
+      "manual_save_requests": 1, "raw_receipt_cycle": "restart", "response_bytes": 696,
+      "exit_code": 0, "crash_flag": false, "status": "stopped", "active_run_after_stop": null
+    },
+    {
+      "cycle": "after_restore", "managed_run_id": 3, "managed_process_count": 1,
+      "native_start_elapsed_ms": 45356, "native_readiness": "passed",
+      "manual_save_requests": 1, "raw_receipt_cycle": "other", "response_bytes": 920,
+      "exit_code": 0, "crash_flag": false, "status": "stopped", "active_run_after_stop": null
+    },
+    {
+      "cycle": "after_archive_restore", "managed_run_id": 4, "managed_process_count": 1,
+      "native_start_elapsed_ms": 44824, "native_readiness": "passed",
+      "manual_save_requests": 1, "raw_receipt_cycle": "other", "response_bytes": 696,
+      "exit_code": 0, "crash_flag": false, "status": "stopped", "active_run_after_stop": null
+    }
+  ],
+  "storage_lifecycle": {
+    "archive_with_installed_library": { "program_storage": "full", "omitted_bytes": 0, "library": "preserved" },
+    "preflight_permanent_delete": { "library": "installed", "peer": "preserved", "owned_files": "removed" },
+    "restart_readback": {
+      "persisted_instance_settings_and_configuration": "verified",
+      "fresh_managed_run": "verified",
+      "native_readiness": "passed",
+      "exact_manual_save_content": "not_claimed"
+    },
+    "backup_restore": {
+      "outcome": "passed", "restored_files": 70, "safeguard": "verified",
+      "program_config": "preserved", "subsequent_native_readiness": "passed"
+    },
+    "program_maintenance": { "outcome": "not_tested", "reason": "network_update_not_selected" },
+    "save_observation": "generated",
+    "library_uninstall": {
+      "outcome": "library_only_instance_program_unchanged", "program_entries": "preserved",
+      "save_files_preserved": 70, "native_config_files_preserved": 0
+    },
+    "archive": {
+      "archive": "verified", "interrupted_restore_simulation": "deferred_commit_failure",
+      "journal_during_interruption": "restoring", "instance_row_during_interruption": "absent",
+      "interrupted_commit": "recovered", "restored_state": "stopped", "ownership": "verified",
+      "config_saves_program_bytes": "preserved", "subsequent_native_readiness": "passed"
+    },
+    "instance_delete": { "independent_program": "removed", "library_record": "preserved", "cleanup": "verified" },
+    "final_library_uninstall": { "unused_programs": "removed", "retained_data_paths": 0 }
+  },
+  "cleanup": {
+    "four_managed_runs_stopped": true,
+    "all_native_process_exit_codes_zero": true,
+    "all_crash_flags_false": true,
+    "active_runs_cleared": true,
+    "log_result": "passed",
+    "runner_cleanup_failures": [],
+    "post_run_owned_seven_days_processes": 0,
+    "disposable_instance_directory_absent": true,
+    "disposable_runtime_directory_absent": true
+  },
+  "artifacts": [
+    { "name": "sevendaystodie-native.json", "size_bytes": 3323, "sha256": "46b433b7cec15dd5fe1b4f0ead67540c1cf96eab9afdd2e2381217ff0c0d6a1c" },
+    { "name": "sevendaystodie-native.log", "size_bytes": 6766, "sha256": "265a838bba0cd3235ec8403b892d17093e310615d00b15d7df7565da7906a6d2" },
+    { "name": "native-build-04.json", "size_bytes": 1521, "sha256": "3e18af616ed7ecaf2605010bb415ed16987facb09950fb65573a6b52a6c73eb4" },
+    { "name": "native-source-04-proof.json", "size_bytes": 794, "sha256": "df2b926151424d2f8a5fc6dfb8bdf501669266e6b4d022378deacae6a5d92b19" },
+    { "name": "native-build-04.artifacts/source-manifest.json", "size_bytes": 863859, "sha256": "8b3635b2c7ae5f05d86c8c6a808bfb9e6f960b2dd47784d0b1e8d85eb461b9e3" },
+    { "name": "managed_backend_test_binary", "size_bytes": 193284608, "sha256": "8ddeb8811cd1fd0fd125b4cc286bd0f4e92d171a9ded7b9186219a46d825f183" }
+  ],
+  "scope_limits": [
+    "Four correlated Telnet requests returned requested. Response bytes, generated save files and normal stops do not establish request-caused durable completion or player progress.",
+    "The persisted_readback lifecycle line verifies persisted instance configuration and a fresh run. No exact pre-stop manual-save checkpoint was captured or reloaded in this run.",
+    "The 70-file stopped-world backup and archive recovery preserve the tested bytes and subsequently reach native readiness; this does not establish all saved game objects or an old populated-world migration.",
+    "Archive interruption is a controlled deferred-commit failure, not a process crash or power-loss test.",
+    "GUI, client joins, multiplayer, live moderation, third-party Mods, live network program updates and repairs were not tested. Historical configuration and moderation evidence retains its own date and scope."
+  ]
+}

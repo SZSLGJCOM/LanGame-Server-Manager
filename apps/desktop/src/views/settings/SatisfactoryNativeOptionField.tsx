@@ -1,6 +1,8 @@
 import { useMemo } from "react";
+import { ActivityNotice } from "../../components/ActivityNotice";
 import { useI18n } from "../../i18n";
-import { ConfigurationField } from "./ConfigurationField";
+import { buildConfigurationFieldIds, ConfigurationField } from "./ConfigurationField";
+import { focusConfigurationControl } from "./configuration-workspace-state";
 import { buildConfigurationFieldCopy } from "./GuidedSettingsForm";
 import { parseGuidedSettingsSchema, readGuidedFieldValue, writeGuidedFieldValue } from "./guided-settings";
 import type { ConfigurationSpecializedRendererProps } from "./module-types";
@@ -28,7 +30,7 @@ export function SatisfactoryNativeOptionField(props: ConfigurationSpecializedRen
   const { snapshot } = useSatisfactoryWorldSettings();
   const schema = useMemo(() => parseGuidedSettingsSchema(props.moduleDetails, locale, t), [locale, props.moduleDetails, t]);
   const field = schema.fields.find((entry) => entry.key === props.fieldKey);
-  if (!field) return <p className="form-note form-note--error" role="alert">{t("satisfactory.settings.native.fieldUnavailable")}</p>;
+  if (!field) return <ActivityNotice tone="error">{t("satisfactory.settings.native.fieldUnavailable")}</ActivityNotice>;
   const native = snapshot?.server_options[NATIVE_KEYS[field.key] ?? ""];
   const pending = snapshot?.pending_server_options[NATIVE_KEYS[field.key] ?? ""];
   const actual = readSatisfactoryNativeOption(field, native);
@@ -46,21 +48,25 @@ export function SatisfactoryNativeOptionField(props: ConfigurationSpecializedRen
   copy.preserveNativeWhenUnset = native?.trim() || t("satisfactory.settings.native.currentValueUnavailable");
   const resolved = value !== undefined && (field.type === "boolean" ? typeof value === "boolean" :
     field.enumOptions?.some((option) => option.value === value));
+  const inputId = buildConfigurationFieldIds(field.key, "configuration-satisfactory").inputId;
   return <div className="settings-editor-stack">
     <div className="settings-schema-grid configuration-field-grid">
       <ConfigurationField field={{ ...field, preserveNativeWhenUnset: !resolved,
         defaultValue: field.type === "boolean" ? false : field.defaultValue,
         presentation: { ...field.presentation, state: "editable", rendererId: undefined } }}
         value={value} settings={props.settings} copy={copy} t={t}
-        idPrefix="configuration-satisfactory" disabled={props.disabled}
+        idPrefix="configuration-satisfactory" disabled={props.disabled} validationDisplay="activity"
         onPatch={(patch) => {
           const written = writeGuidedFieldValue(props.settings, field, patch[field.key]);
           props.onPatch({ [field.key]: written[field.key] });
         }} />
     </div>
     {label !== null && (hasOverride && value !== actual || pending && pending !== native) ?
-      <p className="form-note" role="status">{t("satisfactory.settings.native.currentValue", { value: label })}
-        {pending && pending !== native ? ` ${t("satisfactory.settings.native.pendingValue")}` : ""}</p> : null}
+      <ActivityNotice action={<button type="button" className="secondary-button configuration-validation-target"
+        aria-controls={inputId} onClick={() => focusConfigurationControl(inputId)}>{field.title}</button>}>
+        {`${t("satisfactory.settings.native.currentValue", { value: label })}${
+          pending && pending !== native ? ` ${t("satisfactory.settings.native.pendingValue")}` : ""}`}
+      </ActivityNotice> : null}
     {hasOverride ? <div className="panel-head panel-head--compact">
       <button type="button" className="ghost-button" disabled={props.disabled}
         data-satisfactory-release-override={field.key}

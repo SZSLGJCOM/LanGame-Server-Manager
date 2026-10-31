@@ -1,7 +1,8 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useId, useState, type ReactNode } from "react";
 import { useI18n, type TranslateFn } from "../../i18n";
 import { ARK_EDITORS_EN } from "../../i18n/games/ark-editors.en";
 import { buildConfigurationFieldIds } from "./ConfigurationField";
+import { ConfigurationValidationNotice } from "./ConfigurationValidationNotice";
 import type { ConfigurationSpecializedRendererProps } from "./module-types";
 import { validateArkComplexField } from "./ark-complex-validation";
 
@@ -26,10 +27,11 @@ export function ArkEditorFrame(props: ArkFieldEditorProps & { children: ReactNod
         onClick={() => setNative(!native)} disabled={props.disabled || Boolean(error)}>
         {arkText(t, native ? "table" : "native")}</button>
     </div>
-    {error ? <p className="ark-editor__error" role="alert">{arkText(t, "rawNotice")} {arkText(t, "invalid")}</p> : null}
+    {error ? <span id={`${id}-error`} className="configuration-field-error-a11y">{arkText(t, "rawNotice")} {arkText(t, "invalid")}</span> : null}
     {native || error ? <textarea id={id} className="settings-schema-input settings-schema-textarea" rows={8}
       aria-label={arkText(t, "nativeField", { name: title })} value={raw} disabled={props.disabled}
-      aria-invalid={Boolean(error)} onChange={(event) => props.onPatch({ [props.settingKey]: event.target.value })} /> : props.children}
+      aria-invalid={Boolean(error)} aria-errormessage={error ? `${id}-error` : undefined}
+      onChange={(event) => props.onPatch({ [props.settingKey]: event.target.value })} /> : props.children}
   </section>;
 }
 
@@ -37,10 +39,14 @@ export function ArkEditorFrame(props: ArkFieldEditorProps & { children: ReactNod
 export function ArkCommitInput(props: { value: string; label: string; disabled?: boolean; placeholder?: string;
   id?: string; list?: string; numeric?: boolean; onCommit: (value: string) => void }) {
   const { t } = useI18n();
+  const fallbackId = useId();
+  const inputId = props.id ?? fallbackId;
   const [draft, setDraft] = useState<string | null>(null);
   const [failed, setFailed] = useState(false);
+  const error = failed ? arkText(t, "editError") : null;
   useEffect(() => { if (draft === props.value) setDraft(null); }, [draft, props.value]);
-  return <div><input id={props.id} list={props.list} className="settings-schema-input" aria-label={props.label} disabled={props.disabled} aria-invalid={failed || undefined}
+  return <div><input id={inputId} list={props.list} className="settings-schema-input" aria-label={props.label} disabled={props.disabled}
+    aria-invalid={failed || undefined} aria-errormessage={failed ? `${inputId}-error` : undefined}
     inputMode={props.numeric ? "decimal" : undefined} value={draft ?? props.value} placeholder={props.placeholder}
     onChange={(event) => { setDraft(event.target.value); setFailed(false); }}
     onBlur={() => {
@@ -49,5 +55,6 @@ export function ArkCommitInput(props: { value: string; label: string; disabled?:
       catch { setFailed(true); }
     }}
     onKeyDown={(event) => { if (event.key === "Enter") event.currentTarget.blur(); }} />
-    {failed ? <span role="alert" className="ark-editor__error">{arkText(t, "editError")}</span> : null}</div>;
+    {error ? <span id={`${inputId}-error`} className="configuration-field-error-a11y">{error}</span> : null}
+    <ConfigurationValidationNotice message={error} inputId={inputId} label={props.label} /></div>;
 }

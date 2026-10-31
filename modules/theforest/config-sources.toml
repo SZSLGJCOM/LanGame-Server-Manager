@@ -3,6 +3,21 @@ last_verified = "2026-07-13"
 notes = "SteamCMD public app info and the installed manifest match at buildid 3488796 on 2026-07-13. The current Assembly-CSharp.dll embeds the exact generated server.cfg inventory and defaults; its SteamDSConfig accessors also prove that the consumed cheat key is allowCheats and that the generated serverContact line has no current accessor. The historical Steam community guide independently documents the operator surface and -configfilepath startup flow. A 2026-09-08 isolated exact-build A2S probe established the zero-player query contract; read-only player queries are now enabled. Host-callable moderation remains unavailable."
 
 [[sources]]
+id = "managed_native_manual_save_20261031"
+kind = "runtime_probe"
+path = "reference-fixtures/2026-10-31-managed_native_manual_save.json"
+authority = "compiled_manager_backend_with_isolated_retained_package"
+description = "2026-10-31 Asia/Shanghai: the immutable manager backend completed native_manual_save acceptance against 3488796, with two isolated managed runs, declared native readiness, normal exits and owned cleanup. Formal save receipt status remains confirmed. This run does not claim exact saved-content readback. This is manual-save/two-cycle start-stop scope, not full backup/restore/uninstall acceptance, GUI or client gameplay."
+
+[[sources]]
+id = "package_identity_review_20261031"
+kind = "documentation"
+path = "Steam app 556450 build 3488796 / TheForestDedicatedServer_Data/Managed/Assembly-CSharp.dll"
+authority = "first_party_release_metadata_and_read_only_retained_package_identity"
+url = "https://api.steampowered.com/ISteamNews/GetNewsForApp/v2/?appid=242760&count=6&maxlength=0&feeds=steam_community_announcements"
+description = "2026-10-31 read-only review: the retained manifest reports StateFlags 4 and buildid/TargetBuildID 3488796; Assembly-CSharp.dll SHA256 bc0c9b79b125ce9a6d96d532359fde8a539159378bd9f558309572b9744a9d7e matches the exact native package reviewed previously. The publisher's Unity security announcement (2025-10-04 Asia/Shanghai) expressly excludes The Forest base game and its dedicated server; the 1.12 announcement is VR-specific. No later dedicated-server configuration change was established from the official feed. This does not claim a fresh public-depot query or repeat the existing native readiness, save-path, loader, shutdown or client acceptance."
+
+[[sources]]
 id = "native_loader_control_20261001"
 kind = "install_probe"
 path = "modules/theforest/control/LanGameTheForestControl.cs"

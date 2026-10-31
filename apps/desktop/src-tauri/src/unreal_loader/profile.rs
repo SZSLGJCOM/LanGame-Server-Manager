@@ -20,11 +20,19 @@ impl Profile {
                 .then_some("d076d5d223360f133e365ef37901ff9789eb68186a8f6d66494038f4864684b2"));
         }
         match (self.id, actual) {
-            ("abioticfactor", "2563f8d798c8277400acd28eefde604c0ac7d77601627296211af48b30dba25f") => Ok(None),
+            (
+                "abioticfactor",
+                "2563f8d798c8277400acd28eefde604c0ac7d77601627296211af48b30dba25f"
+                | "de8b4bdaee7a21f56b6f55bc1cc37e97e34c4c1b8649672635b876220f7a935d",
+            ) => Ok(None),
             ("conanexiles", "d0ea317e7e037e68454414f12828d5995cc9e519b9c34eda264be1954d352b14") => {
                 Ok(Some("2eec9aa9aa443fb476db583cfdc5044285ccc246df0a60e93155fb37e14324b6"))
             }
-            ("scum", "070fcad918ba04eb9797db29674cadbd6691427b936fe354bca23b008c8c9971") => Ok(None),
+            (
+                "scum",
+                "070fcad918ba04eb9797db29674cadbd6691427b936fe354bca23b008c8c9971"
+                | "a862d658271f26d082de5df7bba01e8af9c3d051cb9634e908bb94d8a9efbc7a",
+            ) => Ok(None),
             _ => Err("This game build is outside the verified native save contract; no files were changed.".into()),
         }
     }

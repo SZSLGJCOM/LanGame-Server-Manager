@@ -7,6 +7,7 @@ import {
 } from "../../scum-custom-zones";
 import { useConfigurationFieldHelp } from "./ConfigurationFieldHelp";
 import type { ConfigurationSpecializedRendererProps } from "./module-types";
+import { ActivityNotice } from "../../components/ActivityNotice";
 
 const COPY = "scum.settings.customZones";
 
@@ -107,13 +108,18 @@ export function ScumCustomZonesRenderer(props: ConfigurationSpecializedRendererP
         onClick={() => setRefresh((value) => value + 1)}>
         {t(dirty ? `${COPY}.discardAndReload` : `${COPY}.reload`)}
       </button>
-      {loading ? <span role="status">{t(`${COPY}.loading`)}</span> : null}
-      {saving ? <span role="status">{t(`${COPY}.saving`)}</span> : null}
+      {loading ? <ActivityNotice>{t(`${COPY}.loading`)}</ActivityNotice> : null}
+      {saving ? <ActivityNotice>{t(`${COPY}.saving`)}</ActivityNotice> : null}
     </div>
-    {error ? <p className="error-text" role="alert">{t(`${COPY}.failed`)} {error}</p> : null}
-    {status && status !== "ready" ? <p className="muted" role="status">{t(`${COPY}.states.${status}`)}</p> : null}
+    {error ? <ActivityNotice tone="error" action={
+      <button type="button" className="secondary-button" disabled={dirty ? disabled : loading || saving || props.disabled}
+        onClick={() => { if (dirty) void save(); else setRefresh((value) => value + 1); }}>
+        {t(dirty ? `${COPY}.save` : `${COPY}.reload`)}
+      </button>
+    }>{`${t(`${COPY}.failed`)} ${error}`}</ActivityNotice> : null}
+    {status && status !== "ready" ? <ActivityNotice tone="warning">{t(`${COPY}.states.${status}`)}</ActivityNotice> : null}
     {status === "ready" && selected && draft ? <>
-      {!snapshot?.writable ? <p className="muted" role="status">{t(`${COPY}.readOnly`)}</p> : null}
+      {!snapshot?.writable ? <ActivityNotice tone="warning">{t(`${COPY}.readOnly`)}</ActivityNotice> : null}
       <label className="settings-schema-field">
         <span className="settings-field-label">{t(`${COPY}.configuration`)}</span>
         <select className="settings-schema-input settings-schema-select" value={selectedKey}
@@ -140,8 +146,8 @@ export function ScumCustomZonesRenderer(props: ConfigurationSpecializedRendererP
           onClick={() => { setDraft({ ...selected.damage }); setError(null); setSaved(false); }}>
           {t(`${COPY}.revert`)}
         </button>
-        {dirty ? <span role="status">{t(`${COPY}.unsaved`)}</span> : null}
-        {saved ? <span role="status">{t(`${COPY}.saved`)}</span> : null}
+        {dirty ? <ActivityNotice>{t(`${COPY}.unsaved`)}</ActivityNotice> : null}
+        {saved ? <ActivityNotice tone="success">{t(`${COPY}.saved`)}</ActivityNotice> : null}
       </div>
     </> : null}
   </section>;

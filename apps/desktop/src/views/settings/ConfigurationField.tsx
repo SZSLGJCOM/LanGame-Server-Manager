@@ -47,6 +47,7 @@ export interface ConfigurationFieldProps {
   settings: SettingsObject;
   t?: TranslateFn;
   validationMessage?: string;
+  validationDisplay?: "inline" | "activity";
   value: unknown;
 }
 
@@ -434,9 +435,12 @@ export function ConfigurationField(props: ConfigurationFieldProps) {
           </button>
         ) : null}
       </div>}
-      {props.field.presentation.restartScope || isInvalid ? <div className="configuration-field-feedback">
+      {isInvalid && props.validationDisplay === "activity" ?
+        <span id={ids.errorId} className="configuration-field-error-a11y">{props.validationMessage}</span> : null}
+      {props.field.presentation.restartScope || (isInvalid && props.validationDisplay !== "activity") ? <div className="configuration-field-feedback">
         <ConfigurationFieldRestartScope copy={props.copy} field={props.field} />
-        {isInvalid ? <p id={ids.errorId} className="form-note form-note--error">{props.validationMessage}</p> : null}
+        {isInvalid && props.validationDisplay !== "activity" ?
+          <p id={ids.errorId} className="form-note form-note--error">{props.validationMessage}</p> : null}
       </div> : null}
     </div>
   );

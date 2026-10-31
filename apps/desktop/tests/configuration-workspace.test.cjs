@@ -50,10 +50,11 @@ function readRequired(filename, label) {
   return fs.readFileSync(filename, "utf8");
 }
 
-function loadWorkspaceApi() {
-  readRequired(workspacePath, "ConfigurationWorkspace.tsx");
-  return require(workspacePath);
-}
+const {
+  focusConfigurationControl,
+  mergeConfigurationPatch,
+  resolveConfigurationFieldNavigation
+} = require("../src/views/settings/configuration-workspace-state.ts");
 
 function settingsMountBlock(source) {
   const start = source.indexOf('{activeDetailTab === "settings"');
@@ -69,18 +70,6 @@ function cssRule(source, selector) {
 
 function assertMatches(source, pattern, message) {
   assert.ok(pattern.test(source), message);
-}
-
-function assertInteractiveMarker(source, marker) {
-  const markerIndex = source.indexOf(marker);
-  const buttonStart = source.lastIndexOf("<button", markerIndex);
-  const buttonEnd = source.indexOf("</button>", markerIndex);
-  assert.ok(markerIndex >= 0, `missing ${marker}`);
-  assert.ok(buttonStart >= 0 && buttonEnd > markerIndex, `${marker} must belong to a button`);
-  assert.ok(
-    source.slice(buttonStart, buttonEnd).includes("onClick="),
-    `${marker} must trigger navigation`
-  );
 }
 
 function modelFixture() {
@@ -362,10 +351,6 @@ test("keeps internal configuration provenance out of the player workspace", () =
 });
 
 test("resolves validation targets to a section and stable focus control", () => {
-  const {
-    focusConfigurationControl,
-    resolveConfigurationFieldNavigation
-  } = loadWorkspaceApi();
   const model = modelFixture();
   const validationIssue = { fieldKey: "server_name", message: "Required" };
   assert.deepEqual(
@@ -393,21 +378,7 @@ test("resolves validation targets to a section and stable focus control", () => 
   assert.equal(focusConfigurationControl("configuration-demo-missing-input", root), false);
 });
 
-test("wires validation issues into focusable navigation", () => {
-  const source = readRequired(workspacePath, "ConfigurationWorkspace.tsx");
-  assertInteractiveMarker(source, "data-configuration-validation-field");
-  assert.ok(
-    (source.match(/resolveConfigurationFieldNavigation\(/g)?.length ?? 0) >= 1,
-    "workspace must call the shared field-navigation resolver"
-  );
-  assert.ok(
-    (source.match(/focusConfigurationControl\(/g)?.length ?? 0) >= 1,
-    "workspace must focus a control after navigation"
-  );
-});
-
 test("merges patches into the current draft without dropping unrelated native keys", () => {
-  const { mergeConfigurationPatch } = loadWorkspaceApi();
   const nested = { preserve: true };
   const current = {
     server_name: "Lan room",
@@ -483,33 +454,6 @@ test("keeps autosave active with progress feedback and retryable failures", () =
   assertMatches(source, /onClick=\{retrySave\}/, "save failures must remain retryable");
   assertMatches(source, /<ConfigurationSaveStatus status=\{saveStatus\} validationBlocked=\{validationBlocked\}/,
     "saved, pending and invalid settings must remain distinguishable");
-});
-
-test("feeds module-level validation into the blocking summary and autosave gate", () => {
-  assertMatches(
-    workspaceSource,
-    /getSettingsValidationIssues\?\.\(settingsParseResult\.value,\s*moduleContext\)/,
-    "module-level settings validation must execute"
-  );
-  assertMatches(
-    workspaceSource,
-    /uniqueIssues\(\[\s*\.\.\.schemaIssues,\s*\.\.\.moduleIssues\s*\]\)/,
-    "schema and module issues must share one summary"
-  );
-  assertMatches(
-    workspaceSource,
-    /const validationBlocked = validationIssues\.length > 0 \|\| networkValidationBlocked/,
-    "module validation must block autosave"
-  );
-  assertMatches(workspaceSource, /const saveBlocked = editorDisabled \|\| validationBlocked/,
-    "schema and local port validation must share the autosave gate");
-  assertMatches(workspaceSource, /onValidationBlockedChange=\{setNetworkValidationBlocked\}/,
-    "unfinished network drafts must reach the workspace validation gate");
-  assertMatches(
-    workspaceSource,
-    /validationIssues\.map\([\s\S]{0,260}data-configuration-validation-field/,
-    "the visible summary must enumerate the combined validation issues"
-  );
 });
 
 test("returns the mismatch state before any foreign schema controls render", () => {

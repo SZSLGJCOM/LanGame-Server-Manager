@@ -1,0 +1,161 @@
+{
+  "schema_version": 1,
+  "module_id": "dontstarve",
+  "evidence_classification": "official_package_static_config_comparison",
+  "verified_on": "2026-10-30",
+  "steam_app_id": 343050,
+  "steam_build_id": "26306694",
+  "game_version": "760944",
+  "branch_updated_at": "2026-10-29T20:26:05Z",
+  "acquisition": {
+    "source": "Valve anonymous SteamCMD app_update 343050 validate, Windows public branch",
+    "completed_at": "2026-10-30T14:11:39Z",
+    "exit_code": 0,
+    "state_flags": 4,
+    "update_result": 0,
+    "official_success_marker": "Success! App '343050' fully installed.",
+    "depots": {
+      "1004": "7604377918839582995",
+      "343051": "5032013234847761474"
+    }
+  },
+  "scripts_sha256": "ec4a53d1d56aea6f26b423ef08c9f68625a5330059a01b096fb35cb7a95acf17",
+  "executable_path": "bin64/dontstarve_dedicated_server_nullrenderer_x64.exe",
+  "executable_sha256": "96580b2afe6af46f92e72809195fea9b11f04aa4afec2f92b6e93def5a8f98b7",
+  "prior": {
+    "steam_build_id": "26230508",
+    "game_version": "760178",
+    "scripts_sha256": "32e70a4425ed6df8f06bd2c4e5e473c82d00a5c4897a3a1a8dd07062417f568f"
+  },
+  "inventory": {
+    "changed_metadata": [
+      "gameVersion",
+      "scriptsSha256"
+    ],
+    "option_count": 238,
+    "group_counts": {
+      "worldgen": 5,
+      "settings": 10
+    },
+    "page_counts": {
+      "mastergen": 64,
+      "mastersettings": 126,
+      "cavesgen": 38,
+      "cavessettings": 50
+    },
+    "page_enum_sets_checked": 278,
+    "option_additions": [],
+    "option_removals": [],
+    "declaration_changes": [],
+    "schema_changes_required": false,
+    "unchanged": [
+      "native default values",
+      "group identity and order",
+      "option order and locations",
+      "master_controlled visibility",
+      "PC enums and dynamic task/start registrations"
+    ]
+  },
+  "inheritance": {
+    "masteroption_count": 34,
+    "masteroption_keys": [
+      "basicresource_regrowth",
+      "beefaloheat",
+      "brightmarecreatures",
+      "crow_carnival",
+      "darkness",
+      "day",
+      "dropeverythingondespawn",
+      "extrastartingitems",
+      "ghostenabled",
+      "ghostsanitydrain",
+      "hallowed_nights",
+      "healthpenalty",
+      "hunger",
+      "krampus",
+      "lessdamagetaken",
+      "portalresurection",
+      "resettime",
+      "seasonalstartingitems",
+      "shadowcreatures",
+      "spawnmode",
+      "spawnprotection",
+      "specialevent",
+      "temperaturedamage",
+      "winters_feast",
+      "year_of_the_beefalo",
+      "year_of_the_bunnyman",
+      "year_of_the_carrat",
+      "year_of_the_catcoon",
+      "year_of_the_dragonfly",
+      "year_of_the_gobbler",
+      "year_of_the_knight",
+      "year_of_the_pig",
+      "year_of_the_snake",
+      "year_of_the_varg"
+    ],
+    "matches_renderer_inherited_keys": true,
+    "master_sync_count": 15,
+    "master_sync_keys": [
+      "basicresource_regrowth",
+      "brightmarecreatures",
+      "darkness",
+      "dropeverythingondespawn",
+      "ghostenabled",
+      "ghostsanitydrain",
+      "healthpenalty",
+      "hunger",
+      "krampus",
+      "lessdamagetaken",
+      "portalresurection",
+      "resettime",
+      "shadowcreatures",
+      "spawnmode",
+      "temperaturedamage"
+    ],
+    "both_sets_unchanged": true,
+    "native_creation_screen_unchanged": true
+  },
+  "upstream_consumer_changes": {
+    "path": "scripts/worldsettings_overrides.lua",
+    "before_sha256": "163a32cecf0227a7a919cad8e386b3aafdb37c3773ca78d35d32ce88aa55f38d",
+    "after_sha256": "7805560108e665403044f39cda67bb9cc5211135b19feaee89c63c61ac8095a4",
+    "existing_consumers_with_only_frequency_key_corrections": 40,
+    "key_corrections": {
+      "few": "rare",
+      "many": "often"
+    },
+    "new_internal_consumers_without_native_option_registration": [
+      "beefalo_setting",
+      "buzzard_setting",
+      "cave_vent_mite",
+      "lightninggoat_setting"
+    ],
+    "interpretation": "The 40 corrected consumers now use the existing native declaration and schema enum keys. Four added internal Pre handlers are absent from customize.lua option registrations; their presence alone does not establish new UI configuration contracts. Existing expert Lua overrides remain operator-owned."
+  },
+  "unchanged_source_hashes": {
+    "scripts/map/customize.lua": "c298ed69e10a0dd91af63e74446defb16cd4f968f1cf32569504a47885453d19",
+    "scripts/map/locations.lua": "0c9c0b4d9a9b72a3285094c138e8780a83f4e6b8f239c8a7633b8f0b445326d4",
+    "scripts/map/tasksets.lua": "8ee6f0c9cfee9796277db993243bb8758805aea13bb08d90dea9a71333bbd292",
+    "scripts/map/startlocations.lua": "78841f1ed7e6d71b7d1da09a396a354ee2560c5351cc671272debaed57f6f4ad",
+    "scripts/map/levels/forest.lua": "acec7ce9b2a223ab7c2a71ba00269e6521048d3e025a56f247906fa00ed52031",
+    "scripts/map/levels/caves.lua": "ef13cf469afafe709cc17c67564845221b383c3c921aa79734dcbde7b1557391",
+    "scripts/screens/redux/servercreationscreen.lua": "e6d33c85305b7de84f379cdadf0dd53375310fba562763d3e3ce651de007180a",
+    "scripts/widgets/redux/worldsettings/worldsettingsmenu.lua": "174258a04405164a9583abbe12395a3343bb37f2613f0fd4a91f212e8aa4a991",
+    "scripts/map/tasksets/caves.lua": "ca042a09698e4f5bd4ce5b673a101c9f552824336729777862f1f3d7a069010d",
+    "scripts/map/tasksets/forest.lua": "1d0cf156eab56cc385fd08241ea514f4c9146df95d22ffdb19302b253be348a4",
+    "scripts/map/tasksets/lavaarena.lua": "9686ed03aea71dc2417ecf4c4d8f1d409b315c25f34b61dfb7326a5084527817",
+    "scripts/map/tasksets/quagmire.lua": "1a3cf406b3fe8b8b115e9db88ad93f3e175cea5d8fcf5fca8db4fe6aaeabf9f4"
+  },
+  "validation": {
+    "comparison_command": "python -B scripts/verify_dst_world_options.py --install-root <validated-install-root>",
+    "refresh_command": "python -B scripts/verify_dst_world_options.py --install-root <validated-install-root> --write",
+    "refresh_changes_only_inventory_identity": true,
+    "parser_tests_passed": 20,
+    "shard_contract_tests_passed": 8,
+    "comparison_evidence_sha256": "239fbfc94bec2731f8fe4a0d29f4600171ae8215b09c3884a95009b86212ebc2",
+    "consumer_evidence_sha256": "31e718332088166cc90dd1e62bf82b454b867bbda907aa04a939f030b52cb941"
+  },
+  "official_release_url": "https://steamstore-a.akamaihd.net/news/externalpost/steam_community_announcements/1847920302236291",
+  "scope": "Read-only parsing and byte comparison of official packages; no game or Mod Lua was executed. The managed schema and serializer already express every registered native option and its enum values. This fixture does not renew the separate historical lifecycle evidence or establish gameplay effects, online sessions, Mod behavior or saved-content readback."
+}

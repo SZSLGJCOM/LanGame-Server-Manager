@@ -1,0 +1,52 @@
+{
+  "reviewed_on": "2026-10-31",
+  "steam_app_id": 2728330,
+  "public_build_id": "26335264",
+  "public_branch_updated_utc": "2026-10-30T22:41:59Z",
+  "source": "Isolated official SteamCMD package; read-only comparison against installed build 26172878. No native game execution in this review.",
+  "manifest": {
+    "path": "steamapps/appmanifest_2728330.acf",
+    "sha256": "846d44b09456410e7b8205897f54ec46fe9bab6c93b765e927095b263056b726",
+    "build_id": "26335264",
+    "target_build_id": "26335264",
+    "state_flags": 4,
+    "update_result": 0,
+    "size_on_disk": 1354024929,
+    "game_depot_id": "2728331",
+    "game_depot_manifest": "1562753932764563829"
+  },
+  "executable": {
+    "path": "HumanitZServer/Binaries/Win64/HumanitZServer-Win64-Shipping.exe",
+    "size": 79284224,
+    "sha256": "bfb85c9197166694eb2335e6f1c9a800ef11027b2e82b71c0ac8e6df7d64b8a8",
+    "pe_file_version": "",
+    "pe_product_version": ""
+  },
+  "configuration": {
+    "comparison_baseline_build_id": "26172878",
+    "path": "HumanitZServer/REF_GameServerSettings.ini",
+    "sha256": "1508efa4657cea1024d504a1850a7813e767a4f5f510391535e752de56b8cceb",
+    "baseline_bytes_match": true,
+    "reference_version": 39,
+    "assignment_count": 95,
+    "unique_native_key_count": 94,
+    "duplicate_assignment": {"key": "RecycleCar", "value": "14", "occurrences": 2},
+    "added_keys": [],
+    "removed_keys": [],
+    "changed_defaults": [],
+    "module_coverage": "The 92 settings keys are represented by schema controls, including optional BackpackCleanup, WeaponDurabilityMulti and HeadshotOnlyMode overrides. RConPort is owned by the port model. Version is the reference-file identifier and is intentionally not rendered. RecycleCar is rendered once."
+  },
+  "rcon_reference": {
+    "path": "RCONCommands.txt",
+    "sha256": "2902c3625a795bd5e9f7ccc50ad7add9bd24089b4f0879f341196748780e1bc0",
+    "baseline_bytes_match": true,
+    "save_command": "save",
+    "shutdown_command": "shutdown",
+    "save_contract": "The shipped reference still describes save as Save game and provides no durable-completion protocol. The existing fixed HumanitZ ACK parser expects packet ID 1 and Game saved!, while the application retains Requested. This review does not establish that the new binary returns that ACK or that it persists world data."
+  },
+  "reviewed_module_files": {
+    "schema.json": "7ce52414b5fccde6f00cbc1fd5f244123ed22de61578d358614c36dde5ff5f14",
+    "module.toml": "c16c33885a2dd97e4641ed3f862eaf70283c40eae4e19635c4d2d0f22872da39"
+  },
+  "scope": "The acquired manifest matches the public branch metadata queried on 2026-10-31. No configuration or documented RCON command delta requires adaptation. Steam build identity and REF Version 39 do not establish a human-readable release version. Native readiness, authenticated info/save exchanges, persistence, shutdown and recovery still require separate verification; earlier runtime evidence is unchanged."
+}

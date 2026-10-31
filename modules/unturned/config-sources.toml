@@ -1,6 +1,21 @@
 status = "best_effort_verified"
 last_verified = "2026-09-28"
-notes = "The historical anonymous app_update 1110390 validate probe recorded buildid 24080174, TargetBuildID 24080174, SizeOnDisk 1860413320, and depots 1004/1110391/1110393/1110394. Current first-party 3.26.3.12 source and installed build 25107012 identify 282 native fields in Config.txt dictionary blocks: 274 settings are covered, six scheduled shutdown/update controls remain maintenance-owned, and two obsolete fields are not serialized. This corrects the earlier metadata-only interpretation of dotted property paths: Browser/Server/Players are native DAT dictionaries, not literal dotted keys. Unset values retain unowned native values; clearing an unchanged managed override releases it to native difficulty/map defaults. Unknown fields/comments and externally changed released values are retained."
+notes = "The historical anonymous app_update 1110390 validate probe recorded buildid 24080174, TargetBuildID 24080174, SizeOnDisk 1860413320, and depots 1004/1110391/1110393/1110394. The recorded 2026-09-28 first-party 3.26.3.12 source and installed build 25107012 identify 282 native fields in Config.txt dictionary blocks: 274 settings are covered, six scheduled shutdown/update controls remain maintenance-owned, and two obsolete fields are not serialized. This corrects the earlier metadata-only interpretation of dotted property paths: Browser/Server/Players are native DAT dictionaries, not literal dotted keys. Unset values retain unowned native values; clearing an unchanged managed override releases it to native difficulty/map defaults. Unknown fields/comments and externally changed released values are retained."
+
+[[sources]]
+id = "managed_native_manual_save_20261031"
+kind = "runtime_probe"
+path = "reference-fixtures/2026-10-31-managed_native_manual_save.json"
+authority = "compiled_manager_backend_with_isolated_retained_package"
+description = "2026-10-31 Asia/Shanghai: the immutable manager backend completed native_manual_save acceptance against 25613089, with two isolated managed runs, declared native readiness, normal exits and owned cleanup. Formal save receipt status remains requested. This run does not claim exact saved-content readback. This is manual-save/two-cycle start-stop scope, not full backup/restore/uninstall acceptance, GUI or client gameplay."
+
+[[sources]]
+id = "package_identity_review_20261031"
+kind = "documentation"
+path = "Official dedicated-server updates RSS; Steam app 1110390 build 25613089 / Unturned_Data/Managed/Assembly-CSharp.dll"
+authority = "first_party_release_metadata_and_read_only_retained_package_identity"
+url = "https://smartlydressedgames.com/rss/unturned-steam-dedicated-server-updates.xml"
+description = "2026-10-31 read-only review: the official dedicated-server RSS reports 3.26.3.13 / build 25613089, published 2026-09-30 05:24:37 Asia/Shanghai. The retained manifest has StateFlags 4 and matching buildid/TargetBuildID; Assembly-CSharp.dll SHA256 is 15666f1e20afc32a01a5510eb71eef2512a6eb4064ee628b806ee333ab4e4660. System.Reflection.Metadata PEReader, without loading or executing the assembly, enumerates the same 282 public native configuration fields across 13 categories: 274 map to existing controls and eight to existing exclusions, with no missing or unmapped fields. Max_Packets_Per_Second and Chat_Always_Use_Rich_Text remain NonSerialized. The pre-existing timeout_seconds schema accepts integer values from 30 to 600 although its native-type metadata and actual field are float; this inventory does not change that schema policy or classify it as a new release regression. The 3.26.3.13 publisher notes describe BattlEye launcher, text and costume fixes, with no new configuration surface. Current-package native console, saving and lifecycle acceptance remain separate from this inventory and from the older 3.26.3.12 evidence."
 
 [[sources]]
 id = "windows_console_input_build_25444106"

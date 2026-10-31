@@ -225,6 +225,7 @@ async fn isolated_dragonwilds_production_stop_backs_up_completed_autosave_and_re
     let cleanup = NativeCleanup {
         state: &state,
         instance_ids: vec![id.clone()],
+        never_started_instance_ids: Default::default(),
         cleanup_allowed: Arc::clone(&package.cleanup_allowed),
     };
     let saves = PathBuf::from(&initial.saves_path);

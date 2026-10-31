@@ -3,6 +3,21 @@ last_verified = "2026-08-30"
 notes = "Core Keeper Dedicated Server app 1963720 public build 23543502 was installed and verified on 2026-07-13. A clean-data-path probe generated ServerConfig.json with maxNumberPlayers 100, networkSendRate 20, and seasonOverride -1; ARGUMENTS.txt defines world slots 0 through 29 and season value 0 as disabled. Community roster docs still cover Admins.json and PlayerBans.json. The direct-connection runtime probe remains applicable: anonymous Steam relay login can fail, while -port, -ip, and -password kept the server listening, so LanGame defaults new instances to direct mode. A sanitized 2026-08-30 A2S_INFO probe verified that LGSM allocated game port 27018 after UDP 27017 was occupied, the server answered on UDP query port 27019, and EDF advertised game port 27018."
 
 [[sources]]
+id = "managed_native_start_stop_20261031"
+kind = "runtime_probe"
+path = "reference-fixtures/2026-10-31-managed_native_start_stop.json"
+authority = "compiled_manager_backend_with_isolated_retained_package"
+description = "2026-10-31 Asia/Shanghai: build 25825323 completed one isolated native empty-server readiness and normal-stop cycle with exit 0 and owned cleanup. Manual save and restart were disabled for this start-stop acceptance. A separately retained earlier manual-save attempt reached empty-server readiness but was rejected with world_not_ready; no completion or exact checkpoint was claimed, and the guard was not relaxed. Initialized-world manual save, client gameplay and full backup/restore/uninstall remain outside this evidence."
+
+[[sources]]
+id = "package_identity_review_20261031"
+kind = "documentation"
+path = "Steam app 1963720 manifest and CoreKeeperServer_Data/Managed/Pug.Other.dll"
+authority = "first_party_release_metadata_and_read_only_retained_package_identity"
+url = "https://store.steampowered.com/news/app/1621690/view/681889561799821561"
+description = "2026-10-31 read-only review: the official release feed identifies stable 1.3.0.6 on 2026-10-09 (Asia/Shanghai); its change fixes Steam Free Weekend world entry. The retained installed manifest reports StateFlags 4 and buildid/TargetBuildID 25825323. Pug.Other.dll SHA256 is 631b58cfb806e838bc0c770963b3ec13edeba368007e2ad91e280bd7bf8ad2b0, matching the already admitted primary fingerprint. All six current native dependency files were SHA256-compared with the build-25825323 tuple in commands_managed_save_payload.rs and matched without substitutions. This is installed-package identity evidence, not a new Steam public-depot query or an independent mapping from release label 1.3.0.6 to this build. No new server, client, save or restart probe was performed; historical runtime dates and limitations remain unchanged."
+
+[[sources]]
 id = "empty_world_readiness_2026_09_20"
 kind = "runtime_probe"
 path = "CoreKeeperServer_Data/Managed/Pug.Other.dll"

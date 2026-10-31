@@ -2,6 +2,53 @@ use super::*;
 use crate::live_players::valheim_control::{AccessLists, ControlSnapshot, ValidatedPeer};
 use app_storage::PlayerAccessMutationOperation::{Add, Remove};
 
+#[test]
+fn native_profiles_require_complete_reviewed_assembly_tuples() {
+    let profiles = [
+        [
+            "ef8c8d3a1f45694ef7a701e8e2a25bf8a3874c951a2639c81dfe614ce3aa5fa3",
+            "0d66bd029bf753e2721304c775126b34af329bfcd6e632d8d38edaa96b5cf1a5",
+            "8953c24a2f2af7ae257cc64fb36dde9d102c871c29b4cdd97d0c3c001de5bd5a",
+        ],
+        [
+            "0dfc7e81436f822121148efed859ba1e661d58b9484bd45e3b6f33b6dd86bfad",
+            "63e114e7cfdcc38e4f4391c18b91f774290274d2b9200e6d85d757cbe3673e18",
+            "8953c24a2f2af7ae257cc64fb36dde9d102c871c29b4cdd97d0c3c001de5bd5a",
+        ],
+        [
+            "648f3f8ed7b44c3d3cd612acd782743d9e03af7e60b7fe72d5827523e95505fd",
+            "9658619e34e456b88639f6cc6e7d0fd186432f63bf1033e3e04e98e8fac2be9e",
+            "1924e4c348616fbd754a8f688d3dc65cde5a741cfef57e80474fcdd0121013b5",
+        ],
+    ];
+    let accepted = |profile: [&str; 3]| supported_profile(profile[0], profile[1], profile[2]);
+    for profile in profiles {
+        assert!(accepted(profile), "Reviewed native profile rejected");
+        for other in profiles {
+            for field in 0..3 {
+                if other[field] != profile[field] {
+                    let mut mixed = profile;
+                    mixed[field] = other[field];
+                    assert!(!accepted(mixed), "Mixed native profile accepted: {field}");
+                }
+            }
+        }
+        for field in 0..3 {
+            for unknown in [
+                "",
+                "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+            ] {
+                let mut changed = profile;
+                changed[field] = unknown;
+                assert!(
+                    !accepted(changed),
+                    "Unknown native profile accepted: {field}"
+                );
+            }
+        }
+    }
+}
+
 #[tokio::test]
 async fn unsupported_valheim_start_retires_owned_plugin_without_a_new_session() {
     use super::super::commands_managed_save_control::tests::Fixture;

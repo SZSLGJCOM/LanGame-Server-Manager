@@ -15,6 +15,7 @@ import type { InstanceDetails, ModuleDetails, UpdateInstanceInput } from "../../
 import type { InstanceArchiveDetails } from "../../src/storage-management-types";
 import "../../src/app.css";
 import { prepareBrowserLocaleCatalogs } from "./browser-locale-catalogs";
+import { ConfigurationActivityHost } from "./configuration-activity-host";
 
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
 document.documentElement.dataset.theme = "dark";
@@ -214,14 +215,14 @@ function control(tag: string) {
 function writeCalls() { return calls.filter((call) => call.command === "write_dragonwilds_world_settings"); }
 async function renderFixture(key: string, archive?: InstanceArchiveDetails, callerDisabled = false) {
   await act(async () => { root.render(<StrictMode><I18nProvider key={key}><InstanceSettingsSaveProvider>
-    <main className="server-detail-panel" style={{ height: "calc(100vh - 32px)", margin: 16 }}>
+    <ConfigurationActivityHost><main className="server-detail-panel" style={{ height: "calc(100% - 32px)", margin: 16 }}>
       {callerDisabled ? <div className="configuration-workspace" style={{ padding: 20, overflow: "auto" }}>
         <DragonwildsWorldSettingsProvider details={details}>
           <DragonwildsWorldSettingsPanel sectionId="world_crafting" details={details} moduleDetails={moduleDetails}
             settings={JSON.parse(details.settings_json)} disabled onPatch={() => { throw new Error("Unexpected settings patch"); }} />
         </DragonwildsWorldSettingsProvider>
       </div> : <Workspace archive={archive} />}
-    </main>
+    </main></ConfigurationActivityHost>
   </InstanceSettingsSaveProvider></I18nProvider></StrictMode>); });
 }
 async function draw(key: string, archive?: InstanceArchiveDetails, callerDisabled = false) {
@@ -397,7 +398,7 @@ async function verifyReadLifecycle(locale: string) {
   await act(async () => { failure.release(); await frame(); });
   await until(() => completedReads.length > failuresBefore && panel().getAttribute("aria-busy") === "false",
     "Rejected delayed native read left the editor loading");
-  lifecycle(panel().textContent?.includes("Synthetic delayed world read failure") && !panel().querySelector("select") && !refreshButton().disabled,
+  lifecycle(fixture?.querySelector(".shell-activity-bar")?.textContent?.includes("Synthetic delayed world read failure") && !panel().querySelector("select") && !refreshButton().disabled,
     "StrictMode delayed native failure clears loading and exposes the real error with retry");
   await clickRefresh();
   lifecycle(modeSelect().value === "Normal", "explicit retry recovers a delayed read failure without writing defaults");
@@ -493,6 +494,10 @@ async function run() {
     await setValue(numeric, "3.1");
     check(control(processing).getAttribute("aria-invalid") === "true" && Boolean(await flushError()),
       `${locale}: an out-of-range draft rejects the start barrier`);
+    check(!panel().querySelector(".form-note--error"), `${locale}: invalid native rules do not insert inline error text`);
+    const locate = element<HTMLButtonElement>(`[data-configuration-validation-target="${control(processing).id}"]`);
+    await act(async () => { locate.focus(); locate.click(); });
+    check(document.activeElement === control(processing), `${locale}: activity validation focuses the invalid native rule`);
     check(writeCalls().length === firstWriteCount, `${locale}: out-of-range controls do not issue native writes`);
     await setValue(control(processing), "1.23");
     check(Boolean(await flushError()) && writeCalls().length === firstWriteCount, `${locale}: unsupported precision rejects persistence without writing`);
@@ -543,7 +548,7 @@ async function run() {
     current.revision = `fixture-external-change-${++revision}`;
     const conflictWrites = writeCalls().length;
     check((await flushError()).includes("World settings conflict"), `${locale}: compare-and-swap failure rejects the start barrier`);
-    check(writeCalls().length === conflictWrites + 1 && panel().textContent?.includes("World settings conflict") && control(processing).value === "2",
+    check(writeCalls().length === conflictWrites + 1 && fixture?.querySelector(".shell-activity-bar")?.textContent?.includes("World settings conflict") && control(processing).value === "2",
       `${locale}: native conflict keeps the unsaved draft visible`);
     await elapsed(850);
     check(writeCalls().length === conflictWrites + 1 && Boolean(await flushError()) && writeCalls().length === conflictWrites + 1,
@@ -551,7 +556,7 @@ async function run() {
     check(refreshButton().textContent?.includes(locale === "zh-CN" ? "放弃更改" : "Discard changes"), `${locale}: dirty refresh announces draft discard`);
     failNextRead = true;
     await clickRefresh();
-    check(panel().textContent?.includes("Synthetic world read failure") && control(processing).value === "2",
+    check(fixture?.querySelector(".shell-activity-bar")?.textContent?.includes("Synthetic world read failure") && control(processing).value === "2",
       `${locale}: a failed explicit refresh preserves the complete draft`);
     await clickRefresh();
     check(control(processing).value === "0.8" && current.world_mode === "Hard", `${locale}: successful explicit refresh replaces the rejected draft with native facts`);
@@ -645,7 +650,7 @@ async function run() {
     await section("world", false);
     await act(async () => { initialFailure.release(); await frame(); });
     await until(() => panel().getAttribute("aria-busy") === "false", "Initial native read failure left the editor loading");
-    check(panel().textContent?.includes("Synthetic world read failure") && !panel().querySelector("select"),
+    check(fixture?.querySelector(".shell-activity-bar")?.textContent?.includes("Synthetic world read failure") && !panel().querySelector("select"),
       `${locale}: initial read failure shows the real error without guessed rules`);
     await clickRefresh();
     check(modeSelect().value === "Normal", `${locale}: explicit refresh recovers the native world after a failed initial read`);

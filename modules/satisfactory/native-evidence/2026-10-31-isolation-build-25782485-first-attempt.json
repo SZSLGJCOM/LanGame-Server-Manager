@@ -1,0 +1,141 @@
+{
+  "schema_version": 1,
+  "module_id": "satisfactory",
+  "reviewed_on": "2026-10-31",
+  "verification_timezone": "Asia/Shanghai",
+  "evidence_classification": "failed_isolated_native_instance_isolation_attempt",
+  "status": "failed_cleanup",
+  "source_identity_sha256": "9161f9cdccc644c3bd4dd925ab916220b774eb1c1fcad8c6ddcd3b93686f7255",
+  "source_manifest_sha256": "8b3635b2c7ae5f05d86c8c6a808bfb9e6f960b2dd47784d0b1e8d85eb461b9e3",
+  "source_git_revision": "d58857d32d668a3661261b96134145c6911357a4",
+  "source_working_tree_clean": false,
+  "test_binary_sha256": "8ddeb8811cd1fd0fd125b4cc286bd0f4e92d171a9ded7b9186219a46d825f183",
+  "package": {
+    "classification": "existing_local_package",
+    "steam_app_id": 1690800,
+    "steam_build_id": "25782485",
+    "appmanifest_sha256": "7ea895a5ffd153a3eacdac0b8d820ff2cf95db280f40e358a6a1da47907d4192",
+    "source_inventory_bytes": 15537487195
+  },
+  "test": {
+    "selector": "commands::tests::manual_runtime_tests::native_lifecycle_tests::native_satisfactory_instance_isolation",
+    "arguments": [
+      "--exact",
+      "--ignored",
+      "--test-threads=1",
+      "--nocapture"
+    ],
+    "started_utc": "2026-10-31T04:53:24.282384+00:00",
+    "completed_utc": "2026-10-31T04:56:53.334574+00:00",
+    "exit_code": 101,
+    "tests_passed": 0,
+    "duration_seconds": 209.01,
+    "settings": null,
+    "ports_preflight": "clear",
+    "flags": {
+      "LANGAME_NATIVE_MODULE_ID": "satisfactory",
+      "LANGAME_NATIVE_MANUAL_SAVE": "true",
+      "LANGAME_NATIVE_MANUAL_SAVE_RESTART": "true",
+      "LANGAME_NATIVE_ACQUISITION": "local_package",
+      "LANGAME_NATIVE_INSTANCE_MODE": "independent_pair",
+      "LANGAME_NATIVE_OBSERVE_SECONDS": "0"
+    }
+  },
+  "failure": {
+    "assertion": "native prestart evidence differs",
+    "expected_events": [
+      "started",
+      "completed"
+    ],
+    "observed_events": [
+      "started",
+      "failed",
+      "using_installed"
+    ],
+    "prestart_error_code": "steamcmd_not_ready",
+    "prestart_error_source": {
+      "artifact": "satisfactory-isolation-retained-diagnostics/i/peer-8330368d10098c52/logs/managed-console/run-1793422552411-main.log",
+      "line": 5
+    },
+    "cause": "The isolation fixture inherited automatic program updates while its externally bootstrapped SteamCMD directory had not been verified by the LGSM readiness owner in this test process. Both executable and Steam client DLLs existed; the directory had neither an LGSM owner marker nor a ready marker. The production updater rejected readiness before app_update/download, then explicitly verified and used the installed program without claiming an update.",
+    "production_paths": [
+      "crates/app-steamcmd/src/ownership.rs",
+      "crates/app-steamcmd/src/steamcmd_readiness.rs",
+      "crates/app-steamcmd/src/steamcmd_prepare.rs",
+      "apps/desktop/src-tauri/src/commands_runtime_prestart_fallback.rs"
+    ],
+    "classification": "fixture_missing_dependency_readiness_and_unintended_network_update_scope",
+    "network_or_game_download_failure_observed": false,
+    "production_updater_defect_established": false
+  },
+  "cleanup": {
+    "original_result": "process_stop_failed; both NativeWorld credential cleanups remained unconfirmed and the fixture was retained",
+    "original_stop_evidence": {
+      "primary": "never started; supervisor stop evidence absent",
+      "peer": "owned_tree=finished; raw cleanup exit 0xC000013A"
+    },
+    "normal_stop_success": false,
+    "subsequent_independent_recovery": {
+      "processes_remaining": 0,
+      "exact_credentials_absent": 4,
+      "credential_read_windows_error": 1168,
+      "secret_data_accessed": false,
+      "reparse_points": 0,
+      "diagnostic_files_retained": 7,
+      "action": "DB/config/managed-console diagnostics were retained and SHA256-verified before removing only the owned disposable fixture root. The original failed result was not changed."
+    }
+  },
+  "fixture_correction": {
+    "state": "implemented; not validated by this failed attempt",
+    "changes": [
+      "Pin program_update.policy inside the dedicated isolation scope so this local-package test does not enter network update preparation.",
+      "Track explicitly never-started owned instance IDs only for the isolation scope; remove each before awaiting start. Accept missing supervisor stop evidence only with that proof and a confirmed absence of pending start. Keep unknown or attempted starts and all other scopes conservative."
+    ],
+    "production_defaults_changed": false
+  },
+  "artifacts": [
+    {
+      "name": "satisfactory-isolation-native.json",
+      "size_bytes": 1716,
+      "sha256": "6c9533241cdff854c25be9cd668e92d485344f4777f6846d563b43c271550742"
+    },
+    {
+      "name": "satisfactory-isolation-native.log",
+      "size_bytes": 1761,
+      "sha256": "6c1d0a914aea1ce6328f0301704eaa499db83706e95aea0c33ca6445137b1d73",
+      "path": "2026-10-31-isolation-build-25782485-first-attempt-output.txt"
+    },
+    {
+      "name": "native-build-04.json",
+      "size_bytes": 1521,
+      "sha256": "3e18af616ed7ecaf2605010bb415ed16987facb09950fb65573a6b52a6c73eb4"
+    },
+    {
+      "name": "satisfactory-isolation-retained-diagnostics/i/peer-8330368d10098c52/logs/managed-console/run-1793422552411-main.log",
+      "size_bytes": 4093,
+      "sha256": "0dd5f0629f0b381f7223204264d440e0a4fd558425880db71973f0fb83d98e53"
+    },
+    {
+      "name": "satisfactory-isolation-cleanup-inspection.json",
+      "size_bytes": 2225,
+      "sha256": "9964f42f8888162b0f457c774d4c350028140fcdd261e085313b1587789834c9"
+    },
+    {
+      "name": "satisfactory-isolation-cleanup-recheck.json",
+      "size_bytes": 944,
+      "sha256": "9fb94a816351442a5354a4df6173f8682d126c36b68ee471292ec36bbea163b8"
+    },
+    {
+      "name": "satisfactory-isolation-manual-cleanup.json",
+      "size_bytes": 1785,
+      "sha256": "d0390cb8e29f64575a85b4fc098f9a9d238f9789233e04c60852ad5442ba57c6"
+    }
+  ],
+  "scope_limits": [
+    "This is a failed first attempt, not successful native compatibility, HTTPS world/save or cross-instance isolation evidence.",
+    "NativeWorld preparation had not run; no claim, credential creation or save receipt was reached. Four exact Windows credential targets were independently confirmed absent.",
+    "The peer raw cleanup exit is not normal-stop acceptance. Subsequent manual owned-resource recovery does not turn the failed native test into a pass.",
+    "The observed failure occurred before game app_update/download. It does not prove network availability, latest-package update behavior or a production updater defect.",
+    "Historical CL 502094 runtime evidence retains its original build and date; a separately recorded successful rerun is required for CL 513885 isolation."
+  ]
+}

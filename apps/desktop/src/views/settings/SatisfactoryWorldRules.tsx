@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { ActivityNotice } from "../../components/ActivityNotice";
 import { useI18n } from "../../i18n";
 import { buildSatisfactoryRulesPatch, createSatisfactoryWorld, isSatisfactoryRuleValueValid,
   SATISFACTORY_RULES, SATISFACTORY_STARTING_LOCATIONS, splitSatisfactoryCreationRules,
@@ -56,7 +57,7 @@ export function SatisfactoryWorldRules(props: ConfigurationSpecializedRendererPr
   useEffect(() => {
     if (draft && snapshot && !stale && !invalid && !Object.keys(buildSatisfactoryRulesPatch(snapshot, draft.values)).length) updateDraft(null);
   }, [draft, snapshot, stale, invalid]);
-  return <SatisfactoryNativePanel sectionId="creative_rules" dirty={dirty}>
+  return <SatisfactoryNativePanel sectionId="creative_rules" dirty={dirty} onNavigateField={props.onNavigateField}>
     <p className="form-note">{t(`${COPY}.creativeHelp`)}</p>
     {snapshot?.connection_status === "ready" && !snapshot.is_game_running ?
       <p className="form-note" role="status">{t(`${COPY}.worldRequired`)}</p> : null}
@@ -78,16 +79,16 @@ export function SatisfactoryWorldRules(props: ConfigurationSpecializedRendererPr
         </div>
       </section>)}
     </div>
-    {stale ? <div className="configuration-workspace__notice" role="status">
-      <span>{t(`${COPY}.changedSinceEdit`)}</span>
+    {stale ? <ActivityNotice tone="warning" action={
       <button type="button" className="secondary-button" disabled={state.busy}
-        onClick={() => { updateDraft(null); setConsent(false); }}>{t(`${COPY}.discardDraft`)}</button>
-    </div> : null}
-    {autosave.saving ? <p className="form-note" role="status">{t(`${COPY}.saving`)}</p> : null}
-    {autosave.failed ? <div className="panel-head panel-head--compact panel-head--spread">
-      <span className="form-note form-note--error" role="status">{t(`${COPY}.autosaveFailed`)}</span>
-      <button type="button" className="secondary-button" disabled={!draft || !canSave(draft)} onClick={autosave.retry}>{t(`${COPY}.retryAutosave`)}</button>
-    </div> : null}
+        onClick={() => { updateDraft(null); setConsent(false); }}>{t(`${COPY}.discardDraft`)}</button>}>
+      {t(`${COPY}.changedSinceEdit`)}
+    </ActivityNotice> : null}
+    {autosave.saving ? <ActivityNotice>{t(`${COPY}.saving`)}</ActivityNotice> : null}
+    {autosave.failed ? <ActivityNotice tone="error" action={
+      <button type="button" className="secondary-button" disabled={!draft || !canSave(draft)} onClick={autosave.retry}>{t(`${COPY}.retryAutosave`)}</button>}>
+      {t(`${COPY}.autosaveFailed`)}
+    </ActivityNotice> : null}
   </SatisfactoryNativePanel>;
 }
 
@@ -115,7 +116,7 @@ export function SatisfactoryWorldCreation(props: ConfigurationSpecializedRendere
       skip_onboarding: true, acknowledge_enable_advanced_settings: consent, ...splitSatisfactoryCreationRules(draft) }));
     if (accepted) setConfirmCreate(false);
   }
-  return <SatisfactoryNativePanel sectionId="world_generation" dirty={dirty}>
+  return <SatisfactoryNativePanel sectionId="world_generation" dirty={dirty} onNavigateField={props.onNavigateField}>
     <p className="form-note">{t(`${COPY}.creationHelp`)}</p>
     <div className="settings-schema-grid configuration-field-grid">
       <Field fieldKey="satisfactory_new_session_name" sectionId="world_generation" title={t(`${COPY}.newSessionName`)}
@@ -158,7 +159,7 @@ export function SatisfactoryWorldCreation(props: ConfigurationSpecializedRendere
     {snapshot && snapshot.connected_players > 0 ? <p className="form-note" role="status">{t(`${COPY}.playersPresent`)}</p> : null}
     <button type="button" className="primary-button" disabled={disabled || !confirmCreate || invalid || nameUsed || !name.trim() || (hasCreative && !consent)}
       onClick={() => void create()}>{t(`${COPY}.createWorld`)}</button>
-    {state.result === "accepted" || state.result === "loaded" ? <p className="form-note" role="status">
-      {t(`${COPY}.${state.result === "loaded" ? "loaded" : "accepted"}`)}</p> : null}
+    {state.result === "accepted" || state.result === "loaded" ? <ActivityNotice tone={state.result === "loaded" ? "success" : "info"}>
+      {t(`${COPY}.${state.result === "loaded" ? "loaded" : "accepted"}`)}</ActivityNotice> : null}
   </SatisfactoryNativePanel>;
 }

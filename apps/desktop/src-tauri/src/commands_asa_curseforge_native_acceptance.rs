@@ -162,6 +162,7 @@ async fn run_acceptance(
     let cleanup = NativeCleanup {
         state: &state,
         instance_ids: vec![id.clone()],
+        never_started_instance_ids: Default::default(),
         cleanup_allowed: Arc::clone(&package.cleanup_allowed),
     };
     let result: AcceptanceResult<()> = Box::pin(async {

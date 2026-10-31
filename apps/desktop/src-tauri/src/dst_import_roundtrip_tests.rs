@@ -1,5 +1,8 @@
 use super::*;
 
+#[path = "dst_import_world_options_tests.rs"]
+mod world_options;
+
 struct Fixture {
     root: PathBuf,
     storage: StorageBootstrap,
@@ -12,7 +15,10 @@ impl Fixture {
         let root =
             std::env::temp_dir().join(format!("dst-import-roundtrip-{}", uuid::Uuid::new_v4()));
         fs::create_dir_all(root.join("db")).unwrap();
-        let workspace = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../..");
+        let workspace = std::env::var_os("LANGAME_SMOKE_SOURCE_ROOT")
+            .filter(|value| !value.is_empty())
+            .map(PathBuf::from)
+            .unwrap_or_else(|| Path::new(env!("CARGO_MANIFEST_DIR")).join("../../.."));
         let paths = app_storage::StoragePaths {
             app_data_root: root.clone(),
             settings_path: root.join("settings.json"),
@@ -52,10 +58,11 @@ impl Fixture {
             storage_status: paths.probe_status(),
             paths,
         };
+        let state = DesktopState::from_storage(&storage);
         Self {
             root,
             storage,
-            state: DesktopState::default(),
+            state,
             instance,
         }
     }

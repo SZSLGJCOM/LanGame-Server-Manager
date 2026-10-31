@@ -1,0 +1,112 @@
+{
+  "schema_version": 1,
+  "module_id": "necesse",
+  "evidence_classification": "isolated_managed_backend_native_manual_save_two_cycles",
+  "verified_on": "2026-10-31",
+  "verification_timezone": "Asia/Shanghai",
+  "source_identity_sha256": "bdb9ec254ec78270cd246cd60d21ba0d2ead43eec5e2fd68aac5ab657c7e1925",
+  "test_binary_sha256": "7ac5843571203f96e5618719e82093456026c102a1c84bad7c5c60773af51263",
+  "source_manifest_sha256": "38af891de1a2c3b3876a1b0abb95d5c891c67a5bf54d971f9691748131ff351b",
+  "source_file_count": 4202,
+  "package": {
+    "classification": "existing_local_package",
+    "steam_build_id": "24926481",
+    "appmanifest_sha256": "664fe5aa13cdd281289f3c03f7db43cd089600d3d7d15f570e9b4704210aea39",
+    "version_label": null,
+    "copied_payload_bytes": 248240746,
+    "primary_file": {
+      "relative_path": "Server.jar",
+      "size_bytes": 20518515,
+      "sha256": "83e08ad78ceb5f6f24b5ed9bee96ce63160e4f72a7bff8dafd8b99cb649952ef"
+    },
+    "public_branch_metadata": {
+      "build": "24926481",
+      "updated_local": "2026-08-25T19:41:57+08:00",
+      "matches_supplied_package": true,
+      "metadata_artifact_sha256": "59cf844a74d07a620c499079cf9d676b3c6a2a64941cdf4721593010f915966b"
+    }
+  },
+  "test": {
+    "selector": "commands::tests::manual_runtime_tests::native_lifecycle_tests::native_manual_save",
+    "production_scope": "manual_save_start_stop_two_cycles",
+    "started_utc": "2026-10-31T03:44:45.797121+00:00",
+    "completed_utc": "2026-10-31T03:46:46.456399+00:00",
+    "started_local": "2026-10-31T11:44:45.797121+08:00",
+    "completed_local": "2026-10-31T11:46:46.456399+08:00",
+    "exit_code": 0,
+    "tests_passed": 1,
+    "duration_seconds": 120.61,
+    "settings": {
+      "program_update": {
+        "policy": "pinned"
+      }
+    },
+    "ports_preflight": "clear",
+    "flags": {
+      "LANGAME_NATIVE_MANUAL_SAVE": "true",
+      "LANGAME_NATIVE_MANUAL_SAVE_RESTART": "true",
+      "LANGAME_NATIVE_EXACT_SAVE_READBACK": "true"
+    },
+    "save_receipt_completions": [
+      "requested"
+    ],
+    "exact_checkpoint_readback_requested": true
+  },
+  "observed_native_receipts": [
+    "NATIVE_LIFECYCLE module=necesse phase=instance_created elapsed_ms=393 program_mode=Independent preparation=isolated_copy library=preserved ownership=verified effective_root=fixture/n-a7cdcb910f8a8f5e\\runtime creation_scope=storage",
+    "NATIVE_LIFECYCLE module=necesse phase=prestart_update cycle=initial events=pinned persisted_evidence=verified download_bytes=not_measured",
+    "NATIVE_LIFECYCLE module=necesse phase=started cycle=initial processes=1 bind=default firewall=non_elevated_policy elapsed_ms=46718",
+    "NATIVE_LIFECYCLE module=necesse phase=native_ready cycle=initial declared_probes=passed variant=isolated",
+    "NATIVE_MANUAL_SAVE module=necesse cycle=initial phase=receipt attempted_once=true retried=false instance_matches=true run_matches=true session_matches=true managed_generations_alive=true route=managed_process_generation response_present=false response_bytes=0 write_confirmation_pending=false save_completion=requested durable_write=not_assessed restart_readback=not_assessed",
+    "NATIVE_SAVE_OBSERVATION module=necesse receipt=requested native_callback=completed save_family_changed=true periodic_autosave_excluded=true production_completion=not_claimed",
+    "NATIVE_SAVE_CHECKPOINT module=necesse phase=captured run_id=1 files=1 captured_before_stop=true scope=isolated_world",
+    "NATIVE_SAVE_CHECKPOINT_FILE relative=worlds\\n.zip bytes=22667 sha256=4c0394b73625678317ccf113a90ad7d879c9b1bdd891b3c8a7fa8b968d76806d",
+    "NATIVE_STOP_RESULT module=necesse cycle=initial run_id=1 process=main exit_code=Some(0) crash_flag=false status=stopped",
+    "NATIVE_SAVE_CHECKPOINT module=necesse phase=restored after_normal_stop=true shutdown_snapshot_excluded=true sha256_verified=true",
+    "NATIVE_LIFECYCLE module=necesse phase=cycle_stopped cycle=initial run_id=1 active_run=none",
+    "NATIVE_LIFECYCLE module=necesse phase=prestart_update cycle=restart events=pinned persisted_evidence=verified download_bytes=not_measured",
+    "NATIVE_LIFECYCLE module=necesse phase=started cycle=restart processes=1 bind=default firewall=non_elevated_policy elapsed_ms=46380",
+    "NATIVE_LIFECYCLE module=necesse phase=native_ready cycle=restart declared_probes=passed variant=isolated",
+    "NATIVE_CONTENT_READBACK module=necesse cycle=restart loaded_world_seed=matched fresh_native_query=true second_save_sent=false",
+    "NATIVE_SAVE_READBACK module=necesse phase=verified initial_run=1 restart_run=2 exact_manual_checkpoint=true native_load=passed second_save_sent=false scope=isolated_world",
+    "NATIVE_STOP_RESULT module=necesse cycle=restart run_id=2 process=main exit_code=Some(0) crash_flag=false status=stopped",
+    "NATIVE_LIFECYCLE module=necesse phase=cycle_stopped cycle=restart run_id=2 active_run=none",
+    "NATIVE_MANUAL_SAVE module=necesse phase=restarted fresh_managed_run=true native_readiness=passed content_readback=not_claimed",
+    "NATIVE_LIFECYCLE module=necesse phase=complete scope=production_start_stop cleanup=passed gui=not_tested"
+  ],
+  "cleanup": {
+    "test_reported": "passed",
+    "cleanup_failures": [],
+    "owned_processes_absent_after_test": true,
+    "owned_fixture_removed_after_test": true
+  },
+  "artifacts": [
+    {
+      "name": "necesse-native.json",
+      "size_bytes": 2022,
+      "sha256": "b42cc713e6253932533854580eaf6ee02636645afdd6fe57b1103555f197af96"
+    },
+    {
+      "name": "necesse-native.log",
+      "size_bytes": 3239,
+      "sha256": "c20ae7e4e81a4903110453900ab0752507e950d46f75dccdce078661d4d02613"
+    },
+    {
+      "name": "native-build-02.json",
+      "size_bytes": 1521,
+      "sha256": "aa6b4b3cd00e5b1751d1ab12c346481d0106388777920b2968f4563e24113de6"
+    },
+    {
+      "name": "native-source-proof.json",
+      "size_bytes": 791,
+      "sha256": "b5a26b26f64fad98f46637674a68a0c374ac16b24f5f1a5195fc6ced1a4ad41f"
+    }
+  ],
+  "scope_limits": [
+    "This is production backend manual-save acceptance with two fresh managed runs, not the full backup/restore/uninstall/archive lifecycle.",
+    "Save receipts retain their emitted status. Requested does not establish native completion or durable writes; any independent checkpoint/readback evidence is separately identified in the emitted native receipts.",
+    "No GUI, client join, multiplayer gameplay, populated existing-world migration or power-loss durability was tested.",
+    "The test copied a retained local package into a disposable independent instance; it did not acquire the game from upstream or independently establish public-branch recency.",
+    "Source and executable identities refer to the immutable 4202-file snapshot used for this run. Adding this evidence afterward does not change that tested identity."
+  ]
+}

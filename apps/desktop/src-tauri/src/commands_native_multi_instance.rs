@@ -18,38 +18,7 @@ pub(super) async fn run_initial<R: tauri::Runtime>(
         },
     )
     .await?;
-    let peer_root = creation::program_root(&peer)?;
-    runtime
-        .smoke
-        .require_fresh_world(&peer_root, &runtime.package.root)?;
-    let baselines = runtime.smoke.log_baselines(&peer, &peer_root)?;
-    let prestart =
-        prestart_probe::PrestartProbe::begin(runtime.storage, &peer, runtime.descriptor)?;
-    runtime
-        .package
-        .cleanup_allowed
-        .store(false, Ordering::SeqCst);
-    Box::pin(start_instance_process_after_reconcile(
-        None,
-        runtime.state,
-        runtime.storage,
-        peer.summary.id.clone(),
-        "manual",
-        None,
-    ))
-    .await?;
-    prestart.verify(runtime.storage, &peer, "concurrent_peer")?;
-    let running = read_instance_details(&runtime.storage.paths, &peer.summary.id).await?;
-    runtime
-        .smoke
-        .wait_ready(
-            runtime.descriptor,
-            &running,
-            &peer_root,
-            &runtime.package.root,
-            baselines,
-        )
-        .await?;
+    let running = start_owned(runtime, &peer, "concurrent_peer").await?;
     let identity = running
         .active_run
         .as_ref()
@@ -80,49 +49,11 @@ pub(super) async fn run_initial<R: tauri::Runtime>(
         peer.summary.module_id, identity.run_id
     );
 
-    stop_instance_process((*runtime.state).clone(), peer.summary.id.clone()).await?;
-    let stopped = read_instance_details(&runtime.storage.paths, &peer.summary.id).await?;
-    if stopped.active_run.is_some()
-        || runtime
-            .state
-            .runtime_supervisor
-            .lock()
-            .map_err(|_| "runtime supervisor lock poisoned")?
-            .is_tracked(&peer.summary.id)
-    {
-        return Err("native concurrent peer stop left a managed process".into());
-    }
-    let overview =
-        app_storage::read_instance_runtime_overview(&runtime.storage.paths, &peer.summary.id)
-            .await?;
-    let completed = overview
-        .recent_runs
-        .iter()
-        .find(|run| run.run_id == identity.run_id)
-        .ok_or("native concurrent peer stop lost its run history")?;
-    if completed.crash_flag || completed.processes.iter().any(|process| process.crash_flag) {
-        return Err("native concurrent peer stop recorded a crash".into());
-    }
-    diagnostics::report_success(
-        "stopped",
-        &running,
-        &peer_root,
-        &runtime.package.root,
-        runtime.settings,
-    )
-    .await?;
-    runtime
-        .package
-        .cleanup_allowed
-        .store(true, Ordering::SeqCst);
-    println!(
-        "NATIVE_MULTI_INSTANCE module={} phase=peer_stopped peer_run_id={} active_runs=none normal_stop=passed",
-        peer.summary.module_id, identity.run_id
-    );
+    let stopped = stop_owned(runtime, &running).await?;
     Ok((primary_run_id, stopped))
 }
 
-async fn verify_peer_running<R: tauri::Runtime>(
+pub(super) async fn verify_peer_running<R: tauri::Runtime>(
     runtime: &runtime::NativeRuntime<'_, '_, R>,
     peer: &InstanceDetails,
     expected: &ActiveInstanceRun,
@@ -164,7 +95,10 @@ async fn verify_peer_running<R: tauri::Runtime>(
     Ok(())
 }
 
-fn verify_isolation(primary: &InstanceDetails, peer: &InstanceDetails) -> Result<(), &'static str> {
+pub(super) fn verify_isolation(
+    primary: &InstanceDetails,
+    peer: &InstanceDetails,
+) -> Result<(), &'static str> {
     let primary_saves = Path::new(&primary.saves_path);
     let peer_saves = Path::new(&peer.saves_path);
     if primary.summary.id == peer.summary.id
@@ -180,4 +114,103 @@ fn verify_isolation(primary: &InstanceDetails, peer: &InstanceDetails) -> Result
         return Err("native concurrent instances share configuration, saves or bound ports");
     }
     Ok(())
+}
+
+/// Start one owned instance without consuming its complete save/stop cycle.
+pub(super) async fn start_owned<R: tauri::Runtime>(
+    runtime: &runtime::NativeRuntime<'_, '_, R>,
+    peer: &InstanceDetails,
+    cycle: &str,
+) -> Result<InstanceDetails, Box<dyn std::error::Error>> {
+    let peer_root = creation::program_root(peer)?;
+    if matches!(cycle, "initial" | "concurrent_peer") {
+        runtime
+            .smoke
+            .require_fresh_world(&peer_root, &runtime.package.root)?;
+    }
+    let baselines = runtime.smoke.log_baselines(peer, &peer_root)?;
+    let prestart = prestart_probe::PrestartProbe::begin(runtime.storage, peer, runtime.descriptor)?;
+    runtime
+        .package
+        .cleanup_allowed
+        .store(false, Ordering::SeqCst);
+    Box::pin(start_instance_process_after_reconcile(
+        None,
+        runtime.state,
+        runtime.storage,
+        peer.summary.id.clone(),
+        "manual",
+        None,
+    ))
+    .await?;
+    prestart.verify(runtime.storage, peer, cycle)?;
+    let running = read_instance_details(&runtime.storage.paths, &peer.summary.id).await?;
+    runtime
+        .smoke
+        .wait_ready(
+            runtime.descriptor,
+            &running,
+            &peer_root,
+            &runtime.package.root,
+            baselines,
+        )
+        .await?;
+    Ok(running)
+}
+
+/// Preserve the normal product stop and its persisted crash/ownership checks.
+pub(super) async fn stop_owned<R: tauri::Runtime>(
+    runtime: &runtime::NativeRuntime<'_, '_, R>,
+    peer: &InstanceDetails,
+) -> Result<InstanceDetails, Box<dyn std::error::Error>> {
+    let peer_root = creation::program_root(peer)?;
+    let identity = peer
+        .active_run
+        .as_ref()
+        .ok_or("owned native stop has no run identity")?;
+    stop_instance_process((*runtime.state).clone(), peer.summary.id.clone()).await?;
+    let stopped = read_instance_details(&runtime.storage.paths, &peer.summary.id).await?;
+    if stopped.active_run.is_some()
+        || runtime
+            .state
+            .pending_runtime_start_instance_ids()?
+            .iter()
+            .any(|id| id == &peer.summary.id)
+        || runtime
+            .state
+            .runtime_supervisor
+            .lock()
+            .map_err(|_| "runtime supervisor lock poisoned")?
+            .is_tracked(&peer.summary.id)
+    {
+        return Err("native concurrent peer stop left a managed process".into());
+    }
+    let overview =
+        app_storage::read_instance_runtime_overview(&runtime.storage.paths, &peer.summary.id)
+            .await?;
+    let completed = overview
+        .recent_runs
+        .iter()
+        .find(|run| run.run_id == identity.run_id)
+        .ok_or("native concurrent peer stop lost its run history")?;
+    if completed.crash_flag || completed.processes.iter().any(|process| process.crash_flag) {
+        return Err("native concurrent peer stop recorded a crash".into());
+    }
+    diagnostics::report_success(
+        "stopped",
+        peer,
+        &peer_root,
+        &runtime.package.root,
+        runtime.settings,
+    )
+    .await?;
+    runtime
+        .package
+        .cleanup_allowed
+        .store(true, Ordering::SeqCst);
+    println!(
+        "NATIVE_MULTI_INSTANCE module={} phase=peer_stopped peer_run_id={} instance_active_run=none normal_stop=passed",
+        peer.summary.module_id, identity.run_id
+    );
+    Ok(stopped)
 }

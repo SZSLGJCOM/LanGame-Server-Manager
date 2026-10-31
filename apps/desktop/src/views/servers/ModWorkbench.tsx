@@ -1,4 +1,4 @@
-import { startTransition, type DragEvent, type PointerEvent, useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
+import { startTransition, type DragEvent, type PointerEvent, useCallback, useDeferredValue, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import {
   downloadSteamWorkshopItems,
   installManualModReferences,
@@ -551,6 +551,18 @@ export function ModWorkbench(props: ModWorkbenchProps) {
     if (!browseResult) return;
     if (browsePaneRef.current) browsePaneRef.current.scrollTop = 0;
   }, [browseResult]);
+
+  useLayoutEffect(() => {
+    const pane = browsePaneRef.current;
+    const card = pane?.querySelector<HTMLElement>(".mw-mod-card--open");
+    if (!pane || !card) return;
+    // Opening details changes the grid's column count. Center the selection
+    // after reflow, without scrolling the outer workspace or later async updates.
+    // The scroll container naturally clamps cards near the start and end.
+    const bounds = pane.getBoundingClientRect();
+    const selected = card.getBoundingClientRect();
+    pane.scrollTop += selected.top + selected.height / 2 - (bounds.top + pane.clientTop + pane.clientHeight / 2);
+  }, [selectedBrowseWorkshopId, activeWorkbenchView]);
 
   const [detailFailure, setDetailFailure] = useState<{ id: string; locale: LocaleCode; message: string } | null>(null);
   const detailError = detailFailure?.id === selectedBrowseWorkshopId && detailFailure.locale === locale

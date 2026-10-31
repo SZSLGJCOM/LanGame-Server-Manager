@@ -1,0 +1,109 @@
+{
+  "schema_version": 1,
+  "module_id": "theforest",
+  "evidence_classification": "isolated_managed_backend_native_manual_save_two_cycles",
+  "verified_on": "2026-10-31",
+  "verification_timezone": "Asia/Shanghai",
+  "source_identity_sha256": "bdb9ec254ec78270cd246cd60d21ba0d2ead43eec5e2fd68aac5ab657c7e1925",
+  "test_binary_sha256": "7ac5843571203f96e5618719e82093456026c102a1c84bad7c5c60773af51263",
+  "source_manifest_sha256": "38af891de1a2c3b3876a1b0abb95d5c891c67a5bf54d971f9691748131ff351b",
+  "source_file_count": 4202,
+  "package": {
+    "classification": "existing_local_package",
+    "steam_build_id": "3488796",
+    "appmanifest_sha256": "59f1387b21478992c880327eaa3c24aa6a6c11b39fa3be0f4526d4df94ed0ecb",
+    "version_label": null,
+    "source_total_bytes": 1765887409,
+    "copied_payload_bytes": 1765887409,
+    "primary_file": {
+      "relative_path": "TheForestDedicatedServer_Data/Managed/Assembly-CSharp.dll",
+      "size_bytes": 8230400,
+      "sha256": "bc0c9b79b125ce9a6d96d532359fde8a539159378bd9f558309572b9744a9d7e"
+    },
+    "public_branch_metadata": {
+      "build": "3488796",
+      "updated_local": "2019-01-24T02:09:24+08:00",
+      "matches_supplied_package": true,
+      "metadata_artifact_sha256": "59cf844a74d07a620c499079cf9d676b3c6a2a64941cdf4721593010f915966b"
+    }
+  },
+  "test": {
+    "selector": "commands::tests::manual_runtime_tests::native_lifecycle_tests::native_manual_save",
+    "production_scope": "manual_save_start_stop_two_cycles",
+    "started_utc": "2026-10-31T03:57:54.456843+00:00",
+    "completed_utc": "2026-10-31T04:00:58.289348+00:00",
+    "started_local": "2026-10-31T11:57:54.456843+08:00",
+    "completed_local": "2026-10-31T12:00:58.289348+08:00",
+    "exit_code": 0,
+    "tests_passed": 1,
+    "duration_seconds": 183.79,
+    "settings": {
+      "program_update": {
+        "policy": "pinned"
+      }
+    },
+    "ports_preflight": "clear",
+    "flags": {
+      "LANGAME_NATIVE_MANUAL_SAVE": "true",
+      "LANGAME_NATIVE_MANUAL_SAVE_RESTART": "true"
+    },
+    "save_receipt_completions": [
+      "confirmed"
+    ],
+    "exact_checkpoint_readback_requested": false
+  },
+  "observed_native_receipts": [
+    "NATIVE_LIFECYCLE module=theforest phase=instance_created elapsed_ms=1723 program_mode=Independent preparation=isolated_copy library=preserved ownership=verified effective_root=fixture/n-98342237a9a776ca\\runtime creation_scope=storage",
+    "NATIVE_LIFECYCLE module=theforest phase=prestart_update cycle=initial events=pinned persisted_evidence=verified download_bytes=not_measured",
+    "NATIVE_LIFECYCLE module=theforest phase=started cycle=initial processes=1 bind=default firewall=non_elevated_policy elapsed_ms=45328",
+    "NATIVE_LIFECYCLE module=theforest phase=native_ready cycle=initial declared_probes=passed variant=isolated",
+    "NATIVE_MANUAL_SAVE module=theforest cycle=initial phase=receipt attempted_once=true retried=false instance_matches=true run_matches=true session_matches=true managed_generations_alive=true route=managed_process_generation response_present=true response_bytes=100 write_confirmation_pending=false save_completion=confirmed durable_write=not_assessed restart_readback=not_assessed",
+    "NATIVE_THEFOREST_CONTROL command=shutdown native_saves=2 native_nonce_saves=1 legacy_save_acks=1 native_shutdown_requests=1 exit_code=0 run_identity=matched elapsed_ms=2851",
+    "NATIVE_STOP_RESULT module=theforest cycle=initial run_id=1 process=main exit_code=Some(0) crash_flag=false status=stopped",
+    "NATIVE_LIFECYCLE module=theforest phase=cycle_stopped cycle=initial run_id=1 active_run=none",
+    "NATIVE_LIFECYCLE module=theforest phase=prestart_update cycle=restart events=pinned persisted_evidence=verified download_bytes=not_measured",
+    "NATIVE_LIFECYCLE module=theforest phase=started cycle=restart processes=1 bind=default firewall=non_elevated_policy elapsed_ms=44880",
+    "NATIVE_LIFECYCLE module=theforest phase=native_ready cycle=restart declared_probes=passed variant=isolated",
+    "NATIVE_MANUAL_SAVE module=theforest cycle=restart phase=receipt attempted_once=true retried=false instance_matches=true run_matches=true session_matches=true managed_generations_alive=true route=managed_process_generation response_present=true response_bytes=100 write_confirmation_pending=false save_completion=confirmed durable_write=not_assessed restart_readback=not_assessed",
+    "NATIVE_THEFOREST_CONTROL command=shutdown native_saves=2 native_nonce_saves=1 legacy_save_acks=1 native_shutdown_requests=1 exit_code=0 run_identity=matched elapsed_ms=3835",
+    "NATIVE_STOP_RESULT module=theforest cycle=restart run_id=2 process=main exit_code=Some(0) crash_flag=false status=stopped",
+    "NATIVE_LIFECYCLE module=theforest phase=cycle_stopped cycle=restart run_id=2 active_run=none",
+    "NATIVE_MANUAL_SAVE module=theforest phase=restarted fresh_managed_run=true native_readiness=passed content_readback=not_claimed",
+    "NATIVE_LIFECYCLE module=theforest phase=complete scope=production_start_stop cleanup=passed gui=not_tested"
+  ],
+  "cleanup": {
+    "test_reported": "passed",
+    "cleanup_failures": [],
+    "owned_processes_absent_after_test": true,
+    "owned_fixture_removed_after_test": true
+  },
+  "artifacts": [
+    {
+      "name": "theforest-native.json",
+      "size_bytes": 2371,
+      "sha256": "410bd641b37fac5ad33f7cee529c4584fc63d14d7f28925cb20df9ad451a6a9f"
+    },
+    {
+      "name": "theforest-native.log",
+      "size_bytes": 3147,
+      "sha256": "633f731259916de50a77644afa1307f62098e89f9ec3468808d42e09b017396c"
+    },
+    {
+      "name": "native-build-02.json",
+      "size_bytes": 1521,
+      "sha256": "aa6b4b3cd00e5b1751d1ab12c346481d0106388777920b2968f4563e24113de6"
+    },
+    {
+      "name": "native-source-proof.json",
+      "size_bytes": 791,
+      "sha256": "b5a26b26f64fad98f46637674a68a0c374ac16b24f5f1a5195fc6ced1a4ad41f"
+    }
+  ],
+  "scope_limits": [
+    "This is production backend manual-save acceptance with two fresh managed runs, not the full backup/restore/uninstall/archive lifecycle.",
+    "Save receipts retain their emitted status. Requested does not establish native completion or durable writes; any independent checkpoint/readback evidence is separately identified in the emitted native receipts.",
+    "No GUI, client join, multiplayer gameplay, populated existing-world migration or power-loss durability was tested.",
+    "The test copied a retained local package into a disposable independent instance; it did not acquire the game from upstream or independently establish public-branch recency.",
+    "Source and executable identities refer to the immutable 4202-file snapshot used for this run. Adding this evidence afterward does not change that tested identity."
+  ]
+}

@@ -1,0 +1,20 @@
+
+running 1 test
+test commands::tests::manual_runtime_tests::native_lifecycle_tests::native_satisfactory_instance_isolation ... NATIVE_LIFECYCLE module=satisfactory phase=package_copy bytes=15537487195 elapsed_ms=33162 acquisition=existing_local_package creation_scope=storage source_provenance=unverified
+NATIVE_LIFECYCLE module=satisfactory phase=instance_created elapsed_ms=56532 program_mode=Independent preparation=isolated_copy library=preserved ownership=verified effective_root=fixture/i\peer-8330368d10098c52\runtime creation_scope=storage
+NATIVE_LIFECYCLE module=satisfactory phase=instance_created elapsed_ms=50462 program_mode=Independent preparation=isolated_copy library=preserved ownership=verified effective_root=fixture/i\n-8b39ad012b415b19\runtime creation_scope=storage
+NATIVE_LIFECYCLE module=satisfactory phase=pair_created program_mode=Independent config_saves_ports=isolated peer=unstarted simultaneous_running=not_tested
+NATIVE_CLEANUP module=satisfactory phase=stopped process=main run_id=1 exit_code=Some(-1073741510) exit_hex=0xC000013A owned_tree=finished
+NATIVE_LIFECYCLE cleanup=process_stop_failed
+NATIVE_SATISFACTORY_WORLD phase=credential_cleanup outcome=unconfirmed fallback=true
+NATIVE_SATISFACTORY_WORLD phase=credential_cleanup outcome=unconfirmed fallback=true
+native lifecycle cleanup retained its package because process shutdown is unconfirmed
+Error: "native prestart evidence differs: expected=[\"started\", \"completed\"] observed=[\"started\", \"failed\", \"using_installed\"]"
+FAILED
+
+failures:
+
+failures:
+    commands::tests::manual_runtime_tests::native_lifecycle_tests::native_satisfactory_instance_isolation
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 3222 filtered out; finished in 209.01s

@@ -1,0 +1,56 @@
+{
+  "schema_version": 1,
+  "module_id": "dontstarve",
+  "evidence_classification": "official_package_static_config_comparison",
+  "verified_on": "2026-10-31",
+  "steam_app_id": 343050,
+  "steam_build_id": "26335402",
+  "game_version": "761239",
+  "acquisition": {
+    "source": "Fresh Valve anonymous SteamCMD app_update 343050 validate, Windows public branch",
+    "completed_at": "2026-10-31T03:21:31.623685+00:00",
+    "exit_code": 0,
+    "state_flags": 4,
+    "update_result": 0,
+    "depots": {
+      "1004": "7604377918839582995",
+      "343051": "4099411213896431867"
+    },
+    "appmanifest_sha256": "2cc9c516346b46c82262627b981b2bccf03c42cd70bdfcbb1ed5b7852c30417a",
+    "result_sha256": "78169410892fc1c98cb14fde9446e4fcb67dbe313e8e9dacda81d573dd17b549",
+    "log_sha256": "c81a7555aec35d5fe67e2958a6c8f6e9711f8a6c28b416fff1a33c2ab52d8828",
+    "steam_console_sha256": "2250aeab43db99ec6aa08ce0d95f8fc5609a4661d194bc9193e700fb620f775f"
+  },
+  "scripts_sha256": "4d905828318646db65b064f3774583f82d7e868d2ad276d8ab592a6249fd5cc7",
+  "executable_path": "bin64/dontstarve_dedicated_server_nullrenderer_x64.exe",
+  "executable_sha256": "62977346b0b0085bb3d6e69bfbde36b75f4bcec44d2fc36f2d1bd4573cd64c57",
+  "prior": {
+    "fixture": "2026-10-30-world_options_760944.json",
+    "steam_build_id": "26306694",
+    "game_version": "760944",
+    "scripts_sha256": "ec4a53d1d56aea6f26b423ef08c9f68625a5330059a01b096fb35cb7a95acf17"
+  },
+  "inventory": {
+    "changed_metadata": ["gameVersion", "scriptsSha256"],
+    "option_count": 238,
+    "group_counts": {"worldgen": 5, "settings": 10},
+    "page_counts": {"mastergen": 64, "mastersettings": 126, "cavesgen": 38, "cavessettings": 50},
+    "option_additions": [],
+    "option_removals": [],
+    "declaration_changes": [],
+    "schema_changes_required": false,
+    "all_groups_and_option_objects_equal_previous_inventory": true,
+    "previous_fixture_source_hashes_rechecked": 12,
+    "previous_fixture_source_hash_mismatches": [],
+    "masteroption_count": 34,
+    "master_sync_count": 15,
+    "inheritance_source_unchanged": true
+  },
+  "validation": {
+    "authoritative_generator": "python -B scripts/verify_dst_world_options.py --install-root <validated-install-root> --write",
+    "generator_exit_code": 0,
+    "schema_matches": true,
+    "only_inventory_identity_changed": true
+  },
+  "scope": "Read-only Lua source extraction and authoritative inventory generation from the validated official package. All 238 option declarations and 12 previously identified configuration/creation-screen source hashes were compared. No Lua was executed. Native lifecycle, save-request dispatch, byte restoration and clients require separate evidence; this static fixture does not renew historical runtime dates."
+}

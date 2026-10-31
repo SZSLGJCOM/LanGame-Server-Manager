@@ -1,6 +1,9 @@
 import { act, useState } from "react";
 import { createRoot } from "react-dom/client";
 import schema from "../../../../modules/satisfactory/schema.json";
+import { ActivityBar } from "../../src/components/ActivityBar";
+import { ActivityNoticeTarget } from "../../src/components/ActivityNotice";
+import { createActivityNoticeStore } from "../../src/components/activity-notice-store";
 import { I18nProvider } from "../../src/i18n";
 import { EN_US_SATISFACTORY_MESSAGES } from "../../src/i18n/games/satisfactory.en";
 import { ZH_CN_SATISFACTORY_MESSAGES } from "../../src/i18n/games/satisfactory.zh-cn";
@@ -17,6 +20,7 @@ document.documentElement.dataset.theme = "dark";
 const fixture = document.getElementById("fixture");
 if (!fixture) throw new Error("Fixture root is missing");
 const root = createRoot(fixture);
+const noticeStore = createActivityNoticeStore();
 const nonce = new URLSearchParams(location.search).get("nonce");
 const checks: string[] = [], errors: string[] = [], overflowViolations: string[] = [];
 const calls: Array<{ command: string; args: Record<string, unknown> }> = [];
@@ -162,7 +166,10 @@ async function until(condition: () => boolean, timeout = 8000) {
 }
 async function draw(key: string, archived = false) {
   await act(async () => { root.render(<I18nProvider key={key}><InstanceSettingsSaveProvider>
-    <main className="server-detail-panel" style={{ margin: 16, height: "calc(100vh - 32px)" }}><Workspace archived={archived} /></main>
+    <ActivityNoticeTarget.Provider value={{ element: null, store: noticeStore, dismissLabel: locale === "zh-CN" ? "关闭" : "Close" }}>
+      <main className="server-detail-panel" style={{ margin: 16, height: "calc(100vh - 88px)" }}><Workspace archived={archived} /></main>
+      <footer className="shell-activity-bar" style={{ margin: "0 16px" }}><ActivityBar store={noticeStore} entries={[]} /></footer>
+    </ActivityNoticeTarget.Provider>
   </InstanceSettingsSaveProvider></I18nProvider>); });
   await until(() => Boolean(fixture?.querySelector(".configuration-workspace__body")));
   if (!archived) await idle();
@@ -183,11 +190,59 @@ const ruleKey = (key: string) => `satisfactory_${key.replace(/\./gu, "_")}`;
 function button(key: string) {
   const messages = locale === "zh-CN" ? ZH_CN_SATISFACTORY_MESSAGES : EN_US_SATISFACTORY_MESSAGES;
   const title = messages[`${prefix}.${key}`];
-  const result = [...visiblePanel().querySelectorAll<HTMLButtonElement>("button")].find((entry) => entry.textContent?.trim() === title);
+  const result = [...visiblePanel().querySelectorAll<HTMLButtonElement>("button"),
+    ...fixture!.querySelectorAll<HTMLButtonElement>(".shell-activity-panel button, .shell-activity-viewport button")]
+    .find((entry) => entry.textContent?.trim() === title);
   if (!result) throw new Error(`Missing action ${key}/${title}: ${visiblePanel().textContent}`);
   return result;
 }
-async function click(key: string) { check(!button(key).disabled, `editable native action ${key}`); await act(async () => { button(key).click(); }); }
+async function openActivityDetails() {
+  if (!fixture?.querySelector(".shell-activity-panel")) {
+    await act(async () => { element<HTMLButtonElement>(".shell-activity-expand").click(); });
+  }
+}
+async function closeActivityDetails() {
+  const close = fixture?.querySelector<HTMLButtonElement>(".shell-activity-panel-close");
+  if (close) await act(async () => { close.click(); });
+}
+async function click(key: string) {
+  if (["retryAutosave", "discardDraft"].includes(key)) await openActivityDetails();
+  check(!button(key).disabled, `editable native action ${key}`);
+  await act(async () => { button(key).click(); });
+  await closeActivityDetails();
+}
+function feedbackOutsideEditor(message: string) {
+  check(noticeStore.getSnapshot().filter((notice) => notice.text === message).length === 1,
+    `${locale}: active native feedback is published once`);
+  check(!element(".configuration-workspace__main").querySelector(".shell-activity-notice, .form-note--error, .configuration-workspace__notice"),
+    `${locale}: native feedback does not occupy the configuration editor`);
+}
+async function jumpToInvalidField(key: string) {
+  const input = control<HTMLInputElement>(key);
+  check(input.getAttribute("aria-invalid") === "true" && input.closest(".configuration-field")?.classList.contains("is-invalid"),
+    `${locale}: invalid native input retains its red frame and accessible state`);
+  const error = document.getElementById(input.getAttribute("aria-errormessage") ?? "");
+  check(error?.textContent && getComputedStyle(error).position === "absolute" && error.getBoundingClientRect().height <= 1,
+    `${locale}: native validation preserves a non-layout accessible error description`);
+  feedbackOutsideEditor(error.textContent);
+  await openActivityDetails();
+  const action = element<HTMLButtonElement>(`.shell-activity-panel [data-configuration-validation-target="${input.id}"]`);
+  await act(async () => { action.focus(); action.click(); await frame(); });
+  check(document.activeElement === input && !fixture?.querySelector(".shell-activity-panel"),
+    `${locale}: native validation navigation focuses its input and closes activity details`);
+}
+async function jumpToNativePanel(sectionId: "room" | "access") {
+  await openActivityDetails();
+  const fieldKey = `native_${sectionId}`;
+  const inputId = buildConfigurationFieldIds(fieldKey, "configuration-satisfactory").inputId;
+  const action = element<HTMLButtonElement>(`.shell-activity-panel [data-satisfactory-navigation-field="${fieldKey}"]`);
+  check(action.getAttribute("aria-controls") === inputId && !action.disabled,
+    `${locale}: native prerequisite feedback targets the registered ${sectionId} panel`);
+  await act(async () => { action.focus(); action.click(); await frame(); });
+  await until(() => document.activeElement?.id === inputId);
+  check(visiblePanel().dataset.satisfactoryNativePanel === sectionId && !fixture?.querySelector(".shell-activity-panel"),
+    `${locale}: native prerequisite navigation opens ${sectionId}, focuses it and closes activity details`);
+}
 async function text(key: string, value: string) {
   const input = control<HTMLInputElement>(key); check(!input.disabled, `editable ${key}`);
   await act(async () => { Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set?.call(input, value);
@@ -258,14 +313,22 @@ async function runLocale() {
   const credentialReads = count("read_satisfactory_admin_password");
   current = snapshot("unclaimed");
   await draw(`${locale}-main`);
+  await section("creative_rules"); await jumpToNativePanel("room");
   await text("satisfactory_server_name", "Owned Factory"); await click("setup"); await idle();
   check(latest("setup_satisfactory_server").server_name === "Owned Factory", `${locale}: setup claims the native server with its chosen name`);
   check(count("read_satisfactory_admin_password") === credentialReads, `${locale}: credentials are not read automatically`);
   layout();
-  current.connection_status = "authorization_required"; bump(); await refresh(); await section("access");
+  current.connection_status = "authorization_required"; bump(); await refresh(); await jumpToNativePanel("access");
   await text("satisfactory_admin_authorization", "synthetic-authorize"); await click("authorize"); await idle();
   check(!hasControl("satisfactory_admin_authorization"), `${locale}: one-time authorization input is cleared after acceptance`);
-  await click("showAdminPassword"); await until(() => hasControl("satisfactory_admin_password"));
+  failNext = "read_satisfactory_admin_password"; await click("showAdminPassword");
+  await until(() => noticeStore.getSnapshot().some((notice) => notice.text === "Synthetic native mutation failure"));
+  feedbackOutsideEditor("Synthetic native mutation failure");
+  await openActivityDetails();
+  const credentialRetry = element<HTMLButtonElement>(".shell-activity-panel .shell-activity-notice.is-error .shell-activity-notice-actions button");
+  check(!credentialRetry.disabled, `${locale}: credential errors retain an explicit read retry`);
+  await act(async () => { credentialRetry.click(); }); await closeActivityDetails();
+  await until(() => hasControl("satisfactory_admin_password"));
   check(control<HTMLInputElement>("satisfactory_admin_password").value === "synthetic-admin-credential", `${locale}: credentials appear only after explicit reading`);
   await section("room"); await section("access");
   check(!hasControl("satisfactory_admin_password"), `${locale}: navigating away clears revealed credentials`);
@@ -279,6 +342,7 @@ async function runLocale() {
   failNext = "write_satisfactory_room"; await autosaved("write_satisfactory_room", roomWrites);
   check(control<HTMLInputElement>("satisfactory_server_name").value === "Changed Factory" && control<HTMLInputElement>("satisfactory_join_password").value === "synthetic-join",
     `${locale}: failed room save retains its draft`);
+  feedbackOutsideEditor("Synthetic native mutation failure");
   await click("retryAutosave"); await idle();
   check(count("write_satisfactory_room") === roomWrites + 2, `${locale}: room errors issue only the explicit retry`);
   check(latest("write_satisfactory_room").client_password === "synthetic-join" && current.server_name === "Changed Factory", `${locale}: explicit retry saves native room settings`);
@@ -320,14 +384,18 @@ async function runLocale() {
   await toggle(ruleKey(noFuel), true); current.advanced_game_settings["FG.External.Rule"] = "changed"; bump(); await refresh();
   const staleRules = count("write_satisfactory_world_rules");
   await act(async () => { await new Promise<void>((resolve) => setTimeout(resolve, 950)); });
+  await openActivityDetails();
   check(count("write_satisfactory_world_rules") === staleRules && Boolean(button("discardDraft")), `${locale}: changed native world rules block saving old world drafts`);
   await click("discardDraft");
   await toggle(ruleKey(noFuel), true); current.active_session_name = "Other"; current.advanced_game_settings = {}; bump(); await refresh();
+  await openActivityDetails();
   check(count("write_satisfactory_world_rules") === staleRules && Boolean(button("discardDraft")), `${locale}: a changed active world blocks saving the previous world's draft`);
   await click("discardDraft");
   check(!control<HTMLInputElement>(ruleKey(noFuel)).checked, `${locale}: discarding reads the new world's rule state`);
   await toggle(ruleKey(noFuel), true); failNext = "write_satisfactory_world_rules";
   await autosaved("write_satisfactory_world_rules", staleRules);
+  feedbackOutsideEditor("Synthetic native mutation failure");
+  await openActivityDetails();
   check(control<HTMLInputElement>(ruleKey(noFuel)).checked && !button("retryAutosave").disabled, `${locale}: rule save errors retain editable drafts`);
   const failedRules = count("write_satisfactory_world_rules");
   await act(async () => { await new Promise<void>((resolve) => setTimeout(resolve, 950)); });
@@ -379,9 +447,18 @@ async function runLocale() {
     check(control<HTMLSelectElement>(ruleKey(key)).options.length === values.length && JSON.stringify(definition.options.map((entry) => entry.value)) === JSON.stringify(values),
       `${locale}: ${key} keeps native option order and values`);
   }
+  const locationTop = control("satisfactory_starting_location").getBoundingClientRect().top;
   await text("satisfactory_new_session_name", "retained");
   check(button("createWorld").disabled && control<HTMLInputElement>("satisfactory_confirm_create").disabled, `${locale}: creation refuses an existing name case-insensitively`);
+  check(control("satisfactory_starting_location").getBoundingClientRect().top === locationTop,
+    `${locale}: validation does not shift the next native field`);
+  await jumpToInvalidField("satisfactory_new_session_name");
+  await section("room");
+  check(!noticeStore.getSnapshot().some((notice) => notice.tone === "error"), `${locale}: hidden native drafts do not publish unreachable feedback`);
+  await section("world_generation");
+  await jumpToInvalidField("satisfactory_new_session_name");
   await text("satisfactory_new_session_name", `Fresh ${locale}`);
+  check(!noticeStore.getSnapshot().some((notice) => notice.tone === "error"), `${locale}: correcting the native draft removes its validation notice`);
   for (const [key, value] of [[energy, "25"], ["FG.GameMode.PartsCostMultiplier", "125"], ["FG.GameMode.SpacePartsCostMultiplier", "5000"],
     [purity, "5"], ["FG.GameMode.NodeRandomization", "4"]]) {
     const definition = SATISFACTORY_RULES.find((entry) => entry.key === key)!;
@@ -391,6 +468,8 @@ async function runLocale() {
   check(Number.isInteger(Number(control<HTMLInputElement>(ruleKey(seed)).value)) && Number(control<HTMLInputElement>(ruleKey(seed)).value) !== 0,
     `${locale}: seed generation produces a nonzero native int32`);
   await click("randomSeed"); check(control<HTMLInputElement>(ruleKey(seed)).value === "0", `${locale}: random seed uses native zero`);
+  await text(ruleKey(seed), "2147483648");
+  await jumpToInvalidField(ruleKey(seed));
   await text(ruleKey(seed), "-12345"); await select(ruleKey("FG.GameRules.StartingTier"), 10);
   check(!hasControl(ruleKey("FG.GameRules.GiveAllTiers")),
     `${locale}: starting tier has one editor for the all-tiers choice`);

@@ -30,6 +30,7 @@ const fullCatalog = Array.from({ length: 31 }, (_, index): SteamWorkshopLookupIt
   description_excerpt: "Server settings and multiplayer gameplay adjustments."
 }));
 let details: InstanceDetails, catalog = fullCatalog, epoch = 0;
+let holdDetails = false, releaseDetails: (() => void) | null = null;
 addEventListener("error", (event) => errors.push(event.message));
 addEventListener("unhandledrejection", (event) => errors.push(String(event.reason)));
 const originalError = console.error;
@@ -84,6 +85,74 @@ async function render(items: SteamWorkshopLookupItem[]) {
   await settle(() => Boolean(fixture.querySelector(".mw-browse-status")) &&
     fixture.querySelectorAll(".mw-mod-card").length === Math.min(30, items.length), "Workshop catalog did not settle");
   await layoutFrame();
+}
+function cardVisible(card: HTMLElement, pane: HTMLElement) {
+  const cardBounds = card.getBoundingClientRect(), paneBounds = pane.getBoundingClientRect();
+  return cardBounds.top >= paneBounds.top - 1 && cardBounds.bottom <= paneBounds.bottom + 1;
+}
+function checkCardCentered(card: HTMLElement, pane: HTMLElement, label: string) {
+  const cardBounds = card.getBoundingClientRect(), paneBounds = pane.getBoundingClientRect();
+  const offset = (cardBounds.top + cardBounds.bottom) / 2 - (paneBounds.top + pane.clientTop + pane.clientHeight / 2);
+  const atStart = pane.scrollTop <= 1, atEnd = pane.scrollHeight - pane.clientHeight - pane.scrollTop <= 1;
+  check(Math.abs(offset) <= 1 || (offset < 0 && atStart) || (offset > 0 && atEnd), label);
+}
+async function checkSelectionScroll(opener: string, deferredDetails: boolean) {
+  await render(fullCatalog);
+  const pane = element(".mw-browse-pane"), card = element(".mw-mod-card:nth-child(20)");
+  pane.scrollTop += card.getBoundingClientRect().top - pane.getBoundingClientRect().top
+    - (pane.clientHeight - card.getBoundingClientRect().height) / 2;
+  await layoutFrame();
+  check(cardVisible(card, pane), `${opener}: later catalog card is visible before selection`);
+  const before = { scroll_top: pane.scrollTop, card_top: card.getBoundingClientRect().top,
+    columns: getComputedStyle(element(".mw-mod-grid")).gridTemplateColumns };
+  holdDetails = deferredDetails;
+  await act(async () => { card.querySelector<HTMLButtonElement>(opener)!.click(); });
+  await settle(() => Boolean(fixture.querySelector(".mw-store-detail")) && (!deferredDetails || releaseDetails !== null),
+    "Selected Workshop details did not open");
+  await layoutFrame();
+  check(card === element(".mw-mod-card--open"), `${opener}: the clicked card stays selected after reflow`);
+  check(cardVisible(card, pane), `${opener}: opening details keeps the selected card fully visible`);
+  checkCardCentered(card, pane, `${opener}: selection is vertically centered within the available scroll range`);
+  check(element(".server-detail-scroll--mods").scrollTop === 0 && element(".mw-workbench").scrollTop === 0
+    && document.documentElement.scrollTop === 0, `${opener}: selection scroll stays inside the browse pane`);
+  measurements.push({ scene: `selection-${opener}`, before, after: { scroll_top: pane.scrollTop,
+    card_top: card.getBoundingClientRect().top, pane_top: pane.getBoundingClientRect().top,
+    pane_bottom: pane.getBoundingClientRect().bottom, card_bottom: card.getBoundingClientRect().bottom,
+    columns: getComputedStyle(element(".mw-mod-grid")).gridTemplateColumns } });
+  if (deferredDetails) {
+    pane.scrollTop = 0;
+    await layoutFrame();
+    check(pane.scrollTop === 0, "Manual browsing can move away from the selected card");
+    holdDetails = false;
+    await act(async () => { releaseDetails?.(); releaseDetails = null; });
+    await settle(() => element(".mw-store-detail").textContent?.includes(fullCatalog[19].description!) === true,
+      "Deferred Workshop details did not arrive");
+    await layoutFrame();
+    check(pane.scrollTop === 0, "Late detail content does not pull the user's scroll back to selection");
+    await act(async () => { element<HTMLButtonElement>(".mw-mod-card-title").click(); });
+    await layoutFrame();
+    check(pane.scrollTop === 0 && cardVisible(element(".mw-mod-card--open"), pane),
+      "The first card stays visible at the top scroll boundary");
+    checkCardCentered(element(".mw-mod-card--open"), pane, "The first card centers as far as the top boundary allows");
+    const visibleCard = [...pane.querySelectorAll<HTMLElement>(".mw-mod-card")]
+      .filter((item) => cardVisible(item, pane)).at(-1);
+    assert(visibleCard && !visibleCard.classList.contains("mw-mod-card--open"), "Another visible card is available");
+    const visibleTitle = visibleCard.querySelector<HTMLButtonElement>(".mw-mod-card-title");
+    assert(visibleTitle, "Visible card has a title button");
+    await act(async () => { visibleTitle.click(); });
+    await layoutFrame();
+    checkCardCentered(visibleCard, pane, "Selecting another already visible card also centers it");
+    pane.scrollTop = pane.scrollHeight;
+    await layoutFrame();
+    await act(async () => { element<HTMLButtonElement>(".mw-mod-card:last-child .mw-mod-card-title").click(); });
+    await layoutFrame();
+    check(cardVisible(element(".mw-mod-card--open"), pane), "The last card stays fully visible");
+    checkCardCentered(element(".mw-mod-card--open"), pane, "The last card centers as far as the bottom boundary allows");
+    await act(async () => { element<HTMLButtonElement>(".mw-pager button:last-child").click(); });
+    await settle(() => fixture.querySelectorAll(".mw-mod-card").length === 1 && !fixture.querySelector(".mw-store-detail"),
+      "Workshop pagination did not replace the catalog");
+    check(pane.scrollTop === 0, "Changing pages still resets the browse pane to the top");
+  }
 }
 function measure(scene: string, fullPage = false) {
   const selectors = [".server-detail-scroll--mods", ".mw-workbench", ".mw-workbench-main", ".mw-workspace-section",
@@ -144,9 +213,16 @@ async function run() {
   details = { ...template, summary: { ...template.summary, id: "fixture-workshop-layout", module_id: "dontstarve",
     status: "Stopped", active_process_count: 0 }, active_run: null, settings_json: "{}" };
   mockWindows("workshop-layout-fixture");
-  mockIPC(createModWorkbenchFixtureIpc(() => ({ details, moduleDetails, catalog, cached: new Set<string>(), pageSize: 30 }), {
+  const ipc = createModWorkbenchFixtureIpc(() => ({ details, moduleDetails, catalog, cached: new Set<string>(), pageSize: 30 }), {
     check: assert, save: () => { throw new Error("Unexpected save in layout fixture"); }
-  }), { shouldMockEvents: true });
+  });
+  mockIPC(async (command, payload) => {
+    const result = await ipc(command, payload);
+    if (command === "read_steam_workshop_item_details" && holdDetails) {
+      return new Promise((resolve) => { releaseDetails = () => resolve(result); });
+    }
+    return result;
+  }, { shouldMockEvents: true });
   Object.assign(window, { isTauri: true });
   await render(fullCatalog);
   element(".workshop-layout-frame").style.height = `${Math.round(element(".workshop-layout-frame").getBoundingClientRect().height * 0.62)}px`;
@@ -173,6 +249,8 @@ async function run() {
   check(Boolean(fixture.querySelector(".mw-empty")), "Empty catalog shows its real empty state");
   await render(fullCatalog);
   measure("final-full-page", true);
+  await checkSelectionScroll(".mw-mod-card-title", true);
+  await checkSelectionScroll(".mw-mod-thumb", false);
   check(errors.length === 0, "Browser console and uncaught errors remain empty");
   // Keep geometry failures separate so the runner captures a baseline screenshot.
   return { status: "passed", checks, failures, measurements, browser_errors: errors,

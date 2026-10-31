@@ -19,6 +19,8 @@ require.extensions[".css"] = (module) => module._compile("", module.filename);
 require.extensions[".png"] = (module, filename) => module._compile(`module.exports = ${JSON.stringify(filename)};`, filename);
 
 const { parseGuidedSettingsSchema } = require("../src/views/settings/guided-settings.ts");
+const { ActivityNoticeTarget } = require("../src/components/ActivityNotice.tsx");
+const { groupConfigurationValidationIssues } = require("../src/views/settings/configuration-workspace-state.ts");
 const filename = path.resolve(__dirname, "../src/views/settings/ConfigurationWorkspace.tsx");
 const loaded = new Module(filename, module);
 loaded.filename = filename;
@@ -32,6 +34,43 @@ loaded.require = (id) => id === "../../i18n" ? { ...load(id), useI18n: () => con
     useInstancePortRegistration: () => ({ ports: [], defaultPorts: [], setPorts() {} })
   } : load(id);
 loaded._compile(transpileTypeScript(fs.readFileSync(filename, "utf8"), filename), filename);
+
+test("shared validation messages retain every distinct navigation target", () => {
+  const issues = [
+    { fieldKey: "internet_server", reason: "module", message: "A login token is required." },
+    { fieldKey: "game_server_login_token", reason: "module", message: "A login token is required." },
+    { fieldKey: "internet_server", reason: "module", message: "A login token is required." },
+    { fieldKey: "max_players", reason: "minimum", message: "Player limit must be positive." }
+  ];
+  assert.deepEqual(groupConfigurationValidationIssues(issues), [
+    { message: "A login token is required.", fieldKeys: ["internet_server", "game_server_login_token"] },
+    { message: "Player limit must be positive.", fieldKeys: ["max_players"] }
+  ]);
+  assert.equal(issues.length, 4, "grouping must not change validation or save blocking inputs");
+});
+
+test("configuration validation leaves only accessible error markers in the editor when activity owns feedback", () => {
+  const html = renderToStaticMarkup(React.createElement(ActivityNoticeTarget.Provider, {
+    value: { element: null, dismissLabel: "Close" }
+  }, React.createElement(loaded.exports.ConfigurationWorkspace, {
+    details: {
+      summary: { id: "unturned-validation", module_id: "unturned", name: "Unturned", bind_ip: "0.0.0.0" },
+      settings_json: JSON.stringify({ internet_server: true, game_server_login_token: "" }),
+      ports: [], backup_retention_count: 5
+    },
+    moduleDetails: {
+      summary: { id: "unturned", name: "Unturned" },
+      schema_json: fs.readFileSync(path.resolve(__dirname, "../../../modules/unturned/schema.json"), "utf8")
+    },
+    bindAddressCandidates: [], runtime: null, launchPlan: null, launchPlanError: null, onSave() {}
+  })));
+  assert.doesNotMatch(html, /configuration-workspace__validation/);
+  assert.doesNotMatch(html, /form-note--error/);
+  assert.match(html, /class="configuration-field[^\"]* is-invalid"/);
+  assert.match(html, /id="configuration-unturned-internet-server-input"[^>]*aria-invalid="true"/);
+  assert.match(html, /aria-errormessage="configuration-unturned-internet-server-error"/);
+  assert.match(html, /id="configuration-unturned-internet-server-error" class="configuration-field-error-a11y"/);
+});
 
 test("DST configuration omits migrated roster notices while Player Access retains all three lists", () => {
   const moduleDetails = {

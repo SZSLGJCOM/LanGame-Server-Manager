@@ -57,20 +57,25 @@ ABI; it does not replace an isolated server/client integration test.
 
 ## Native contract
 
-Native reflection is limited to explicitly checked members and two
-three-assembly SHA-256 profiles:
+Native reflection is limited to explicitly checked members and three
+complete three-assembly SHA-256 profiles:
 
+- Build 26266951 (1.0.21): `648f3f8ed7b44c3d3cd612acd782743d9e03af7e60b7fe72d5827523e95505fd`
 - Build 25909431: `ef8c8d3a1f45694ef7a701e8e2a25bf8a3874c951a2639c81dfe614ce3aa5fa3`
 - Local integration fixture build 25730807: `0dfc7e81436f822121148efed859ba1e661d58b9484bd45e3b6f33b6dd86bfad`
 
-The corresponding `assembly_utils.dll` hashes are
+Build 26266951 requires `assembly_utils.dll`
+`9658619e34e456b88639f6cc6e7d0fd186432f63bf1033e3e04e98e8fac2be9e`
+and `Splatform.dll`
+`1924e4c348616fbd754a8f688d3dc65cde5a741cfef57e80474fcdd0121013b5`.
+For the two earlier builds, the corresponding `assembly_utils.dll` hashes are
 `0d66bd029bf753e2721304c775126b34af329bfcd6e632d8d38edaa96b5cf1a5` (25909431) and
 `63e114e7cfdcc38e4f4391c18b91f774290274d2b9200e6d85d757cbe3673e18` (25730807).
 Both require `Splatform.dll`
 `8953c24a2f2af7ae257cc64fb36dde9d102c871c29b4cdd97d0c3c001de5bd5a`.
 Mixed or unknown tuples are rejected.
 
-Both profiles were inspected statically. The fixed contract uses public
+All three profiles were inspected statically. The fixed contract uses public
 `ZNet.instance`, `IsServer()`, `GetPeers()`, `ZNetPeer.IsReady()`, peer uid/name/socket,
 `ISocket.IsConnected()/GetHostName()`, `ZNet.IsAdmin(string)`, private
 `InternalKick(ZNetPeer)` and `SendAdminList()`, and the three private `SyncedList`
@@ -93,6 +98,26 @@ their original hashes. Existing settings and version-42 saved rules were
 preserved. Normal startup also upgraded the previously enabled owned plugin
 without invoking account-management preparation again. A normal client departure
 returned a complete zero-player native snapshot with no remaining player entries.
+
+On 2026-10-30, official SteamCMD validation installed build 26266951 (1.0.21,
+network 41). All three hashes changed, including `Splatform.dll`; admission uses
+complete tuples so an old/new assembly mixture is still rejected. Against build
+25909431, full `ZNet`, `World`, `SyncedList`, peer/socket, `PlatformUserID`, `Game`,
+`FileWriter` and `ZDOMan` method/field/property captures are identical, including
+IL, exception handlers and local types. `SaveSystem.EndSave` and its committed
+counter retain the reviewed semantics. File-list/cache helpers changed separately.
+
+Before changing either production admission gate, an independent probe in an
+isolated official package invoked the reviewed native disk check and asynchronous
+save API. It observed one save start, the original worker completion and committed
+generation 0 to 1. The five-file world snapshot was captured and hash-checked
+before shutdown, then restored to a fresh run. The native loader read the same
+world UID and generation 1 with world format 42. Both phases exited normally
+through the engine shutdown path with code zero; no forced cleanup was used.
+The fixed BepInExPack 5.4.2351 remained unchanged and all twenty immutable loader
+files were verified. This new zero-player world does not establish live client,
+crossplay, public A2S or existing-player world compatibility. The retained evidence
+is [the native build fixture](../reference-fixtures/2026-10-30-native_build_26266951.json).
 
 For direct Steam sockets, the native bare host is passed to
 `Splatform.PlatformUserID("Steam", host)`. PlayFab sockets already return a full
@@ -196,7 +221,7 @@ first 60 seconds. In the isolated Windows dedicated build 25730807, that call
 raised a native `NullReferenceException` after the server had opened its Steam
 endpoint. The server/autosave path above preserves the real disk and save-state
 checks without invoking client-platform UI or manufacturing a native singleton.
-Both complete pinned tuples are admitted for this dedicated save route. Read-only
+All three complete pinned tuples are admitted for this dedicated save route. Read-only
 IL comparison on 2026-10-21 confirmed identical disk checks, save dispatch, worker
 completion and committed-generation logic, including exception handlers and local
 types. The native world worker's only instruction changes in build 25909431 write
@@ -205,7 +230,7 @@ remains separate from player-control admission so another build requires its own
 save-path review. Reflection binding and static comparison do not replace a real
 dedicated-server save test.
 
-Read-only IL inspection of both pinned builds 25730807 and 25909431 confirms that
+Read-only IL inspection of builds 25730807, 25909431 and 26266951 confirms that
 `SaveSystem.EndSave(source, success)` updates private `s_saveNumber` only when
 `success` is true, after the chunk/DB2/FWL/OK native commit path. In contrast,
 `GetSaveNumber()` returns the proposed generation while saving and cannot confirm
@@ -235,10 +260,20 @@ The synthetic harness covers successful/failed workers, native disk-space
 refusal, missing game readiness, the absent dedicated client-platform dependency,
 rejection/readiness,
 unrelated saves, world/observer replacement, counter wrap, authentication,
-serialization, nonce replay and bounded unknown outcomes. Both pinned native
-assemblies also pass a binding-only reflection probe; the plugin builds against
-the actual reviewed loader/Unity references. These checks do not claim a real
-world save, client integration or filesystem-failure acceptance under a live game.
+serialization, nonce replay and bounded unknown outcomes. The two earlier native
+profiles also passed a binding-only reflection probe. The 31 boundary tests pass
+when the plugin is built against the actual 26266951 and reviewed loader/Unity
+references. Synthetic and binding-only checks do not replace the independent real
+save/reload evidence above, client integration or live filesystem-failure acceptance.
+
+The [2026-10-31 managed backend acceptance](../reference-fixtures/2026-10-31-managed_native_lifecycle_build_26266951.json)
+completed four native lifecycle cycles with the adapted manager and normal exits 0.
+The first confirmed manual save produced a five-file checkpoint before shutdown;
+the next process loaded that exact world/generation without a second save. Backup
+restore, interrupted archive recovery and library-only uninstall preserved the
+isolated instance. Two later restored-world checks each preceded a distinct
+confirmed save. These results cover the disposable world, not populated old-world
+migration, multiplayer, crossplay or power-loss durability.
 
 ## Isolated smoke test
 

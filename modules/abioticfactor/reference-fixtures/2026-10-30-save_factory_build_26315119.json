@@ -1,0 +1,80 @@
+{
+  "schema_version": 1,
+  "module_id": "abioticfactor",
+  "steam_app_id": 2857200,
+  "steam_build_id": "26315119",
+  "verified_at": "2026-10-30",
+  "evidence_classification": "official_package_static_contract",
+  "acquisition": {
+    "source": "Valve anonymous SteamCMD app_update 2857200 validate, Windows public branch",
+    "branch_updated_at": "2026-10-30T06:05:48Z",
+    "completed_at": "2026-10-30T13:39:39Z",
+    "exit_code": 0,
+    "official_success_marker": "Success! App '2857200' fully installed.",
+    "state_flags": 4,
+    "update_result": 0,
+    "depot_id": "2857201",
+    "depot_manifest": "5899724607043708861",
+    "depot_size": 3259600194
+  },
+  "executable_path": "AbioticFactor/Binaries/Win64/AbioticFactorServer-Win64-Shipping.exe",
+  "executable_size": 142254080,
+  "executable_sha256": "de8b4bdaee7a21f56b6f55bc1cc37e97e34c4c1b8649672635b876220f7a935d",
+  "pdb_guid": "1A0D0A57-6841-22EC-A800-E2BBF06DC00B",
+  "pdb_age": 1,
+  "pdb_size": 1700745216,
+  "pe_rsds_matches_pdb": true,
+  "factory": {
+    "reflected_path": "/Script/AbioticFactor.SaveCurrentWorld:SaveCurrentWorld",
+    "function_flags": "0x04022401",
+    "function_params_rva": "0x7f687d0",
+    "parameter_struct_size": 16,
+    "parameters": [
+      {
+        "name": "WorldContextObject",
+        "kind": "ObjectProperty",
+        "property_gen_flags": "0x12",
+        "property_flags": "0x10000000000082",
+        "array_dim": 1,
+        "parameter_offset": 0
+      },
+      {
+        "name": "ReturnValue",
+        "kind": "ObjectProperty",
+        "property_gen_flags": "0x12",
+        "property_flags": "0x10000000000580",
+        "array_dim": 1,
+        "parameter_offset": 8
+      }
+    ],
+    "native_signature": "USaveCurrentWorld* USaveCurrentWorld::SaveCurrentWorld(const UObject*)",
+    "native_rva": "0x49a9c60",
+    "native_size": 260,
+    "native_code_sha256": "12cb9c6c48c79a490d20433c4cfa46e54b6fa48e3e0f5c948d06910a088935c2"
+  },
+  "activation": {
+    "reflected_path": "/Script/Engine.BlueprintAsyncActionBase:Activate",
+    "function_flags": "0x04020402",
+    "function_params_rva": "0x7f070c0",
+    "parameter_struct_size": 0,
+    "parameters": [],
+    "native_override": "void USaveCurrentWorld::Activate()",
+    "native_rva": "0x49950a0",
+    "native_size": 531,
+    "native_code_sha256": "175886371194c414889a23769b748ad6ccf858601f6e0a6deb93cf741f0035d8",
+    "base_exec_rva": "0x2bdf280",
+    "base_exec_size": 31,
+    "derived_vtable_rva": "0x7092580",
+    "derived_dispatch_slot": "0x2b8",
+    "derived_dispatch_target_matches_native_override": true,
+    "observed_native_guards": [
+      "valid stored GameInstance reference",
+      "GameInstance is not already saving",
+      "GameInstance has pending saves",
+      "valid GameInstance world and its SaveQueueSubsystem",
+      "world save is not already queued"
+    ]
+  },
+  "method": "LLVM 23.1.4 inspected PE RSDS, matching PDB symbols and field layouts. PDB-derived FFunctionParams and FObjectPropertyParams layouts were used to read the actual PE reflection data; EPropertyGenFlags confirms Object=0x12. Complete factory, native Activate and base execActivate instruction ranges were decoded, and the base virtual dispatch slot was checked against the derived vtable. Private addresses are evidence only and are not consumed by the production adapter.",
+  "scope": "The official package retains the factory flags, two object properties, native signature, base Activate contract, derived virtual dispatch and entry guards used by the reflection-based adapter. This static fixture does not authorize image admission or establish UE4SS startup, a no-client rejection, a ready-world save, persistence, worker equivalence or client join. Runtime world, identity, signature and deadline gates remain required; native acceptance is separate."
+}

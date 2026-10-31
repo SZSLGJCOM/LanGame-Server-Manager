@@ -11,10 +11,15 @@ struct Fixture {
     root: PathBuf,
     paths: StoragePaths,
     context: ZoneContext,
+    layout: NativeLayout,
 }
 
 impl Fixture {
     async fn new() -> Self {
+        Self::with_layout(NativeLayout::Build25803875).await
+    }
+
+    async fn with_layout(layout: NativeLayout) -> Self {
         let root = std::env::temp_dir().join(format!("lgsm-scum-zones-{}", uuid::Uuid::new_v4()));
         let repo = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..");
         let paths = StoragePaths {
@@ -78,10 +83,18 @@ impl Fixture {
         .execute(&mut native)
         .await
         .unwrap();
+        sqlx::query(match layout {
+            NativeLayout::Build25803875 => "PRAGMA user_version=73",
+            NativeLayout::Build26320224 => "PRAGMA user_version=75",
+        })
+        .execute(&mut native)
+        .await
+        .unwrap();
         native.close().await.unwrap();
         Self {
             root,
             paths,
+            layout,
             context: ZoneContext {
                 database,
                 install,
@@ -99,7 +112,7 @@ impl Fixture {
     }
 
     async fn input(&self) -> WriteScumCustomZoneDamageInput {
-        let snapshot = read_snapshot(ID, &self.context).await.unwrap();
+        let snapshot = read_snapshot(ID, &self.context, self.layout).await.unwrap();
         WriteScumCustomZoneDamageInput {
             instance_id: ID.into(),
             database_identity: snapshot.database_identity.unwrap(),
@@ -123,8 +136,10 @@ impl Drop for Fixture {
 
 #[tokio::test]
 async fn sqlite_write_changes_only_three_slots_and_preserves_unknown_world_and_regions() {
-    let fixture = Fixture::new().await;
-    verify_stopped_write_and_backup(&fixture).await;
+    for layout in [NativeLayout::Build25803875, NativeLayout::Build26320224] {
+        let fixture = Fixture::with_layout(layout).await;
+        verify_stopped_write_and_backup(&fixture).await;
+    }
 }
 
 #[cfg(windows)]
@@ -201,7 +216,7 @@ async fn verify_stopped_write_and_backup(fixture: &Fixture) {
     fs::create_dir_all(nested_sidecar.parent().unwrap()).unwrap();
     fs::write(&nested_sidecar, b"retained nested sidecar").unwrap();
     let input = fixture.input().await;
-    let result = write_stopped(&fixture.paths, &fixture.context, input)
+    let result = write_stopped(&fixture.paths, &fixture.context, fixture.layout, input)
         .await
         .unwrap();
     let mut connection = fixture.connection().await;
@@ -233,7 +248,9 @@ async fn verify_stopped_write_and_backup(fixture: &Fixture) {
         ]
     );
     connection.close().await.unwrap();
-    let reloaded = read_snapshot(ID, &fixture.context).await.unwrap();
+    let reloaded = read_snapshot(ID, &fixture.context, fixture.layout)
+        .await
+        .unwrap();
     assert_eq!(result.revision, reloaded.revision);
     assert_eq!(
         result.configurations[0].regions,
@@ -314,7 +331,7 @@ END;",
         connection.close().await.unwrap();
 
         let input = fixture.input().await;
-        let result = write_stopped(&fixture.paths, &fixture.context, input).await;
+        let result = write_stopped(&fixture.paths, &fixture.context, fixture.layout, input).await;
         let mut connection = fixture.connection().await;
         let world: Vec<u8> =
             sqlx::query_scalar("SELECT unknown_data FROM retained_world WHERE id=1")
@@ -349,7 +366,7 @@ async fn stale_revision_or_replaced_database_is_rejected_before_backup() {
     sqlx::query("UPDATE custom_zone_configuration_damage_handling_methods SET damage_handling_methods=9 WHERE id=2").execute(&mut connection).await.unwrap();
     connection.close().await.unwrap();
     assert!(
-        write_stopped(&fixture.paths, &fixture.context, input)
+        write_stopped(&fixture.paths, &fixture.context, fixture.layout, input)
             .await
             .is_err()
     );
@@ -358,7 +375,7 @@ async fn stale_revision_or_replaced_database_is_rejected_before_backup() {
     fs::rename(path, path.with_extension("original-db")).unwrap();
     fs::copy(path.with_extension("original-db"), path).unwrap();
     assert!(
-        write_stopped(&fixture.paths, &fixture.context, input)
+        write_stopped(&fixture.paths, &fixture.context, fixture.layout, input)
             .await
             .is_err()
     );
@@ -379,7 +396,7 @@ async fn unchanged_values_do_not_create_a_backup() {
         melee_weapon: ScumZoneHandling::Allow,
         projectile: ScumZoneHandling::Allow,
     };
-    let result = write_stopped(&fixture.paths, &fixture.context, input)
+    let result = write_stopped(&fixture.paths, &fixture.context, fixture.layout, input)
         .await
         .unwrap();
     assert!(result.backup_id.is_none());
@@ -402,7 +419,7 @@ async fn readonly_corrupt_short_and_unknown_formats_preserve_data() {
     readonly.set_readonly(true);
     fs::set_permissions(&fixture.context.database, readonly).unwrap();
     assert!(
-        write_stopped(&fixture.paths, &fixture.context, input)
+        write_stopped(&fixture.paths, &fixture.context, fixture.layout, input)
             .await
             .is_err()
     );
@@ -410,16 +427,28 @@ async fn readonly_corrupt_short_and_unknown_formats_preserve_data() {
     let mut connection = fixture.connection().await;
     sqlx::query("UPDATE custom_zone_configuration_damage_handling_methods SET num_damage_handling_methods=2 WHERE id=1").execute(&mut connection).await.unwrap();
     connection.close().await.unwrap();
-    assert!(read_snapshot(ID, &fixture.context).await.is_err());
+    assert!(
+        read_snapshot(ID, &fixture.context, fixture.layout)
+            .await
+            .is_err()
+    );
     let mut connection = fixture.connection().await;
     sqlx::query("PRAGMA user_version=74")
         .execute(&mut connection)
         .await
         .unwrap();
     connection.close().await.unwrap();
-    assert!(read_snapshot(ID, &fixture.context).await.is_err());
+    assert!(
+        read_snapshot(ID, &fixture.context, fixture.layout)
+            .await
+            .is_err()
+    );
     fs::write(&fixture.context.database, b"not a SQLite database").unwrap();
-    assert!(read_snapshot(ID, &fixture.context).await.is_err());
+    assert!(
+        read_snapshot(ID, &fixture.context, fixture.layout)
+            .await
+            .is_err()
+    );
     assert_eq!(
         fs::read(&fixture.context.database).unwrap(),
         b"not a SQLite database"
@@ -430,6 +459,50 @@ async fn readonly_corrupt_short_and_unknown_formats_preserve_data() {
             .unwrap()
             .is_empty()
     );
+}
+
+#[tokio::test]
+async fn database_version_must_match_its_verified_image_before_read_or_backup() {
+    for (layout, change_version) in [
+        (NativeLayout::Build25803875, "PRAGMA user_version=75"),
+        (NativeLayout::Build26320224, "PRAGMA user_version=73"),
+        (NativeLayout::Build25803875, "PRAGMA user_version=74"),
+        (NativeLayout::Build26320224, "PRAGMA user_version=74"),
+        (NativeLayout::Build26320224, "PRAGMA user_version=76"),
+    ] {
+        let fixture = Fixture::with_layout(layout).await;
+        let input = fixture.input().await;
+        let mut connection = fixture.connection().await;
+        sqlx::query(change_version)
+            .execute(&mut connection)
+            .await
+            .unwrap();
+        connection.close().await.unwrap();
+        let before = fs::read(&fixture.context.database).unwrap();
+        let read_error = read_snapshot(ID, &fixture.context, layout)
+            .await
+            .unwrap_err();
+        assert!(
+            read_error
+                .to_string()
+                .contains("does not match the verified server build")
+        );
+        let write_error = write_stopped(&fixture.paths, &fixture.context, layout, input)
+            .await
+            .unwrap_err();
+        assert!(
+            write_error
+                .to_string()
+                .contains("does not match the verified server build")
+        );
+        assert_eq!(fs::read(&fixture.context.database).unwrap(), before);
+        assert!(
+            crate::list_instance_backups(&fixture.paths, ID)
+                .await
+                .unwrap()
+                .is_empty()
+        );
+    }
 }
 
 #[tokio::test]
@@ -551,7 +624,10 @@ async fn native_schema_roundtrip_on_owned_copy() {
     let saved = Path::new(&backups[0].backup_path).join("saves/SaveFiles/SCUM.db");
     let anchor = DatabaseAnchor::open(&saved, false).unwrap();
     let mut backup = db::connect(&anchor, false).await.unwrap();
-    let restored = db::read(&mut backup, &anchor)
+    let native_layout = io::verified_layout(&fixture.context.install)
+        .unwrap()
+        .unwrap();
+    let restored = db::read(&mut backup, &anchor, native_layout)
         .await
         .unwrap()
         .snapshot(ID, &anchor)
@@ -569,7 +645,8 @@ async fn native_schema_roundtrip_on_owned_copy() {
         .then(|| crate::instance_file_patch::sha256(&fs::read(source_wal).unwrap()));
     assert_eq!(remaining_wal, original_wal);
     println!(
-        "SCUM_NATIVE_ZONES roundtrip=verified configurations={} backup_before_change=true source=read_only server_started=false",
+        "SCUM_NATIVE_ZONES roundtrip=verified schema={} configurations={} backup_before_change=true source=read_only server_started=false",
+        native_layout.database_version(),
         after.configurations.len()
     );
 }

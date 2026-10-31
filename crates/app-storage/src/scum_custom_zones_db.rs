@@ -8,7 +8,7 @@ use app_core::scum_custom_zones::{
 use serde::Serialize;
 use sqlx::{Connection, Row, SqliteConnection, sqlite::SqliteConnectOptions};
 
-use super::io::{DatabaseAnchor, invalid};
+use super::io::{DatabaseAnchor, NativeLayout, invalid};
 use crate::StorageError;
 use crate::instance_file_patch::sha256;
 
@@ -77,14 +77,15 @@ pub(super) async fn connect(
 pub(super) async fn read(
     connection: &mut SqliteConnection,
     anchor: &DatabaseAnchor,
+    layout: NativeLayout,
 ) -> Result<NativeZones, StorageError> {
     let version: i64 = sqlx::query_scalar("PRAGMA user_version")
         .fetch_one(&mut *connection)
         .await?;
-    if version != 73 {
+    if version != layout.database_version() {
         return Err(invalid(
             &anchor.path,
-            "This SCUM database version has not been verified for custom-zone edits.",
+            "This SCUM database version does not match the verified server build for custom-zone edits.",
         ));
     }
     let config_rows = sqlx::query("SELECT id,map_id,substr(COALESCE(name,''),1,1025) AS name FROM custom_zone_configuration ORDER BY map_id,id LIMIT ?1")
@@ -298,6 +299,7 @@ impl NativeZones {
 }
 
 pub(super) struct PreparedUpdate {
+    layout: NativeLayout,
     before: NativeZones,
     row_id: i64,
     original: i64,
@@ -314,8 +316,9 @@ pub(super) async fn prepare(
     connection: &mut SqliteConnection,
     anchor: &DatabaseAnchor,
     input: &WriteScumCustomZoneDamageInput,
+    layout: NativeLayout,
 ) -> Result<PreparedUpdate, StorageError> {
-    let before = read(connection, anchor).await?;
+    let before = read(connection, anchor, layout).await?;
     let (row_id, original, next) = before.replacement(input, anchor)?;
     let trigger: Option<String> = sqlx::query_scalar("SELECT name FROM sqlite_master WHERE type='trigger' AND tbl_name='custom_zone_configuration_damage_handling_methods' COLLATE NOCASE LIMIT 1")
         .fetch_optional(&mut *connection).await?;
@@ -335,6 +338,7 @@ pub(super) async fn prepare(
         ));
     }
     Ok(PreparedUpdate {
+        layout,
         before,
         row_id,
         original,
@@ -351,6 +355,7 @@ pub(super) async fn apply(
     prepared: PreparedUpdate,
 ) -> Result<ScumCustomZonesSnapshot, StorageError> {
     let PreparedUpdate {
+        layout,
         mut before,
         row_id,
         original,
@@ -367,7 +372,7 @@ pub(super) async fn apply(
             ));
         }
     }
-    let after = read(connection, anchor).await?;
+    let after = read(connection, anchor, layout).await?;
     let expected_row = before
         .damage
         .iter_mut()

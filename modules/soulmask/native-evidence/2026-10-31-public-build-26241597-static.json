@@ -1,0 +1,75 @@
+{
+  "reviewed_on": "2026-10-31",
+  "steam_app_id": 3017310,
+  "public_build_id": "26241597",
+  "public_branch_updated_utc": "2026-10-27T11:37:11Z",
+  "source": "Isolated official SteamCMD package; read-only comparison against installed build 26158250 and the modeled build 25117179 baseline. No native game execution in this review.",
+  "manifest": {
+    "path": "steamapps/appmanifest_3017310.acf",
+    "sha256": "32dc0afd70f6fd7463a8ce439f1dbcf531bf0262d3bc6b7ae24fa8c3406062a3",
+    "build_id": "26241597",
+    "target_build_id": "26241597",
+    "state_flags": 4,
+    "update_result": 0,
+    "size_on_disk": 5757061141,
+    "game_depot_id": "3017311",
+    "game_depot_manifest": "8530371229149019794"
+  },
+  "executable": {
+    "path": "WS/Binaries/Win64/WSServer-Win64-Shipping.exe",
+    "size": 53139296,
+    "sha256": "e39cecdf0f0c50d7dc93c090eb592dd436f6513b16b5120dfa44f5fca7f2b215"
+  },
+  "configuration": {
+    "comparison_baseline_build_id": "26158250",
+    "modeled_baseline_build_id": "25117179",
+    "files": [
+      {
+        "path": "WS/Config/GameplaySettings/GameXishuConfig_Template.json",
+        "sha256": "c9f9128fe1df1608c18a7873f9bf9c5a50877fc3393fc7a439f91b0ae02cd00c",
+        "baseline_bytes_match": true,
+        "profile_key_counts": {"0": 282, "1": 282, "2": 282}
+      },
+      {
+        "path": "WS/Config/GameplaySettings/GameXishu_Template.json",
+        "sha256": "687d3351fd0706583348decc95cdb9f07b4ad0e8d5e07ac89a62918cf5fe9768",
+        "baseline_bytes_match": true,
+        "profile_key_counts": {"0": 282, "1": 282, "2": 282}
+      }
+    ],
+    "all_template_files": {
+      "directory": "WS/Config/GameplaySettings",
+      "pattern": "GameXishu*.json",
+      "file_count": 137,
+      "added_files": [],
+      "removed_files": [],
+      "changed_files": [],
+      "inventory_sha256": "db6834f73fb9236e26c9a0171779f54c43551a9f843fa8e2bfa64cb83130c9a4",
+      "inventory_encoding": "UTF-8; filenames sorted case-sensitively; each entry is filename, TAB, byte length, TAB, lowercase SHA256, LF"
+    },
+    "canonical_profile_comparison": {
+      "profiles": ["0", "1", "2"],
+      "added_keys": [],
+      "removed_keys": [],
+      "changed_types": [],
+      "changed_defaults": [],
+      "changed_metadata": [],
+      "schema_mapped_key_count": 282,
+      "schema_missing_native_keys": [],
+      "schema_native_type_mismatches": [],
+      "schema_default_scope": "The schema provides one shared setting per coefficient. Its defaults match native profiles 0 and 2 after float32 normalization. Native profile 1 retains five different preset defaults; these are unchanged from the comparison baseline, not newly introduced package changes.",
+      "unchanged_profile_1_preset_differences": {
+        "GameWorldDayTimePortion": {"schema": 0.69999999, "native": 0.800000011920929},
+        "JianZhuChuanSongMenPlusKaiGuan": {"schema": 1, "native": 0},
+        "GongHuiMaxZhaoMuCount": {"schema": 50, "native": 40},
+        "ManRenChuZhanCount": {"schema": 3, "native": 1},
+        "AnimalFollowerMaxCount": {"schema": 3, "native": 1}
+      }
+    }
+  },
+  "reviewed_module_files": {
+    "schema.json": "fb0c616802aff1891317c177e59726fccba88f50219ea7c17ee422c16455db43",
+    "module.toml": "b51552e5363f5cc32a151ee063d3bb4f77d67740c4181e5887cf90861b8059d6"
+  },
+  "scope": "The acquired manifest matches the public branch metadata queried on 2026-10-31. No configuration delta requires adaptation. This static review does not verify current Echo/RCON, save acknowledgement, world persistence, normal shutdown, restart or recovery. Earlier native results retain their original build and date."
+}

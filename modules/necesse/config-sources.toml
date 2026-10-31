@@ -1,6 +1,21 @@
 status = "best_effort_verified"
 last_verified = "2026-07-13"
-notes = "Steam public build 23522725 (updated 2026-06-02 UTC) is current and anonymous app_update 1169370 validate brought the local package to that exact build on 2026-07-13. The current official Necesse Wiki multiplayer parameter table still matches the launch parameters and managed console surfaces exposed by this module. StartServer-nogui.bat retains the bundled JVM wrapper flags LanGame preserves before -jar. No standalone server settings file is shipped; the runtime generates server.cfg and current native read-only evidence below adds independent optional overrides; LanGame-owned path, bind, port, and headless wrapper flags remain explicit exclusions."
+notes = "Historical 2026-07-13 verification: Steam public build 23522725 (updated 2026-06-02 UTC) matched the package obtained by anonymous app_update 1169370 validate. The current official Necesse Wiki multiplayer parameter table still matches the launch parameters and managed console surfaces exposed by this module. StartServer-nogui.bat retains the bundled JVM wrapper flags LanGame preserves before -jar. No standalone server settings file is shipped; the runtime generates server.cfg and current native read-only evidence below adds independent optional overrides; LanGame-owned path, bind, port, and headless wrapper flags remain explicit exclusions."
+
+[[sources]]
+id = "managed_native_manual_save_20261031"
+kind = "runtime_probe"
+path = "reference-fixtures/2026-10-31-managed_native_manual_save.json"
+authority = "compiled_manager_backend_with_isolated_retained_package"
+description = "2026-10-31 Asia/Shanghai: the immutable manager backend completed native_manual_save acceptance against 24926481, with two isolated managed runs, declared native readiness, normal exits and owned cleanup. Formal save receipt status remains requested. The exact-checkpoint opt-in was enabled; the portable fixture preserves the independent native completion, capture and restart-readback markers rather than upgrading the formal receipt. This is manual-save/two-cycle start-stop scope, not full backup/restore/uninstall acceptance, GUI or client gameplay."
+
+[[sources]]
+id = "package_identity_review_20261031"
+kind = "documentation"
+path = "Steam app 1169370 build 24926481 / Server.jar!/necesse/engine/Settings.class"
+authority = "first_party_release_metadata_and_read_only_retained_package_identity"
+url = "https://store.steampowered.com/news/app/1169040/view/707780820824229552"
+description = "2026-10-31 read-only review: the latest published release observed is 1.3.3, dated 2026-08-25 Asia/Shanghai, and its official note requires hosts and servers to update. The retained manifest reports StateFlags 4 and buildid/TargetBuildID 24926481. Server.jar SHA256 is 83e08ad78ceb5f6f24b5ed9bee96ce63160e4f72a7bff8dafd8b99cb649952ef; Settings.class SHA256 remains b5eed1bb24e7d9589ed3e2add612e40814f16081bfa22900d7065fafb464954b, matching the existing 1.3.3 configuration evidence. The current module already uses -strictserverauthority and the isolated -settings path. No new configuration delta was established, no fresh public-depot query was made, and no native start, save, restart or multiplayer result is claimed."
 
 [[sources]]
 id = "steamcmd_anonymous_app_1169370"

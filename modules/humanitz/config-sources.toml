@@ -1,6 +1,20 @@
 status = "best_effort_verified"
-last_verified = "2026-10-25"
-notes = "Read-only reference review on 2026-10-25 found installed official app 2728330 build 26172878 (HumanitZ 1.1B), still REF Version=39. The new BackpackCleanup, WeaponDurabilityMulti and HeadshotOnlyMode keys have optional controls that preserve existing native values until explicitly set; the current RecycleCar comment measures ownership expiry from last login. This reference and isolated rendering evidence does not renew native runtime or RCON acceptance. Historical SteamCMD installation on 2026-07-13 used build 23914958, and runtime observations below remain bound to that older build. Existing roster and retired-key evidence retains its original scope. settings_extra and extra_launch_args remain available for version-specific keys."
+last_verified = "2026-10-31"
+notes = "Public build 26335264 was statically compared and passed isolated native lifecycle validation on 2026-10-31. REF Version=39 and documented commands are unchanged from build 26172878; BackpackCleanup, WeaponDurabilityMulti and HeadshotOnlyMode remain optional controls that preserve native values until explicitly set. The new native evidence binds build02 source and artifact hashes and covers four readiness/save-request/normal-stop cycles, backup/restore, uninstall preservation, interrupted archive recovery and owned cleanup. Save receipts remain Requested; exact manual-save contents, real clients, GUI and network program maintenance were not verified. Historical evidence below retains its original build and scope. settings_extra and extra_launch_args remain available for version-specific keys."
+
+[[sources]]
+id = "public_build_26335264_native_lifecycle"
+kind = "install_probe"
+path = "native-evidence/2026-10-31-public-build-26335264-native.json; native-evidence/2026-10-31-public-build-26335264-native-output.txt"
+authority = "isolated_native_production_lifecycle_with_source_and_artifact_identity"
+description = "2026-10-31: app 2728330 public build 26335264 passed native_package_lifecycle in 250.26 seconds using build02 source identity bdb9ec254ec78270cd246cd60d21ba0d2ead43eec5e2fd68aac5ab657c7e1925. Four fresh runs passed declared readiness, complete empty roster collection, one authenticated save request each and normal exit 0. The fixture restored 27 backup files, preserved 29 saves and five native config files on library uninstall, recovered an interrupted archive commit, and cleaned its owned program/data. All four save receipts remain Requested with durable_write and exact restart_readback not assessed. Official package identity is separately linked; this storage-scoped local-package fixture did not test GUI, real-client gameplay, native A2S or network program update/repair."
+
+[[sources]]
+id = "public_reference_build_26335264_static"
+kind = "documentation"
+path = "native-evidence/2026-10-31-public-build-26335264-static.json"
+authority = "isolated_official_package_read_only_identity_and_reference_comparison"
+description = "2026-10-31: the completed app 2728330 manifest matches public build 26335264. REF_GameServerSettings.ini and RCONCommands.txt are byte-identical to installed build 26172878; REF Version=39, 94 unique native keys, and the existing optional controls remain applicable. No configuration or documented command change was found. This static review does not renew native readiness, RCON info/save ACK, persistence, shutdown or recovery evidence."
 
 [[sources]]
 id = "humanitz_reference_build_26172878"

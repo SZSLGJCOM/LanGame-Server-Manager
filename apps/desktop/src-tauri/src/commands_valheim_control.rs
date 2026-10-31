@@ -187,22 +187,33 @@ fn supported_game(root: &Path) -> Result<bool, String> {
         &root.join(NATIVE_PREPARATION_FILES[2]),
         16 * 1024 * 1024,
     )?);
+    Ok(supported_profile(&main, &utils, &platform))
+}
+
+fn supported_profile(main: &str, utils: &str, platform: &str) -> bool {
+    // Keep each reviewed build's complete tuple: 26266951 also changed Splatform.
     let known = [
         (
             "ef8c8d3a1f45694ef7a701e8e2a25bf8a3874c951a2639c81dfe614ce3aa5fa3",
             "0d66bd029bf753e2721304c775126b34af329bfcd6e632d8d38edaa96b5cf1a5",
+            "8953c24a2f2af7ae257cc64fb36dde9d102c871c29b4cdd97d0c3c001de5bd5a",
         ),
         (
             "0dfc7e81436f822121148efed859ba1e661d58b9484bd45e3b6f33b6dd86bfad",
             "63e114e7cfdcc38e4f4391c18b91f774290274d2b9200e6d85d757cbe3673e18",
+            "8953c24a2f2af7ae257cc64fb36dde9d102c871c29b4cdd97d0c3c001de5bd5a",
+        ),
+        (
+            "648f3f8ed7b44c3d3cd612acd782743d9e03af7e60b7fe72d5827523e95505fd",
+            "9658619e34e456b88639f6cc6e7d0fd186432f63bf1033e3e04e98e8fac2be9e",
+            "1924e4c348616fbd754a8f688d3dc65cde5a741cfef57e80474fcdd0121013b5",
         ),
     ];
-    Ok(
-        platform == "8953c24a2f2af7ae257cc64fb36dde9d102c871c29b4cdd97d0c3c001de5bd5a"
-            && known.iter().any(|(expected_main, expected_utils)| {
-                main == *expected_main && utils == *expected_utils
-            }),
-    )
+    known
+        .iter()
+        .any(|(expected_main, expected_utils, expected_platform)| {
+            main == *expected_main && utils == *expected_utils && platform == *expected_platform
+        })
 }
 
 fn read_owner(root: &Path) -> Result<Option<Ownership>, String> {

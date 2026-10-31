@@ -3,6 +3,27 @@ last_verified = "2026-10-27"
 notes = "Official 1.5.0.31459 Mod support was reviewed on 2026-10-27: seven launch controls and AllowLocalOnlyMods are modeled from the developer wiki updated 2026-10-26. Generated launch/INI fixtures cover all new controls. Build26092453 completed two isolated host startup/no-client save-rejection cycles and a separate explicitly acknowledged elevated Windows Sandbox anonymous Mod6472552 download/mount/start/stop probe on 2026-10-27. The SDK selected Windows file8379971 (203851 bytes), mounted one Mod, reached native readiness and exited0; installed payload hashes are recorded in reference-fixtures/2026-10-27-native_mod_probe_build_26092453.json. Anonymous data used the guest Public temporary cache, outside the instance tree; the token-backed Saved/mod.io default is a separate mode. Token authentication/persistent caching, sideload loading, dependency resolution, ordinary-permission SDK operation, client gameplay and ready-world persistence are not established by that probe. Existing UE4SS build admission and historical runtime evidence keep their original scope. The official launch-parameter and sandbox-option documentation was reviewed on 2026-09-08 against the current schema. ApocalypticAbilities and MaximizeEnemySpawns are now included with the documented false defaults; the exclusions tied to the July package have been removed. Their generated native INI values are covered by the current acceptance fixture; individual gameplay effects have not been verified. The July SteamCMD package record remains historical installation evidence. Installed build 24343458 boots and returns complete A2S_INFO/A2S_PLAYER responses. A controlled run changing only LANOnly from true to false restored Steam queries while UseLocalIPs stayed true; the original LAN-only configuration was restored afterward. LAN discovery uses the game-native port 14001. Admin.ini moderator entries remain separate from read-only online player names."
 
 [[sources]]
+id = "managed_native_guard_build_26315119_20261031"
+kind = "runtime_probe"
+path = "reference-fixtures/2026-10-31-managed_native_guard_build_26315119.json"
+authority = "compiled_manager_backend_with_isolated_official_package"
+description = "2026-10-31 Asia/Shanghai: the final manager backend completed two ordinary-permission startup/no-client rejection/stop cycles against validated build 26315119. Each fresh run returned world_unavailable to the inert saveprobe, with ready/invoked/call_returned/write_confirmed false; formal save dispatch rejected before invocation without retry. Both native exits were 0 and owned fixture cleanup passed. This establishes managed dispatch and lifecycle guards, not a ready-world save, persistence, client join or Mod loading."
+
+[[sources]]
+id = "save_factory_build_26315119"
+kind = "documentation"
+path = "reference-fixtures/2026-10-30-save_factory_build_26315119.json"
+authority = "official_steam_package_and_matching_pdb_static_analysis"
+description = "2026-10-30 public SteamCMD validate identifies build26315119 and depot2857201 manifest5899724607043708861. Matching PE/PDB static analysis confirms the current factory properties, flags and native signature, base Activate virtual dispatch to the derived override, and native entry guards. Static evidence only; image admission, UE4SS startup/no-client acceptance and ready-world persistence are separate."
+
+[[sources]]
+id = "native_guard_build_26315119"
+kind = "documentation"
+path = "reference-fixtures/2026-10-30-native_guard_build_26315119.json"
+authority = "isolated_official_package_with_unchanged_production_save_policy"
+description = "2026-10-30 build26315119 completed two ordinary-permission standalone native startup/no-client saveprobe rejection/normal Ctrl+C stop cycles with fixed UE4SS and unchanged production Lua. Fresh identities returned world_unavailable with no invocation or save request; both exits were 0. Production admission was unchanged for this probe. This does not verify managed host dispatch, ready-world persistence, client join or Mod loading."
+
+[[sources]]
 id = "steamcmd_anonymous_app_2857200"
 kind = "documentation"
 path = "<validated-install-root>/steamapps/appmanifest_2857200.acf"

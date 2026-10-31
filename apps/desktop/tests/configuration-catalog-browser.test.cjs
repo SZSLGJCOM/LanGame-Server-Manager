@@ -11,6 +11,18 @@ function fixtureMode(mode) {
   };
 }
 
+for (const viewport of [{ width: 1560, height: 900 }, { width: 960, height: 600 }]) {
+  test(`configuration status notices retain recovery and cross-category navigation at ${viewport.width}×${viewport.height}`, { timeout: 90000 }, async () => {
+    const report = await runBrowserFixture({ fixturePath: "configuration-catalog-browser.html", viewport,
+      fixtureCleanup: true, bundleWithMiddleware: true, fixtureMiddleware: fixtureMode("configuration-status-notices") });
+    assert.equal(report.status, "passed", report.error);
+    assert.equal(report.notice_actions, 3);
+    assert.deepEqual(report.browser_errors, []);
+    assert.equal(report.browser_processes_remaining, 0);
+    assert.equal(report.scratch_removed, true);
+  });
+}
+
 for (const viewport of [{ width: 1280, height: 800 }, { width: 960, height: 600 }]) {
   test(`DST Cursed Confrontation Caves settings save all five choices at ${viewport.width}×${viewport.height}`, { timeout: 90000 }, async () => {
     const report = await runBrowserFixture({

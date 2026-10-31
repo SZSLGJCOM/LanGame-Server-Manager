@@ -38,6 +38,7 @@ const disabled = (key, settings) => {
 function button(element) {
   if (!React.isValidElement(element)) return undefined;
   if (element.type === "button") return element;
+  if (element.props.action) return button(element.props.action);
   if (typeof element.type === "function") return button(element.type(element.props));
   return React.Children.toArray(element.props.children).map(button).find(Boolean);
 }

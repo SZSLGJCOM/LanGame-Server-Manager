@@ -1,6 +1,14 @@
 status = "best_effort_verified"
-last_verified = "2026-10-10"
-notes = "Steam public build 23662689 (updated 2026-06-10 UTC) matches the local validated package. Its generated config.json contains nine server settings. LanGame models all nine, including nullable AutoCreateWorldSeed and the developer-documented SleepThresholdMs control. The Windows package remains framework-dependent on .NET 8, and the exact-build smoke reached Server ready and accepted list/save/stop through managed stdin."
+last_verified = "2026-10-31"
+notes = "Public build 25755522 passed isolated production start/stdin-save-request/normal-stop/restart acceptance on 2026-10-31. Both save receipts remain Requested; exact content readback and backup/restore were not exercised. This runtime acceptance does not by itself establish a fresh configuration inventory. Historical nine-key configuration evidence and the .NET 8 preparation contract retain their own scope."
+
+[[sources]]
+id = "public_build_25755522_native_manual_save"
+kind = "runtime_probe"
+path = "native-evidence/2026-10-31-public-build-25755522-native.json; native-evidence/2026-10-31-public-build-25755522-native-output.txt"
+authority = "isolated_production_backend_native_two_cycle_acceptance_with_build02_identity"
+description = "2026-10-31: public app 4763510 build 25755522 passed native_manual_save in 159.86 seconds. Both fresh managed runs passed native readiness, one Requested save receipt and normal exit 0, followed by owned cleanup. The portable evidence binds the package, public metadata, build02 source/binary, runtime module files and raw output. Exact content readback, full backup/restore/uninstall/archive lifecycle, GUI and real-client behavior were not tested. Earlier sources keep their original scope."
+
 
 [[sources]]
 id = "configuration_review_20260930"

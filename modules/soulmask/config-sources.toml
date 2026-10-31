@@ -1,6 +1,28 @@
 status = "best_effort_verified"
-last_verified = "2026-09-28"
-notes = "SteamCMD anonymous app_update 3017310 validate completed against the validated package on 2026-07-13. The public manifest reports buildid 24123420 and SizeOnDisk 5692879739. LanGame crosswalks Soulmask launch arguments, the RCON runtime command surface, and all 276 keys in the installed GameXishu gameplay templates. The current package adds NewYingHuoTimeLenMul, JianDuiRuQinKaiGuan, and ReleaseControlStatusCDRatio and changes the four tenacity-damage defaults to 0.5 plus ZuRenDirectCunQu to 1. The GameXishu materializer writes one managed GameXishu.json profile under WS/Saved/GameplaySettings before launch. A 2026-09-28 static comparison of installed build 25117179 found six additional gameplay coefficients, bringing each profile to 282 keys; their defaults and ranges come from the matching native metadata. This comparison does not establish the latest public Steam build or a native launch result."
+last_verified = "2026-10-31"
+notes = "2026-10-31 isolated build04 native full lifecycle passed against fresh public build 26241597: four A2S_INFO readiness checks, native Echo SaveWorld 1 Requested receipts, normal SaveAndExit stops, backup/restore, library uninstall preservation, interrupted archive recovery and owned cleanup. This does not establish exact manual-saved content, general RCON/player behavior or network update compatibility. Historical configuration evidence: SteamCMD anonymous app_update 3017310 validate completed against the validated package on 2026-07-13. The public manifest reports buildid 24123420 and SizeOnDisk 5692879739. LanGame crosswalks Soulmask launch arguments, the RCON runtime command surface, and all 276 keys in the installed GameXishu gameplay templates. The current package adds NewYingHuoTimeLenMul, JianDuiRuQinKaiGuan, and ReleaseControlStatusCDRatio and changes the four tenacity-damage defaults to 0.5 plus ZuRenDirectCunQu to 1. The GameXishu materializer writes one managed GameXishu.json profile under WS/Saved/GameplaySettings before launch. A 2026-09-28 static comparison of installed build 25117179 found six additional gameplay coefficients, bringing each profile to 282 keys; their defaults and ranges come from the matching native metadata. This comparison does not establish the latest public Steam build or a native launch result."
+
+[[sources]]
+id = "native_lifecycle_public_build_26241597"
+kind = "install_probe"
+path = "native-evidence/2026-10-31-public-build-26241597-native.json"
+authority = "isolated_managed_backend_native_lifecycle_with_immutable_build_and_package_identity"
+description = "2026-10-31: fresh official app 3017310 public build 26241597 passed the build04 native lifecycle in 686.37 seconds: four A2S_INFO readiness/SaveWorld 1 Requested/normal exit-zero cycles, 25-file backup restore with safeguard and program/config preservation, 27 save files retained by library uninstall, deferred archive-commit recovery, fresh restored startup and final owned cleanup. Source/binary/package identity and original log hashes are attached. Requested is retained: exact manual-saved world contents and durability were not assessed. General RCON administration, populated player behavior, client joins, network installation/update and GUI were not tested."
+
+[[sources]]
+id = "public_game_xishu_build_26241597_static"
+kind = "documentation"
+path = "native-evidence/2026-10-31-public-build-26241597-static.json"
+authority = "isolated_official_package_read_only_identity_hash_and_json_comparison"
+description = "2026-10-31: the completed app 3017310 manifest matches public build 26241597. All 137 GameXishu JSON templates are byte-identical to installed build 26158250. The two canonical templates retain 282 keys in each of profiles 0, 1 and 2, with no key, type, default or metadata delta; all keys are modeled. The existing shared schema defaults match profiles 0 and 2 after float32 normalization; five different profile-1 preset values are unchanged. This static comparison does not renew Echo/RCON, save, persistence, shutdown or recovery evidence."
+
+[[sources]]
+id = "installed_game_xishu_build_26158250"
+kind = "documentation"
+path = "native-evidence/2026-10-31-installed-build-26158250.json"
+authority = "installed_official_package_read_only_hash_and_json_comparison"
+url = "https://steamstore-a.akamaihd.net/news/externalpost/steam_community_announcements/1847286114048481"
+description = "Earlier 2026-10-31 read-only installed-package comparison: build 26158250 has the same two canonical template hashes as build 25117179, with 282 keys in each profile. This historical installed-package observation does not identify the later public build or renew native runtime evidence; the separately acquired public package is recorded above."
 
 [[sources]]
 id = "configuration_review_20260930"

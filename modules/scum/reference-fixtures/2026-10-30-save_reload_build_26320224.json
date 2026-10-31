@@ -1,0 +1,328 @@
+{
+  "schema_version": 1,
+  "observed_on": "2026-10-30",
+  "steam_app_id": 3792580,
+  "build_id": "26320224",
+  "game_version": "1.3.5.2.172724+172352",
+  "scope": "Independent ordinary-permission official package using unchanged production Lua/protocol and compiled production bridge. One native save invocation, pre-stop SQLite checkpoint and new-process reload; not a managed-backend lifecycle acceptance.",
+  "package": {
+    "source": "SteamCMD anonymous app_update 3792580 validate",
+    "depot_id": "3792581",
+    "depot_manifest": "7276695924733020807",
+    "executable_relative_path": "SCUM/Binaries/Win64/SCUMServer.exe",
+    "executable_sha256": "a862d658271f26d082de5df7bba01e8af9c3d051cb9634e908bb94d8a9efbc7a",
+    "executable_bytes": 130064896,
+    "copied_files": 310,
+    "copied_bytes": 15622896118,
+    "ordinary_independent_files": true
+  },
+  "code_identity": {
+    "base_revision": "d58857d32d668a3661261b96134145c6911357a4",
+    "worktree_uncommitted": true,
+    "source_files_sha256": {
+      "modules/scum/control/bridge.cpp": "e77e790c368943e39141cf8d7e932216d87d011edec2c64703c94371c4902434",
+      "apps/desktop/src-tauri/native/world_save_bridge.hpp": "e846069515baa464c9c0af907eaea1b2d5909bb1395cee1e221aeee1e8c39342",
+      "modules/scum/control/LgsmWorldSave/Scripts/main.lua": "bcd793c8e9b7f1e9fe265b6aceed935c3dd0759ef4284d82c3c662408e87dc77",
+      "apps/desktop/src-tauri/src/live_players/unreal_save_protocol.lua": "63cbe84f36fc8fcdf83bb72c76da2962d7641b1c43ad27fcfab961a93979d6b4"
+    },
+    "policy_sha256": "bcd793c8e9b7f1e9fe265b6aceed935c3dd0759ef4284d82c3c662408e87dc77",
+    "protocol_sha256": "63cbe84f36fc8fcdf83bb72c76da2962d7641b1c43ad27fcfab961a93979d6b4",
+    "payload_sha256": "c1e207d03c8f6b8b98d8b513466075204f9d8990f2efcf3da171d724b6e3973e",
+    "payload_assembly": "Exact production policy bytes + LF + exact production protocol bytes",
+    "bridge_sha256": "d482369a0e4853a42c98098e1b4b15c97711956d76d77b4dcb81965f8aac60f9",
+    "ue4ss_core_sha256": "91d5444f41d19d0bb502f0fbdc15d76421e20359e898caa39e41e134c8f87958",
+    "proxy_sha256": "f2f9e57f7707c8456b117391b1ab45fd7149332f89a3a94726eda0cc2300e834",
+    "settings_sha256": "ca6a2d0a35ce6890095729e74be6f8556c4b84cf70691af3c91a942ebf592f35"
+  },
+  "runtime": {
+    "elevated": false,
+    "connected_clients": 0,
+    "production_host_gate_used_or_bypassed": false,
+    "world_or_readiness_state_modified": false,
+    "extra_mod": "Separate read-only inherited-player-property metadata probe; production save payload unchanged",
+    "network_observation": "Game UDP bound to127.0.0.1 via MULTIHOME; official query UDP and response TCP listeners remained0.0.0.0. No firewall settings changed."
+  },
+  "save": {
+    "manual_requests_total": 1,
+    "probe_ready": true,
+    "native_operation": "AutoSave(EntitySystem*, true)",
+    "native_status": "returned",
+    "production_response": {
+      "ready": true,
+      "invoked": true,
+      "call_returned": true,
+      "write_confirmed": false,
+      "error": null
+    },
+    "request_process_boot_world_identity_verified": true,
+    "request_sent_at_utc": "2026-10-30T14:54:01.740Z",
+    "response_received_at_utc": "2026-10-30T14:54:02.249Z",
+    "native_log_line_number": 4145,
+    "native_log_line": "[2026.10.30-14.54.02:095][ 43]LogEntitySystem: Auto-save took 0.012ms for 0 objects and 0 relative transform(s)",
+    "changed_tables": [
+      "entity",
+      "entity_system",
+      "item_entity",
+      "replenishable_resource",
+      "vehicle_entity",
+      "vehicle_spawner",
+      "virtualized_item"
+    ],
+    "entity_system_timestamp_before": 0.0,
+    "entity_system_timestamp_after": 9.036680035293102
+  },
+  "checkpoint": {
+    "method": "SQLite Backup API, source read-only transaction pinned by a schema read, includes committed WAL, standalone DELETE journal after capture; quick_check=ok",
+    "captured_at_utc": "2026-10-30T14:54:04.277Z",
+    "stop_signal_at_utc": "2026-10-30T14:54:04.366Z",
+    "captured_before_stop": true,
+    "sha256": "ceecc59ca74bafe2edefcb43a5d17f3f503dc613a55790e8b39b7b22dac68827",
+    "bytes": 4476928,
+    "user_version": 75,
+    "quick_check": [
+      "ok"
+    ],
+    "entity_rows": 3746,
+    "entity_to_delete_on_startup_rows": 16,
+    "native_metadata": {
+      "relative_path": "SCUM/Saved/Metadata.json",
+      "content": {
+        "Version": 1
+      },
+      "sha256": "0340179e10b09538704db06ee0bd63fcda7491cbec0218ab79771f081c0bdd09"
+    }
+  },
+  "reload": {
+    "new_process_identity_verified": true,
+    "restored_database_sha256_matches_checkpoint_before_start": true,
+    "restored_target_schema_before_start": 75,
+    "restored_target_quick_check": [
+      "ok"
+    ],
+    "native_metadata_preserved": true,
+    "extra_save_requests": 0,
+    "native_log_first_loaded_schema": 75,
+    "native_log_line_number": 1862,
+    "native_log_line": "[2026.10.30-15.02.51:155][  0]LogEntitySystem: DbLoadState took 16.928ms for 3730 entities",
+    "loaded_entities": 3730,
+    "saveprobe_ready": true,
+    "readback_schema": 75,
+    "readback_quick_check": [
+      "ok"
+    ],
+    "readback_entity_system_timestamp": 9.036680035293102,
+    "verification_passed": true
+  },
+  "stop": {
+    "method": "CTRL_C_EVENT in an owned hidden console",
+    "helper_exit_code": 0,
+    "game_exit_code": 3221225786,
+    "game_exit_code_hex": "0xC000013A",
+    "game_exit_status": "STATUS_CONTROL_C_EXIT",
+    "job_forced_cleanup_used": false,
+    "exit_zero_graceful_shutdown_verified": false,
+    "remaining_game_processes": 0,
+    "managed_backend_shutdown_tested": false
+  },
+  "limitations": [
+    "Native void return and the shared protocol remain requested/returned, not a write-completed receipt.",
+    "Committed table changes and exact pre-stop snapshot reload do not prove causal persistence of every subsystem.",
+    "Auto-save objects=0 is the SaveEntities returned collection-size statistic, not an execution counter for the two internally changed virtual-call sites; coverage or non-coverage is not established by this count.",
+    "No connected-client or player-mutation coverage.",
+    "Control-C interruption with no Job kill does not establish graceful exit0 or the product managed shutdown path."
+  ],
+  "harness_findings": [
+    {
+      "kind": "auxiliary_port_selection",
+      "save_requests": 0,
+      "observation": "Initial port selection omitted SCUM game+2 TCP; native response socket bind failed and the game exited before readiness.",
+      "correction": "Checked the complete TCP/UDP port family before the sole save run; preserved original failed-start logs and Saved."
+    },
+    {
+      "kind": "evidence_json_format",
+      "save_requests": 0,
+      "observation": "First failed-start helper appended an INI line to evidence JSON only.",
+      "correction": "Raw records retained; separate normalized copies remove exactly the terminal CRLF scum.ServerSettingsVersion=7 CRLF. Production Lua and IPC request bytes unaffected."
+    },
+    {
+      "kind": "native_saved_metadata",
+      "save_requests": 0,
+      "observation": "First standalone restore replaced the entire Saved directory but omitted Metadata.json; native startup created schema from0 and loaded0 entities.",
+      "correction": "Retained that failed restore and repeated only reload from the same pre-stop DB plus the original native Metadata.json; schema75 and3730 entities loaded. Product checkpoint already retains Saved metadata while replacing only DB and companions."
+    }
+  ],
+  "production_checkpoint_references": [
+    "apps/desktop/src-tauri/src/commands_native_save_checkpoint_profiles.rs:42",
+    "apps/desktop/src-tauri/src/commands_native_save_checkpoint.rs:435"
+  ],
+  "raw_evidence": {
+    "retention": "External local acceptance artifacts; relative labels only, no machine paths or runtime identity tokens in this fixture",
+    "files": [
+      {
+        "relative_label": "prepared.json",
+        "bytes": 1927,
+        "sha256": "bd76be586504d21d3e7aa481d50465c7efc9dd10e4dc3fae7c3706691a00a9c0"
+      },
+      {
+        "relative_label": "executed-inputs.json",
+        "bytes": 1334,
+        "sha256": "c64b66ce1df5f8da593d51f333e428324b16bd0fed510e96abd90f03d0453667"
+      },
+      {
+        "relative_label": "package-copy-inventory.json",
+        "bytes": 56415,
+        "sha256": "e916d630794b986304e6c9920538042f16780470123676ab568fc4b170c3638c"
+      },
+      {
+        "relative_label": "save-port-family/save-request.json",
+        "bytes": 232,
+        "sha256": "06f1df43528f972762df95df12d0f8d6ea517bfe658569991b91af49dc6a33b3"
+      },
+      {
+        "relative_label": "save-port-family/save-response.json",
+        "bytes": 485,
+        "sha256": "bad7eb6a2c4688e14e8d4edca6c97b55ad84a9a10053b6f3dd9ce227eee1ff2a"
+      },
+      {
+        "relative_label": "save-port-family/save-native-request.txt",
+        "bytes": 167,
+        "sha256": "a452099391a4e786aa2b8ab7a48db984d356ee35efd1922f0b9c5183c2e05abf"
+      },
+      {
+        "relative_label": "save-port-family/save-native-response.txt",
+        "bytes": 116,
+        "sha256": "2dfc54cfa114646c1d9840ebefecf0a42ed41970e17a0e49ba133da5741a60d7"
+      },
+      {
+        "relative_label": "save-port-family/native.log",
+        "bytes": 600502,
+        "sha256": "de211d4853ce3e0ec6a13fe4cb61811628615fb37e2bbefe39d62520b57175ab"
+      },
+      {
+        "relative_label": "save-port-family/UE4SS.log",
+        "bytes": 45231,
+        "sha256": "025567aeb41d826064d25de114ca6fb8baac8fc8f4d370580cb4d389d262ba43"
+      },
+      {
+        "relative_label": "save-port-family/post-request-before-stop.log",
+        "bytes": 383,
+        "sha256": "051199f759d7e0fbe78a0c13d4ae8baeda6ccfe3b6fd21601713a3a920c224c8"
+      },
+      {
+        "relative_label": "save-port-family/before.db",
+        "bytes": 4476928,
+        "sha256": "f9ee2b30795f77ee5c975d2b90f748e8cb20c746b204e0646301b547ac0d0601"
+      },
+      {
+        "relative_label": "save-port-family/before.json",
+        "bytes": 682156,
+        "sha256": "cd1ece99089b9fac2aea0c9978abb454d53ea5fa7127318ecc3c6e1182cbc4e3"
+      },
+      {
+        "relative_label": "save-port-family/after-save-before-stop.db",
+        "bytes": 4476928,
+        "sha256": "ceecc59ca74bafe2edefcb43a5d17f3f503dc613a55790e8b39b7b22dac68827"
+      },
+      {
+        "relative_label": "save-port-family/after-save-before-stop.json",
+        "bytes": 682349,
+        "sha256": "f56f1d7f7eef43d75686d304915f9f047145eb0a26c67124adcd5ad65b0378d1"
+      },
+      {
+        "relative_label": "save-port-family/result.json",
+        "bytes": 3225,
+        "sha256": "9a8733e11aa3fcc4a0fff7bb7526531eda762a5ad223355530d5546232426442"
+      },
+      {
+        "relative_label": "restore-with-native-metadata.json",
+        "bytes": 1225,
+        "sha256": "125defb282e6ea0cde4eaa1e933e165f59f1b5a0fdd72137c732bd8d03ab1e4e"
+      },
+      {
+        "relative_label": "reload-with-native-metadata/native.log",
+        "bytes": 658698,
+        "sha256": "5a87b1de9dbe343e84a36f659f1ce0ffd5797f53e87695a72a82775c69f3debb"
+      },
+      {
+        "relative_label": "reload-with-native-metadata/before.db",
+        "bytes": 4481024,
+        "sha256": "78aeb1efaea7c0af49ea9d036ead5b347e9f97086a987afea88fdbc4a011b84e"
+      },
+      {
+        "relative_label": "reload-with-native-metadata/before.json",
+        "bytes": 682883,
+        "sha256": "b9f12fff95649dd7b8462e11df9b4139f354d8521a0d4065a266041da2ba8b35"
+      },
+      {
+        "relative_label": "reload-with-native-metadata/result.json",
+        "bytes": 1631,
+        "sha256": "36f14e369d646edbc817a3d6d2d95c9743b41a5d611042f7cf73c1e87a83affb"
+      },
+      {
+        "relative_label": "metadata-reload-result.json",
+        "bytes": 2051,
+        "sha256": "af0b3ad4cd60b98d95b6049f3c35038c50d6a638411129c95c3c615b576dc2eb"
+      },
+      {
+        "relative_label": "review-summary.json",
+        "bytes": 5786,
+        "sha256": "8345c2f57ca6511abaf94bc0f3aa3b9579c16b3c8ddf84d4e1ac7b26a7d1a940"
+      },
+      {
+        "relative_label": "save/native.log",
+        "bytes": 927323,
+        "sha256": "29f4b1569171f9e5f4594a4081894c2b783dd1e5cafc4b8f98d0dcadafecfcc6"
+      },
+      {
+        "relative_label": "save/result.json",
+        "bytes": 505,
+        "sha256": "970942ca628cd8e6567423debe6a8cb08fe35d566a2c7a9daf71b4706353f17b"
+      },
+      {
+        "relative_label": "evidence-normalization.json",
+        "bytes": 982,
+        "sha256": "0208a119eb3353f429adbb5ba0805cdbe0340d1eb9b39b22263e9e8c42edef8f"
+      },
+      {
+        "relative_label": "reload-from-prestop-checkpoint/native.log",
+        "bytes": 601410,
+        "sha256": "b63605197619680b0f709b78fb0165671ccabc539e3c9b5b75d9c075eb61892c"
+      },
+      {
+        "relative_label": "reload-from-prestop-checkpoint/result.json",
+        "bytes": 1600,
+        "sha256": "a08347446cf1ac854e61bd58cd77e7db534b4214561e8c209dc17bc6b8eb5485"
+      },
+      {
+        "relative_label": "prepare-helper-executed-with-json-suffix.py.txt",
+        "bytes": 6359,
+        "sha256": "4a7dff8483afc387b45ab44b5289cbf7e727a33a8dfa595d648160353e762b1c"
+      },
+      {
+        "relative_label": "run-probe-first-attempt.py.txt",
+        "bytes": 19358,
+        "sha256": "fc35445bf7311c7655c280a0020f632dca0f58ea238059a12ea8278082a942ce"
+      },
+      {
+        "relative_label": "prepare_probe.py",
+        "bytes": 6329,
+        "sha256": "3a7eac3b8d6c7cf1597b8fc5268122da75c2867ed32acf1673818b98de00239f"
+      },
+      {
+        "relative_label": "run_probe.py",
+        "bytes": 19602,
+        "sha256": "b45474ff53414d32fe69fb776c0a2b6cb498bbd0f366f783fab38b1afa943802"
+      },
+      {
+        "relative_label": "resume_reload_only.py",
+        "bytes": 3431,
+        "sha256": "dee3c2e47de335235910b503d5b799c5a6a1daaef476c3bea9af0c7ecd0291cf"
+      },
+      {
+        "relative_label": "resume_with_native_metadata.py",
+        "bytes": 3266,
+        "sha256": "851359551719544e1714e189583627b982ca36495d6530b0266ce834395d7c23"
+      }
+    ]
+  }
+}

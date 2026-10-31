@@ -1,0 +1,147 @@
+{
+  "schema_version": 1,
+  "module_id": "arksurvivalascended",
+  "evidence_classification": "isolated_native_start_stop_and_save_request",
+  "verified_on": "2026-10-30",
+  "steam_app_id": 2430930,
+  "steam_build_id": "26258656",
+  "official_acquisition": {
+    "source": "Valve public anonymous incremental app_update validate, Windows; independent old official data seed",
+    "expected_build": "26258656",
+    "actual_build": "26258656",
+    "state_flags": 4,
+    "exit_code": 0,
+    "official_success_marker": true,
+    "started_utc": "2026-10-30T14:11:39.0122112+00:00",
+    "completed_utc": "2026-10-30T14:16:52.9669635+00:00",
+    "steamcmd_sha256": "7baf77927639793e11b2a02ec2fd6d9114c95432be2f23a3225e274732255cf4",
+    "steamcmd_signature_status": "Valid",
+    "appmanifest_sha256": "6e73b0d4717343697e7b1b8269750e36598528657d4267aeac81ca2d5e218f3a",
+    "installed_size_bytes": 12227552346,
+    "depot_manifests": {
+      "1004": "7604377918839582995",
+      "2430931": "5814524973746231856"
+    }
+  },
+  "executable": {
+    "relative_path": "ShooterGame/Binaries/Win64/ArkAscendedServer.exe",
+    "size_bytes": 197028968,
+    "sha256": "e44d4b59cfd9aa895698dab9c3e562daf0e3ef783ccd28541482fee7351ac7c5"
+  },
+  "source_identity_sha256": "f18ffaa9e36f99b3d4bf6f7d6f6fcaf92022085bdd6b45ee8e35043357f2a241",
+  "test_binary_sha256": "436d089219ea53b086c371dfc462a53fb153fa4068ac4db2421b685962c5a82b",
+  "source_manifest_sha256": "b4ca7e00570e4972d69a8af0b1ccdcaf7b7deb0d5f1f63191da897981b65aaee",
+  "reviewed_snapshot_files_sha256": {
+    "apps/desktop/src-tauri/src/commands_native_lifecycle_tests.rs": "fb5a95cebd3e2e290ff7ced4bffb23d6fc4feca0634575fd3ce99ecdbef54ba3",
+    "apps/desktop/src-tauri/src/commands_native_manual_save_probe.rs": "fb30ac9c789a232283d8d4539b3a2388d7b671fecb9e4b480311f3c1c5469f0f",
+    "apps/desktop/src-tauri/src/commands_native_runtime.rs": "de2cff2c728f7346db4d0b0aa46b1019c33a2d88572dab454b9480971ee8327e",
+    "apps/desktop/src-tauri/src/commands_native_player_counts.rs": "9593482923d2023eacf610a6947e033c12e06d658991f57d25d5ff1d33ba0231"
+  },
+  "test": {
+    "selector": "commands::tests::manual_runtime_tests::native_lifecycle_tests::native_manual_save",
+    "arguments": [
+      "--exact",
+      "--ignored",
+      "--test-threads=1",
+      "--nocapture"
+    ],
+    "compiled_feature": "native-test-console",
+    "started_utc": "2026-10-30T14:39:10.2031708+00:00",
+    "completed_utc": "2026-10-30T14:47:25.9368713+00:00",
+    "test_exit_code": 0,
+    "tests_passed": 1,
+    "tests_failed": 0,
+    "duration_seconds": 495.5,
+    "copied_payload_bytes": 12227575743,
+    "production_scope": "start_stop",
+    "native_test_package_classification": "existing_local_package; source_provenance=unverified",
+    "acquisition_provenance": "The separate official validation receipt above establishes the supplied package identity; the lifecycle test itself does not acquire or certify an upstream package.",
+    "result_sha256": "b29cf7d8d8453afdc5c044dbbbf7d944703ef64a1737480a8115bcde5def123f",
+    "log_sha256": "3a4b6445b4db2e65f32915a113b2b0f8e3d6554aee4a608ba470638432d5ba96",
+    "runner_sha256": "9dcc6c46d7f7116b1c42143e42c772af1b63d357add590c20c5d2a70eb546b2a"
+  },
+  "settings": {
+    "program_update_policy": "pinned",
+    "manual_save": true,
+    "manual_save_restart": true,
+    "exact_saved_content_readback": false
+  },
+  "cycles": [
+    {
+      "cycle": "initial",
+      "native_readiness": "passed",
+      "prestart_update_policy": "pinned",
+      "save_request": {
+        "attempted_once": true,
+        "retried": false,
+        "instance_run_and_session_matched": true,
+        "managed_generations_alive": true,
+        "route": "declared_network_transport_current_run",
+        "response_present": true,
+        "response_bytes": 47,
+        "write_confirmation_pending": false,
+        "save_completion": "requested",
+        "durable_write": "not_assessed",
+        "restart_readback": "not_assessed"
+      },
+      "stops": [
+        {
+          "run_id": 1,
+          "process": "main",
+          "exit_code": -1,
+          "crash_flag": false,
+          "status": "stopped"
+        }
+      ],
+      "active_run_after_stop": null
+    },
+    {
+      "cycle": "restart",
+      "native_readiness": "passed",
+      "prestart_update_policy": "pinned",
+      "save_request": {
+        "attempted_once": true,
+        "retried": false,
+        "instance_run_and_session_matched": true,
+        "managed_generations_alive": true,
+        "route": "declared_network_transport_current_run",
+        "response_present": true,
+        "response_bytes": 47,
+        "write_confirmation_pending": false,
+        "save_completion": "requested",
+        "durable_write": "not_assessed",
+        "restart_readback": "not_assessed"
+      },
+      "stops": [
+        {
+          "run_id": 2,
+          "process": "main",
+          "exit_code": -1,
+          "crash_flag": false,
+          "status": "stopped"
+        }
+      ],
+      "active_run_after_stop": null
+    }
+  ],
+  "restart": {
+    "fresh_managed_run": true,
+    "native_readiness": "passed",
+    "content_readback": "not_claimed"
+  },
+  "cleanup": {
+    "production_stop_returned_success": true,
+    "active_and_tracked_runs_cleared": true,
+    "disposable_fixture_directory_removed": true,
+    "log_result": "passed"
+  },
+  "scope_limits": [
+    "Save completion is requested, not confirmed; response bytes and write_confirmation_pending=false do not prove native durable commit.",
+    "Restart establishes a fresh managed run and native readiness, not an independently verified readback of saved contents.",
+    "This selector does not execute the full backup/restore/uninstall lifecycle.",
+    "GUI, live-client compatibility, gameplay effects and third-party mod behavior were not tested.",
+    "Both formal production stop operations returned success with recorded process exit -1 and crash_flag=false. Exit zero and a graceful engine exit are not established.",
+    "No player-count/identity observation was emitted by this run; live-client joins, cross-server transfers and ASA API compatibility were not exercised.",
+    "The 2026-10-28 public-branch fixture remains historical build 26068782; this run uses separately validated build 26258656."
+  ]
+}

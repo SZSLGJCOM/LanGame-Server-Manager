@@ -1,0 +1,118 @@
+{
+  "schema_version": 1,
+  "module_id": "conanexiles",
+  "evidence_classification": "isolated_managed_backend_native_manual_save_two_cycles",
+  "verified_on": "2026-10-31",
+  "verification_timezone": "Asia/Shanghai",
+  "source_identity_sha256": "bdb9ec254ec78270cd246cd60d21ba0d2ead43eec5e2fd68aac5ab657c7e1925",
+  "test_binary_sha256": "7ac5843571203f96e5618719e82093456026c102a1c84bad7c5c60773af51263",
+  "source_manifest_sha256": "38af891de1a2c3b3876a1b0abb95d5c891c67a5bf54d971f9691748131ff351b",
+  "source_file_count": 4202,
+  "package": {
+    "classification": "existing_local_package",
+    "steam_build_id": "25792439",
+    "appmanifest_sha256": "548ceaf5c0b64c21fd1b1fa8b1f4100a767f674f8abcfb1d05e143b7cb5da234",
+    "version_label": null,
+    "source_total_bytes": 4813316474,
+    "copied_payload_bytes": 4811189367,
+    "primary_file": {
+      "relative_path": "ConanSandbox/Binaries/Win64/ConanSandboxServer-Win64-Shipping.exe",
+      "size_bytes": 186939240,
+      "sha256": "d0ea317e7e037e68454414f12828d5995cc9e519b9c34eda264be1954d352b14"
+    },
+    "public_branch_metadata": {
+      "build": "25792439",
+      "updated_local": "2026-10-08T21:45:31+08:00",
+      "matches_supplied_package": true,
+      "metadata_artifact_sha256": "59cf844a74d07a620c499079cf9d676b3c6a2a64941cdf4721593010f915966b"
+    },
+    "paired_provider": {
+      "relative_path": "ConanSandbox/Binaries/Win64/Dreamworld.dll",
+      "size_bytes": 5232488,
+      "sha256": "2eec9aa9aa443fb476db583cfdc5044285ccc246df0a60e93155fb37e14324b6"
+    }
+  },
+  "test": {
+    "selector": "commands::tests::manual_runtime_tests::native_lifecycle_tests::native_manual_save",
+    "production_scope": "manual_save_start_stop_two_cycles",
+    "started_utc": "2026-10-31T04:38:49.502516+00:00",
+    "completed_utc": "2026-10-31T04:43:27.152344+00:00",
+    "started_local": "2026-10-31T12:38:49.502516+08:00",
+    "completed_local": "2026-10-31T12:43:27.152344+08:00",
+    "exit_code": 0,
+    "tests_passed": 1,
+    "duration_seconds": 277.59,
+    "settings": {
+      "program_update": {
+        "policy": "pinned"
+      }
+    },
+    "ports_preflight": "clear",
+    "flags": {
+      "LANGAME_NATIVE_MANUAL_SAVE": "true",
+      "LANGAME_NATIVE_MANUAL_SAVE_RESTART": "true",
+      "LANGAME_NATIVE_SAVE_REQUIRE_COMPLETED": "true"
+    },
+    "save_receipt_completions": [
+      "confirmed"
+    ],
+    "exact_checkpoint_readback_requested": false
+  },
+  "observed_native_receipts": [
+    "NATIVE_LIFECYCLE module=conanexiles phase=instance_created elapsed_ms=34237 program_mode=Independent preparation=isolated_copy library=preserved ownership=verified effective_root=fixture/n-9e94b6951e1f67ac\\runtime creation_scope=storage",
+    "NATIVE_LIFECYCLE module=conanexiles phase=prestart_update cycle=initial events=pinned persisted_evidence=verified download_bytes=not_measured",
+    "NATIVE_LIFECYCLE module=conanexiles phase=started cycle=initial processes=1 bind=default firewall=non_elevated_policy elapsed_ms=48338",
+    "NATIVE_LIFECYCLE module=conanexiles phase=native_ready cycle=initial declared_probes=passed variant=isolated",
+    "UNREAL_WORLD_SAVE module=conanexiles action=saveprobe phase=native_receipt cause=received elapsed_ms=712 ready=true invoked=false call_returned=false write_confirmed=false native_error=none",
+    "UNREAL_WORLD_SAVE module=conanexiles action=save phase=native_receipt cause=received elapsed_ms=746 ready=true invoked=true call_returned=true write_confirmed=true native_error=none",
+    "NATIVE_MANUAL_SAVE module=conanexiles cycle=initial phase=receipt attempted_once=true retried=false instance_matches=true run_matches=true session_matches=true managed_generations_alive=true route=managed_process_generation response_present=true response_bytes=70 write_confirmation_pending=false save_completion=confirmed durable_write=not_assessed restart_readback=not_assessed",
+    "NATIVE_STOP_RESULT module=conanexiles cycle=initial run_id=1 process=main exit_code=Some(0) crash_flag=false status=stopped",
+    "NATIVE_LIFECYCLE module=conanexiles phase=cycle_stopped cycle=initial run_id=1 active_run=none",
+    "NATIVE_LIFECYCLE module=conanexiles phase=prestart_update cycle=restart events=pinned persisted_evidence=verified download_bytes=not_measured",
+    "NATIVE_LIFECYCLE module=conanexiles phase=started cycle=restart processes=1 bind=default firewall=non_elevated_policy elapsed_ms=47618",
+    "NATIVE_LIFECYCLE module=conanexiles phase=native_ready cycle=restart declared_probes=passed variant=isolated",
+    "UNREAL_WORLD_SAVE module=conanexiles action=saveprobe phase=native_receipt cause=received elapsed_ms=878 ready=true invoked=false call_returned=false write_confirmed=false native_error=none",
+    "UNREAL_WORLD_SAVE module=conanexiles action=save phase=native_receipt cause=received elapsed_ms=1500 ready=true invoked=true call_returned=true write_confirmed=true native_error=none",
+    "NATIVE_MANUAL_SAVE module=conanexiles cycle=restart phase=receipt attempted_once=true retried=false instance_matches=true run_matches=true session_matches=true managed_generations_alive=true route=managed_process_generation response_present=true response_bytes=70 write_confirmation_pending=false save_completion=confirmed durable_write=not_assessed restart_readback=not_assessed",
+    "NATIVE_STOP_RESULT module=conanexiles cycle=restart run_id=2 process=main exit_code=Some(0) crash_flag=false status=stopped",
+    "NATIVE_LIFECYCLE module=conanexiles phase=cycle_stopped cycle=restart run_id=2 active_run=none",
+    "NATIVE_MANUAL_SAVE module=conanexiles phase=restarted fresh_managed_run=true native_readiness=passed content_readback=not_claimed",
+    "NATIVE_LIFECYCLE module=conanexiles phase=complete scope=production_start_stop cleanup=passed gui=not_tested"
+  ],
+  "cleanup": {
+    "test_reported": "passed",
+    "cleanup_failures": [],
+    "owned_processes_absent_after_test": true,
+    "owned_fixture_removed_after_test": true
+  },
+  "artifacts": [
+    {
+      "name": "conanexiles-native.json",
+      "size_bytes": 2438,
+      "sha256": "bfcfd510d88a7b225102d987378eeb7df8fc2c0d1af5f1540676ee73c81945ee"
+    },
+    {
+      "name": "conanexiles-native.log",
+      "size_bytes": 3577,
+      "sha256": "bff104737c3faf12ecd2ad503decc5b529edcb207d89d5082e8fbbe89a233451"
+    },
+    {
+      "name": "native-build-02.json",
+      "size_bytes": 1521,
+      "sha256": "aa6b4b3cd00e5b1751d1ab12c346481d0106388777920b2968f4563e24113de6"
+    },
+    {
+      "name": "native-source-proof.json",
+      "size_bytes": 791,
+      "sha256": "b5a26b26f64fad98f46637674a68a0c374ac16b24f5f1a5195fc6ced1a4ad41f"
+    }
+  ],
+  "scope_limits": [
+    "This is production backend manual-save acceptance with two fresh managed runs, not the full backup/restore/uninstall/archive lifecycle.",
+    "Save receipts retain their emitted status. Requested does not establish native completion or durable writes; any independent checkpoint/readback evidence is separately identified in the emitted native receipts.",
+    "No GUI, client join, multiplayer gameplay, populated existing-world migration or power-loss durability was tested.",
+    "The test copied a retained local package into a disposable independent instance; it did not acquire the game from upstream or independently establish public-branch recency.",
+    "Source and executable identities refer to the immutable 4202-file snapshot used for this run. Adding this evidence afterward does not change that tested identity.",
+    "Native SQL transaction completion is tied to each original owned callback sequence; no hardware fsync, populated player/building reload, or exact checkpoint readback is claimed."
+  ]
+}

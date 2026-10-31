@@ -1,5 +1,5 @@
-import { ActivityNotice } from "../../components/ActivityNotice";
-import { useLayoutEffect, useMemo, useRef, useState } from "react";
+import { ActivityNotice, ActivityNoticeTarget } from "../../components/ActivityNotice";
+import { useContext, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { ShellIcon } from "../../components/ShellIcon";
 import { getLocalizedModuleDisplayName } from "../../store-media";
 import { useI18n } from "../../i18n";
@@ -13,6 +13,7 @@ import type {
   UpdateInstanceInput
 } from "../../types";
 import { ConfigurationSearchNavigation } from "./ConfigurationSearchNavigation";
+import { buildConfigurationFieldIds } from "./ConfigurationField";
 import { ConfigurationSaveStatus } from "./ConfigurationSaveStatus";
 import { ConfigurationLoadError } from "./ConfigurationLoadError";
 import { GuidedSettingsForm } from "./GuidedSettingsForm";
@@ -24,6 +25,7 @@ import {
 import {
   findConfigurationSectionNode,
   focusConfigurationControl,
+  groupConfigurationValidationIssues,
   mergeConfigurationPatch,
   resolveConfigurationFieldNavigation
 } from "./configuration-workspace-state";
@@ -53,12 +55,6 @@ import { buildSavedConfigurationSchema } from "./saved-configuration-schema";
 import { useArkMapAvailability } from "./useArkMapAvailability";
 import { ArkMapAvailabilityNotice, ArkMapUnavailableWarning } from "./ArkMapAvailabilityNotice";
 import { arkMapSelectionErrorMessage, buildArkMapSelectionPatch } from "./ark-cluster-maps";
-
-export {
-  focusConfigurationControl,
-  mergeConfigurationPatch,
-  resolveConfigurationFieldNavigation
-} from "./configuration-workspace-state";
 
 export interface ConfigurationWorkspaceProps {
   details: InstanceDetails;
@@ -101,6 +97,7 @@ function uniqueIssues(issues: GuidedSettingsValidationIssue[]): GuidedSettingsVa
 
 export function ConfigurationWorkspace(props: ConfigurationWorkspaceProps) {
   const { locale, t } = useI18n();
+  const activityTarget = useContext(ActivityNoticeTarget);
   const readOnly = Boolean(props.archive);
   const [navigationOpen, setNavigationOpen] = useState(false);
   const navigationToggle = useRef<HTMLButtonElement>(null);
@@ -194,6 +191,7 @@ export function ConfigurationWorkspace(props: ConfigurationWorkspaceProps) {
     () => uniqueIssues([...schemaIssues, ...moduleIssues]),
     [moduleIssues, schemaIssues]
   );
+  const validationNotices = useMemo(() => groupConfigurationValidationIssues(validationIssues), [validationIssues]);
   const loading = localizedModuleDetails === null && !props.moduleDetailsError;
   const moduleMismatch = Boolean(
     localizedModuleDetails && localizedModuleDetails.summary.id !== moduleId
@@ -291,6 +289,7 @@ export function ConfigurationWorkspace(props: ConfigurationWorkspaceProps) {
     if (!model) return;
     const target = resolveConfigurationFieldNavigation(model, fieldKey, idPrefix, readOnly);
     if (!target) return;
+    setNavigationOpen(false);
     setRequestedSectionId(target.sectionId);
     setRequestedFocusId(target.inputId);
   }
@@ -355,13 +354,16 @@ export function ConfigurationWorkspace(props: ConfigurationWorkspaceProps) {
               inert={registration.sectionId !== selectedSectionId}
               style={registration.sectionId !== selectedSectionId ? { display: "none" } : undefined}
               tabIndex={registration.fieldKey ? -1 : undefined}>
-              <registration.Renderer sectionId={registration.sectionId} active={registration.sectionId === selectedSectionId}
-                fieldKey={registration.fieldKey} details={props.details}
-                moduleDetails={localizedModuleDetails} settings={settingsParseResult.value!}
-                arkMapAvailability={arkMapAvailability}
-                disabled={editorDisabled}
-                onNavigateField={navigateValidationField}
-                onPatch={(patch) => commitSettings((current) => applyPatch(current, patch))} />
+              <ActivityNoticeTarget.Provider value={registration.sectionId === selectedSectionId ? activityTarget
+                : { element: null, dismissLabel: "" }}>
+                <registration.Renderer sectionId={registration.sectionId} active={registration.sectionId === selectedSectionId}
+                  fieldKey={registration.fieldKey} details={props.details}
+                  moduleDetails={localizedModuleDetails} settings={settingsParseResult.value!}
+                  arkMapAvailability={arkMapAvailability}
+                  disabled={editorDisabled}
+                  onNavigateField={navigateValidationField}
+                  onPatch={(patch) => commitSettings((current) => applyPatch(current, patch))} />
+              </ActivityNoticeTarget.Provider>
             </div>
           ) : null
         ))}
@@ -417,20 +419,22 @@ export function ConfigurationWorkspace(props: ConfigurationWorkspaceProps) {
               </button>}>
               {saveFailureMessage}
             </ActivityNotice> : null}
-            {validationIssues.length > 0 ? <div className="configuration-workspace__validation" role="alert">
-              <strong>{t("settings.configuration.workspace.validation", undefined, "Resolve these settings before saving")}</strong>
-              <div className="configuration-workspace__validation-list">
-                {validationIssues.map((issue, index) => <button type="button"
-                  className="configuration-workspace__validation-button"
-                  key={`${issue.fieldKey}-${index}`}
-                  data-configuration-validation-field={issue.fieldKey}
-                  onClick={() => navigateValidationField(issue.fieldKey)}>{issue.message}</button>)}
-              </div>
-            </div> : null}
+            {validationNotices.map((notice) => <ActivityNotice tone="error"
+              key={JSON.stringify([props.details.summary.id, notice.message, [...notice.fieldKeys].sort()])}
+              action={<>{notice.fieldKeys.map((fieldKey) => {
+                const target = resolveConfigurationFieldNavigation(model, fieldKey, idPrefix);
+                const item = model.items.find((candidate) => candidate.fieldKey === fieldKey);
+                return target && item ? <button type="button" className="secondary-button configuration-validation-target"
+                  key={fieldKey} title={item.field.title} data-configuration-validation-field={fieldKey}
+                  onClick={() => navigateValidationField(fieldKey)}>{item.field.title}</button> : null;
+              })}</>}>
+              {notice.message}
+            </ActivityNotice>)}
             {renderSpecializedRenderers("before-fields")}
             {arkMapAvailability && selectedSectionId === "room" ? <>
               <ArkMapAvailabilityNotice availability={arkMapAvailability} />
               <ArkMapUnavailableWarning availability={arkMapAvailability}
+                inputId={buildConfigurationFieldIds("map_name", idPrefix).inputId}
                 map={String(settingsParseResult.value?.map_name ?? schema.fields.find((field) => field.key === "map_name")?.defaultValue ?? "")} />
               {mapSelectionError ? <ActivityNotice tone="error">{mapSelectionError}</ActivityNotice> : null}
             </> : null}
@@ -438,7 +442,7 @@ export function ConfigurationWorkspace(props: ConfigurationWorkspaceProps) {
               <GuidedSettingsForm schema={schema} settings={settingsParseResult.value ?? {}}
                 moduleDetails={localizedModuleDetails} selectedSectionId={selectedSectionId}
                 disabled={editorDisabled} readOnly={readOnly} idPrefix={idPrefix}
-                defaultContext={defaultContext} validationIssues={validationIssues}
+                defaultContext={defaultContext} validationIssues={validationIssues} validationDisplay="activity"
                 onChange={handleFieldChange} onBatchChange={handleBatchChange} />
             ) : null}
 

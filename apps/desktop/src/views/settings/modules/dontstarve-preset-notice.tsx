@@ -4,18 +4,19 @@ import type { SettingsObject } from "../settings-schema";
 import { isCustomRawValue } from "./dontstarve-validation";
 import { getDontStarveWorldScriptMode } from "./dontstarve-world-lua";
 import { isDontStarveShardActive } from "./dontstarve-shards";
+import { ActivityNotice } from "../../../components/ActivityNotice";
 
 export function DontStarveCavesNotice(props: ConfigurationSpecializedRendererProps) {
   const { t } = useI18n();
   if (isDontStarveShardActive(props.settings, "caves")) return null;
-  return <div className="configuration-workspace__notice configuration-workspace__setting-notice" role="status">
-    <span>{t("dst.settings.caves.inactive", undefined,
-      "Caves are disabled. Their settings are preserved and will apply on the next server start after enabling Caves.")}</span>
+  return <ActivityNotice tone="warning" action={
     <button type="button" className="secondary-button" disabled={props.disabled}
       onClick={() => props.onPatch({ enable_caves: true })}>
       {t("dst.settings.caves.enable", undefined, "Enable Caves")}
-    </button>
-  </div>;
+    </button>}>
+    {t("dst.settings.caves.inactive", undefined,
+      "Caves are disabled. Their settings are preserved and will apply on the next server start after enabling Caves.")}
+  </ActivityNotice>;
 }
 
 export function DontStarvePresetNotice(props: ConfigurationSpecializedRendererProps) {
@@ -36,15 +37,14 @@ function DontStarvePresetDetails(props: ConfigurationSpecializedRendererProps) {
     return <DontStarveCavesNotice {...props} />;
   }
   if (getDontStarveWorldScriptMode(props.settings, shard)) {
-    return <div className="configuration-workspace__notice configuration-workspace__setting-notice" role="status">
-      <span>{t("dst.settings.worldScript.active", undefined,
-        "This shard uses a Lua script that cannot be synchronized with guided controls. Edit its active source under Advanced; other settings remain editable.")}</span>
-      {props.onNavigateField ? <button type="button" className="secondary-button" disabled={props.disabled}
+    return <ActivityNotice tone="warning" action={props.onNavigateField ? <button type="button" className="secondary-button" disabled={props.disabled}
         onClick={() => props.onNavigateField?.(isCustomRawValue(props.settings, `${shard}_worldgenoverride_lua`)
           ? `${shard}_worldgenoverride_lua` : `${shard}_world_overrides_extra`)}>
         {t("dst.settings.worldScript.edit", undefined, "Edit Lua")}
-      </button> : null}
-    </div>;
+      </button> : undefined}>
+      {t("dst.settings.worldScript.active", undefined,
+        "This shard uses a Lua script that cannot be synchronized with guided controls. Edit its active source under Advanced; other settings remain editable.")}
+    </ActivityNotice>;
   }
   const notice = getDontStarvePresetNotice(props.settings, props.sectionId, t);
   return notice ? <p className="body-copy">{notice}</p> : null;

@@ -1,0 +1,34 @@
+{
+  "reviewed_on": "2026-10-31",
+  "steam_app_id": 380870,
+  "installed_build_id": "25485538",
+  "manifest_state_flags": 4,
+  "manifest_update_result": 0,
+  "source": "Existing installed package; read-only inspection, without SteamCMD or native game execution",
+  "server_options": {
+    "path": "java/projectzomboid.jar!/zombie/network/ServerOptions.class",
+    "size": 28208,
+    "sha256": "50a54b1cbba203fa20bd3b94f33299bba70d93eedbe6eaea9d22ba5129ea3fb5",
+    "comparison_baseline": "modules/projectzomboid/server-options-build-42.json",
+    "baseline_build_id": "24909836",
+    "method": "javap 21 -p -c disassembly of the ServerOptions constructor; compare every option name, type, constant argument and dynamic default expression with the recorded constructor inventory",
+    "native_option_count": 144,
+    "baseline_option_count": 144,
+    "added_keys": [],
+    "removed_keys": [],
+    "changed_types_or_constructor_values": [],
+    "unhandled_constructor_instructions": [],
+    "dynamic_defaults_checked": [
+      "ResetID: Rand.Next(1000000000)",
+      "ServerPlayerID: Integer.toString(Rand.Next(2147483647))",
+      "Seed: GameServer.seed"
+    ]
+  },
+  "launch_contract": {
+    "entry": "jre64/bin/java.exe",
+    "main_class": "zombie.network.GameServer",
+    "packaged_classpath": ["java/", "java/projectzomboid.jar"],
+    "sources": ["StartServer64.bat", "ProjectZomboid64.json"]
+  },
+  "scope": "The installed package retains the complete modeled 144-option constructor contract. This does not establish current public-branch identity, native startup, authentication, moderation, save completion, backup recovery or client compatibility. Historical runtime evidence retains its original build and date."
+}

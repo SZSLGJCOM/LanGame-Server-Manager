@@ -1,0 +1,36 @@
+{
+  "reviewed_on": "2026-10-31",
+  "steam_app_id": 3017310,
+  "installed_build_id": "26158250",
+  "manifest_state_flags": 4,
+  "manifest_update_result": 0,
+  "source": "Existing installed package; read-only inspection, without SteamCMD or native game execution",
+  "executable": {
+    "path": "WS/Binaries/Win64/WSServer-Win64-Shipping.exe",
+    "size": 53709152,
+    "sha256": "de006f06d131dc0759a9e747f876b0a4e7cb4f669151bce1e2624f232fb8bda5"
+  },
+  "configuration": {
+    "comparison_baseline_build_id": "25117179",
+    "files": [
+      {
+        "path": "WS/Config/GameplaySettings/GameXishuConfig_Template.json",
+        "sha256": "c9f9128fe1df1608c18a7873f9bf9c5a50877fc3393fc7a439f91b0ae02cd00c",
+        "baseline_bytes_match": true,
+        "profile_key_counts": {"0": 282, "1": 282, "2": 282}
+      },
+      {
+        "path": "WS/Config/GameplaySettings/GameXishu_Template.json",
+        "sha256": "687d3351fd0706583348decc95cdb9f07b4ad0e8d5e07ac89a62918cf5fe9768",
+        "baseline_bytes_match": true,
+        "profile_key_counts": {"0": 282, "1": 282, "2": 282}
+      }
+    ]
+  },
+  "latest_publisher_announcement": {
+    "title": "Soulmask 1.0 Update Patch #22: Bug Fixed",
+    "published_utc": "2026-10-27T11:02:52Z",
+    "url": "https://steamstore-a.akamaihd.net/news/externalpost/steam_community_announcements/1847286114048481"
+  },
+  "scope": "Both installed gameplay templates remain byte-identical to the modeled 282-key baseline. The publisher announcement does not identify this installed Steam build, so Patch 22 package identity and current Echo/RCON, save, normal shutdown and recovery remain unverified. Earlier native results retain their original scope."
+}

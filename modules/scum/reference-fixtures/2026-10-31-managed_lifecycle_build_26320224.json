@@ -1,0 +1,184 @@
+{
+  "schema_version": 1,
+  "module_id": "scum",
+  "evidence_classification": "isolated_managed_backend_native_save_requests_and_lifecycle",
+  "verified_on": "2026-10-31",
+  "verification_timezone": "Asia/Shanghai",
+  "steam_app_id": 3792580,
+  "steam_build_id": "26320224",
+  "game_version": "1.3.5.2.172724+172352",
+  "prior_independent_evidence": [
+    "2026-10-30-native_contract_build_26320224.json",
+    "2026-10-30-save_reload_build_26320224.json"
+  ],
+  "environment": "Windows host; the compiled manager backend owns an isolated Independent instance from a fixed previously validated official package. The log records default binding and non_elevated_policy for firewall handling.",
+  "package": {
+    "acquisition_during_lifecycle": "existing_local_package; source_provenance=unverified",
+    "provenance": "Prior independent official SteamCMD validation is retained in the native-contract fixture. This run reuses that package and independently rehashes its manifest and executable; it does not perform a new upstream acquisition.",
+    "copied_payload_bytes": 15622912410,
+    "appmanifest_sha256": "efcffe6340785493b329b20fbde2ffd997f5fc5caa052c320b011ef6bd1bfd8b",
+    "executable_relative_path": "SCUM/Binaries/Win64/SCUMServer.exe",
+    "executable_size_bytes": 130064896,
+    "executable_sha256": "a862d658271f26d082de5df7bba01e8af9c3d051cb9634e908bb94d8a9efbc7a",
+    "program_update_policy": "pinned"
+  },
+  "source_identity_sha256": "bdb9ec254ec78270cd246cd60d21ba0d2ead43eec5e2fd68aac5ab657c7e1925",
+  "test_binary_sha256": "7ac5843571203f96e5618719e82093456026c102a1c84bad7c5c60773af51263",
+  "source_manifest_sha256": "38af891de1a2c3b3876a1b0abb95d5c891c67a5bf54d971f9691748131ff351b",
+  "build": {
+    "entry_point": "workspace-managed Cargo wrapper (local path and filename omitted)",
+    "entry_point_sha256": "a49fe85bfed0b558354bc5a605e84b5a2f9a30c251c2bc57ff4ddc51503223b2",
+    "cargo_command": "test",
+    "cargo_arguments": [
+      "-p", "langame-desktop", "--bin", "langame-desktop", "--all-features",
+      "--locked", "--no-run", "--message-format=json"
+    ],
+    "test_binary_size_bytes": 193062912,
+    "captured_at_utc": "2026-10-31T03:26:23.9192503Z",
+    "source_manifest_file_count": 4202,
+    "independently_rehashed_frozen_source_files": 4202,
+    "frozen_source_mismatch_count": 0,
+    "binary_and_manifest_hashes_match_receipt": true,
+    "receipt_and_source_proof_identity_match": true,
+    "resource_binding": "LANGAME_SMOKE_SOURCE_ROOT selects the retained matching source; the test fixture explicitly binds modules and migrations to the formal DesktopState storage context.",
+    "frontend_validation": "not_claimed"
+  },
+  "reviewed_current_and_frozen_source_files_sha256": {
+    "apps/desktop/src-tauri/src/commands_native_lifecycle_tests.rs": "f767a84826d7968c67cadfec88e64fa7f6769e627958f9907903b0ad5b7e5bc2",
+    "apps/desktop/src-tauri/src/commands_native_storage_fixture.rs": "e7e2a3c881e254d67939e03714c05964d4a315ba1a6a035d2e14ee4230ee8fbc",
+    "apps/desktop/src-tauri/src/commands_native_runtime.rs": "de2cff2c728f7346db4d0b0aa46b1019c33a2d88572dab454b9480971ee8327e",
+    "apps/desktop/src-tauri/src/commands_native_manual_save_probe.rs": "fb30ac9c789a232283d8d4539b3a2388d7b671fecb9e4b480311f3c1c5469f0f",
+    "apps/desktop/src-tauri/src/commands_native_maintenance.rs": "3e6a74b5c8c3ba02c6aa1cde1d798360458b6c0ba90f8f6ed3fc1b7d581ae096",
+    "apps/desktop/src-tauri/src/commands_native_archive.rs": "a5c03cc0dc8b044ca1b9e3036a03a57e526118d41b65ab898488b41a61c63827",
+    "apps/desktop/src-tauri/src/unreal_loader/profile.rs": "524f4f0a030b1214926e2e2cd337772777ec4cd971f3fde010dc48e82e61e686",
+    "modules/scum/module.toml": "98d14eb9a19b2dc851425f83c335ebe8f5bb2c74eb9e737078e7cecad746d8b4",
+    "modules/scum/smoke.toml": "cbd6a6f5617bde9e323a356fe4c5ff3036358c9e71f3ee47a71f2000eb7f0857",
+    "modules/scum/control/bridge.cpp": "e77e790c368943e39141cf8d7e932216d87d011edec2c64703c94371c4902434",
+    "modules/scum/control/LgsmWorldSave/Scripts/main.lua": "bcd793c8e9b7f1e9fe265b6aceed935c3dd0759ef4284d82c3c662408e87dc77"
+  },
+  "test": {
+    "selector": "commands::tests::manual_runtime_tests::native_lifecycle_tests::native_package_lifecycle",
+    "started_utc": "2026-10-31T03:26:53.536209+00:00",
+    "completed_utc": "2026-10-31T03:39:15.375118+00:00",
+    "started_local": "2026-10-31T11:26:53.536209+08:00",
+    "completed_local": "2026-10-31T11:39:15.375118+08:00",
+    "status": "passed",
+    "test_exit_code": 0,
+    "tests_passed": 1,
+    "tests_failed": 0,
+    "tests_ignored": 0,
+    "tests_filtered_out": 3215,
+    "duration_seconds": 741.69,
+    "manual_save_enabled": true,
+    "manual_save_restart_enabled": true,
+    "exact_manual_save_checkpoint_enabled": false,
+    "native_completion_required": false,
+    "ports_preflight": "clear"
+  },
+  "manual_save_requests": {
+    "total": 4,
+    "requests_per_cycle": 1,
+    "retried": false,
+    "instance_run_and_session_matched": true,
+    "managed_generations_alive": true,
+    "route": "managed_process_generation",
+    "native_ready": true,
+    "native_invoked": true,
+    "native_call_returned": true,
+    "native_write_confirmed": false,
+    "native_error": "none",
+    "response_bytes_per_request": 201,
+    "write_confirmation_pending": false,
+    "save_completion": "requested",
+    "durable_write": "not_assessed",
+    "exact_saved_content_readback": "not_assessed",
+    "later_receipt_attribution": "The two cycle=other receipts follow after_restore and after_archive_restore native readiness respectively, before each corresponding stop. They are separate requests, not retries."
+  },
+  "cycles": [
+    {
+      "cycle": "initial", "managed_run_id": 1, "start_elapsed_ms": 91602,
+      "native_readiness": "passed", "manual_save_requests": 1,
+      "exit_code": 0, "crash_flag": false, "status": "stopped", "active_run_after_stop": null
+    },
+    {
+      "cycle": "restart", "managed_run_id": 2, "start_elapsed_ms": 48619,
+      "native_readiness": "passed", "manual_save_requests": 1,
+      "exit_code": 0, "crash_flag": false, "status": "stopped", "active_run_after_stop": null
+    },
+    {
+      "cycle": "after_restore", "managed_run_id": 3, "start_elapsed_ms": 48766,
+      "native_readiness": "passed", "manual_save_requests": 1,
+      "exit_code": 0, "crash_flag": false, "status": "stopped", "active_run_after_stop": null
+    },
+    {
+      "cycle": "after_archive_restore", "managed_run_id": 4, "start_elapsed_ms": 47929,
+      "native_readiness": "passed", "manual_save_requests": 1,
+      "exit_code": 0, "crash_flag": false, "status": "stopped", "active_run_after_stop": null
+    }
+  ],
+  "storage_lifecycle": {
+    "archive_with_installed_library": {
+      "program_storage": "full", "omitted_bytes": 0, "library": "preserved"
+    },
+    "preflight_permanent_delete": {
+      "library": "installed", "peer": "preserved", "owned_files": "removed"
+    },
+    "restart_readback": {
+      "persisted_instance_settings_and_config": "verified",
+      "fresh_managed_run": "verified",
+      "native_readiness": "passed",
+      "exact_manual_save_content": "not_claimed"
+    },
+    "backup_restore": {
+      "outcome": "passed", "restored_files": 59, "safeguard": "verified",
+      "program_config": "preserved", "subsequent_native_readiness": "passed"
+    },
+    "program_maintenance": {
+      "outcome": "not_tested", "reason": "network_update_not_selected"
+    },
+    "save_observation": "generated",
+    "library_uninstall": {
+      "outcome": "library_only_instance_program_unchanged",
+      "program_entries": "preserved", "save_files_preserved": 81,
+      "native_config_files_preserved": 0
+    },
+    "archive": {
+      "archive": "verified", "interrupted_restore_simulation": "deferred_commit_failure",
+      "journal_during_interruption": "restoring", "instance_row_during_interruption": "absent",
+      "interrupted_commit": "recovered", "restored_state": "stopped",
+      "ownership": "verified", "config_saves_program_bytes": "preserved",
+      "subsequent_native_readiness": "passed"
+    },
+    "instance_delete": {
+      "independent_program": "removed", "library_record": "preserved", "cleanup": "verified"
+    },
+    "final_library_uninstall": {
+      "unused_programs": "removed", "retained_data_paths": 0
+    }
+  },
+  "cleanup": {
+    "four_managed_runs_stopped": true,
+    "all_native_process_exit_codes_zero": true,
+    "all_crash_flags_false": true,
+    "active_runs_cleared": true,
+    "log_result": "passed",
+    "runner_cleanup_failures": []
+  },
+  "artifacts": [
+    { "name": "scum-native.json", "size_bytes": 3176, "sha256": "c7887dd5bdc704fe1f427e03b4454533d32594bba9f60d40031e0d109371a7f0" },
+    { "name": "scum-native.log", "size_bytes": 7724, "sha256": "e5b87af3382af689df73735eb88bd4698301a04e8d06c5389be1e86fbf9cb507" },
+    { "name": "native-build-02.json", "size_bytes": 1521, "sha256": "aa6b4b3cd00e5b1751d1ab12c346481d0106388777920b2968f4563e24113de6" },
+    { "name": "native-source-proof.json", "size_bytes": 791, "sha256": "b5a26b26f64fad98f46637674a68a0c374ac16b24f5f1a5195fc6ced1a4ad41f" },
+    { "name": "source-manifest.json", "size_bytes": 858233, "sha256": "38af891de1a2c3b3876a1b0abb95d5c891c67a5bf54d971f9691748131ff351b" },
+    { "name": "managed_backend_test_binary", "size_bytes": 193062912, "sha256": "7ac5843571203f96e5618719e82093456026c102a1c84bad7c5c60773af51263" }
+  ],
+  "scope_limits": [
+    "Four formal save requests returned requested. Native call return and generated save files do not establish causal durable completion of these requests or every game subsystem.",
+    "The raw persisted_readback=verified lifecycle line establishes persisted instance settings/configuration and a fresh run. Exact manual-save checkpoint capture and saved-content readback were not enabled.",
+    "Restored instances reached native readiness after backup and archive recovery. This does not establish every saved object's state or a populated old-world migration.",
+    "This generic backup/archive lifecycle does not edit custom-zone damage rules or prove their edit rollback. The separate schema-75 native database-copy API evidence retains its own scope.",
+    "The deferred archive commit interruption is a controlled recovery test, not a process crash or power-loss durability test.",
+    "GUI, live clients, player identity/count, multiplayer, combat semantics, public listing, third-party Mods and network program update/repair were not tested.",
+    "The original independent native contract and pre-stop save/reload fixtures remain historical evidence; this run adds formal managed lifecycle and normal exit-0 stops."
+  ]
+}

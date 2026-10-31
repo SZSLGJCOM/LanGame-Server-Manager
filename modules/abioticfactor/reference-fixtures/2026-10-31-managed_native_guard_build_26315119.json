@@ -1,0 +1,232 @@
+{
+  "schema_version": 1,
+  "module_id": "abioticfactor",
+  "evidence_classification": "isolated_managed_backend_native_no_client_guard",
+  "verified_on": "2026-10-31",
+  "verification_timezone": "Asia/Shanghai",
+  "steam_app_id": 2857200,
+  "steam_build_id": "26315119",
+  "prior_standalone_fixture": "2026-10-30-native_guard_build_26315119.json",
+  "static_contract_fixture": "2026-10-30-save_factory_build_26315119.json",
+  "environment": "Windows host; the compiled manager backend creates and owns an isolated Independent instance from a supplied fixed official package. No client joined. The test log records default binding and non-elevated firewall policy.",
+  "official_acquisition": {
+    "source": "Valve public anonymous app_update validate, Windows",
+    "expected_build": "26315119",
+    "actual_build": "26315119",
+    "state_flags": 4,
+    "update_result": 0,
+    "exit_code": 0,
+    "official_success_marker": true,
+    "started_utc": "2026-10-30T13:35:32.6282017+00:00",
+    "completed_utc": "2026-10-30T13:39:39.4480824+00:00",
+    "steamcmd_sha256": "7baf77927639793e11b2a02ec2fd6d9114c95432be2f23a3225e274732255cf4",
+    "steamcmd_signature_status": "Valid",
+    "depot_manifests": {
+      "2857201": "5899724607043708861"
+    },
+    "installed_size_bytes": 3259600194,
+    "appmanifest_sha256": "39ceb4171b6007b97ca1fa6a0f2d7613e4d3bf6498e55ccaf7caa5f9b94318a3"
+  },
+  "executable": {
+    "relative_path": "AbioticFactor/Binaries/Win64/AbioticFactorServer-Win64-Shipping.exe",
+    "size_bytes": 142254080,
+    "sha256": "de8b4bdaee7a21f56b6f55bc1cc37e97e34c4c1b8649672635b876220f7a935d"
+  },
+  "source_identity_sha256": "ae4c888070c4f6aa88d66f6cac952d90ed8f9f4a2a19a2aeb39ccbf87fccb7b1",
+  "test_binary_sha256": "d3110fe6352af83e0dcb13262e9fff67f1e2313496a7800db0487bab96bc432b",
+  "source_manifest_sha256": "7d2e61775417ec8671be20d81a934d321153a27264f7890f7afa3929d48867ee",
+  "build": {
+    "entry_point": "workspace-managed Cargo wrapper (local path and filename omitted)",
+    "entry_point_sha256": "a49fe85bfed0b558354bc5a605e84b5a2f9a30c251c2bc57ff4ddc51503223b2",
+    "cargo_command": "test",
+    "cargo_arguments": [
+      "--no-run",
+      "--workspace",
+      "--all-features",
+      "--locked",
+      "--message-format=json"
+    ],
+    "source_manifest_file_count": 4191,
+    "source_proof_verified_file_count": 4191,
+    "clippy_matching_file_count": 4191,
+    "clippy_source_mismatch_count": 0,
+    "test_binary_size_bytes": 197889536,
+    "binary_and_manifest_hashes_match_receipt": true,
+    "test_build_manifest_and_source_proof_identity_match": true
+  },
+  "reviewed_snapshot_files_sha256": {
+    "apps/desktop/src-tauri/src/commands_native_lifecycle_tests.rs": "fb5a95cebd3e2e290ff7ced4bffb23d6fc4feca0634575fd3ce99ecdbef54ba3",
+    "apps/desktop/src-tauri/src/commands_native_save_guard_probe.rs": "762fcd384bd55db95366fb2e2d9d48af8e07517dd83cbe7f16ca021f14d50b5b",
+    "apps/desktop/src-tauri/src/commands_native_runtime.rs": "de2cff2c728f7346db4d0b0aa46b1019c33a2d88572dab454b9480971ee8327e"
+  },
+  "test": {
+    "selector": "commands::tests::manual_runtime_tests::native_lifecycle_tests::native_no_client_save_guard",
+    "started_utc": "2026-10-30T16:07:50.0899234+00:00",
+    "completed_utc": "2026-10-30T16:09:59.7224140+00:00",
+    "started_local": "2026-10-31T00:07:50.089923+08:00",
+    "completed_local": "2026-10-31T00:09:59.722414+08:00",
+    "test_exit_code": 0,
+    "tests_passed": 1,
+    "tests_failed": 0,
+    "tests_ignored": 0,
+    "tests_filtered_out": 3213,
+    "duration_seconds": 126.61,
+    "copied_payload_bytes": 3285276291,
+    "production_scope": "start_stop",
+    "native_test_package_classification": "existing_local_package; source_provenance=unverified",
+    "acquisition_provenance": "The independent official acquisition receipt and rehashed package image establish the supplied package identity. The lifecycle test itself does not acquire or certify an upstream package."
+  },
+  "cycles": [
+    {
+      "cycle": "initial",
+      "prestart_update_policy": "pinned",
+      "persisted_update_policy_evidence": "verified",
+      "native_start": {
+        "managed_process_count": 1,
+        "elapsed_ms": 61472,
+        "bind": "default",
+        "firewall": "non_elevated_policy"
+      },
+      "native_readiness": "passed",
+      "readiness_probe": {
+        "action": "saveprobe",
+        "receipt": "received",
+        "elapsed_ms": 528,
+        "ready": false,
+        "invoked": false,
+        "call_returned": false,
+        "write_confirmed": false,
+        "native_error": "world_unavailable",
+        "current_launch_request_and_timestamp_binding": "verified"
+      },
+      "formal_backend_save_dispatch": {
+        "attempted_once": true,
+        "retried": false,
+        "result": "rejected_before_invoke",
+        "formal_receipt": false,
+        "native_save_invoked": false,
+        "save_frame_published": false
+      },
+      "stop": {
+        "run_id": 1,
+        "process": "main",
+        "exit_code": 0,
+        "crash_flag": false,
+        "status": "stopped"
+      },
+      "active_run_after_stop": null
+    },
+    {
+      "cycle": "restart",
+      "prestart_update_policy": "pinned",
+      "persisted_update_policy_evidence": "verified",
+      "native_start": {
+        "managed_process_count": 1,
+        "elapsed_ms": 46941,
+        "bind": "default",
+        "firewall": "non_elevated_policy"
+      },
+      "native_readiness": "passed",
+      "readiness_probe": {
+        "action": "saveprobe",
+        "receipt": "received",
+        "elapsed_ms": 439,
+        "ready": false,
+        "invoked": false,
+        "call_returned": false,
+        "write_confirmed": false,
+        "native_error": "world_unavailable",
+        "current_launch_request_and_timestamp_binding": "verified"
+      },
+      "formal_backend_save_dispatch": {
+        "attempted_once": true,
+        "retried": false,
+        "result": "rejected_before_invoke",
+        "formal_receipt": false,
+        "native_save_invoked": false,
+        "save_frame_published": false
+      },
+      "stop": {
+        "run_id": 2,
+        "process": "main",
+        "exit_code": 0,
+        "crash_flag": false,
+        "status": "stopped"
+      },
+      "active_run_after_stop": null
+    }
+  ],
+  "restart": {
+    "fresh_managed_run": true,
+    "native_readiness": "passed",
+    "formal_save": "not_performed",
+    "content_readback": "not_claimed"
+  },
+  "cleanup": {
+    "production_stop_returned_success": true,
+    "both_process_exit_codes_zero": true,
+    "active_and_tracked_runs_cleared": true,
+    "disposable_fixture_directory_removed": true,
+    "log_result": "passed"
+  },
+  "artifacts": [
+    {
+      "name": "managed_native_guard_result",
+      "size_bytes": 546,
+      "sha256": "4b44116cc0bbf2f1002c79033c2f51532c8f9f261e194516ff752811c02b824b"
+    },
+    {
+      "name": "managed_native_guard_log",
+      "size_bytes": 2871,
+      "sha256": "12d8ea3d7ac45cc9127297c5e2cb3fbdffd17f9357982c6775b0e144f9e66655"
+    },
+    {
+      "name": "final_workspace_build_receipt",
+      "size_bytes": 1647,
+      "sha256": "a512993f0b35697f773e60af60c96b608eed5746a53c86308176caddab7ffa69"
+    },
+    {
+      "name": "final_workspace_source_proof",
+      "size_bytes": 274,
+      "sha256": "4205f24aa09433a775c57937b027cef7a8cb1c9daf5bcac19e732e7b5b20b156"
+    },
+    {
+      "name": "source_manifest",
+      "size_bytes": 855794,
+      "sha256": "7d2e61775417ec8671be20d81a934d321153a27264f7890f7afa3929d48867ee"
+    },
+    {
+      "name": "frontend_manifest",
+      "size_bytes": 14731,
+      "sha256": "eead864da97311fa5594724ab74a9139085c57cbd893626c326426e1c1731309"
+    },
+    {
+      "name": "managed_backend_test_binary",
+      "size_bytes": 197889536,
+      "sha256": "d3110fe6352af83e0dcb13262e9fff67f1e2313496a7800db0487bab96bc432b"
+    },
+    {
+      "name": "official_package_acquisition_receipt",
+      "size_bytes": 1976,
+      "sha256": "2a299d725ee6d2457a2fd88174d5ee0cbf99d0f7e6bcb5d1c9b38ce4d45963aa"
+    },
+    {
+      "name": "official_appmanifest",
+      "size_bytes": 864,
+      "sha256": "39ceb4171b6007b97ca1fa6a0f2d7613e4d3bf6498e55ccaf7caa5f9b94318a3"
+    },
+    {
+      "name": "official_server_executable",
+      "size_bytes": 142254080,
+      "sha256": "de8b4bdaee7a21f56b6f55bc1cc37e97e34c4c1b8649672635b876220f7a935d"
+    }
+  ],
+  "scope_limits": [
+    "This fixture covers the formal manager backend no-client dispatch guard, unlike the earlier standalone Lua probe.",
+    "Each cycle publishes only an inert saveprobe. ready, invoked, call_returned and write_confirmed are all false; formal dispatch rejects before native invocation.",
+    "No successful native save, durable commit, saved-content readback or preservation of client-created progress is claimed.",
+    "A fresh managed restart proves a new run and readiness, not persistence or restore correctness.",
+    "The test does not exercise the full backup/restore/uninstall lifecycle, GUI, client joins, gameplay effects or third-party Mod behavior.",
+    "The 4191-file frozen-source and clippy correspondence is taken from the hashed source-proof receipt; this preparation independently rehashes the three reviewed test/runtime source files plus the binary, manifests, package executable and input evidence."
+  ]
+}

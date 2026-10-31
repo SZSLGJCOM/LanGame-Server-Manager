@@ -9,7 +9,15 @@ struct Fixture(PathBuf);
 #[cfg(windows)]
 impl Fixture {
     fn new() -> Self {
-        let root = test_support::unique_test_root();
+        let unique_root = test_support::unique_test_root();
+        let unique_suffix = unique_root
+            .file_name()
+            .and_then(|name| name.to_str())
+            .and_then(|name| name.strip_prefix("langame-runtime-test-"))
+            .expect("runtime test root with its unique process, time, and sequence suffix");
+        // These fixtures need ordinary native paths below 247 UTF-16 units, even
+        // when the managed TEMP root is long. Keep the full unique identity.
+        let root = unique_root.with_file_name(format!("path-{unique_suffix}"));
         fs::create_dir_all(&root).expect("create isolated launch fixture");
         Self(root)
     }

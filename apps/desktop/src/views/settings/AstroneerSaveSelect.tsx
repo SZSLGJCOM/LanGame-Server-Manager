@@ -5,6 +5,7 @@ import { ConfigurationField, type ConfigurationSpecializedRendererProps as Field
 import { buildConfigurationFieldCopy } from "./GuidedSettingsForm";
 import { parseGuidedSettingsSchema, readGuidedFieldValue } from "./guided-settings";
 import type { ConfigurationSpecializedRendererProps } from "./module-types";
+import { ActivityNotice } from "../../components/ActivityNotice";
 
 type CatalogState = { instanceId: string } & (
   | { status: "loading" }
@@ -40,20 +41,17 @@ function SaveControl(control: FieldRendererProps) {
         {entry.descriptive_name}
       </option>)}
     </select>
-    {visible.status === "loading" ? <p className="form-note" role="status">
+    {visible.status === "loading" ? <ActivityNotice>
       {t("astroneer.settings.saves.loading")}
-    </p> : visible.status === "error" ? <div>
-      <p className="form-note form-note--error" role="alert">
-        {t("astroneer.settings.saves.readError", { error: visible.error })}
-      </p>
+    </ActivityNotice> : visible.status === "error" ? <ActivityNotice tone="error" action={
       <button type="button" className="secondary-button" disabled={control.disabled}
-        onClick={() => { if (!control.disabled) void refresh(); }}>{t("common.retry", undefined, "Retry")}</button>
-    </div> : <>
-      {entries.length === 0 ? <p className="form-note" role="status">{t("astroneer.settings.saves.empty")}</p>
-        : !present ? <p className="form-note" role="status">{t("astroneer.settings.saves.unmatched")}</p> : null}
-      <button type="button" className="secondary-button" disabled={control.disabled}
-        onClick={() => { if (!control.disabled) void refresh(); }}>{t("astroneer.settings.saves.refresh")}</button>
-    </>}
+        onClick={() => { if (!control.disabled) void refresh(); }}>{t("common.retry", undefined, "Retry")}</button>}>
+      {t("astroneer.settings.saves.readError", { error: visible.error })}
+    </ActivityNotice> : entries.length === 0 || !present ? <ActivityNotice tone="warning">
+      {t(entries.length === 0 ? "astroneer.settings.saves.empty" : "astroneer.settings.saves.unmatched")}
+    </ActivityNotice> : null}
+    <button type="button" className="secondary-button" disabled={control.disabled || visible.status === "loading"}
+      onClick={() => { if (!control.disabled) void refresh(); }}>{t("astroneer.settings.saves.refresh")}</button>
   </div>;
 }
 

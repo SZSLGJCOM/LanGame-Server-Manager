@@ -10,6 +10,30 @@ from typing import Any
 ROOT = Path(__file__).resolve().parents[1]
 MODULE_ROOT = ROOT / "modules" / "scum"
 FIXTURE_PATH = MODULE_ROOT / "config-fixtures" / "2026-09-28-steamcmd_anonymous_app_3792580.json"
+# This dated fixture keeps its reviewed evidence; later provenance reviews may
+# update the current ledger without relabelling the old configuration baseline.
+HISTORICAL_SOURCE_IDS = (
+    "elevated_native_start_build_25187656",
+    "steamcmd_anonymous_app_3792580",
+    "generated_current_server_settings",
+    "official_server_settings_2025",
+    "official_wipe_and_players_2025",
+    "generated_economy_override",
+    "official_economy_override",
+    "generated_raid_times",
+    "official_raid_times",
+    "generated_notifications",
+    "official_notifications",
+    "admin_users_file",
+    "other_player_access_rosters",
+    "unreal_generated_support_files",
+    "launch_args",
+    "non_elevated_runtime_probe",
+    "scum_player_extension_2026_09_08",
+    "official_august_update_1_3_3_0",
+    "unreal_log_console_contract",
+    "existing_instance_console_absent_20261001",
+)
 
 
 def qualified(row: dict[str, Any]) -> str:
@@ -38,10 +62,10 @@ def build_fixture() -> dict[str, Any]:
         "fixture_version": 1,
         "module_id": "scum",
         "evidence": {
-            "status": ledger["status"],
+            "status": "download_verified_requires_elevation",
             "verified_at": "2026-09-28",
             "build": "Generated ServerSettings v7 baseline plus official 1.3.3.0 August additions; existing build 25187656 INI compared read-only",
-            "source_ids": [source["id"] for source in ledger["sources"]],
+            "source_ids": list(HISTORICAL_SOURCE_IDS),
         },
         "initial": {"files": [
             {
@@ -122,7 +146,7 @@ def build_fixture() -> dict[str, Any]:
                 "message": "Players online: #NumPlayers",
             }],
             "admin_steam_ids": "76561198000000001\n76561198000000002",
-            "extra_launch_args": "-log\n-NoSound",
+            "extra_launch_args": "-NoSound",
         },
         "expected": {
             "files": [

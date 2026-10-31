@@ -10,6 +10,8 @@ import { useConfigurationFieldHelp } from "./ConfigurationFieldHelp";
 import { ConfigurationSaveStatus } from "./ConfigurationSaveStatus";
 import { useDragonwildsWorldSettings } from "./DragonwildsWorldSettingsContext";
 import type { ConfigurationSpecializedRendererProps } from "./module-types";
+import { ActivityNotice } from "../../components/ActivityNotice";
+import { ConfigurationValidationNotice } from "./ConfigurationValidationNotice";
 
 const COPY = "runescapedragonwilds.settings.worldEditor";
 const MODES: DragonwildsWorldMode[] = ["Normal", "Hard", "Creative", "Custom"];
@@ -70,12 +72,16 @@ export function DragonwildsWorldSettingsPanel(props: ConfigurationSpecializedRen
       <input id={inputId} className="settings-schema-input" type="number" inputMode="decimal"
         min={definition.minimum} max={definition.maximum} step={step} value={raw} disabled={disabled}
         aria-describedby={descriptionId} aria-label={title} aria-invalid={!valid || undefined}
+        aria-errormessage={!valid ? `${inputId}-error` : undefined}
         onChange={(event) => { if (!disabled) editor.changeValue(definition, event.target.value); }} />
       {valid ? <input type="range" min={definition.minimum} max={definition.maximum} step={step}
         value={Number(raw)} disabled={disabled} aria-label={t(`${COPY}.sliderLabel`, { title })}
         aria-describedby={descriptionId} style={{ width: "100%", margin: 0, minWidth: 0, accentColor: "var(--accent)" }}
         onChange={(event) => { if (!disabled) editor.changeValue(definition, event.target.value); }} /> : null}
-      {!valid ? <span className="form-note form-note--error" role="alert">{t(`${COPY}.invalidValue`)}</span> : null}
+      {!valid ? <>
+        <span id={`${inputId}-error`} className="configuration-field-error-a11y">{t(`${COPY}.invalidValue`)}</span>
+        <ConfigurationValidationNotice message={t(`${COPY}.invalidValue`)} inputId={inputId} label={title} />
+      </> : null}
     </>;
   }
 
@@ -86,11 +92,16 @@ export function DragonwildsWorldSettingsPanel(props: ConfigurationSpecializedRen
       <button type="button" className="secondary-button" disabled={editor.loading || saving}
         onClick={() => void editor.refresh()}>{t(editor.dirty ? `${COPY}.discardAndRefresh` : `${COPY}.refresh`)}</button>
     </div>
-    {editor.error ? <p className="form-note form-note--error" role="alert">{editor.error}</p> : null}
-    {editor.loading ? <p className="form-note" role="status">{t(`${COPY}.loading`)}</p> : null}
+    {editor.error ? <ActivityNotice tone="error" action={
+      <button type="button" className="secondary-button" disabled={editor.loading || saving}
+        onClick={() => void editor.refresh()}>{t(editor.dirty ? `${COPY}.discardAndRefresh` : `${COPY}.refresh`)}</button>
+    }>{editor.error}</ActivityNotice> : null}
+    {editor.loading ? <ActivityNotice>{t(`${COPY}.loading`)}</ActivityNotice> : null}
     {!editor.loading && snapshot?.status === "empty" ? <p className="form-note" role="status">{t(`${COPY}.empty`)}</p> : null}
-    {snapshot?.status === "ready" && !editor.stopped ? <p className="form-note" role="status">{t(`${COPY}.stopRequired`)}</p> : null}
-    {snapshot?.status === "ready" && editor.stopped && !snapshot.writable ? <p className="form-note" role="status">{snapshot.message ?? t(`${COPY}.refreshRequired`)}</p> : null}
+    {snapshot?.status === "ready" && !editor.stopped ? <ActivityNotice tone="warning">{t(`${COPY}.stopRequired`)}</ActivityNotice> : null}
+    {snapshot?.status === "ready" && editor.stopped && !snapshot.writable ? <ActivityNotice tone="warning">
+      {snapshot.message ?? t(`${COPY}.refreshRequired`)}
+    </ActivityNotice> : null}
     {snapshot?.status === "ready" && mode ? <>
       {props.sectionId === "world" ? <div className="settings-schema-grid configuration-field-grid">
         <label className="settings-schema-field" data-field-key="world_settings">

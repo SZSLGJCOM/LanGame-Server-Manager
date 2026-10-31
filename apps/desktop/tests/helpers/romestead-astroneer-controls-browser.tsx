@@ -11,6 +11,7 @@ import type { AstroneerSaveCatalog } from "../../src/astroneer-saves";
 import type { InstanceDetails, ModuleDetails, UpdateInstanceInput } from "../../src/types";
 import "../../src/app.css";
 import { prepareBrowserLocaleCatalogs } from "./browser-locale-catalogs";
+import { ConfigurationActivityHost } from "./configuration-activity-host";
 
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
 document.documentElement.dataset.theme = "dark";
@@ -102,9 +103,9 @@ async function until(predicate: () => boolean) {
 }
 async function draw(moduleId: "romestead" | "astroneer", key: string, archived = false) {
   await act(async () => { root.render(<I18nProvider key={key}><InstanceSettingsSaveProvider>
-    <main className="server-detail-panel" style={{ height: "calc(100vh - 32px)", margin: 16 }}>
+    <ConfigurationActivityHost><main className="server-detail-panel" style={{ height: "calc(100% - 32px)", margin: 16 }}>
       <Workspace moduleId={moduleId} archived={archived} />
-    </main>
+    </main></ConfigurationActivityHost>
   </InstanceSettingsSaveProvider></I18nProvider>); });
   await until(() => Boolean(fixture?.querySelector(".configuration-workspace__body")));
 }
@@ -189,6 +190,10 @@ async function romestead(locale: string) {
   const writeCount = writes.length;
   await text(threshold(), "16.5001");
   check(threshold().getAttribute("aria-invalid") === "true", `${locale}: invalid threshold is marked accessibly`);
+  check(!element<HTMLElement>('[data-field-key="sleep_threshold_ms"]').querySelector(".form-note--error"),
+    `${locale}: invalid sleep thresholds do not insert a red text row`);
+  check(Boolean(fixture!.querySelector('.shell-activity-bar [data-configuration-validation-field="sleep_threshold_ms"]')),
+    `${locale}: sleep validation is reachable from the activity bar`);
   let blocked = false;
   try { await save(); } catch (error) {
     if (error instanceof Error && error.name === "InstanceSettingsDraftInvalidError") blocked = true;
@@ -250,18 +255,18 @@ async function astroneer(locale: string) {
   mode = "error";
   const currentWrites = writes.length;
   await act(async () => { element<HTMLButtonElement>('[data-field-key="active_save_file_name"] button').click(); });
-  await until(() => Boolean(fixture?.querySelector('[data-field-key="active_save_file_name"] [role="alert"]')));
+  await until(() => Boolean(fixture?.querySelector('.shell-activity-bar [role="alert"]')));
   check(slot().disabled && slot().value === "Custom Expedition", `${locale}: real read errors retain the current slot`);
   check(writes.length === currentWrites, `${locale}: errors never produce empty success or settings writes`);
   mode = "ready";
-  await act(async () => { element<HTMLButtonElement>('[data-field-key="active_save_file_name"] button').click(); });
+  await act(async () => { element<HTMLButtonElement>('.shell-activity-bar .shell-activity-notice.is-error .shell-activity-notice-actions button').click(); });
   await until(() => !slot().disabled);
-  check(!fixture!.querySelector('[data-field-key="active_save_file_name"] [role="alert"]'), `${locale}: retry recovers catalog reading`);
+  check(!fixture!.querySelector('.shell-activity-bar [role="alert"]'), `${locale}: retry from activity recovers catalog reading`);
   mode = "empty";
   saved = JSON.stringify({ server_name: "Fresh Astroneer", max_players: 8, future_setting: { keep: true } });
   const fresh = saved;
   await draw("astroneer", `${locale}-astroneer-empty`);
-  await until(() => Boolean(fixture?.querySelector('[data-field-key="active_save_file_name"] [role="status"]')) && !fixture!.querySelector('[data-field-key="active_save_file_name"] [aria-busy="true"]'));
+  await until(() => Boolean(fixture?.querySelector('.shell-activity-bar .is-warning')) && !fixture!.querySelector('[data-field-key="active_save_file_name"] [aria-busy="true"]'));
   check(slot().disabled && slot().value === "SAVE_1", `${locale}: fresh empty inventory retains native SAVE_1`);
   await save();
   check(saved === fresh, `${locale}: empty inventory adds no synthetic selection`);

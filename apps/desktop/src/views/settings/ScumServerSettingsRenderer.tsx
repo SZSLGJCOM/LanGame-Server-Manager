@@ -1,4 +1,5 @@
 import { useMemo, useState, type ReactNode } from "react";
+import { ActivityNotice } from "../../components/ActivityNotice";
 import { useI18n, type TranslateFn } from "../../i18n";
 import { scumNativeMessageKey } from "../../i18n/games/scum-native-messages";
 import { buildConfigurationFieldIds } from "./ConfigurationField";
@@ -200,13 +201,13 @@ export function ScumServerSettingsRenderer(props: ConfigurationSpecializedRender
         <span className="page-chip">{t("scum.settings.renderer.settingCount", { count: visible.length }, `${visible.length} settings`)}</span>
       </div> : null}
       {serverMustStop && inventory.some((setting) => setting.risk) ? (
-        <div className="configuration-workspace__notice" role="status">
+        <ActivityNotice tone="warning">
           {t(
             "scum.settings.renderer.stopRiskChanges",
             undefined,
             "Stop this SCUM server before changing wipe or internal-test switches."
           )}
-        </div>
+        </ActivityNotice>
       ) : null}
       {[...grouped.entries()].map(([groupId, settings]) => {
         const title = groupTitle(t, groupId);

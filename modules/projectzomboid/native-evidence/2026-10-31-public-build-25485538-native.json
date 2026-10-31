@@ -1,0 +1,125 @@
+{
+  "schema_version": 1,
+  "module_id": "projectzomboid",
+  "verified_on": "2026-10-31",
+  "verification_timezone": "Asia/Shanghai",
+  "evidence_classification": "isolated_managed_backend_native_manual_save_two_cycles",
+  "source_identity_sha256": "bdb9ec254ec78270cd246cd60d21ba0d2ead43eec5e2fd68aac5ab657c7e1925",
+  "source_manifest_sha256": "38af891de1a2c3b3876a1b0abb95d5c891c67a5bf54d971f9691748131ff351b",
+  "source_file_count": 4202,
+  "source_git_revision": "d58857d32d668a3661261b96134145c6911357a4",
+  "source_working_tree_clean": false,
+  "test_binary_sha256": "7ac5843571203f96e5618719e82093456026c102a1c84bad7c5c60773af51263",
+  "runtime_module_files_sha256": {
+    "modules/projectzomboid/module.toml": "1b269540793c9ae98cb0d0b5a13397747ac1f4dd15e411cfcc4f8e7cc03ba72a",
+    "modules/projectzomboid/schema.json": "69f981ac6c591e28b9471c45ebcd3af0941a18640c0e44664996d065979513b9",
+    "modules/projectzomboid/smoke.toml": "56dc21cc727a8dd9d95adf36df333dd011077a9b811e9af151a7f05581560107",
+    "modules/projectzomboid/templates/SandboxVars.lua.hbs": "244c480d144b47a126fc235226e6f56f2ed7ac271a4649f8a666ad16f2c698d4",
+    "modules/projectzomboid/templates/server.ini.hbs": "05a49867a9ec45c889d6c8c22731c8b51a92d2a97892d407981837653b1b499a",
+    "modules/projectzomboid/templates/spawnpoints.lua.hbs": "290d1f1994500d3a6aea42ae4dd058ad04edf52948dfb3f15e10750dad32099c",
+    "modules/projectzomboid/templates/spawnregions.lua.hbs": "0b30103f12d093e4bf52b3c46e1290b7ae673a0ffece7a41adfc860e9a4874b5"
+  },
+  "package": {
+    "classification": "existing_local_package",
+    "steam_app_id": 380870,
+    "steam_build_id": "25485538",
+    "appmanifest_sha256": "816a51716324e9707fe19a7fc15349032da92722613dee1d8e11e50fe4665795",
+    "manifest_state_flags": 4,
+    "source_inventory_bytes": 7185071813,
+    "copied_payload_bytes": 7185071813,
+    "identity_files": [
+      {
+        "relative_path": "jre64/bin/java.exe",
+        "size_bytes": 49760,
+        "sha256": "007422d785bb5e1cf3cef1d0ef03645c9423713c83aeb8e1ba78f123a35855e1"
+      },
+      {
+        "relative_path": "java/projectzomboid.jar",
+        "size_bytes": 65682033,
+        "sha256": "e1a69eb743ede60b213a0fe7f8b83d4fcab773036d256cc4543a336f3b058a33"
+      }
+    ],
+    "public_branch_metadata": {
+      "build": "25485538",
+      "updated_utc": "2026-09-28T12:06:43+00:00",
+      "queried_on": "2026-10-31",
+      "matches_supplied_package": true,
+      "metadata_artifact_sha256": "59cf844a74d07a620c499079cf9d676b3c6a2a64941cdf4721593010f915966b"
+    }
+  },
+  "test": {
+    "selector": "commands::tests::manual_runtime_tests::native_lifecycle_tests::native_manual_save",
+    "arguments": [
+      "--exact",
+      "--ignored",
+      "--test-threads=1",
+      "--nocapture"
+    ],
+    "started_utc": "2026-10-31T04:28:00.621773+00:00",
+    "completed_utc": "2026-10-31T04:32:53.419304+00:00",
+    "exit_code": 0,
+    "tests_passed": 1,
+    "duration_seconds": 292.66,
+    "settings": {
+      "program_update": {
+        "policy": "pinned"
+      }
+    },
+    "ports_preflight": "clear",
+    "flags": {
+      "LANGAME_NATIVE_MODULE_ID": "projectzomboid",
+      "LANGAME_NATIVE_MANUAL_SAVE": "true",
+      "LANGAME_NATIVE_MANUAL_SAVE_RESTART": "true"
+    }
+  },
+  "observations": {
+    "native_ready_cycles": [
+      "initial",
+      "restart"
+    ],
+    "manual_save_receipts": [
+      "NATIVE_MANUAL_SAVE module=projectzomboid cycle=initial phase=receipt attempted_once=true retried=false instance_matches=true run_matches=true session_matches=true managed_generations_alive=true route=managed_process_generation response_present=false response_bytes=0 write_confirmation_pending=false save_completion=requested durable_write=not_assessed restart_readback=not_assessed",
+      "NATIVE_MANUAL_SAVE module=projectzomboid cycle=restart phase=receipt attempted_once=true retried=false instance_matches=true run_matches=true session_matches=true managed_generations_alive=true route=managed_process_generation response_present=false response_bytes=0 write_confirmation_pending=false save_completion=requested durable_write=not_assessed restart_readback=not_assessed"
+    ],
+    "normal_exit_zero_cycles": [
+      "initial",
+      "restart"
+    ],
+    "fresh_managed_restart": true,
+    "exact_checkpoint_readback": "not_tested",
+    "backup_restore_uninstall_archive": "not_tested",
+    "cleanup": {
+      "test_reported": "passed",
+      "reported_failures": []
+    }
+  },
+  "artifacts": [
+    {
+      "name": "projectzomboid-native.json",
+      "size_bytes": 2405,
+      "sha256": "90e0d491f984eff06a3aca385dd8b45ec4a6f67d9f8a7c11f4c31e2f75a46fe2"
+    },
+    {
+      "path": "2026-10-31-public-build-25485538-native-output.txt",
+      "original_name": "projectzomboid-native.log",
+      "size_bytes": 2881,
+      "sha256": "94909b8480d9075629772454475e5d73cfa9357a2dea1efcade753152c931376"
+    },
+    {
+      "name": "native-build-02.json",
+      "sha256": "aa6b4b3cd00e5b1751d1ab12c346481d0106388777920b2968f4563e24113de6"
+    },
+    {
+      "name": "source-manifest.json",
+      "sha256": "38af891de1a2c3b3876a1b0abb95d5c891c67a5bf54d971f9691748131ff351b"
+    }
+  ],
+  "scope_limits": [
+    "This fixture covers two production backend start/save-request/normal-stop cycles and owned cleanup. It does not cover full backup/restore, uninstall, archive recovery or network program maintenance.",
+    "Both emitted save receipts remain Requested. Native completion, exact manual-save contents and power-loss durability were not established. A ready restart is not exact content readback.",
+    "The test copied an existing local package into an independent disposable instance with pinned updates. The supplied package build separately matches the official public-branch metadata query; this fixture did not download or update the game.",
+    "No GUI, real-client joining, populated player roster, multiplayer gameplay or existing-world migration was tested.",
+    "Code identity refers to immutable build02. The runtime module, schema, smoke and template files were independently matched to its manifest. This later evidence/provenance edit does not extend the tested code identity.",
+    "This is public stable build 25485538; the 42.22 Pre-Release branch is outside this acceptance."
+  ]
+}

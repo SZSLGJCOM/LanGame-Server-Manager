@@ -1,0 +1,128 @@
+{
+  "schema_version": 1,
+  "module_id": "astroneer",
+  "verified_on": "2026-10-31",
+  "verification_timezone": "Asia/Shanghai",
+  "evidence_classification": "isolated_managed_backend_native_manual_save_two_cycles",
+  "source_identity_sha256": "bdb9ec254ec78270cd246cd60d21ba0d2ead43eec5e2fd68aac5ab657c7e1925",
+  "source_manifest_sha256": "38af891de1a2c3b3876a1b0abb95d5c891c67a5bf54d971f9691748131ff351b",
+  "source_file_count": 4202,
+  "source_git_revision": "d58857d32d668a3661261b96134145c6911357a4",
+  "source_working_tree_clean": false,
+  "test_binary_sha256": "7ac5843571203f96e5618719e82093456026c102a1c84bad7c5c60773af51263",
+  "runtime_module_files_sha256": {
+    "modules/astroneer/module.toml": "22a174746db9d4b030b4f72c45ff68f4d7b4f212a34a62dcf03e23e75694c975",
+    "modules/astroneer/schema.json": "4471e30e526ba2b8e40dda3266a314234134149459020fa28227749cb0b188eb",
+    "modules/astroneer/smoke.toml": "aaaafbd3ad3e53c075069e781b80ac7c95e37d8b6ff4d5d77eb86f6758657068",
+    "modules/astroneer/templates/Astro/Saved/Config/WindowsServer/AstroServerSettings.ini.hbs": "e5ffbaccf9e8e306185cbe76e8c3f102923f4c676abbc72e466b64bacd111247",
+    "modules/astroneer/templates/Astro/Saved/Config/WindowsServer/Engine.ini.hbs": "166acb44f1559a41bcfbf1c7f2b87d72b84911e9909cbb5fcc4179558b4bc957",
+    "modules/astroneer/templates/Astro/Saved/Config/WindowsServer/Game.ini.hbs": "cf20262efc703a5e03704cee200a0bfcf5dc9706b97ea0f727cc3b88392ab540"
+  },
+  "package": {
+    "classification": "existing_local_package",
+    "steam_app_id": 728470,
+    "steam_build_id": "25599296",
+    "appmanifest_sha256": "3205e63d8aed8519b24dca500125cdfdd55ccc092392e8fa687ffcc2db236bff",
+    "manifest_state_flags": 4,
+    "source_inventory_bytes": 2798691376,
+    "copied_payload_bytes": 2798691376,
+    "identity_files": [
+      {
+        "relative_path": "AstroServer.exe",
+        "size_bytes": 414208,
+        "sha256": "0159848370c4a669ca8b4e014ea1c3dcda207b389e28bd65820a4260684982fc"
+      },
+      {
+        "relative_path": "Astro/Binaries/Win64/AstroServer-Win64-Shipping.exe",
+        "size_bytes": 106553856,
+        "sha256": "ca68566598e5bedb9caeea4a9a9a35a8f0102e3b41297a0395b279612b6cc979"
+      }
+    ],
+    "public_branch_metadata": {
+      "build": "25599296",
+      "updated_utc": "2026-10-14T16:50:38+00:00",
+      "queried_on": "2026-10-31",
+      "matches_supplied_package": true,
+      "metadata_artifact_sha256": "59cf844a74d07a620c499079cf9d676b3c6a2a64941cdf4721593010f915966b"
+    }
+  },
+  "test": {
+    "selector": "commands::tests::manual_runtime_tests::native_lifecycle_tests::native_manual_save",
+    "arguments": [
+      "--exact",
+      "--ignored",
+      "--test-threads=1",
+      "--nocapture"
+    ],
+    "started_utc": "2026-10-31T04:25:37.471715+00:00",
+    "completed_utc": "2026-10-31T04:27:55.192812+00:00",
+    "exit_code": 0,
+    "tests_passed": 1,
+    "duration_seconds": 137.67,
+    "settings": {
+      "program_update": {
+        "policy": "pinned"
+      }
+    },
+    "ports_preflight": "clear",
+    "flags": {
+      "LANGAME_NATIVE_MODULE_ID": "astroneer",
+      "LANGAME_NATIVE_MANUAL_SAVE": "true",
+      "LANGAME_NATIVE_MANUAL_SAVE_RESTART": "true",
+      "LANGAME_NATIVE_ASTRO_AUTO_PUBLIC_IP": "true"
+    }
+  },
+  "observations": {
+    "native_ready_cycles": [
+      "initial",
+      "restart"
+    ],
+    "manual_save_receipts": [
+      "NATIVE_MANUAL_SAVE module=astroneer cycle=initial phase=receipt attempted_once=true retried=false instance_matches=true run_matches=true session_matches=true managed_generations_alive=true route=managed_process_generation response_present=true response_bytes=82 write_confirmation_pending=false save_completion=requested durable_write=not_assessed restart_readback=not_assessed",
+      "NATIVE_MANUAL_SAVE module=astroneer cycle=restart phase=receipt attempted_once=true retried=false instance_matches=true run_matches=true session_matches=true managed_generations_alive=true route=managed_process_generation response_present=true response_bytes=82 write_confirmation_pending=false save_completion=requested durable_write=not_assessed restart_readback=not_assessed"
+    ],
+    "normal_exit_zero_cycles": [
+      "initial",
+      "restart"
+    ],
+    "fresh_managed_restart": true,
+    "exact_checkpoint_readback": "not_tested",
+    "backup_restore_uninstall_archive": "not_tested",
+    "cleanup": {
+      "test_reported": "passed",
+      "reported_failures": []
+    },
+    "public_ip_receipts": [
+      "NATIVE_ASTRO_PUBLIC_IP cycle=initial phase=verified source=product_discovery persisted=true rendered=true address_not_reported=true",
+      "NATIVE_ASTRO_PUBLIC_IP cycle=restart phase=verified source=persisted_reuse persisted=true rendered=true address_not_reported=true"
+    ]
+  },
+  "artifacts": [
+    {
+      "name": "astroneer-native.json",
+      "size_bytes": 2422,
+      "sha256": "5b985f3bec24b7ea1e3860a840ff6461c08a90478afc34c39f538c478334b378"
+    },
+    {
+      "path": "2026-10-31-public-build-25599296-native-output.txt",
+      "original_name": "astroneer-native.log",
+      "size_bytes": 3131,
+      "sha256": "63581f4327385ec30312682cdf6b1d0eaee24732eb844b366b2dce0be3e269f0"
+    },
+    {
+      "name": "native-build-02.json",
+      "sha256": "aa6b4b3cd00e5b1751d1ab12c346481d0106388777920b2968f4563e24113de6"
+    },
+    {
+      "name": "source-manifest.json",
+      "sha256": "38af891de1a2c3b3876a1b0abb95d5c891c67a5bf54d971f9691748131ff351b"
+    }
+  ],
+  "scope_limits": [
+    "This fixture covers two production backend start/save-request/normal-stop cycles and owned cleanup. It does not cover full backup/restore, uninstall, archive recovery or network program maintenance.",
+    "Both emitted save receipts remain Requested. Native completion, exact manual-save contents and power-loss durability were not established. A ready restart is not exact content readback.",
+    "The test copied an existing local package into an independent disposable instance with pinned updates. The supplied package build separately matches the official public-branch metadata query; this fixture did not download or update the game.",
+    "No GUI, real-client joining, populated player roster, multiplayer gameplay or existing-world migration was tested.",
+    "Code identity refers to immutable build02. The runtime module, schema, smoke and template files were independently matched to its manifest. This later evidence/provenance edit does not extend the tested code identity."
+  ]
+}

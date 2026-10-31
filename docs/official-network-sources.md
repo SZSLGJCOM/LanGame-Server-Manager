@@ -35,13 +35,15 @@ The news panel keeps successful responses for ten minutes under separate game/la
 | Local knowledge embedding model | IBM Granite's pinned Hugging Face checkpoint and the explicitly allowed Hugging Face delivery hosts; file size/SHA-256, bounded retries and cancellation; no China-specific replacement model or mirror |
 | Official knowledge synchronization | The reviewed publisher documentation sources and their approved paths, including scoped publisher help-center APIs; source, redirect and public-address checks remain enforced; no locale-based origin replacement |
 | Remote AI and local model providers | The operator's configured endpoint; requests remain with that provider, and loopback endpoints bypass HTTP proxies; no CDN substitution or cross-origin redirect of credentials/context |
-| Application updates | Disabled in the default configuration; an explicitly enabled release build uses the configured GitHub release feed and signed update artifacts through the updater; no China-specific feed or CDN replacement |
+| Application updates | Disabled in the default configuration. Enabled releases use `langame.cn/updates/server-manager/latest.json`: the service selects the project's GitCode release attachment for APNIC CN source addresses and GitHub for others. The updater falls back to GitHub and the third-party `gh-proxy.org` / `ghfast.top` proxies; every downloaded update still requires the configured signature verification |
 | WebView2 prerequisite during desktop installation | The default Tauri/NSIS `embedBootstrapper` package reuses installed WebView2 or runs the embedded Microsoft bootstrapper to download a missing runtime from Microsoft. The build acquires the bootstrapper from `https://go.microsoft.com/fwlink/p/?LinkId=2124703`. The separate `x64-offline-setup.exe` uses `offlineInstaller` and embeds Microsoft's Evergreen x64 standalone installer for disconnected installation. Neither mode uses a third-party runtime mirror; see the [release guide](desktop-release.md#webview2-delivery) |
 | Steam game-server and Workshop content | SteamCMD's native SteamPipe/Workshop delivery; bootstrap URL alternatives do not replace the content protocol |
 | Game-server control, LAN management and discovery | Instance endpoints, the authenticated LAN management service and local discovery protocols; these are not public interchangeable CDN resources |
 | Websites opened in the system browser | The requested Steam, mod-provider, release or documentation website; browser routing remains under the user's environment |
 
 The full-description API is separate from the Steam China storefront and its catalog. Its narrowly verified public request does not authorize substitution of store, account, login, review or other StoreBrowse operations. The existing CurseForge slug resolver is a third-party integration, not an official CDN, and receives no source substitution. Local game-control endpoints, user-configured AI providers, authenticated services and externally opened websites are not redirected. Application update endpoints and signature verification remain owned by the updater configuration; this policy does not add an update endpoint.
+
+The [application updater](../apps/desktop/src-tauri/src/app_updates/sources.rs) and [update service](../deploy/desktop-updates/README.md) define a separate delivery path. The website serves only the small manifest; installers and signature attachments come from the release hosts. Regional selection uses the requesting IP's APNIC allocation, independently of interface language. Downloads accept only the exact project, version and installer URLs supported by the updater. GitCode hosts the project's published release copy, while the two GitHub proxies are third-party fallbacks, not official Steam/game CDN equivalents. An empty endpoint configuration remains disabled.
 
 The [ARK extension installer](../apps/desktop/src-tauri/src/ark_tools_install.rs), [model downloader](../crates/app-knowledge/src/embedding_download.rs), [knowledge fetcher](../crates/app-knowledge/src/fetch.rs), [AI endpoint policy](../apps/desktop/src-tauri/src/assistant_http_client.rs), [desktop configuration](../apps/desktop/src-tauri/tauri.conf.json) and [release guide](desktop-release.md) define their respective routes. Third-party server processes may also contact their own account, master-server, telemetry or mod services; LanGame's public-source policy does not redirect those processes. A successful media or metadata request does not prove that game authentication, package acquisition or an extension's later downloads will succeed.
 
@@ -179,13 +181,15 @@ Before adding or changing a group, establish publisher ownership, verify the sam
 | 本地知识库向量模型 | IBM Granite 固定 Hugging Face checkpoint 及明确允许的 Hugging Face 分发域名，核验文件大小与 SHA-256，支持有限重试和取消；不换成国内其他模型或镜像 |
 | 官方知识库同步 | 已审核的发布方文档来源及允许路径，包括限定范围的发布方帮助中心 API；保留来源、重定向与公网地址校验，不按语言替换域名 |
 | 远程 AI 与本地模型服务 | 操作者配置的端点，请求保持在该提供方，回环地址绕过 HTTP 代理；不换 CDN，也不跨来源重定向凭据或上下文 |
-| 应用更新 | 默认配置关闭；显式启用的发行构建通过更新器使用配置的 GitHub 发行源及签名更新包；没有国内专用更新源或 CDN 替换 |
+| 应用更新 | 默认配置关闭。启用的发行版使用 `langame.cn/updates/server-manager/latest.json`：服务按 APNIC CN 来源地址选择本项目的 GitCode 发行附件，其余选择 GitHub。更新器还可回退到 GitHub 及第三方 `gh-proxy.org` / `ghfast.top` 代理；所有下载的更新包仍须通过配置的签名验证 |
 | 桌面安装时的 WebView2 前置 | 默认 Tauri/NSIS `embedBootstrapper` 小包复用已有 WebView2，缺少时由内嵌微软引导器从微软下载运行时；构建时从 `https://go.microsoft.com/fwlink/p/?LinkId=2124703` 获取引导器。独立 `x64-offline-setup.exe` 使用 `offlineInstaller` 内置微软 Evergreen x64 完整安装程序，支持断网安装。两种模式均不使用第三方运行时镜像，详见[发行指南](desktop-release.md#webview2-delivery) |
 | Steam 服务端与工坊 MOD 文件 | 继续由 SteamCMD 原生内容协议下载；引导包 CDN 不用于替换游戏内容地址 |
 | 游戏服务器控制、局域网管理与发现 | 实例端点、已认证的局域网管理服务及本地发现协议，不属于可互换的公共 CDN 资源 |
 | 系统浏览器打开的网站 | 请求的 Steam、模组提供方、发行或文档网站，连接继续由用户的浏览器环境管理 |
 
 完整简介使用公开 API，独立于蒸汽平台商店及其游戏目录；本次核实的窄范围请求不允许替换商店、账号、登录、评价或其他 StoreBrowse 操作。已有 CurseForge 链接解析服务属于第三方集成，不标记为官方 CDN，也不换源。局域网游戏控制、用户配置的 AI 服务、需要认证的接口和外部浏览器网站不做域名替换。应用更新地址与签名验证仍由现有更新配置负责，不自行新增发行地址。
+
+[应用更新器](../apps/desktop/src-tauri/src/app_updates/sources.rs)和[更新服务](../deploy/desktop-updates/README.md)定义独立的分发路径。官网只提供小型清单，安装包和签名附件由发行托管站点提供。区域选择依据请求来源 IP 的 APNIC 分配信息，与界面语言无关。下载仅接受更新器支持的精确项目、版本和安装包地址。GitCode 托管本项目发布的发行副本，两项 GitHub 代理属于第三方回退源，不属于 Steam／游戏官方 CDN 等价来源。更新地址为空时仍保持关闭。
 
 [ARK 扩展安装器](../apps/desktop/src-tauri/src/ark_tools_install.rs)、[模型下载器](../crates/app-knowledge/src/embedding_download.rs)、[知识库抓取器](../crates/app-knowledge/src/fetch.rs)、[AI 端点策略](../apps/desktop/src-tauri/src/assistant_http_client.rs)、[桌面配置](../apps/desktop/src-tauri/tauri.conf.json)及[发行指南](desktop-release.md)分别定义各自的链路。第三方游戏服务端进程还可能访问自己的账号、主服务器、遥测或模组服务；LanGame 的公共来源策略不改写这些进程。媒体或元数据读取成功，不代表游戏认证、安装包获取或扩展后续下载也能成功。
 

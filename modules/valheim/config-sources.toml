@@ -3,6 +3,20 @@ last_verified = "2026-07-13"
 notes = "The prior SteamCMD anonymous app_update 896660 validate completed with Success! App '896660' fully installed; its manifest and Iron Gate's official dedicated-server guide were rechecked on 2026-07-13. The recorded package reports buildid 21981590, TargetBuildID 21981590, SizeOnDisk 1636649733, and depots 1004/896662. The official guide was checked again on 2026-09-07: Normal is an explicit preset, modifiers consume separate name and value arguments after the preset, and the documented world keys are nobuildcost, playerevents, passivemobs, and nomap. Configuration and argv acceptance checks cover these corrections. Separate private-mode native lifecycle evidence from 2026-09-20 is recorded below; public A2S and crossplay are not validated by that run."
 
 [[sources]]
+id = "managed_native_lifecycle_build_26266951_20261031"
+kind = "runtime_probe"
+path = "reference-fixtures/2026-10-31-managed_native_lifecycle_build_26266951.json"
+authority = "compiled_manager_backend_with_isolated_official_package"
+description = "2026-10-31 Asia/Shanghai: final managed backend build 26266951 completed four native startup/stop cycles with exits 0 and verified cleanup. The first formal manual save returned confirmed; its five-file world snapshot was captured before shutdown and restored exactly to the next run, which loaded the matching saved world/generation without another save. Backup restore, interrupted archive commit recovery and library-only uninstall preserved instance data; later restored-world checks preceded two distinct additional confirmed saves. No multiplayer, populated old-world migration, power-loss durability or network program update is claimed."
+
+[[sources]]
+id = "native_control_and_save_20261030"
+kind = "install_probe"
+path = "modules/valheim/reference-fixtures/2026-10-30-native_build_26266951.json"
+authority = "official_steamcmd_build_26266951_static_contract_and_isolated_native_save_reload"
+description = "2026-10-30: Official Windows app 896660 validated as build 26266951 (Valheim 1.0.21, network 41), StateFlags 4, 2112248548 installed bytes. All three gated assembly hashes changed. Full method/field/property comparison against build 25909431 preserves ZNet, World, SyncedList, socket and PlatformUserID contracts, the dedicated disk check, native save worker and committed-generation update. Before admitting this tuple, an independent isolated probe under the existing verified BepInExPack 5.4.2351 completed native save generation 0 to 1; its five-file snapshot was captured before shutdown and restored to a new process, which loaded the same world UID and generation 1 with metadata version 42. Both phases exited normally with code 0 and no forced cleanup. Product host and plugin gates retain the two earlier complete tuples and reject mixed or unknown hashes. The fixture records artifact identities and the 31-pass C# boundary suite built against real candidate ABI references. This zero-player probe does not verify live clients, crossplay, public A2S or an existing player's world. Earlier configuration-review dates remain historical."
+
+[[sources]]
 id = "configuration_review_20260930"
 kind = "documentation"
 path = "https://valheim.com/support/a-guide-to-dedicated-servers/"

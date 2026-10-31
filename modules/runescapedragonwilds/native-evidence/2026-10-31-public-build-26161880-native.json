@@ -1,0 +1,154 @@
+{
+  "schema_version": 1,
+  "module_id": "runescapedragonwilds",
+  "verified_on": "2026-10-31",
+  "verification_timezone": "Asia/Shanghai",
+  "evidence_classification": "isolated_managed_backend_requested_save_and_exact_checkpoint_restart",
+  "source_identity_sha256": "bdb9ec254ec78270cd246cd60d21ba0d2ead43eec5e2fd68aac5ab657c7e1925",
+  "source_manifest_sha256": "38af891de1a2c3b3876a1b0abb95d5c891c67a5bf54d971f9691748131ff351b",
+  "source_file_count": 4202,
+  "source_git_revision": "d58857d32d668a3661261b96134145c6911357a4",
+  "source_working_tree_clean": false,
+  "test_binary_sha256": "7ac5843571203f96e5618719e82093456026c102a1c84bad7c5c60773af51263",
+  "runtime_module_files_sha256": {
+    "modules/runescapedragonwilds/module.toml": "3b441646c13487ef03e81f2949ae5af8c96a17805e3183a2e4a8e89534284f5d",
+    "modules/runescapedragonwilds/schema.json": "9ee69c93cede0149247e94f10bb62be98ce3076408083b66c749d8c53ebcce33",
+    "modules/runescapedragonwilds/smoke.toml": "eeb5549d10c8f0676dd6b4b1f1e7b8e4ee348eeb9a85c7d614e7398e5ea280d6",
+    "modules/runescapedragonwilds/templates/RSDragonwilds/Saved/Config/WindowsServer/DedicatedServer.ini.hbs": "a40474fe1a26e88252e52cf11b0a53d224788fd5355d0000d260a3c63e372a3d"
+  },
+  "package": {
+    "classification": "existing_local_package",
+    "steam_app_id": 4019830,
+    "steam_build_id": "26161880",
+    "appmanifest_sha256": "b8023440aab9f71ed2ac044dc8a6a0545db364d493f8909177d3967c51833e49",
+    "manifest_state_flags": 4,
+    "source_inventory_bytes": 5000204132,
+    "copied_payload_bytes": 4999702540,
+    "identity_files": [
+      {
+        "relative_path": "RSDragonwildsServer.exe",
+        "size_bytes": 229536,
+        "sha256": "ada534ccaad106a661c2665c73f5d9d1cb26460163c2bc2a92eb10ae98421a35"
+      },
+      {
+        "relative_path": "RSDragonwilds/Binaries/Win64/RSDragonwildsServer-Win64-Shipping.exe",
+        "size_bytes": 205138592,
+        "sha256": "210adebb1d4971c3a85b5210783c7b861eea9e153bf884a460840f43e96321ba"
+      }
+    ],
+    "public_branch_metadata": {
+      "build": "26161880",
+      "updated_utc": "2026-10-23T19:12:20+00:00",
+      "queried_on": "2026-10-31",
+      "matches_supplied_package": true,
+      "metadata_artifact_sha256": "59cf844a74d07a620c499079cf9d676b3c6a2a64941cdf4721593010f915966b"
+    }
+  },
+  "test": {
+    "selector": "commands::tests::manual_runtime_tests::native_lifecycle_tests::native_manual_save",
+    "arguments": [
+      "--exact",
+      "--ignored",
+      "--test-threads=1",
+      "--nocapture"
+    ],
+    "started_utc": "2026-10-31T04:35:39.103197+00:00",
+    "completed_utc": "2026-10-31T04:37:55.595114+00:00",
+    "exit_code": 0,
+    "tests_passed": 1,
+    "duration_seconds": 136.43,
+    "settings": {
+      "program_update": {
+        "policy": "pinned"
+      }
+    },
+    "ports_preflight": "clear",
+    "flags": {
+      "LANGAME_NATIVE_MODULE_ID": "runescapedragonwilds",
+      "LANGAME_NATIVE_MANUAL_SAVE": "true",
+      "LANGAME_NATIVE_MANUAL_SAVE_RESTART": "true",
+      "LANGAME_NATIVE_EXACT_SAVE_READBACK": "true"
+    }
+  },
+  "observations": {
+    "native_ready_cycles": [
+      "initial",
+      "restart"
+    ],
+    "production_manual_save_receipts": [
+      "NATIVE_MANUAL_SAVE module=runescapedragonwilds cycle=initial phase=receipt attempted_once=true retried=false instance_matches=true run_matches=true session_matches=true managed_generations_alive=true route=managed_process_generation response_present=true response_bytes=73 write_confirmation_pending=false save_completion=requested durable_write=not_assessed restart_readback=not_assessed"
+    ],
+    "production_save_completion": "Requested",
+    "save_requests_sent": 1,
+    "normal_exit_zero_cycles": [
+      "initial",
+      "restart"
+    ],
+    "independent_save_observation": {
+      "fresh_native_save": true,
+      "save_family_changed": true,
+      "periodic_autosave_excluded": true,
+      "production_completion_claimed": false
+    },
+    "exact_checkpoint_readback": {
+      "captured_before_stop": true,
+      "files": [
+        {
+          "relative_path": "Ashenfall.sav",
+          "size_bytes": 64032,
+          "sha256": "b74895197ae5371110d681c6db792c37740e0cd31f0b72719ee49f8effd3d8de"
+        },
+        {
+          "relative_path": "Ashenfall.sav.backup",
+          "size_bytes": 64022,
+          "sha256": "4d8cb0dd743670c716485952f65d40345132bbfbbd312384039a553ff6b673b1"
+        }
+      ],
+      "restored_after_normal_stop": true,
+      "shutdown_snapshot_excluded": true,
+      "restored_sha256_verified": true,
+      "fresh_restart_native_load": "passed",
+      "second_save_sent": false,
+      "scope": "isolated_disposable_world"
+    },
+    "checkpoint_receipts": [
+      "NATIVE_SAVE_OBSERVATION module=runescapedragonwilds receipt=requested fresh_native_save=true save_family_changed=true periodic_autosave_excluded=true production_completion=not_claimed",
+      "NATIVE_SAVE_CHECKPOINT module=runescapedragonwilds phase=captured run_id=1 files=2 captured_before_stop=true scope=isolated_world",
+      "NATIVE_SAVE_CHECKPOINT module=runescapedragonwilds phase=restored after_normal_stop=true shutdown_snapshot_excluded=true sha256_verified=true",
+      "NATIVE_SAVE_READBACK module=runescapedragonwilds phase=verified initial_run=1 restart_run=2 exact_manual_checkpoint=true native_load=passed second_save_sent=false scope=isolated_world"
+    ],
+    "backup_restore_uninstall_archive": "not_tested",
+    "cleanup": {
+      "test_reported": "passed",
+      "reported_failures": []
+    }
+  },
+  "artifacts": [
+    {
+      "name": "runescapedragonwilds-native.json",
+      "size_bytes": 2101,
+      "sha256": "7ac91c2cfd4aff995eb5fc2f161f913051ac94e356d5eace52ddc9158a75eb02"
+    },
+    {
+      "path": "2026-10-31-public-build-26161880-native-output.txt",
+      "original_name": "runescapedragonwilds-native.log",
+      "size_bytes": 3503,
+      "sha256": "eddc9aa0defd7cdbfb39b181a5dd346f11c9119504ccefc27a70e56bb31508dc"
+    },
+    {
+      "name": "native-build-02.json",
+      "sha256": "aa6b4b3cd00e5b1751d1ab12c346481d0106388777920b2968f4563e24113de6"
+    },
+    {
+      "name": "source-manifest.json",
+      "sha256": "38af891de1a2c3b3876a1b0abb95d5c891c67a5bf54d971f9691748131ff351b"
+    }
+  ],
+  "scope_limits": [
+    "The production action emitted one Requested receipt on the initial run. Separate test-only observation established a fresh native write with the periodic autosave window excluded; it does not change production completion to Confirmed.",
+    "The fixture captured the two save-family files before stop, restored and SHA256-checked that checkpoint after normal stop, then verified a fresh native restart loaded it without sending a second save. This is exact checkpoint/load evidence for the disposable world, not real-player progress or power-loss durability.",
+    "This two-cycle backend acceptance does not cover full product backup/restore, uninstall, archive recovery, GUI, real-client joining, owner authorization, multiplayer gameplay or existing-world migration.",
+    "The supplied local package build separately matches the official public-branch metadata. The independent fixture used pinned updates and did not download or update the game.",
+    "Code identity refers to immutable build02. Runtime module/schema/smoke/template files were independently matched to its manifest. Later evidence edits do not extend that tested code identity."
+  ]
+}

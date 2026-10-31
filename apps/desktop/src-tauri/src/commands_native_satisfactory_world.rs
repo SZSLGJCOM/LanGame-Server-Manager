@@ -18,6 +18,9 @@ const CREDENTIAL_KINDS: [&str; 2] = ["admin-password", "api-token"];
 const LOAD_TIMEOUT: Duration = Duration::from_secs(120);
 const API_READY_TIMEOUT: Duration = Duration::from_secs(90);
 
+#[path = "commands_native_satisfactory_isolation_api.rs"]
+pub(crate) mod isolation;
+
 fn native_api_still_loading(error: &str) -> bool {
     matches!(
         error,

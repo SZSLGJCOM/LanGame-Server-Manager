@@ -1,0 +1,217 @@
+{
+  "schema": 1,
+  "verified_on": "2026-10-30",
+  "scope": "Windows Valheim native control and dedicated asynchronous save admission; no licensed game code is included.",
+  "package": {
+    "app_id": "896660",
+    "build_id": "26266951",
+    "game_version": "1.0.21",
+    "network_version": 41,
+    "public_build_updated_utc": "2026-10-28T13:16:15Z",
+    "validation": "Official SteamCMD app_update 896660 validate, exit 0 with success marker",
+    "state_flags": 4,
+    "target_build_id": "26266951",
+    "size_on_disk_bytes": 2112248548,
+    "depots": [
+      {
+        "id": "896662",
+        "manifest": "171106503873955013",
+        "size_bytes": 2044385412
+      },
+      {
+        "id": "1004",
+        "manifest": "7604377918839582995",
+        "size_bytes": 67863136
+      }
+    ]
+  },
+  "baseline_build_id": "25909431",
+  "assemblies": [
+    {
+      "file": "assembly_valheim.dll",
+      "sha256": "648f3f8ed7b44c3d3cd612acd782743d9e03af7e60b7fe72d5827523e95505fd",
+      "size": 2569216,
+      "identity": "assembly_valheim, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null",
+      "mvid": "0c8e996c-a46e-4ffe-a553-04d51c157a54"
+    },
+    {
+      "file": "assembly_utils.dll",
+      "sha256": "9658619e34e456b88639f6cc6e7d0fd186432f63bf1033e3e04e98e8fac2be9e",
+      "size": 242176,
+      "identity": "assembly_utils, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null",
+      "mvid": "ff89ef79-0cdd-4a98-8771-6cdb5687aa2a"
+    },
+    {
+      "file": "Splatform.dll",
+      "sha256": "1924e4c348616fbd754a8f688d3dc65cde5a741cfef57e80474fcdd0121013b5",
+      "size": 54272,
+      "identity": "Splatform, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null",
+      "mvid": "101caef4-d5c2-4b89-b2d3-b21b3ebd9132"
+    }
+  ],
+  "static_comparison": {
+    "method_counts": {
+      "identical": 981,
+      "changed": 10,
+      "added": 16,
+      "removed": 14
+    },
+    "capture_semantics": [
+      "method signatures and attributes",
+      "IL instruction operands",
+      "local variable types",
+      "exception handlers",
+      "max stack",
+      "type field and property signatures"
+    ],
+    "identical_complete_types_and_method_counts": {
+      "FileWriter": 13,
+      "Game": 88,
+      "Splatform.PlatformUserID": 20,
+      "SyncedList": 9,
+      "World": 25,
+      "ZDOMan": 101,
+      "ZNet": 193,
+      "ZNetPeer": 4,
+      "ZPlayFabSocket": 60,
+      "ZSteamSocket": 35
+    },
+    "identical_save_commit_methods": [
+      "System.UInt32 SaveSystem::GetSaveNumber()",
+      "System.UInt32 SaveSystem::GetSaveNumber(System.Boolean)",
+      "System.Void SaveSystem::EndSave(FileHelpers/FileSource,System.Boolean)"
+    ],
+    "reviewed_differences": [
+      "FileHelpers.GetFiles returns an empty array instead of null for unsuccessful cloud mounting or path discovery; GetFileSizes now accepts a null input.",
+      "FileHelpers.ValidPath and SaveSystem.ForceRefreshLocalCache are new helpers. SaveSystem.InvalidateCache() is now public with unchanged body.",
+      "SaveSystem backup helpers use renumbered compiler-generated methods. Version initialization reports 1.0.21.",
+      "Native World metadata remains version 42; no world codec change is required."
+    ],
+    "artifact_sha256": {
+      "baseline-25909431.json": "0567f0f77e730b5262471da4a9f7a18c1c423e37f99c31eb7352957c2c2ea607",
+      "candidate-26266951.json": "610fb4242a85aa15b26ee8e0b20cddd515a2ef033fab55812e428289efcb8f18",
+      "contract-diff-26266951.json": "0c6b238275365c8c136a6217da43956b903f72f1f668d2f104ad528fa4747fc7"
+    }
+  },
+  "independent_native_probe": {
+    "completed_utc": "2026-10-30T14:16:50.4314848Z",
+    "production_gate_modified": false,
+    "production_control_installed": false,
+    "loader": {
+      "url": "https://thunderstore.io/package/download/denikson/BepInExPack_Valheim/5.4.2351/",
+      "archive_size": 702924,
+      "archive_sha256": "bce631497976a93977ceb08e166712e6c31d15244956f89f17df092a9b62e29f",
+      "immutable_files_verified": 20,
+      "plugin_sha256": "8c731c69d7a974d2221ea458f22e4b59e7a9ff0588463dd8bb09ac68bd622b4d",
+      "product_control_installed": false
+    },
+    "tool_source_sha256": {
+      "capture-native-contract.ps1": "0f227f0275d6837e111aaeb813b1aab1e782bc2aca978ae99a70383ee8e7f1fc",
+      "compare-native-contract.py": "d8ad94164e0ea6e7ca3acdb232084a3c8d241a0794915731d7c80aab1b1431d6",
+      "NativeContractProbe.cs": "94ba96afc9efbf23d0aebe4585956e55d1d66c743b62ed45af98ce88ea566ded",
+      "run-native-probe.ps1": "afa9879155073edb1e46c49e2cc29b846b4bed67b4f255223bbea0e2b7adec51"
+    },
+    "result_sha256": "b2911657a244975226435e92aa1bf4814ce56b998b893b84a8b19a56d0e66b89",
+    "save": {
+      "result": {
+        "mode": "save",
+        "status": "ok",
+        "pid": 101460,
+        "process_start_utc_ticks": 639289665786601522,
+        "players": 0,
+        "world_uid": 1811231582,
+        "world_version": 0,
+        "previous_generation": 0,
+        "committed_generation": 1,
+        "disk_check_passed": true,
+        "unique_save_started": true,
+        "original_worker_joined": true,
+        "completed_utc": "2026-10-30T14:16:31.5329169Z"
+      },
+      "stop": {
+        "exit_code": 0,
+        "normal_engine_quit": true,
+        "forced": false,
+        "owned_processes_remaining": 0
+      }
+    },
+    "manual_snapshot": {
+      "captured_before_shutdown": true,
+      "files": [
+        {
+          "path": "lgsm_native_26266951_backup_auto-20261030-221631\\_main.0.fwl2",
+          "size": 65,
+          "sha256": "1e09ce7b6d7f90b6fa6e7242a471f7b0e75b9befb4e8e79c2fdddab157923bba"
+        },
+        {
+          "path": "lgsm_native_26266951\\_main.1.chunks",
+          "size": 10,
+          "sha256": "99af981053ca8e642bad73f4987810489908de128bc2c02eea5ab34590511297"
+        },
+        {
+          "path": "lgsm_native_26266951\\_main.1.db2",
+          "size": 83,
+          "sha256": "2026987c8aee2e8d80f4c11cb5c077cfe9550ff960a963f91a292a3dd6d593a5"
+        },
+        {
+          "path": "lgsm_native_26266951\\_main.1.fwl2",
+          "size": 65,
+          "sha256": "9dcdb920a24693ac0b889bd376113d1ef0fef755967e4afa2271e1b3c1e7d25b"
+        },
+        {
+          "path": "lgsm_native_26266951\\_main.1.ok",
+          "size": 4,
+          "sha256": "e8a4b2ee7ede79a3afb332b5b6cc3d952a65fd8cffb897f5d18016577c33d7cc"
+        }
+      ],
+      "captured_utc": "2026-10-30T14:16:31.7688879Z"
+    },
+    "readback": {
+      "result": {
+        "mode": "readback",
+        "status": "ok",
+        "pid": 70964,
+        "process_start_utc_ticks": 639289665951506194,
+        "players": 0,
+        "world_uid": 1811231582,
+        "world_version": 42,
+        "previous_generation": 1,
+        "committed_generation": 1,
+        "disk_check_passed": false,
+        "unique_save_started": false,
+        "original_worker_joined": false,
+        "completed_utc": "2026-10-30T14:16:47.0094021Z"
+      },
+      "stop": {
+        "exit_code": 0,
+        "normal_engine_quit": true,
+        "forced": false,
+        "owned_processes_remaining": 0
+      }
+    },
+    "restored_snapshot_inventory_verified": true,
+    "forced_cleanup": false
+  },
+  "control_boundary_tests": {
+    "command": "scripts/build_valheim_control.ps1 -OutDir <isolated-output> -BepInExAssembly <reviewed-loader>/BepInEx.dll -UnityCoreAssembly <validated-managed>/UnityEngine.CoreModule.dll -UnityEngineAssembly <validated-managed>/UnityEngine.dll -NetStandardAssembly <validated-managed>/netstandard.dll -RunTests",
+    "passed": 31,
+    "exit_code": 0,
+    "log_sha256": "82bc22be6459c5f9cc53c584a16fc2872023cdaff187eaf4898f2e635492dc45",
+    "plugin_sha256": "8bb3f010d40848b953d8821c4490ec9f6401193b52e6f35542427a75b9d219f5"
+  },
+  "limits": [
+    "The independent probe used a new isolated world with zero connected players; it does not establish existing-player world or online client compatibility.",
+    "No crossplay, public listing, A2S availability, or live player moderation was exercised.",
+    "The pre-admission probe directly exercised the reviewed native save API and is separate from the production management lifecycle test.",
+    "The readback phase starts from the pre-shutdown manual snapshot; its generation 1 cannot be supplied by the later shutdown autosave."
+  ],
+  "code_state": {
+    "base_commit": "d58857d32d668a3661261b96134145c6911357a4",
+    "modified_source_sha256": {
+      "apps/desktop/src-tauri/src/commands_valheim_control.rs": "4ab4ed7eb1a1cd24dfb7dadf248e1860a4b0c0c5a796a75d2946dc0c4b91674a",
+      "apps/desktop/src-tauri/src/commands_valheim_control_tests.rs": "d749f18f33f51086a15bebcb17889621b677d863eb69a39eb6066aafbcc6d207",
+      "modules/valheim/control/ValheimNativeControl.cs": "6d4865f7a79f35a43b53e89745a002654ec1063719c59bf3fc1dcc106b472cd5",
+      "modules/valheim/control/NativeControlTests.cs": "a5366e30276b2014ede5f38add5ffaf626d27f91c62767e90fffb7adc49f561c"
+    }
+  }
+}

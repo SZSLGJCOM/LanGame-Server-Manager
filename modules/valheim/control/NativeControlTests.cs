@@ -111,32 +111,43 @@ namespace Lgsm.Valheim.Control
                 Directory.Delete(FakeAccessFiles.Root);
             }
         }
+        private static void AssertProfile(string[] hashes, bool expected)
+        {
+            ControlTests.Assert(ValheimNativeControl.SupportedProfile(hashes[0], hashes[1], hashes[2]) == expected,
+                "Native profile admission mismatch");
+            ControlTests.Assert(ValheimNativeControl.SupportedWorldSaveProfile(hashes[0], hashes[1], hashes[2]) == expected,
+                "Dedicated save profile admission mismatch");
+        }
         private static void Cases()
         {
             ControlTests.Test("native profiles reject mixed or unknown assembly fingerprints", delegate {
-                ControlTests.Assert(ValheimNativeControl.SupportedProfile(ValheimNativeControl.GameSha256,
-                    ValheimNativeControl.UtilitiesSha256, ValheimNativeControl.PlatformSha256), "Current profile rejected");
-                ControlTests.Assert(ValheimNativeControl.SupportedProfile(ValheimNativeControl.LocalProofGameSha256,
-                    ValheimNativeControl.LocalProofUtilitiesSha256, ValheimNativeControl.PlatformSha256), "Fixture profile rejected");
-                ControlTests.Assert(!ValheimNativeControl.SupportedProfile(ValheimNativeControl.GameSha256,
-                    ValheimNativeControl.LocalProofUtilitiesSha256, ValheimNativeControl.PlatformSha256), "Mixed native profile accepted");
-                ControlTests.Assert(!ValheimNativeControl.SupportedProfile(ValheimNativeControl.GameSha256,
-                    ValheimNativeControl.UtilitiesSha256, new string('0', 64)), "Unknown platform ABI accepted");
-                ControlTests.Assert(!ValheimNativeControl.SupportedProfile(new string('f', 64),
-                    ValheimNativeControl.UtilitiesSha256, ValheimNativeControl.PlatformSha256), "Unknown game ABI accepted");
-                ControlTests.Assert(ValheimNativeControl.SupportedWorldSaveProfile(ValheimNativeControl.LocalProofGameSha256,
-                    ValheimNativeControl.LocalProofUtilitiesSha256, ValheimNativeControl.PlatformSha256),
-                    "Inspected dedicated save profile rejected");
-                ControlTests.Assert(ValheimNativeControl.SupportedWorldSaveProfile(ValheimNativeControl.GameSha256,
-                    ValheimNativeControl.UtilitiesSha256, ValheimNativeControl.PlatformSha256),
-                    "Current dedicated save profile rejected");
-                ControlTests.Assert(!ValheimNativeControl.SupportedWorldSaveProfile(ValheimNativeControl.GameSha256,
-                    ValheimNativeControl.LocalProofUtilitiesSha256, ValheimNativeControl.PlatformSha256),
-                    "Mixed dedicated save profile accepted");
-                ControlTests.Assert(!ValheimNativeControl.SupportedWorldSaveProfile(ValheimNativeControl.GameSha256,
-                    ValheimNativeControl.UtilitiesSha256, new string('0', 64)), "Unknown save platform ABI accepted");
-                ControlTests.Assert(!ValheimNativeControl.SupportedWorldSaveProfile(new string('f', 64),
-                    ValheimNativeControl.UtilitiesSha256, ValheimNativeControl.PlatformSha256), "Unknown save game ABI accepted");
+                string[][] profiles = {
+                    new[] { ValheimNativeControl.GameSha256, ValheimNativeControl.UtilitiesSha256,
+                        ValheimNativeControl.PlatformSha256 },
+                    new[] { ValheimNativeControl.LocalProofGameSha256, ValheimNativeControl.LocalProofUtilitiesSha256,
+                        ValheimNativeControl.PlatformSha256 },
+                    new[] { ValheimNativeControl.Build26266951GameSha256, ValheimNativeControl.Build26266951UtilitiesSha256,
+                        ValheimNativeControl.Build26266951PlatformSha256 }
+                };
+                foreach (string[] profile in profiles)
+                {
+                    AssertProfile(profile, true);
+                    foreach (string[] other in profiles)
+                        for (int field = 0; field < 3; field++)
+                            if (profile[field] != other[field])
+                            {
+                                string[] mixed = (string[])profile.Clone();
+                                mixed[field] = other[field];
+                                AssertProfile(mixed, false);
+                            }
+                    for (int field = 0; field < 3; field++)
+                        foreach (string unknown in new[] { "", new string('f', 64) })
+                        {
+                            string[] changed = (string[])profile.Clone();
+                            changed[field] = unknown;
+                            AssertProfile(changed, false);
+                        }
+                }
             });
             ControlTests.Test("same-object session and current native platform identity", delegate {
                 FakePeer peer = Peer("76561198000000001");

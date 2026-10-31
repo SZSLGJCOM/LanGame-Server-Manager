@@ -313,8 +313,11 @@ def verify_ledger(records: list[dict[str, Any]]) -> list[str]:
         (MODULE_ROOT / "config-sources.toml").read_text(encoding="utf-8-sig")
     )
     failures: list[str] = []
-    if ledger.get("status") != "download_verified_requires_elevation":
-        failures.append("SCUM provenance status must preserve requires-elevation evidence")
+    if ledger.get("status") != "best_effort_verified":
+        failures.append(
+            "SCUM current provenance must remain best-effort; runtime probes do not "
+            "reverify historical configuration defaults"
+        )
     items = ledger.get("items", [])
     server_items = {
         item.get("key"): item

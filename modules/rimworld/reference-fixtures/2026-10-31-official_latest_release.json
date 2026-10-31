@@ -1,0 +1,28 @@
+{
+  "schema_version": 1,
+  "module_id": "rimworld",
+  "classification": "official_release_metadata_recheck",
+  "observed_utc": "2026-10-31 05:34:48 UTC",
+  "query_url": "https://api.github.com/repos/RimWorld-Together/Rimworld-Together/releases/latest",
+  "source_tool": "GitHub connector fetch, successful official latest release response",
+  "release": {
+    "id": 419533326,
+    "tag_name": "26.10.20.1_(1)",
+    "published_at": "2026-10-21T12:32:55Z",
+    "draft": false,
+    "prerelease": false,
+    "html_url": "https://github.com/RimWorld-Together/Rimworld-Together/releases/tag/26.10.20.1_(1)"
+  },
+  "windows_server_asset": {
+    "id": 662445034,
+    "name": "Server-win-x64.zip",
+    "size_bytes": 31766123,
+    "digest": "sha256:ebffcd587bac87405d8d5f2e671d8fce0d5db3a0872a3d14699395ece512790d",
+    "url": "https://github.com/RimWorld-Together/Rimworld-Together/releases/download/26.10.20.1_%281%29/Server-win-x64.zip"
+  },
+  "matches_managed_native_guard_version": true,
+  "scope_limits": [
+    "Metadata recheck only; this fetch did not download or run the archive.",
+    "The separate 2026-10-31 managed native fixture covers two no-client rejection/normal-stop cycles, not client joins or saved-world persistence."
+  ]
+}

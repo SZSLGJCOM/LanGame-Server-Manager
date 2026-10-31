@@ -8,6 +8,7 @@ import type { InstanceDetails, InstanceProvisioning, ModuleDetails } from "../..
 import { ScumCustomZonesRenderer } from "../../src/views/settings/ScumCustomZonesRenderer";
 import "../../src/app.css";
 import "../../src/views/settings/scum-settings.css";
+import { ConfigurationActivityHost } from "./configuration-activity-host";
 
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
 localStorage.setItem("langame.locale", "zh-CN");
@@ -34,10 +35,10 @@ async function until(condition: () => boolean) {
   }
 }
 async function render() {
-  await act(async () => { root.render(<I18nProvider><main className="configuration-workspace" style={{ padding: 24 }}>
+  await act(async () => { root.render(<I18nProvider><ConfigurationActivityHost><main className="configuration-workspace" style={{ padding: 24 }}>
     <ScumCustomZonesRenderer sectionId="custom-zones" details={details} moduleDetails={descriptor}
       settings={{}} disabled={false} onPatch={() => { throw new Error("Zone changes cannot use ordinary settings saves"); }} />
-  </main></I18nProvider>); });
+  </main></ConfigurationActivityHost></I18nProvider>); });
 }
 async function change(key: string, value: string) {
   await act(async () => { const node = field(key); node.value = value; node.dispatchEvent(new Event("change", { bubbles: true })); });
@@ -66,6 +67,8 @@ async function run() {
   await writeScumCustomZoneDamage(buildScumCustomZoneDamageInput(after, after.configurations[1], { melee: "allow", melee_weapon: "block", projectile: "allow" }));
   await click("备份并保存区域规则"); await until(() => !!host.querySelector('[role="alert"]'));
   check(field("projectile").value === "block", "Rejected save must retain the draft");
+  check(!host.querySelector(".scum-custom-zones [role=alert]") && host.querySelector(".shell-activity-bar [role=alert]"),
+    "Rejected saves appear in activity without moving zone controls");
   await click("放弃修改并重新读取"); await until(() => !!field("projectile") && field("projectile").value === "allow");
   cases.push("stale revision rejection and explicit discard/reload");
   details = { ...details, summary: { ...details.summary, status: "Running", active_process_count: 1 } };

@@ -1,0 +1,90 @@
+{
+  "schema_version": 1,
+  "module_id": "dontstarve",
+  "observed_on": "2026-10-31",
+  "steam_build_id": "26335402",
+  "game_version": "761239",
+  "evidence_classification": "native_ini_serialization_capture_and_failed_test_oracle_diagnosis",
+  "main_instance_only": true,
+  "retirement_peer_excluded": true,
+  "capture_index_sha256": "ffaa5aa6cb4f93d33da598abf36e4526c1d8d5126acf50b9d0cf9f2da07a2cde",
+  "source_identity_sha256": "35dad74ce3f62c87c35eb2a1d8db7ac258eac26a759d3d3a9e0a7b2525fbd9c0",
+  "test_binary_sha256": "1e753f3091f46fa40239404f19fcfacf4d98abdec35c3daa80d41c9d3deda2ab",
+  "diagnostic": {
+    "status": "failed",
+    "exit_code": 101,
+    "started_utc": "2026-10-31T06:08:22.467547+00:00",
+    "completed_utc": "2026-10-31T06:12:24.875434+00:00",
+    "cleanup_failures": [],
+    "result_sha256": "49e2775b04c953b81150b25a5c98118c7d59672702af8a4587d94a2e00a93ebf",
+    "log_sha256": "3809025659df4b353bf3fc24d9c2a52980cd77655c2cd82f2e952656cbdb6c2f"
+  },
+  "samples": {
+    "Master": {
+      "manager": {
+        "utf8": "[NETWORK]\nserver_port = 10999\n\n[SHARD]\nis_master = true\nname = Master\n\n[STEAM]\nmaster_server_port = 27016\nauthentication_port = 8766\n",
+        "size_bytes": 133,
+        "sha256": "9775863805af42267bf3c3502439951a1b50daedfe0c8c1b47ba7dc2100b8366",
+        "captured_utc": "2026-10-31T06:08:36.515758+00:00",
+        "last_observed_phase": "NATIVE_LIFECYCLE module=dontstarve phase=package_copy bytes=4663038509 elapsed_ms=8568 acquisition=existing_local_package creation_scope=storage source_provenance=unverified"
+      },
+      "live": {
+        "utf8": "[NETWORK]\r\nserver_port = 10999\r\n\r\n\r\n[SHARD]\r\nis_master = true\r\nname = Master\r\n\r\n\r\n[STEAM]\r\nmaster_server_port = 27016\r\nauthentication_port = 8766\r\n\r\n\r\n[ACCOUNT]\r\nencode_user_path = true\r\n",
+        "size_bytes": 187,
+        "sha256": "32355e569f6a478488f6a25ff6364ea89eddb75014d927d2b2b0525c45d6b5f2",
+        "captured_utc": "2026-10-31T06:10:49.929528+00:00",
+        "last_observed_phase": "NATIVE_LIFECYCLE module=dontstarve phase=permanent_delete library=installed peer=preserved owned_files=removed"
+      },
+      "stopped_native": {
+        "utf8": "[NETWORK]\r\nserver_port = 10999\r\n\r\n\r\n[SHARD]\r\nis_master = true\r\nname = Master\r\n\r\n\r\n[STEAM]\r\nmaster_server_port = 27016\r\nauthentication_port = 8766\r\n",
+        "size_bytes": 147,
+        "sha256": "40fa32a342e8e1d592c164d3c8c7f8d8d7c97f78643cc4aa51f41097198d4474",
+        "captured_utc": "2026-10-31T06:12:20.864140+00:00",
+        "last_observed_phase": "NATIVE_LIFECYCLE module=dontstarve phase=native_ready cycle=restart declared_probes=passed variant=offline_lan"
+      }
+    },
+    "Caves": {
+      "manager": {
+        "utf8": "[NETWORK]\nserver_port = 11000\n\n[SHARD]\nis_master = false\nname = Caves\nid = 2082888042\n\n[STEAM]\nmaster_server_port = 27017\nauthentication_port = 8767\n",
+        "size_bytes": 149,
+        "sha256": "11c5f7058bcb2080a3cf75cdc011d5c3ce65d30d91daf18d5f6b852fd797a720",
+        "captured_utc": "2026-10-31T06:08:36.513703+00:00",
+        "last_observed_phase": "NATIVE_LIFECYCLE module=dontstarve phase=package_copy bytes=4663038509 elapsed_ms=8568 acquisition=existing_local_package creation_scope=storage source_provenance=unverified"
+      },
+      "live": {
+        "utf8": "[NETWORK]\r\nserver_port = 11000\r\n\r\n\r\n[SHARD]\r\nis_master = false\r\nname = Caves\r\nid = 2082888042\r\n\r\n\r\n[STEAM]\r\nmaster_server_port = 27017\r\nauthentication_port = 8767\r\n\r\n\r\n[ACCOUNT]\r\nencode_user_path = true\r\n",
+        "size_bytes": 204,
+        "sha256": "fe893d27c4fdc351b858016635607dfb7999f100c0d6f3bab7b915d000227561",
+        "captured_utc": "2026-10-31T06:10:40.747135+00:00",
+        "last_observed_phase": "NATIVE_LIFECYCLE module=dontstarve phase=permanent_delete library=installed peer=preserved owned_files=removed"
+      },
+      "stopped_native": {
+        "utf8": "[NETWORK]\r\nserver_port = 11000\r\n\r\n\r\n[SHARD]\r\nis_master = false\r\nname = Caves\r\nid = 2082888042\r\n\r\n\r\n[STEAM]\r\nmaster_server_port = 27017\r\nauthentication_port = 8767\r\n",
+        "size_bytes": 164,
+        "sha256": "f4402efc10aab0fc965af67608b2884d0cddf9b3ca629237b471487d99e5571c",
+        "captured_utc": "2026-10-31T06:12:20.455379+00:00",
+        "last_observed_phase": "NATIVE_LIFECYCLE module=dontstarve phase=native_ready cycle=restart declared_probes=passed variant=offline_lan"
+      }
+    },
+    "Islands": {
+      "manager": {
+        "utf8": "[NETWORK]\nserver_port = 11001\n\n[SHARD]\nis_master = false\nname = Islands\nid = 3\n\n[STEAM]\nmaster_server_port = 27018\nauthentication_port = 8768\n",
+        "size_bytes": 142,
+        "sha256": "c2f14b0b5467263a8b43156d6294c75a71e622f62e082f6f6bdf0ea8cb1cba96",
+        "captured_utc": "2026-10-31T06:08:36.514656+00:00",
+        "last_observed_phase": "NATIVE_LIFECYCLE module=dontstarve phase=package_copy bytes=4663038509 elapsed_ms=8568 acquisition=existing_local_package creation_scope=storage source_provenance=unverified"
+      }
+    },
+    "Volcano": {
+      "manager": {
+        "utf8": "[NETWORK]\nserver_port = 11002\n\n[SHARD]\nis_master = false\nname = Volcano\nid = 4\n\n[STEAM]\nmaster_server_port = 27019\nauthentication_port = 8769\n",
+        "size_bytes": 142,
+        "sha256": "2cdd34949caca7303f9fa24292cbbcb144b5c9d2f30e8d2f60136cfa3aff7cb8",
+        "captured_utc": "2026-10-31T06:08:36.516582+00:00",
+        "last_observed_phase": "NATIVE_LIFECYCLE module=dontstarve phase=package_copy bytes=4663038509 elapsed_ms=8568 acquisition=existing_local_package creation_scope=storage source_provenance=unverified"
+      }
+    }
+  },
+  "diagnosis": "Stopped Master/Caves retain all managed field bytes, use CRLF, and add one blank line before each of the SHARD and STEAM sections. Live variants additionally contain ACCOUNT/encode_user_path=true; this temporary section is absent from the stopped samples and is not accepted by the backup oracle. Islands/Volcano were not started and retain their manager bytes.",
+  "scope": "This capture belongs to another failed full-lifecycle run of unchanged build10. It establishes the exact native INI serialization difference, not successful backup/archive acceptance, causal save durability or clients. The test oracle requires the exact pre-start manager bytes after restoration and accepts only manager bytes or the proven stopped-native form before restoration."
+}

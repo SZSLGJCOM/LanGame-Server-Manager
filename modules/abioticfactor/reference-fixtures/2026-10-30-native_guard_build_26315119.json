@@ -1,0 +1,80 @@
+{
+  "schema_version": 1,
+  "module_id": "abioticfactor",
+  "evidence_classification": "isolated_standalone_native_guard",
+  "verified_on": "2026-10-30",
+  "steam_build_id": "26315119",
+  "game_version": "1.5.0.31836",
+  "engine_version": "5.4.4-1050002+++DF+ABF",
+  "executable_sha256": "de8b4bdaee7a21f56b6f55bc1cc37e97e34c4c1b8649672635b876220f7a935d",
+  "static_contract_fixture": "2026-10-30-save_factory_build_26315119.json",
+  "environment": "Ordinary-permission Windows host, fresh task-owned copy of the official package, hidden private console and process job, loopback game binding, LAN-only listing, ephemeral join password and task-owned environment profile. No existing instance or save was used.",
+  "package_copy": {
+    "verified_runtime_file_count": 36,
+    "verified_runtime_bytes": 1580392533,
+    "omitted": ["Steam acquisition metadata", "PDB debug symbols"],
+    "source_and_copied_runtime_files_unchanged_after_both_cycles": true
+  },
+  "loader": {
+    "version": "3.0.1-1125-g527a483b",
+    "archive_sha256": "4f9762f812329a640c8cfa14444c2bb97ecc213b8320bd4c5433383c3eef48f7",
+    "core_sha256": "91d5444f41d19d0bb502f0fbdc15d76421e20359e898caa39e41e134c8f87958",
+    "proxy_name": "version.dll",
+    "proxy_sha256": "d4ea52e1629d3057eaf2a5bfd5525213783bcf2c97d12aa876130207015154d9",
+    "proxy_source_manifest_sha256": "7d2a03749c570614b0fb88705c0d89b4134ff608e6affb6be7d639fa307b2f35",
+    "proxy_provenance": "Existing build_unreal_loader_proxies.ps1 built the fixed 32-file source manifest in an independent output directory; each source SHA-256 and Git blob identity was checked."
+  },
+  "payload": {
+    "assembly": "Unmodified production game policy bytes, one LF, then unmodified production unreal_save_protocol.lua bytes",
+    "policy_sha256": "4554a7ca76dd3e267b300c832ab60238c4b074bb7ec92096ef859f13fddd125c",
+    "protocol_sha256": "63cbe84f36fc8fcdf83bb72c76da2962d7641b1c43ad27fcfab961a93979d6b4",
+    "settings_sha256": "0846fe6df6b3e0e674de6880806ba7602c6ca3ca8af7697e4cbf94ae88acf750",
+    "assembled_sha256": "7ae986f6969e4ce2304e96a7febbc80e5dc24943d5e607a82395dc491dd7950a",
+    "unchanged_after_both_cycles": true
+  },
+  "cycles": [
+    {
+      "cycle": "initial",
+      "started_at": "2026-10-30T14:04:12Z",
+      "completed_at": "2026-10-30T14:04:24Z",
+      "native_session_ready": true,
+      "save_extension_loaded": true,
+      "probe_error": "world_unavailable",
+      "ready": false,
+      "invoked": false,
+      "call_returned": false,
+      "write_confirmed": false,
+      "save_request_sent": false,
+      "normal_ctrl_c_stop_exit_code": 0,
+      "forced_cleanup": false
+    },
+    {
+      "cycle": "restart",
+      "started_at": "2026-10-30T14:04:24Z",
+      "completed_at": "2026-10-30T14:04:34Z",
+      "native_session_ready": true,
+      "save_extension_loaded": true,
+      "probe_error": "world_unavailable",
+      "ready": false,
+      "invoked": false,
+      "call_returned": false,
+      "write_confirmed": false,
+      "save_request_sent": false,
+      "normal_ctrl_c_stop_exit_code": 0,
+      "forced_cleanup": false
+    }
+  ],
+  "observed": {
+    "fresh_launch_and_boot_identity_each_cycle": true,
+    "receipt_bound_to_current_request_and_launch": true,
+    "owned_processes_after_stop": 0,
+    "test_ports_after_stop": 0,
+    "production_image_admission_changed_for_probe": false
+  },
+  "evidence": {
+    "probe_script_sha256": "1ffe64c961b3736b0fa8fb72045dbc3122200823a50edc4dabe1f54051f1c6a5",
+    "result_sha256": "b219b5b7aa7095c748b88a5e40827c8eb6316f52c4c617ec7c2aa7af949896de",
+    "proof_inventory_sha256": "cfe92b6098b8bacc9ca357e4baebe522ca4e48eaf5e5436afb17165eaa76aaa7"
+  },
+  "scope": "Two standalone native startup/no-client readiness-rejection/normal-stop cycles using unchanged production Lua and fixed UE4SS. Only saveprobe was published, with current launch/request binding and all ready/invocation/write flags false. No world readiness was forced and no save frame was sent. This does not exercise the managed host dispatch or establish a ready-world save, durable persistence, client join or official Mod behavior."
+}

@@ -1,6 +1,21 @@
 status = "exhaustive_verified"
 last_verified = "2026-09-28"
-notes = "Mojang's version_manifest_v2.json resolves latest.release to 26.2, released 2026-06-16. Its version document identifies the formal server.jar as SHA1 823e2250d24b3ddac457a60c92a6a941943fcd6a (60894273 bytes) and requires Java 25. A clean launch with that exact artifact and a Temurin Java 25 runtime generated the 69-key upstream server.properties crosswalk used here. The 26.2 surface adds code-of-conduct, status heartbeat, management-server, spam-threshold, and text-filtering-version properties, and no longer emits the former allow-nether, pvp, command-block, spawn, or debug properties. LanGame replaces the native empty rcon.password default with one persisted 122-bit random secret per instance so the declared RCON command surface is immediately safe to enable. extra_properties remains available for future vanilla or fork-specific keys. On 2026-09-28 the live Mojang manifest resolves stable release 26.3 (2026-09-15); its official release notes change white-list to true by default. New instances follow that default; persisted explicit false remains false. The 69-key first-launch reference remains the historical 26.2 package probe, not a claimed 26.3 live-server run."
+notes = "The 2026-07-13 Mojang version_manifest_v2.json probe resolved latest.release to 26.2, released 2026-06-16. Its version document identifies the formal server.jar as SHA1 823e2250d24b3ddac457a60c92a6a941943fcd6a (60894273 bytes) and requires Java 25. A clean launch with that exact artifact and a Temurin Java 25 runtime generated the 69-key upstream server.properties crosswalk used here. The 26.2 surface adds code-of-conduct, status heartbeat, management-server, spam-threshold, and text-filtering-version properties, and no longer emits the former allow-nether, pvp, command-block, spawn, or debug properties. LanGame replaces the native empty rcon.password default with one persisted 122-bit random secret per instance so the declared RCON command surface is immediately safe to enable. extra_properties remains available for future vanilla or fork-specific keys. On 2026-09-28 the live Mojang manifest resolves stable release 26.3 (2026-09-15); its official release notes change white-list to true by default. New instances follow that default; persisted explicit false remains false. The 69-key first-launch reference remains the historical 26.2 package probe, not a claimed 26.3 live-server run."
+
+[[sources]]
+id = "managed_native_manual_save_20261031"
+kind = "runtime_probe"
+path = "reference-fixtures/2026-10-31-managed_native_manual_save.json"
+authority = "compiled_manager_backend_with_isolated_retained_package"
+description = "2026-10-31 Asia/Shanghai: the immutable manager backend completed native_manual_save acceptance against 26.3, with two isolated managed runs, declared native readiness, normal exits and owned cleanup. Formal save receipt status remains requested. This run does not claim exact saved-content readback. This is manual-save/two-cycle start-stop scope, not full backup/restore/uninstall acceptance, GUI or client gameplay."
+
+[[sources]]
+id = "package_identity_review_20261031"
+kind = "documentation"
+path = "Mojang version_manifest_v2.json; server.jar!/META-INF/versions/26.3/server-26.3.jar!/net/minecraft/server/dedicated/DedicatedServerProperties.class"
+authority = "first_party_release_metadata_and_read_only_retained_package_identity"
+url = "https://www.minecraft.net/en-us/article/minecraft-java-edition-26-3"
+description = "2026-10-31 read-only review: the live Mojang manifest reports stable 26.3, released 2026-09-15 19:23:02 Asia/Shanghai; 26.4-snapshot-6 remains a snapshot. Official version metadata requires Java 25 and server.jar SHA1 33680f5f2ac32864d6d7cf5e56a705fdb3e05f4c. The retained jar matches that SHA1 and has SHA256 d052f14d7a173734fba553711e5b570162e2f2a313267ee31a21b975a679be64; embedded version.json identifies 26.3 and Java 25. Its retained JRE release file identifies Temurin 25.0.4.1+1-LTS. DedicatedServerProperties.class SHA256 3c2fd6cd3d9004dd01226321167db2b1de19cf4c41849a3b661d082796d9f336 contains all 69 historical reference property keys as string constants; this proves static presence, not regenerated defaults or runtime behavior. The already implemented white-list=true default matches the release notes. Removed log messages and management protocol 3.1.0 require runtime verification of affected consumers; no new launch, RCON, query or save result is claimed."
 
 [[sources]]
 id = "mojang_manifest_release_26_2"

@@ -1,0 +1,284 @@
+{
+  "schema_version": 1,
+  "module_id": "satisfactory",
+  "verified_on": "2026-10-31",
+  "verification_timezone": "Asia/Shanghai",
+  "evidence_classification": "isolated_managed_native_two_concurrent_worlds_with_restart",
+  "status": "passed",
+  "package_identity": {
+    "steam_app_id": 1690800,
+    "public_build_id": "25782485",
+    "game_version": "1.2.4.1",
+    "changelist": 513885,
+    "classification": "existing_manifest_identified_local_package",
+    "appmanifest_sha256": "7ea895a5ffd153a3eacdac0b8d820ff2cf95db280f40e358a6a1da47907d4192",
+    "source_bytes": 15537487195,
+    "source_mods_directory_present": false,
+    "public_branch_updated_utc": "2026-10-12T14:36:24+00:00",
+    "public_metadata_sha256": "59cf844a74d07a620c499079cf9d676b3c6a2a64941cdf4721593010f915966b",
+    "identity_files": [
+      {
+        "path": "FactoryServer.exe",
+        "size": 217112,
+        "sha256": "15151afb81cf0e7217bd5ae36fd7d3b6efca6c335b61327f44e8c2c92d34c4e7"
+      },
+      {
+        "path": "Engine/Binaries/Win64/FactoryServer-Win64-Shipping-Cmd.exe",
+        "size": 231424,
+        "sha256": "98c44cca4a152e332970462fab74677b8bc24ea299c553df53d7c99165619a8a"
+      },
+      {
+        "path": "Engine/Binaries/Win64/FactoryServer-Win64-Shipping.version",
+        "size": 279,
+        "sha256": "183ce866e78cdf3f88d1cdb92ed2770d26ddba62a9ef2bfb72ab47895213af30"
+      },
+      {
+        "path": "Engine/Binaries/Win64/FactoryServer-Win64-Shipping.modules",
+        "size": 11892,
+        "sha256": "dd1e0af821b350260b00d99efbfcb58aa48777a071fd0cb8b302f98dfc446f6d"
+      },
+      {
+        "path": "FactoryGame/Binaries/Win64/FactoryServer-FactoryGame-Win64-Shipping.dll",
+        "size": 27256840,
+        "sha256": "0b70e32067b6939688d22d1a8f138fbcb4ce0d0e10ad6799bbf4e92ba4a209fd"
+      },
+      {
+        "path": "Manifest_NonUFSFiles_Win64.txt",
+        "size": 57822,
+        "sha256": "ddef5c51759a7998b6f6c132cc91ce276f91b5c9ebd4140a3415bda4647f7052"
+      },
+      {
+        "path": "Manifest_UFSFiles_Win64.txt",
+        "size": 3828381,
+        "sha256": "574a956b90c3afd3b90e42892cd122a11f55cddec4e4ce18e9d961c83bb4c44c"
+      }
+    ],
+    "scope": "The installed manifest and native version identify the supplied current public package. Selected executable/version/content-manifest files were rehashed; this is not a complete base-package content inventory or a network update test."
+  },
+  "tested_source": {
+    "git_revision": "d58857d32d668a3661261b96134145c6911357a4",
+    "working_tree_clean": false,
+    "source_identity_sha256": "35dad74ce3f62c87c35eb2a1d8db7ac258eac26a759d3d3a9e0a7b2525fbd9c0",
+    "source_manifest_sha256": "6861ecdd844571eae79418b76e1197c8e21fb32b922ad9c297240924351c7a0b",
+    "build_receipt": {
+      "artifact": "native-build-10.json",
+      "sha256": "1ed7707e4c6749693b1611dc6792d7bb994fcc95cfedec3c8b91d50290c503ff"
+    },
+    "test_binary": {
+      "artifact": "langame_desktop-cc643bc7d723c665.exe",
+      "size": 193416704,
+      "sha256": "1e753f3091f46fa40239404f19fcfacf4d98abdec35c3daa80d41c9d3deda2ab"
+    },
+    "relevant_files": [
+      {
+        "path": "apps/desktop/src-tauri/src/commands_native_inventory.rs",
+        "length": 5277,
+        "sha256": "00e60befec03d8ddc75805943c643e444127dc45c2ea22baa0cfa3ed261cb61e"
+      },
+      {
+        "path": "apps/desktop/src-tauri/src/commands_native_lifecycle_tests.rs",
+        "length": 47568,
+        "sha256": "8f29ef63ef049647e085cb52061f4133f30df776dbe9d6ef441026066b846b8f"
+      },
+      {
+        "path": "apps/desktop/src-tauri/src/commands_native_multi_instance.rs",
+        "length": 8017,
+        "sha256": "c82de7b5331681163d2d80a7ca875ec8a28ffaf2b9f309e2771d435fd7e3eac2"
+      },
+      {
+        "path": "apps/desktop/src-tauri/src/commands_native_satisfactory_isolation.rs",
+        "length": 14604,
+        "sha256": "eccff66167d1a149e25461427a4f366aab20675a4871f81d1fa4e3b60d659718"
+      },
+      {
+        "path": "apps/desktop/src-tauri/src/commands_native_satisfactory_isolation_api.rs",
+        "length": 5815,
+        "sha256": "727c478d8f4d913dfd232f8536846938ce18cef8efe470509dc72e472496abe5"
+      },
+      {
+        "path": "apps/desktop/src-tauri/src/commands_native_satisfactory_world.rs",
+        "length": 23185,
+        "sha256": "e9c5d80971f520615070752e16824586d740db652343b9b4c15e80f1463aed73"
+      },
+      {
+        "path": "apps/desktop/src-tauri/src/satisfactory_world_api.rs",
+        "length": 14751,
+        "sha256": "a21c815773582149bf3e9ceaab8036a8276dd95fe647055cbee11b549522e759"
+      },
+      {
+        "path": "apps/desktop/src-tauri/src/satisfactory_world_credentials.rs",
+        "length": 2801,
+        "sha256": "b209eb3fb2564ba32f3d4094048bdb03a08f04bfacf6c66afdccbf60b6f0930f"
+      },
+      {
+        "path": "apps/desktop/src-tauri/src/satisfactory_world_service.rs",
+        "length": 23299,
+        "sha256": "fcd18fb93ee7bc622625c79a1a514b59aa53314ac76c1d3d17b95f136835e0d6"
+      },
+      {
+        "path": "modules/satisfactory/module.toml",
+        "length": 4378,
+        "sha256": "0be8d32699470322226d20c1295c4781c64ba973f7b633269ae5750ea2f25c82"
+      },
+      {
+        "path": "modules/satisfactory/schema.json",
+        "length": 11379,
+        "sha256": "d600ad5718c8d3d06f4638b0729edbc10bb70c661abece9aa73a39a519c3f05c"
+      },
+      {
+        "path": "modules/satisfactory/smoke.toml",
+        "length": 699,
+        "sha256": "65fa802a919b126e99ef283364e5af9746d01bf6ea7271053ec8cb3ac729ab85"
+      },
+      {
+        "path": "modules/satisfactory/templates/Engine.ini.hbs",
+        "length": 980,
+        "sha256": "f4b0dc99c5915355063230e0a4ff429ea687ae24c85726321dba774dbe283a75"
+      },
+      {
+        "path": "modules/satisfactory/templates/Game.ini.hbs",
+        "length": 133,
+        "sha256": "b3a3b35b484f6a47b0b2bb2fefe270eb0d2715ceaf0ac32e613a12c9d27272f5"
+      }
+    ],
+    "reuse_condition": "The listed test helpers, production world/API/credential files and module/schema/templates match the actual immutable build10 source manifest. Later evidence-only edits do not extend coverage; later relevant behavior changes require affected checks to be rerun."
+  },
+  "invocation": {
+    "selector": "commands::tests::manual_runtime_tests::native_lifecycle_tests::native_satisfactory_instance_isolation",
+    "arguments": [
+      "--exact",
+      "--ignored",
+      "--test-threads=1",
+      "--nocapture"
+    ],
+    "external_settings_override": null,
+    "scope_owned_settings": {
+      "program_update": {
+        "policy": "pinned"
+      },
+      "auto_pause_when_empty": true,
+      "allow_insecure_local_api": false
+    },
+    "environment": {
+      "LANGAME_NATIVE_MODULE_ID": "satisfactory",
+      "LANGAME_NATIVE_PACKAGE_ROOT": "<manifest-identified-unmodified-package>",
+      "LANGAME_SMOKE_SOURCE_ROOT": "<matching-build10-source-snapshot>",
+      "LANGAME_SMOKE_RUNTIME_ROOT": "<owned-isolated-runtime>",
+      "LANGAME_NATIVE_STEAMCMD_ROOT": "<task-steamcmd-root>",
+      "LANGAME_NATIVE_MANUAL_SAVE": "true",
+      "LANGAME_NATIVE_MANUAL_SAVE_RESTART": "true",
+      "LANGAME_NATIVE_ACQUISITION": "local_package",
+      "LANGAME_NATIVE_INSTANCE_MODE": "independent_pair",
+      "LANGAME_NATIVE_OBSERVE_SECONDS": "0"
+    },
+    "started_utc": "2026-10-31T06:00:36.592879+00:00",
+    "completed_utc": "2026-10-31T06:08:18.251206+00:00",
+    "duration_seconds": 461.6,
+    "exit_code": 0,
+    "ports_preflight": "clear",
+    "run_report": {
+      "artifact": "satisfactory-isolated-native.json",
+      "sha256": "94da9157d8f8900e38700fd40858b2aca8f72c416a684bfc04d8767df9290586"
+    },
+    "log": {
+      "path": "2026-10-31-build-25782485-isolation-native-output.txt",
+      "size": 5181,
+      "sha256": "16022463a5213da06aa4846b73132c8c94c3bdfaa1c23ba3712deb7c3f2ab164"
+    }
+  },
+  "observations": {
+    "instances": 2,
+    "distinct_worlds": 2,
+    "cycles_each": [
+      "initial",
+      "restart"
+    ],
+    "owned_program_config_save_paths_and_bound_ports": "isolated",
+    "readiness": "Four starts returned only after declared native readiness and owned-process checks. Dedicated HTTPS observations verified each unique no-client world.",
+    "world_loads": 4,
+    "concurrent_primary_cycles": {
+      "count": 2,
+      "peer_run": "unchanged",
+      "peer_https_world": "unchanged",
+      "peer_manual_save_family": "unchanged",
+      "peer_stable_configuration": "unchanged",
+      "credentials": "distinct",
+      "cross_token_EnumerateSessions_reads": "rejected_in_both_directions"
+    },
+    "credential_isolation": {
+      "namespaces_distinct": true,
+      "administrator_passwords_distinct": true,
+      "api_tokens_distinct": true,
+      "fingerprints_stable_across_own_restart": true,
+      "secret_or_fingerprint_values_exported": false
+    },
+    "file_observation": {
+      "stable_configuration_files": [
+        "config/instance.json",
+        "data/Saved/Config/WindowsServer/Engine.ini",
+        "data/Saved/Config/WindowsServer/Game.ini",
+        "data/Saved/Config/WindowsServer/GameUserSettings.ini"
+      ],
+      "save_scope": "Each uniquely named LGSM_manual_save_* checkpoint and its exact filename family; the corresponding native .sav must exist.",
+      "comparison": "Relative/owned path plus byte length and bounded DefaultHasher 64-bit content fingerprint, using the existing native file-inventory helper.",
+      "stopped_baseline": "Captured after each instance completes its own normal shutdown, allowing its legitimate native INI writes.",
+      "excluded_mutable_state": [
+        "automatic saves",
+        "runtime logs",
+        "certificate/session-authentication files",
+        "live snapshot revision and play clock"
+      ],
+      "auto_pause_readback_verified": true
+    },
+    "restart": {
+      "fresh_run_ids": true,
+      "primary_retains_own_manual_save_family": true,
+      "peer_loads_own_existing_unique_manual_checkpoint": true,
+      "primary_stopped_configuration_save_family_and_credentials": "unchanged_during_peer_stop_restart_save_stop",
+      "player_content_readback": "not_claimed"
+    },
+    "manual_save": {
+      "receipt_count": 4,
+      "completion": "Confirmed",
+      "response_bytes_each": 152,
+      "attempted_once": true,
+      "retried": false,
+      "route": "managed_process_generation",
+      "current_instance_run_session_and_managed_process_generation_verified": true,
+      "write_confirmation_pending": false,
+      "durable_write": "not_assessed",
+      "exact_player_world_content_readback": "not_assessed"
+    },
+    "normal_stop": {
+      "count": 4,
+      "distinct_managed_run_ids": 4,
+      "production_stop_path": "passed",
+      "persisted_run_and_process_crash_flags": false,
+      "pending_start_active_run_and_supervisor_tracking": "cleared",
+      "raw_process_exit_codes": "not_emitted_by_this_selector"
+    },
+    "credential_cleanup": {
+      "owned_namespaces": 2,
+      "outcome": "passed",
+      "absence_confirmed": true
+    },
+    "final_cleanup": {
+      "owned_processes": "passed",
+      "credentials": "passed",
+      "disposable_fixture_removal": "passed",
+      "reported_failures": []
+    }
+  },
+  "related_evidence": {
+    "failed_first_attempt": "2026-10-31-isolation-build-25782485-first-attempt.json",
+    "separate_single_instance_mod_acceptance": "2026-10-31-build-25782485-frm-native.json"
+  },
+  "scope_limits": [
+    "This is the dedicated two-instance isolation test with no Mods and no clients. It proves actual simultaneous owned worlds, port/config/save/credential separation, cross-token rejection, independent restarts and owned cleanup.",
+    "Confirmed is the production native HTTPS save acknowledgement. Loading the unique previously named manual checkpoint and retaining its file family does not establish exact gameplay contents, all in-memory state or power-loss durability.",
+    "File comparison intentionally covers the stable configuration and actual manual-save families; normal autosaves, logs, certificates and session-authentication changes are excluded. Their exclusion is not evidence that such mutable files never change.",
+    "The test did not cover the full backup/restore/uninstall/archive lifecycle, network installation/update/repair, GUI, real-client joins, populated player behavior or user-world migration.",
+    "SML/FRM functionality is established only by the separately recorded single-instance build04 run. This no-Mod pair does not establish concurrent FRM listeners or product Mod installation.",
+    "The earlier build04 isolation attempt remains failed_cleanup with independently recorded recovery. This later build10 success does not rewrite that original result. The successful cleanup path does not alone reproduce the earlier failed-start cleanup branch."
+  ]
+}
