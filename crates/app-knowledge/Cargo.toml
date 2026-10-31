@@ -7,7 +7,7 @@ rust-version.workspace = true
 
 [dependencies]
 app-network = { path = "../app-network" }
-ort = { version = "=2.0.0-rc.14", default-features = false, features = ["std", "alternative-backend", "api-28"] }
+ort = { version = "=2.0.0-rc.15", default-features = false, features = ["std", "alternative-backend", "api-28"] }
 dom_query = "=0.28.0"
 http = "1.5.0"
 hyper-util = { version = "0.1.21", features = ["client-proxy", "client-proxy-system"] }
