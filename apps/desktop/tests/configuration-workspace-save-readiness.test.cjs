@@ -20,6 +20,7 @@ function captureSaveOptions(moduleDetails, settingsJson = "{}") {
   const load = Module.createRequire(filename);
   let saveOptions;
   loaded.require = (id) => id === "react" ? {
+    useContext: () => undefined,
     useMemo: (factory) => factory(),
     useState: (initial) => [typeof initial === "function" ? initial() : initial, () => {}],
     useRef: (initial) => ({ current: initial }),

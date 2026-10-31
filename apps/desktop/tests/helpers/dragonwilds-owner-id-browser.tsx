@@ -7,6 +7,7 @@ import { InstanceSettingsSaveProvider, useInstanceSettingsSaveCoordinator } from
 import { InstanceSettingsDraftInvalidError } from "../../src/views/settings/instance-settings-save-queue";
 import type { InstanceDetails, ModuleDetails, UpdateInstanceInput } from "../../src/types";
 import { prepareBrowserLocaleCatalogs } from "./browser-locale-catalogs";
+import { ConfigurationActivityHost } from "./configuration-activity-host";
 import "../../src/app.css";
 
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
@@ -92,8 +93,11 @@ async function editAndCheck(name: string, value: string, accepted: boolean) {
     check(JSON.parse(saves.at(-1)!.settings_json).future_setting.retained === true, "Unrelated settings changed");
   } else {
     await until(() => ownerInput().getAttribute("aria-invalid") === "true", `${name}: native length error did not appear`);
-    check(element<HTMLElement>('[data-field-key="owner_id"] .form-note--error').textContent?.includes("32"),
-      `${name}: field error must explain the game limit`);
+    const errorId = ownerInput().getAttribute("aria-errormessage");
+    check(errorId && document.getElementById(errorId)?.textContent?.includes("32"),
+      `${name}: the field's accessible error must explain the game limit`);
+    check(element<HTMLElement>(".shell-activity-viewport .shell-activity-notice.is-error").textContent?.includes("32"),
+      `${name}: the activity notice must explain the game limit`);
     let rejection: unknown;
     await act(async () => {
       try { check(flushSettings, "Settings coordinator is missing"); await flushSettings(); }
@@ -108,7 +112,9 @@ async function run() {
   await act(async () => {
     await prepareBrowserLocaleCatalogs();
     root.render(<StrictMode><I18nProvider><InstanceSettingsSaveProvider>
-      <main className="server-detail-panel" style={{ height: "calc(100vh - 32px)", margin: 16 }}><Workspace /></main>
+      <ConfigurationActivityHost>
+        <main className="server-detail-panel" style={{ height: "calc(100% - 32px)", margin: 16 }}><Workspace /></main>
+      </ConfigurationActivityHost>
     </InstanceSettingsSaveProvider></I18nProvider></StrictMode>);
   });
   await until(() => Boolean(fixture!.querySelector('[data-configuration-section-id="access"] > button')), "Configuration did not mount");

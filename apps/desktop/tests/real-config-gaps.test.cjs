@@ -95,6 +95,12 @@ function parseTomlArrayTables(text, tableName) {
   return tables;
 }
 
+function sourceRecord(ledger, id) {
+  const matches = parseTomlArrayTables(ledger, "sources").filter((source) => source.id === id);
+  assert.equal(matches.length, 1, `expected one provenance record for ${id}`);
+  return matches[0];
+}
+
 test("mod workflow audit reads shared capability catalog and keeps guardrails not_modelled", () => {
   const auditScript = read(path.join(repoRoot, "scripts", "audit_mod_workflows.py"));
   const capability = read(path.join(repoRoot, "apps", "desktop", "src", "views", "servers", "mod-workbench-capability.ts"));
@@ -474,9 +480,11 @@ test("Soulmask current GameXishu gameplay settings are modeled from the installe
 
   assert.match(ledger, /WS\/Config\/GameplaySettings\/GameXishuConfig_Template\.json/);
   assert.match(ledger, /WS\/Saved\/GameplaySettings\/GameXishu\.json/);
-  assert.match(ledger, /last_verified = "2026-09-28"/);
-  assert.match(ledger, /game_xishu_build_25117179/);
-  assert.match(ledger, /same 282 coefficient keys/);
+  const gameplaySource = sourceRecord(ledger, "game_xishu_build_25117179");
+  assert.equal(gameplaySource.kind, "config_file");
+  assert.equal(gameplaySource.authority, "downloaded_steamcmd_server_package");
+  assert.match(gameplaySource.description, /^2026-09-28 read-only comparison/);
+  assert.match(gameplaySource.description, /same 282 coefficient keys/);
   assert.match(ledger, /buildid 24123420/);
   assert.match(ledger, /all 276 keys/);
   assert.match(renderer, /fn materialize_soulmask/);
@@ -629,9 +637,9 @@ test("Satisfactory anonymous dedicated package validate keeps INI materializatio
   assert.match(moduleToml, /args_template\s*=\s*\[\s*"FactoryGame",/);
   assert.match(ledger, /id = "native_console_entry_build_24656085"/);
 
-  assert.match(ledger, /steamcmd_anonymous_app_1690800/);
-  assert.match(ledger, /last_verified = "2026-10-10"/);
-  assert.match(ledger, /id = "production_world_service_acceptance_20261010"/);
+  const packageSource = sourceRecord(ledger, "steamcmd_server_package");
+  assert.equal(packageSource.authority, "steamcmd_anonymous_app_1690800");
+  assert.equal(sourceRecord(ledger, "production_world_service_acceptance_20261010").kind, "runtime_probe");
   assert.match(ledger, /steam_public_build_23855705/);
   assert.match(ledger, /installed_dedicated_server_build_24656085/);
   assert.match(ledger, /native_profile_isolation/);
@@ -1036,15 +1044,18 @@ test("Conan Exiles mod workflow declares Workshop ids and modlist materializatio
 test("Don't Starve Together keeps the current native inventory separate from dated package evidence", () => {
   const ledger = read(path.join(dontStarveRoot, "config-sources.toml"));
   const inventory = JSON.parse(read(path.join(dontStarveRoot, "world-options.json")));
-  const currentPackage = ledger.split("[[sources]]").find((source) =>
-    source.includes('id = "installed_package_world_options"'));
+  const currentSource = sourceRecord(ledger, `world_options_${inventory.gameVersion}_static_review`);
+  const currentPackage = JSON.parse(read(path.join(dontStarveRoot, currentSource.path)));
   const verifiedDate = /^last_verified = "(\d{4}-\d{2}-\d{2})"\r?$/m.exec(ledger)?.[1];
 
-  assert.ok(currentPackage, "the current native inventory has package provenance");
+  assert.equal(currentSource.kind, "documentation");
+  assert.equal(currentPackage.module_id, "dontstarve");
+  assert.equal(currentPackage.evidence_classification, "official_package_static_config_comparison");
   assert.ok(verifiedDate, "package verification has an explicit date");
-  assert.ok(currentPackage.includes(verifiedDate));
-  assert.ok(currentPackage.includes(`game ${inventory.gameVersion}`));
-  assert.ok(currentPackage.includes(`scripts.zip SHA-256 ${inventory.scriptsSha256}`));
+  assert.ok(verifiedDate >= currentPackage.verified_on, "the ledger includes the current inventory review");
+  assert.equal(currentPackage.game_version, inventory.gameVersion);
+  assert.equal(currentPackage.scripts_sha256, inventory.scriptsSha256);
+  assert.equal(sourceRecord(ledger, "installed_package_world_options").kind, "config_file");
   assert.match(ledger, /id = "installed_package_masteroption_inheritance"/);
   assert.match(ledger, /Caves has 86 independent options plus 34 inherited values/);
   assert.match(ledger, /id = "installed_package_location_defaults"/);
@@ -1158,9 +1169,10 @@ test("Palworld official Workshop mods stage and enable through PalModSettings", 
 test("Project Zomboid anonymous package validate records bundled Java launch wrapper", () => {
   const ledger = read(path.join(projectZomboidRoot, "config-sources.toml"));
 
-  assert.match(ledger, /last_verified = "2026-09-28"/);
-  assert.match(ledger, /native_server_options_build_24909836/);
-  assert.match(ledger, /144 option constructors/);
+  const optionSource = sourceRecord(ledger, "native_server_options_build_24909836");
+  assert.equal(optionSource.kind, "config_file");
+  assert.equal(optionSource.path, "java/projectzomboid.jar!/zombie/network/ServerOptions.class");
+  assert.match(optionSource.description, /^2026-09-28: 144 option constructors/);
   assert.match(ledger, /steamcmd_anonymous_app_380870/);
   assert.match(ledger, /Steam public branch and the validated local manifest both report/);
   assert.match(ledger, /TargetBuildID 22695654/);
@@ -1273,12 +1285,14 @@ test("SCUM 1.3.1.1 package and current ServerSettings.ini keys are recorded", ()
   const schema = JSON.parse(read(path.join(scumRoot, "schema.json")));
   const template = read(path.join(scumRoot, "templates", "ServerSettings.ini.hbs"));
 
-  assert.match(ledger, /last_verified = "2026-09-08"/);
-  assert.match(ledger, /steamcmd_anonymous_app_3792580/);
-  assert.match(ledger, /anonymous install validation for SCUM Server build 24107648/);
-  assert.match(ledger, /18,851,870,520 bytes/);
-  assert.match(ledger, /FAE30EDB50B77F09AE9CD318F31816379E7E116A8EF1204109FF1C513FC8BF0D/);
-  assert.match(ledger, /v7, 433 native keys in six sections/);
+  const packageSource = sourceRecord(ledger, "steamcmd_anonymous_app_3792580");
+  assert.equal(packageSource.authority, "steamcmd_anonymous_app_update_validate");
+  assert.match(packageSource.description, /^2026-07-13 anonymous install validation for SCUM Server build 24107648/);
+  assert.match(packageSource.description, /18,851,870,520 bytes/);
+  const settingsSource = sourceRecord(ledger, "generated_current_server_settings");
+  assert.equal(settingsSource.kind, "install_probe");
+  assert.match(settingsSource.description, /FAE30EDB50B77F09AE9CD318F31816379E7E116A8EF1204109FF1C513FC8BF0D/);
+  assert.match(settingsSource.description, /v7, 433 native keys in six sections/);
   assert.match(ledger, /generated_economy_override/);
   assert.match(ledger, /generated_raid_times/);
   assert.match(ledger, /generated_notifications/);

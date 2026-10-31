@@ -304,7 +304,7 @@ test("an incomplete numeric draft survives locale changes and blocks autosave un
   const t = (_key, _params, fallback) => fallback ?? "";
   loaded.filename = filename;
   loaded.require = (id) => id === "react" ? {
-    ...React, useMemo: (compute) => compute(), useLayoutEffect() {},
+    ...React, useContext: () => undefined, useMemo: (compute) => compute(), useLayoutEffect() {},
     useRef(initial) {
       const slot = cursor++;
       if (!(slot in hooks)) hooks[slot] = { current: initial };

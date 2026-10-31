@@ -271,8 +271,15 @@ async function run() {
   await settleUntil(() => Boolean(fixture.querySelector(".ark-creature-spawner")), "ARK spawning did not mount");
   const spawner = element(".ark-creature-spawner");
   const spawnButton = () => element<HTMLButtonElement>('.ark-creature-spawner button[type="submit"]');
+  await act(async () => { element<HTMLElement>(".ark-spawn-options summary").click(); });
+  await act(async () => {
+    const mode = element<HTMLSelectElement>('.ark-spawn-options select[aria-label="生成位置来源"]');
+    Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, "value")!.set!.call(mode, "manual");
+    mode.dispatchEvent(new Event("change", { bubbles: true }));
+  });
   for (const [index, value] of ["100", "200", "300"].entries()) {
     const field = spawner.querySelectorAll<HTMLInputElement>(".ark-creature-spawner__coordinates input")[index];
+    check(field instanceof HTMLInputElement, `Manual coordinate ${index} must be an input`);
     await act(async () => {
       Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!.call(field, value);
       field.dispatchEvent(new Event("input", { bubbles: true }));
