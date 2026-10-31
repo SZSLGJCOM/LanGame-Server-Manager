@@ -64,7 +64,7 @@
     "@typescript/typescript6": "6.0.2",
     "@vitejs/plugin-react": "^6.1.2",
     "typescript": "^7.0.2",
-    "vite": "^8.3.4"
+    "vite": "^8.3.5"
   },
   "allowScripts": {
     "fsevents@2.3.3": false
