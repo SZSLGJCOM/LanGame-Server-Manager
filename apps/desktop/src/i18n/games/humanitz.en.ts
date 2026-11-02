@@ -69,7 +69,7 @@ export const EN_US_HUMANITZ_MESSAGES: MessageCatalog = {
     "settings.schema.humanitz.welcome_message.title":  "Welcome Message",
     "settings.schema.humanitz.welcome_message.description":  "Written to HumanitZServer/WelcomeMessage.txt.",
     "settings.schema.humanitz.reserved_player_steam_ids.title": "Reserved-slot NetIDs",
-    "settings.schema.humanitz.reserved_player_steam_ids.description": "One complete NetID per line, copied from PlayerIDMapped.txt or the Players command, including the | separator. Written to HumanitZServer/F_ReservedSlots.txt. Preserve the complete ID and its letter case. Set ReserveSlots equal to MaxPlayers to limit admission to this list.",
+    "settings.schema.humanitz.reserved_player_steam_ids.description": "One complete NetID per line, copied from PlayerIDMapped.txt or Players: Steam64_+_|ProductUserId, EpicAccountId|ProductUserId or |ProductUserId. Written to HumanitZServer/F_ReservedSlots.txt. Preserve the complete ID, separators and letter case. Set ReserveSlots equal to MaxPlayers to limit admission to this list.",
     "settings.schema.humanitz.on_death_penalty.option.0": "Lose nothing",
     "settings.schema.humanitz.on_death_penalty.option.1": "Lose backpack and held weapon",
     "settings.schema.humanitz.on_death_penalty.option.2": "Also lose pockets and backpack",
@@ -115,7 +115,7 @@ export const EN_US_HUMANITZ_MESSAGES: MessageCatalog = {
   "settings.schema.humanitz.companion_damage.title": "Companion Dog Damage Level",
   "settings.schema.humanitz.companion_damage.description": "Dog companion damage level: 0 low, 1 default, 2 high. This is not a multiplier.",
   "settings.schema.humanitz.admin_steam_ids.title": "Admin NetIDs",
-  "settings.schema.humanitz.admin_steam_ids.description": "One complete NetID per line, copied from PlayerIDMapped.txt or the Players command, including the | separator. Written to HumanitZServer/AdminList.txt. Preserve the complete ID and its letter case.",
+  "settings.schema.humanitz.admin_steam_ids.description": "One complete NetID per line, copied from PlayerIDMapped.txt or Players: Steam64_+_|ProductUserId, EpicAccountId|ProductUserId or |ProductUserId. Written to HumanitZServer/AdminList.txt. Preserve the complete ID, separators and letter case.",
   "settings.schema.humanitz.banned_player_steam_ids.title": "Banned Player NetIDs",
-  "settings.schema.humanitz.banned_player_steam_ids.description": "One complete NetID per line, copied from PlayerIDMapped.txt or the Players command, including the | separator. Written to HumanitZServer/F_BannedPlayers.txt. Preserve the complete ID and its letter case.",
+  "settings.schema.humanitz.banned_player_steam_ids.description": "One complete NetID per line, copied from PlayerIDMapped.txt or Players: Steam64_+_|ProductUserId, EpicAccountId|ProductUserId or |ProductUserId. Written to HumanitZServer/F_BannedPlayers.txt. Preserve the complete ID, separators and letter case.",
 };

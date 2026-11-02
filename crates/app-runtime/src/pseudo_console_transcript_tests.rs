@@ -83,6 +83,22 @@ fn final_transcript_emits_pending_edits_once_without_repeating_completed_rows() 
 }
 
 #[test]
+fn pending_preview_is_repeatable_and_keeps_completion_and_eof_ownership() {
+    let mut terminal = TerminalTranscript::new(40, 8);
+    assert_eq!(push(&mut terminal, b"first\r\npart").unwrap(), "first\n");
+    for _ in 0..3 {
+        assert_eq!(terminal.pending_rows(), ["part"]);
+    }
+    assert!(push(&mut terminal, b"ial\rfinal\x1b[K").unwrap().is_empty());
+    assert_eq!(terminal.pending_rows(), ["final"]);
+    assert_eq!(push(&mut terminal, b"\r\nlast").unwrap(), "final\n");
+    assert_eq!(terminal.pending_rows(), ["last"]);
+    assert_eq!(finish(&mut terminal).unwrap(), "last\n");
+    assert!(terminal.pending_rows().is_empty());
+    assert!(finish(&mut terminal).unwrap().is_empty());
+}
+
+#[test]
 fn final_transcript_rejects_incomplete_utf8_and_control_sequences() {
     for bytes in [b"\xe7\x8e".as_slice(), b"\x1b[", b"\x1b]title"] {
         let mut terminal = TerminalTranscript::new(40, 8);

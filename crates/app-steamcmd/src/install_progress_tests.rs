@@ -1,4 +1,27 @@
 use super::*;
+
+#[test]
+fn raw_preparation_output_is_internal_and_does_not_replace_status() {
+    let mut updates = Vec::new();
+    let mut reporter = crate::steamcmd_prepare::PrepareReporter::new(|update| updates.push(update));
+    reporter.stage(SteamCmdPreparePhase::Verifying, "Checking SteamCMD...");
+    reporter.raw(InstallConsoleOutput::Raw {
+        stream_id: 9,
+        source: InstallOutputSource::Stderr,
+        offset: 0,
+        bytes: b"diagnostic\ndiagnostic\n".to_vec(),
+        finished: false,
+    });
+    assert_eq!(reporter.current.detail, "Checking SteamCMD...");
+    drop(reporter);
+    let raw = updates.pop().unwrap();
+    let serialized = serde_json::to_value(&raw).unwrap();
+    assert!(serialized.get("console_output").is_none());
+    let update = InstallProgressUpdate::preparing_steamcmd(raw);
+    assert!(update.is_raw_output());
+    assert!(update.detail.is_empty());
+    assert!(update.install_progress.is_none());
+}
 use crate::steamcmd_stream::spawn_line_forwarder;
 use tokio::io::AsyncWriteExt;
 use tokio::sync::mpsc;
@@ -106,6 +129,7 @@ fn incomplete_native_percentage_never_becomes_a_reported_number() {
 #[test]
 fn preparation_progress_preserves_download_bytes_without_finishing_game_install() {
     let mut prepare = SteamCmdPrepareProgress {
+        console_output: None,
         phase: SteamCmdPreparePhase::Downloading,
         detail: String::from("Downloading runtime..."),
         downloaded_bytes: Some(25),

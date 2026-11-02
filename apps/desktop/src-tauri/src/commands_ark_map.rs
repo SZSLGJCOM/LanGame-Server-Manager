@@ -3,7 +3,7 @@ use super::*;
 use std::sync::{Arc, OnceLock};
 
 #[path = "ark_map_protocol.rs"]
-mod protocol;
+pub(super) mod protocol;
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]

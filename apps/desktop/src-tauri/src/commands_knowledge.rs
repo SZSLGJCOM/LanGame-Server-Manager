@@ -21,7 +21,7 @@ pub struct KnowledgeCancelInput {
 pub async fn read_knowledge_status(
     state: tauri::State<'_, DesktopState>,
 ) -> Result<KnowledgeRuntimeStatus, String> {
-    let _operation = state.begin_storage_context_operation("knowledge status read")?;
+    let _operation = state.begin_fixed_application_data_operation("knowledge status read")?;
     state.knowledge.status().await
 }
 
@@ -30,7 +30,7 @@ pub async fn update_knowledge_settings(
     state: tauri::State<'_, DesktopState>,
     input: KnowledgeSettings,
 ) -> Result<(), String> {
-    let _operation = state.begin_storage_context_operation("knowledge settings update")?;
+    let _operation = state.begin_fixed_application_data_operation("knowledge settings update")?;
     state.knowledge.update_settings(input).await
 }
 

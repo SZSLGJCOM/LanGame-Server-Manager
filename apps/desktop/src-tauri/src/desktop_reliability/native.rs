@@ -41,6 +41,15 @@ pub(super) async fn observe_or_crash(
                 }
                 let core = unsafe { platform.controller().CoreWebView2() }
                     .map_err(|error| error.to_string())?;
+                // Read the real setting at startup, after renderer reload, and
+                // after browser recreation; checking only the first view misses recovery.
+                let settings = unsafe { core.Settings() }.map_err(|error| error.to_string())?;
+                let mut context_menus_enabled = windows_core::BOOL::default();
+                unsafe { settings.AreDefaultContextMenusEnabled(&mut context_menus_enabled) }
+                    .map_err(|error| error.to_string())?;
+                if context_menus_enabled.as_bool() {
+                    return Err("Desktop WebView2 default context menus must be disabled".into());
+                }
                 let mut pid = 0;
                 unsafe { core.BrowserProcessId(&mut pid) }.map_err(|error| error.to_string())?;
                 if pid == 0 {

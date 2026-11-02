@@ -1,3 +1,4 @@
+import { unavailableStorageMigration } from "./storage-migration-fixture";
 import { prepareBrowserLocaleCatalogs } from "./browser-locale-catalogs";
 import React, { act, StrictMode, type ComponentProps } from "react";
 import { createRoot } from "react-dom/client";
@@ -79,7 +80,7 @@ function Harness() {
   return <AppShell {...props}><SystemView snapshot={bootstrap.state.snapshot} instances={bootstrap.state.instances}
     bindAddressCandidates={[]} appSettings={bootstrap.state.settings} steamCmdStatus={null} steamCmdBusy={false}
     steamCmdProgress={null} steamCmdMessage="" onOpenInstance={noop} onPickDirectory={async () => null}
-    onSaveAppSettings={noop} onEnsureSteamCmd={noop} onUninstallSteamCmd={noop} /></AppShell>;
+    storageMigration={unavailableStorageMigration} onEnsureSteamCmd={noop} onUninstallSteamCmd={noop} /></AppShell>;
 }
 function render() { root.render(<StrictMode><I18nProvider><Harness /></I18nProvider></StrictMode>); }
 function check(value: unknown, message: string): asserts value { if (!value) throw new Error(message); }

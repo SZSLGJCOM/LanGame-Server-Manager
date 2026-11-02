@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { arkToolsHostAvailable, prepareArkTools, readArkToolsStatus, spawnArkCreature,
+import { arkToolsHostAvailable, readArkToolsStatus, spawnArkCreature,
   type ArkSpawnResult, type ArkToolsStatus } from "../../api-ark-tools";
 import { ActivityNotice } from "../../components/ActivityNotice";
 import { ConfigurationActionHelp, ConfigurationHelp } from "../settings/ConfigurationFieldHelp";
@@ -8,11 +8,12 @@ import { describeError } from "../../app-state";
 import { selectLocaleText, useI18n } from "../../i18n";
 import { parseArkEnabledModIds, type ArkCustomCreatureEntry } from "./gm-tools";
 import { ArkCatalogPicker } from "./ArkCatalogPicker";
+import { useArkToolsInstallation } from "./useArkToolsInstallation";
 import type { ArkMapPlayer } from "../../ark-world-map";
 import "./ark-creature-spawner.css";
 
-interface Props { instanceId: string; moduleId: string; status: string; settingsJson: string; processKey: string;
-  runId: number | null; runtimeRunning?: boolean; selectedPlayer?: ArkMapPlayer | null }
+interface Props { instanceId: string; instanceName: string; moduleId: string; status: string; settingsJson: string; processKey: string;
+  runId: number | null; runtimeRunning?: boolean; selectedPlayer?: ArkMapPlayer | null; extensionStatus?: ArkToolsStatus | null }
 // These base-game asset paths are shared by ASE and ASA. Other classes can be
 // resolved from the loaded world's registry or supplied as a full asset path.
 const BASE_CLASSES: Record<string, string> = {
@@ -31,7 +32,7 @@ function savedCreatures(id: string): ArkCustomCreatureEntry[] {
   } catch { return []; }
 }
 
-export function ArkCreatureSpawner({ instanceId, moduleId, status, settingsJson, processKey, runId, runtimeRunning, selectedPlayer }: Props) {
+export function ArkCreatureSpawner({ instanceId, instanceName, moduleId, status, settingsJson, processKey, runId, runtimeRunning, selectedPlayer, extensionStatus }: Props) {
   const { locale } = useI18n();
   const text = (zh: string, en: string) => selectLocaleText(locale, zh, en);
   const scope = useMemo(() => ({ instanceId, processKey, runId, status, runtimeRunning }), [instanceId, processKey, runId, status, runtimeRunning]);
@@ -55,6 +56,8 @@ export function ArkCreatureSpawner({ instanceId, moduleId, status, settingsJson,
   const [savedLabel, setSavedLabel] = useState("");
   const [savedModId, setSavedModId] = useState("");
   const host = arkToolsHostAvailable();
+  const installation = useArkToolsInstallation(instanceId, instanceName, host, setExtension);
+  const working = busy || installation.active || installation.removing;
   const running = runtimeRunning ?? status.toLowerCase() === "running";
   const stopped = status.toLowerCase() === "stopped";
   const playerTarget = selectedPlayer && selectedPlayer.x !== null && selectedPlayer.y !== null && selectedPlayer.z !== null
@@ -100,30 +103,22 @@ export function ArkCreatureSpawner({ instanceId, moduleId, status, settingsJson,
   }
   useEffect(() => {
     current.current = scope;
-    setExtension(null); setError(null);
-    if (host) void refresh();
+    setError(null);
+    if (installation.active || installation.removing) { setChecking(false); setResult(null); }
+    else if (extensionStatus) { setExtension(extensionStatus); setChecking(false); }
+    else { setExtension(null); if (host) void refresh(); }
     return () => { ++statusRequest.current; if (current.current === scope) current.current = null; };
-    // Settings and runtime transitions invalidate the live extension handshake.
+    // Reuse the map's automatic handshake so a slow startup can recover without
+    // a manual connection action. Stopped maps still inspect the local install.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [scope, status, settingsJson, host]);
-
-  async function install() {
-    if (pending.current || !host || running) return;
-    const token = scope;
-    pending.current = true; setBusy(true); setError(null);
-    try {
-      const value = await prepareArkTools(instanceId);
-      if (current.current === token) setExtension(value);
-    } catch (reason) { if (current.current === token) setError(describeError(reason)); }
-    finally { pending.current = false; if (current.current) setBusy(false); }
-  }
+  }, [scope, status, settingsJson, host, extensionStatus, installation.active, installation.removing]);
 
   async function spawn(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     // Read the current player snapshot at submission; manual values are an explicit override.
     const target = positionMode === "player" ? playerTarget
       : { x: Number(coordinates.x), y: Number(coordinates.y), z: Number(coordinates.z), playerId: Number(playerId) };
-    if (pending.current || !running || !runId || !extension?.connected || !configured || !target) return;
+    if (pending.current || installation.active || installation.removing || installation.recovering || !running || !runId || !extension?.connected || !configured || !target) return;
     const token = scope;
     pending.current = true; setBusy(true); setError(null); setResult(null);
     try {
@@ -135,16 +130,12 @@ export function ArkCreatureSpawner({ instanceId, moduleId, status, settingsJson,
     finally { pending.current = false; if (current.current) setBusy(false); }
   }
 
-  const disabled = busy || checking || !host;
-  const installHelp = [text("首次使用需要在停服时安装生物工具扩展。", "Install the creature extension while the instance is stopped before first use."),
-    !stopped ? text("请先停止实例。", "Stop the instance first.") : null,
-    text("将从 ArkServerApi 下载已校验版本，仅安装到本实例的独立程序目录；已有第三方加载器冲突时会停止。", "Download a verified ArkServerApi release into this instance's private program directory. An existing conflicting loader stops installation."),
-    moduleId === "arksurvivalascended" ? text("安装后，扩展在首次启动或游戏更新时会向 cdn.pelayori.com（备用 cdn.shadowhunter.co.za / cdn.shadowhunter-systems.co.za）发送服务器程序 SHA-256 哈希，下载匹配文件。点击安装即允许此下载。", "On first startup or game updates, the extension sends the server EXE SHA-256 hash to cdn.pelayori.com (fallbacks: cdn.shadowhunter.co.za / cdn.shadowhunter-systems.co.za) for matching files. Installing allows these downloads.") : null].filter(Boolean).join(" ");
+  const disabled = working || checking || installation.recovering || !host;
   const hostHelp = text("请在本机桌面客户端使用方舟生物工具。", "Use ARK creature tools in the local desktop client.");
   const checkingHelp = text("正在检查服务端扩展，请稍候。", "Checking the server extension. Please wait.");
-  const connectionHelp = text("服务端扩展未连接，请检查运行日志后点击“连接”重试。", "The server extension is disconnected. Check the runtime log, then use Connect to check again.");
-  const spawnReason = !host ? hostHelp : busy ? text("正在处理当前操作，请稍候。", "The current operation is in progress. Please wait.")
-    : checking ? checkingHelp : !extension ? text("尚未确认服务端扩展状态，请重新检查连接。", "The server extension status is unknown. Check the connection again.")
+  const connectionHelp = text("服务端扩展尚未连接，连接状态会自动更新；持续失败时请检查运行日志。", "The server extension is not connected yet. Connection status updates automatically; check the runtime log if the problem persists.");
+  const spawnReason = !host ? hostHelp : working ? text("正在处理当前操作，请稍候。", "The current operation is in progress. Please wait.")
+    : checking ? checkingHelp : !extension ? text("尚未确认服务端扩展状态，等待自动检查。", "Waiting for the automatic server extension status check.")
     : !extension.installed ? stopped
       ? text("请先安装服务端扩展，再启动当前地图后生成生物。", "Install the server extension, then start the selected map to spawn creatures.")
       : text("生成生物需要服务端扩展。请先停止实例并安装服务端扩展，再启动当前地图。", "Spawning requires the server extension. Stop the instance, install the server extension, then start the selected map.")
@@ -158,16 +149,12 @@ export function ArkCreatureSpawner({ instanceId, moduleId, status, settingsJson,
     : text(`在所选玩家 ${selectedPlayer?.name || selectedPlayer?.playerId || ""} 的当前位置生成。${tamed ? "驯服生物归属该玩家。" : ""}`,
       `Spawn at the current position of ${selectedPlayer?.name || selectedPlayer?.playerId || "the selected player"}.${tamed ? " Tamed creatures belong to this player." : ""}`);
   const spawnHelp = [spawnReason ?? spawnTargetHelp, extension?.issue].filter(Boolean).join(" ");
-  const extensionHelp = [!host ? hostHelp : checking ? checkingHelp : !extension?.installed ? installHelp
-    : extension.connected ? text("服务端扩展已连接。点击可重新检查连接状态。", "Server extension connected. Click to check the connection again.")
-    : running ? connectionHelp : text("扩展已安装，启动当前地图后可连接。", "The extension is installed. Start the selected map to connect."),
-    extension?.issue].filter(Boolean).join(" ");
   return <section className="ark-creature-spawner" aria-label={text("生成方舟生物", "Spawn ARK creature")}>
     <form onSubmit={event => void spawn(event)} onInvalidCapture={event => {
       const node = event.target;
       if (node instanceof HTMLElement) { const details = node.closest("details"); if (details) details.open = true; }
     }}>
-      <fieldset disabled={busy}>
+      <fieldset disabled={working}>
         <ArkCatalogPicker kind="creature" query={search} onQueryChange={setSearch} value={creature} onPick={setCreature} />
         <div className="ark-spawn-dock">
         <details className="ark-spawn-options"><summary>{positionMode === "manual"
@@ -187,15 +174,10 @@ export function ArkCreatureSpawner({ instanceId, moduleId, status, settingsJson,
         <div className="ark-spawn-tool-grid ark-creature-spawner__parameters">
           <label className="ark-spawn-setting"><span>{text("等级", "Level")}</span><input aria-label={text("基础等级", "Base level")} type="number" required min={1} max={5000} step={1} value={level} onChange={e => setLevel(e.target.value)} /></label>
           <label className="ark-spawn-setting"><span>{text("状态", "State")}</span><select aria-label={text("生成状态", "Creature state")} value={String(tamed)} onChange={e => setTamed(e.target.value === "true")}><option value="false">{text("野生", "Wild")}</option><option value="true">{text("驯服", "Tamed")}</option></select></label>
-          <ConfigurationActionHelp reason={extensionHelp}>
-            <button type="button" className="secondary-button ark-spawn-tool" aria-label={extension?.installed ? text("检查连接", "Check connection") : text("安装服务端扩展", "Install server extension")}
-              data-ark-tools-action={extension?.installed ? "check" : "install"} disabled={disabled || !extension?.installed && !stopped}
-              onClick={() => void (extension?.installed ? refresh() : install())}><ShellIcon name={busy || checking ? "loader" : extension?.installed ? "refresh" : "download"} />
-              <span>{busy ? text("处理中", "Working") : checking ? text("检查中", "Checking") : extension?.installed ? text("连接", "Connect") : text("安装", "Install")}</span></button>
-          </ConfigurationActionHelp>
         <ConfigurationActionHelp reason={spawnHelp}>
         <button type="submit" className="primary-button ark-spawn-tool" aria-label={text("生成生物", "Spawn creature")} disabled={disabled || !running || !runId || missingPlayer || !configured || !extension?.connected}><ShellIcon name={busy ? "loader" : "send"} /><span>{busy ? text("处理中", "Working") : text("生成", "Spawn")}</span></button></ConfigurationActionHelp>
-        </div></div>
+        </div>
+        </div>
       </fieldset>
     </form>
     <ActivityNotice tone="error">{error ?? ""}</ActivityNotice>

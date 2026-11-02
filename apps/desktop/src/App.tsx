@@ -10,7 +10,7 @@ import { AssistantProgressPoller } from "./assistant-progress";
 import { formatDesktopError } from "./desktop-error-message";
 import type { AssistantActionId, AssistantBuildInput, AssistantPromptCard } from "./assistant-types";
 import { AiSettingsWriteQueue, formatAiProviderLabel, getAiProviderPreset, getAiSettingsStatus, loadAiSettings, normalizeAiSettings, persistAiSettings, type AiSettings } from "./ai-settings";
-import { bootstrapApp, checkAppUpdate, clearAssistantSecret, getAssistantConversationState, resumeAssistantConversation, createAssistantConversation, cancelAssistantTurn, deleteAssistantConversation, confirmAssistantOperation, executeAssistantOperation, fetchBindAddressCandidates, fetchOverlayFamilies, generateInstanceBroadcast, installAppUpdate, listInstanceBroadcastEvents, listOllamaModels, logFrontendEvent, pickDirectoryPath, probeSteamCmdStatus, readAssistantSecretStatus, readInstanceBroadcastPolicy, sendInstanceBroadcast, storeAssistantSecret, updateAppSettings } from "./api";
+import { bootstrapApp, checkAppUpdate, clearAssistantSecret, getAssistantConversationState, resumeAssistantConversation, createAssistantConversation, cancelAssistantTurn, deleteAssistantConversation, confirmAssistantOperation, executeAssistantOperation, fetchBindAddressCandidates, fetchOverlayFamilies, generateInstanceBroadcast, installAppUpdate, listInstanceBroadcastEvents, listOllamaModels, logFrontendEvent, pickDirectoryPath, probeSteamCmdStatus, readAssistantSecretStatus, readInstanceBroadcastPolicy, sendInstanceBroadcast, storeAssistantSecret } from "./api";
 import { applyAppUpdateCheckResult, createInitialAppUpdateState, failAppUpdateState, reduceAppUpdateInstallEvent } from "./app-update-model";
 import {
   describeError,
@@ -28,8 +28,11 @@ import {
 } from "./app-state";
 import { message, resolveUiMessage, type UiMessage } from "./app-ui";
 import { mergeBootstrapSnapshot } from "./bootstrap-snapshot";
+import type { RuntimeActionOperation } from "./runtime-action-store";
 import { steamCmdDetailMessage, steamCmdSummaryMessage } from "./steamcmd-ui";
 import { useInstallationCancellation } from "./hooks/useInstallationCancellation";
+import { useStorageMigration } from "./hooks/useStorageMigration";
+import type { StorageMigrationStatus } from "./storage-migration-types";
 import { useInstanceRetirement } from "./hooks/useInstanceRetirement";
 import { useInstanceInventoryRefresh } from "./hooks/useInstanceInventoryRefresh";
 import { AppShell } from "./components/AppShell";
@@ -59,7 +62,6 @@ import {
 } from "./hooks/useDesktopEffects";
 import { useI18n } from "./i18n";
 import type {
-  AppPathSettingsInput,
   AppUpdateState,
   AssistantChatMessage,
   AssistantExecutionState,
@@ -485,7 +487,7 @@ function DesktopApp({ theme, onThemeChange }: DesktopAppProps) {
       cancelled = true;
     };
   }, [aiSettings.provider, aiSettings.baseUrl]);
-  async function runSteamCmdProbe(options: { silent?: boolean } = {}) {
+  async function runSteamCmdProbe(options: { silent?: boolean; propagateError?: boolean } = {}) {
     if (options.silent && steamCmdOperationBusyRef.current) return;
     const probeId = ++steamCmdProbeTokenRef.current;
     if (!options.silent) {
@@ -511,6 +513,7 @@ function DesktopApp({ theme, onThemeChange }: DesktopAppProps) {
         setSteamCmdMessage(message("activity.steamCmdFailed", { message: messageText }));
         if (!options.silent) setActivity(message("activity.steamCmdFailed", { message: messageText }));
       }
+      if (options.propagateError) throw error;
     } finally {
       if (!options.silent && probeId === steamCmdProbeTokenRef.current) {
         steamCmdOperationBusyRef.current = false;
@@ -1009,25 +1012,19 @@ function DesktopApp({ theme, onThemeChange }: DesktopAppProps) {
     }
   }
 
-  async function handleSaveAppSettings(settings: AppPathSettingsInput) {
-    const nextSettings = {
-      games_root: settings.games_root.trim(),
-      servers_root: settings.servers_root.trim(),
-      archives_root: settings.archives_root.trim(),
-      steamcmd_root: settings.steamcmd_root.trim()
-    };
-
-    try {
-      const savedSettings = await updateAppSettings(nextSettings);
-      await reloadBootstrap();
-      await runSteamCmdProbe();
-
-      setActivity(message("settings.paths.saved", { path: savedSettings.games_root }));
-    } catch (error) {
-      setActivity(message("settings.paths.failed", { message: describeError(error) }));
-      throw error;
-    }
+  async function handleStorageMigrationCompleted(status: StorageMigrationStatus) {
+    // The host has committed these paths. A refresh failure must not restore the old settings.
+    setBootstrap((current) => ({ ...current, state: { ...current.state,
+      settings: { ...current.state.settings, ...status.input }
+    } }));
+    for (const instance of getCurrentBootstrap().state.instances) instancePanelReader.invalidate(instance.id);
+    setInstanceDetailsById({});
+    clearSelectedInstancePanel();
+    setPanelRetryGeneration((current) => current + 1);
+    await reloadBootstrap();
+    await runSteamCmdProbe({ propagateError: true });
   }
+  const storageMigration = useStorageMigration(handleStorageMigrationCompleted, bootstrap.state.settings);
 
   async function handleClearAiSecret(settings: AiSettings) {
     const nextSettings = normalizeAiSettings(settings);
@@ -1574,16 +1571,16 @@ function DesktopApp({ theme, onThemeChange }: DesktopAppProps) {
     }
   }
 
-  async function handleStartServerWithBroadcast(instanceId: string, expectedWorldStart?: DstWorldStartPreview) {
-    const started = await handleStartServer(instanceId, expectedWorldStart);
+  async function handleStartServerWithBroadcast(instanceId: string, expectedWorldStart?: DstWorldStartPreview, operation?: RuntimeActionOperation) {
+    const started = await handleStartServer(instanceId, expectedWorldStart, operation);
     if (started) {
       void maybeRunLifecycleBroadcast(instanceId, "startup");
     }
   }
 
-  async function handleStopServerWithBroadcast(instanceId: string) {
-    await maybeRunLifecycleBroadcast(instanceId, "shutdown");
-    await handleStopServer(instanceId);
+  async function handleStopServerWithBroadcast(instanceId: string, operation?: RuntimeActionOperation) {
+    if (!operation?.cancelsStartup) await maybeRunLifecycleBroadcast(instanceId, "shutdown");
+    await handleStopServer(instanceId, operation);
   }
 
   const assistantInput: AssistantBuildInput = {
@@ -1615,6 +1612,7 @@ function DesktopApp({ theme, onThemeChange }: DesktopAppProps) {
       <AppShell
         activeView={activeView}
         activityText={resolveUiMessage(t, activity)}
+        activityMessage={activity}
         activityTone={activity.tone}
         runtimeStartNotice={activity.runtimeStartNotice}
         runtimeRefreshIssue={activeView === "system" ? systemRefreshIssue : runtimeRefreshIssue}
@@ -1622,6 +1620,7 @@ function DesktopApp({ theme, onThemeChange }: DesktopAppProps) {
         runtimePollIntervalMs={activeView === "system" ? systemPollIntervalMs : runtimePollIntervalMs}
         runtimeRefreshFailureLimit={RUNTIME_REFRESH_FAILURE_LIMIT}
         onResumeRuntimeAutoRefresh={handleResumeRuntimeAutoRefresh}
+        storageMigration={storageMigration}
         steamCmdStopPending={steamCmdStopPending}
         steamCmdStopError={steamCmdStopError}
         installationStopPendingIds={installationStopPendingIds}
@@ -1710,7 +1709,7 @@ function DesktopApp({ theme, onThemeChange }: DesktopAppProps) {
         onLibraryCatalogFocusChange={setLibraryCatalogFocusId}
         onLibraryCatalogScrollLeftChange={setLibraryCatalogScrollLeft}
         onPickDirectory={handlePickDirectory}
-        onSaveAppSettings={handleSaveAppSettings}
+        storageMigration={storageMigration}
         onStorageChanged={async () => { await reloadBootstrap(); }}
         onImportDontStarveWorldData={(instanceId, sourcePath) => handleImportDontStarveWorldData(instanceId, sourcePath)}
         onSelectInstance={setSelectedInstanceId}

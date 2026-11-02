@@ -203,6 +203,7 @@ class LifecycleFixture {
             Box::pin(stop_instance_process(
                 self.app.state::<DesktopState>(),
                 self.instance_id.clone(),
+                None,
             )),
         )
         .await

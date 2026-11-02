@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import type { AiSettings, PersistAiSettings } from "../ai-settings";
 import type { AssistantConversationSummary } from "../assistant-conversations";
 import type {
@@ -36,10 +36,16 @@ import { openExternalUrl } from "../api";
 import { ActivityBar, type ActivityBarEntry } from "./ActivityBar";
 import { createActivityNoticeStore } from "./activity-notice-store";
 import { RuntimeStartWarnings } from "./RuntimeStartWarnings";
+import { ArkToolsInstallationProvider } from "./ArkToolsInstallationContext";
+import { useArkToolsActivity } from "./ArkToolsInstallActivity";
+import type { StorageMigrationModel } from "../hooks/useStorageMigration";
+import { StorageMigrationActivity } from "../views/system/StorageMigrationReview";
+import { ShellIcon } from "./ShellIcon";
 
 interface AppShellProps {
   activeView: ViewKey;
   activityText: string;
+  activityMessage?: UiMessage;
   activityTone?: UiMessage["tone"];
   runtimeStartNotice?: UiMessage["runtimeStartNotice"];
   runtimeRefreshIssue: RuntimeRefreshIssue | null;
@@ -48,6 +54,7 @@ interface AppShellProps {
   runtimeRefreshFailureLimit: number;
   onResumeRuntimeAutoRefresh: () => void;
   steamCmdProgress: SteamCmdPrepareSnapshot | null;
+  storageMigration?: StorageMigrationModel;
   steamCmdMessage: string;
   steamCmdStopPending: boolean;
   steamCmdStopError: string | null;
@@ -90,9 +97,27 @@ interface AppShellProps {
 }
 
 export function AppShell(props: AppShellProps) {
+  return <ArkToolsInstallationProvider><AppShellContent {...props} /></ArkToolsInstallationProvider>;
+}
+
+function AppShellContent(props: AppShellProps) {
   const { t, locale } = useI18n();
+  const arkActivity = useArkToolsActivity();
   const [noticeStore] = useState(createActivityNoticeStore);
   const [updateRetryRequest, setUpdateRetryRequest] = useState(0);
+  const activityIdentity = props.activityMessage ?? props.activityText;
+  const [dismissedActivity, setDismissedActivity] = useState<UiMessage | string | null>(null);
+  const [dismissedSteamCmd, setDismissedSteamCmd] = useState<string | null>(null);
+  const [dismissedRefreshIssue, setDismissedRefreshIssue] = useState<string | null>(null);
+  useEffect(() => {
+    if (!props.runtimeRefreshIssue) setDismissedRefreshIssue(null);
+  }, [props.runtimeRefreshIssue]);
+  const refreshIssue = props.runtimeRefreshIssue?.message === dismissedRefreshIssue ? null : props.runtimeRefreshIssue;
+  function dismissSteamCmd() {
+    if (!props.steamCmdProgress || props.steamCmdProgress.active) return;
+    setDismissedSteamCmd(props.steamCmdProgress.operation_id);
+    if (props.activityText === props.steamCmdMessage) setDismissedActivity(activityIdentity);
+  }
   async function downloadAppInstaller() {
     const url = appUpdateReleaseUrl(props.appUpdateState.availableVersion);
     if (!props.appUpdatesEnabled || !url) throw new Error(appUpdateCopy(locale).releaseUnavailable);
@@ -103,16 +128,23 @@ export function AppShell(props: AppShellProps) {
     props.onCheckAppUpdate();
   }
   const showSteamCmdProgress = props.steamCmdProgress?.active
-    || ((props.steamCmdProgress?.error || props.steamCmdProgress?.cancelled) && props.activityText === props.steamCmdMessage);
+    || (props.steamCmdProgress?.operation_id !== dismissedSteamCmd
+      && (props.steamCmdProgress?.error || props.steamCmdProgress?.cancelled) && props.activityText === props.steamCmdMessage);
   const installationJob = selectActiveInstallationJob(props.jobs);
   const showInstallationProgress = installationJob && (!props.steamCmdProgress?.active
     || (props.steamCmdProgress.phase === "queued" && installationJob.install_progress?.phase !== "queued"));
   const regenerationJob = showInstallationProgress || showSteamCmdProgress ? null : selectActiveDstRegenerationJob(props.jobs);
-  const showActivityFeedback = !props.runtimeStartNotice
-    && (Boolean(props.activityTone) || (!showInstallationProgress && !showSteamCmdProgress));
-  const showRefreshFeedback = Boolean(props.runtimeRefreshIssue || props.runtimeAutoRefreshPaused);
+  const migration = props.storageMigration;
+  const progressEntries: ActivityBarEntry[] = [...arkActivity.progressEntries];
+  if (migration?.available && migration.hasActivity) {
+    progressEntries.push({ id: `storage-migration:${migration.status?.operation_id ?? "recovering"}`,
+      content: <StorageMigrationActivity migration={migration} /> });
+  }
+  const showActivityFeedback = !props.runtimeStartNotice && dismissedActivity !== activityIdentity
+    && (Boolean(props.activityTone) || (!showInstallationProgress && !showSteamCmdProgress && !progressEntries.length));
+  const showRefreshFeedback = Boolean(refreshIssue || props.runtimeAutoRefreshPaused);
   const finishedRegeneration = useFinishedDstRegeneration(props.jobs);
-  const activityEntries: ActivityBarEntry[] = [];
+  const activityEntries: ActivityBarEntry[] = [...arkActivity.outcomes];
   if (finishedRegeneration.job) activityEntries.push({ id: `regeneration:${finishedRegeneration.job.id}`, content:
     <DstRegenerationOutcome job={finishedRegeneration.job} locale={locale} onDismiss={finishedRegeneration.dismiss}
       dismissLabel={t("servers.mods.closeToast", undefined, "Close")} /> });
@@ -121,12 +153,15 @@ export function AppShell(props: AppShellProps) {
     content: <div className="shell-activity-feedback">
       <span className={`shell-activity-text${props.activityTone ? ` is-${props.activityTone}` : ""}`}
         role={props.activityTone === "error" ? "alert" : undefined} title={props.activityText}>{props.activityText}</span>
+      <button type="button" className="shell-activity-notice-close" onClick={() => setDismissedActivity(activityIdentity)}
+        aria-label={t("servers.mods.closeToast", undefined, "Close")}><ShellIcon name="x" /></button>
     </div>
   });
   if (showRefreshFeedback) activityEntries.push({ id: "runtime-refresh", content:
-    <AutoRefreshStatus intervalMs={props.runtimePollIntervalMs} issue={props.runtimeRefreshIssue}
+    <AutoRefreshStatus intervalMs={props.runtimePollIntervalMs} issue={refreshIssue}
       paused={props.runtimeAutoRefreshPaused} failureLimit={props.runtimeRefreshFailureLimit}
-      onResume={props.onResumeRuntimeAutoRefresh} />
+      onResume={props.onResumeRuntimeAutoRefresh}
+      onDismiss={() => setDismissedRefreshIssue(props.runtimeRefreshIssue?.message ?? null)} />
   });
 
   return (
@@ -174,11 +209,12 @@ export function AppShell(props: AppShellProps) {
 
         <footer className="shell-activity-bar" role="status" aria-live="polite" aria-atomic="false">
           <span className="shell-activity-label">{t("shell.activity")}</span>
-          <ActivityBar store={noticeStore} entries={activityEntries} progress={showInstallationProgress ? (
+          <ActivityBar store={noticeStore} entries={activityEntries} progressEntries={progressEntries} progress={showInstallationProgress ? (
             <InstallationActivity job={installationJob} name={getLocalizedModuleDisplayName(installationJob.target_id, locale, installationJob.label)} locale={locale} t={t}
               onStop={() => props.onCancelInstallation(installationJob.id)} stopPending={props.installationStopPendingIds.includes(installationJob.id)} stopError={props.installationStopErrors[installationJob.id]} />
           ) : showSteamCmdProgress && props.steamCmdProgress ? (
             <SteamCmdActivity snapshot={props.steamCmdProgress} message={props.steamCmdMessage} locale={locale} t={t}
+              onDismiss={dismissSteamCmd}
               onStop={() => { if (props.steamCmdProgress) props.onCancelSteamCmd(props.steamCmdProgress.operation_id); }} stopPending={props.steamCmdStopPending} stopError={props.steamCmdStopError} />
           ) : regenerationJob ? <DstRegenerationActivity job={regenerationJob} locale={locale} /> : null} />
         </footer>

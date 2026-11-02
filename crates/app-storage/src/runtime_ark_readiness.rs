@@ -43,10 +43,11 @@ pub(super) fn analyze_ark_maps_runtime_health(
     instance: &InstanceDetails,
 ) -> Option<app_core::RuntimeHealth> {
     let settings: Value = serde_json::from_str(&instance.settings_json).ok()?;
-    if settings
-        .get("additional_maps")
-        .and_then(Value::as_array)
-        .is_none_or(Vec::is_empty)
+    if (instance.summary.module_id != "arksurvivalevolved"
+        && settings
+            .get("additional_maps")
+            .and_then(Value::as_array)
+            .is_none_or(Vec::is_empty))
         || !matches!(
             instance.summary.status,
             InstanceStatus::Running | InstanceStatus::Starting
@@ -172,27 +173,24 @@ fn analyze_maps_with(
             .all(|(name, protocol)| owns_binding(&projected.ports, endpoints, pid, name, protocol))
             && (settings.get("rcon_enabled").and_then(Value::as_bool) != Some(true)
                 || owns_binding(&projected.ports, endpoints, pid, "rcon", "tcp"));
-        let native_ready = if instance.summary.module_id == "arksurvivalevolved" {
-            true
-        } else {
-            match log_evidence::observe(
-                path,
-                process,
-                active.run_id,
-                &enabled_keys,
-                has_current_ready_line(process, &log.lines),
-            ) {
-                Ok(ready) => ready,
-                Err(error) => {
-                    return health(
-                        "warning",
-                        "log_read_failed",
-                        format!(
-                            "ARK map {} readiness evidence could not be inspected: {error}",
-                            map.display_name
-                        ),
-                    );
-                }
+        let native_ready = match log_evidence::observe(
+            &instance.summary.module_id,
+            path,
+            process,
+            active.run_id,
+            &enabled_keys,
+            has_current_ready_line(&instance.summary.module_id, process, &log.lines),
+        ) {
+            Ok(ready) => ready,
+            Err(error) => {
+                return health(
+                    "warning",
+                    "log_read_failed",
+                    format!(
+                        "ARK map {} readiness evidence could not be inspected: {error}",
+                        map.display_name
+                    ),
+                );
             }
         };
         if !ports_ready || !native_ready {
@@ -237,11 +235,22 @@ pub(super) fn native_line_is_current(process: &InstanceProcessState, line: &str)
     native_line_timestamp(line).is_some_and(|observed| observed >= started)
 }
 
-fn has_current_ready_line(process: &InstanceProcessState, lines: &[String]) -> bool {
-    lines.iter().any(|line| {
-        let normalized = line.to_ascii_lowercase();
-        has_asa_ready_marker(&normalized) && native_line_is_current(process, line)
-    })
+fn has_current_ready_line(
+    module_id: &str,
+    process: &InstanceProcessState,
+    lines: &[String],
+) -> bool {
+    lines
+        .iter()
+        .any(|line| native_ready_marker(module_id, line) && native_line_is_current(process, line))
+}
+
+fn native_ready_marker(module_id: &str, line: &str) -> bool {
+    if module_id == "arksurvivalevolved" {
+        super::startup_readiness::simple_ready_signal(module_id, line)
+    } else {
+        has_asa_ready_marker(&line.to_ascii_lowercase())
+    }
 }
 
 pub(super) fn native_line_timestamp(line: &str) -> Option<u64> {
@@ -382,66 +391,6 @@ fn parse_endpoints(text: &str) -> Endpoints {
         result.entry((pid, protocol)).or_default().insert(port);
     }
     result
-}
-
-pub(super) fn analyze_ark_evolved_runtime_health(
-    active_run: Option<&ActiveInstanceRun>,
-    ports: &[PortBinding],
-) -> Option<app_core::RuntimeHealth> {
-    let pid = active_run.and_then(|run| run.pid)?;
-    let required_ports = ark_evolved_required_udp_ports(ports);
-    if required_ports.is_empty() {
-        return None;
-    }
-
-    let owned_udp_ports = owned_udp_ports_for_pid(pid).ok()?;
-    let mut bound_ports = Vec::new();
-    let mut missing_ports = Vec::new();
-
-    for port in required_ports {
-        if owned_udp_ports.contains(&port) {
-            bound_ports.push(port);
-        } else {
-            missing_ports.push(port);
-        }
-    }
-
-    if missing_ports.is_empty() {
-        return Some(app_core::RuntimeHealth {
-            status: String::from("ready"),
-            summary: format!(
-                "ARK: Survival Evolved has bound its required UDP ports ({}) and is ready for players.",
-                format_port_list(&bound_ports)
-            ),
-            reason: runtime_health_reason(
-                "ark_udp_ready",
-                &[("ports", format_port_list(&bound_ports))],
-            ),
-            matched_line: None,
-        });
-    }
-
-    if bound_ports.is_empty() {
-        return None;
-    }
-
-    Some(app_core::RuntimeHealth {
-        status: String::from("starting"),
-        summary: format!(
-            "ARK: Survival Evolved has bound UDP port{} {} and is still waiting on {}.",
-            if bound_ports.len() == 1 { "" } else { "s" },
-            format_port_list(&bound_ports),
-            format_port_list(&missing_ports)
-        ),
-        reason: runtime_health_reason(
-            "ark_udp_pending",
-            &[
-                ("bound", format_port_list(&bound_ports)),
-                ("missing", format_port_list(&missing_ports)),
-            ],
-        ),
-        matched_line: None,
-    })
 }
 
 #[cfg(test)]

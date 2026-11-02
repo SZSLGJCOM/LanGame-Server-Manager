@@ -98,12 +98,13 @@ impl StartedScope {
             && result.summary.id == self.instance_id
             && result.summary.module_id == self.module_id
             && selection::is_stopped(&result.summary)
-            && result.run_id == self.run_id
+            && result.run_id == Some(self.run_id)
+            && result.outcome == app_core::StopInstanceOutcome::Stopped
             && result.session_id == self.session_id
             && self
                 .processes
                 .iter()
-                .any(|(run, _, pid)| *run == result.run_id && *pid == result.pid)
+                .any(|(run, _, pid)| Some(*run) == result.run_id && *pid == result.pid)
             && result.process_count == self.processes.len()
             && result.processes.len() == self.processes.len()
             && processes == self.processes
@@ -224,7 +225,7 @@ impl StopEvidence {
         scope: Option<&StartedScope>,
         result: &StopInstanceResult,
     ) {
-        self.response_run_id = Some(result.run_id);
+        self.response_run_id = result.run_id;
         self.response_session_id = result.session_id.clone();
         self.response_crash_reason = windows_crash_exit_reason(result.exit_code);
         self.response_matches_start = scope.is_some_and(|scope| scope.matches_stop(result));

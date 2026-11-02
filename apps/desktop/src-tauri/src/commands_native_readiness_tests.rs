@@ -298,7 +298,7 @@ port_name = "console"
 }
 
 #[test]
-fn humanitz_readiness_reuses_only_the_declared_read_only_info_action() {
+fn humanitz_readiness_reuses_the_info_phase_of_the_declared_players_transport() {
     let modules = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../../modules");
     let mut descriptor = app_modules::discover_modules(&modules)
         .unwrap()

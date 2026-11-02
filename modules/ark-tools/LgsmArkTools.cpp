@@ -170,6 +170,16 @@ Json Spawn(UWorld* world, const std::vector<std::string>& args) {
     if (!dino) return Error(id, "spawn_failed");
     try {
         if (tame) {
+            // TameDino consumes the taming team and tribe settings; the
+            // controller argument alone does not establish ownership.
+#ifdef LGSM_ASA
+            auto* state = static_cast<AShooterPlayerState*>(owner->PlayerStateField().Get());
+#else
+            auto* state = static_cast<AShooterPlayerState*>(owner->PlayerStateField());
+#endif
+            dino->TamingTeamIDField() = owner->TargetingTeamField();
+            dino->TamerStringField() = ServerApi::IApiUtils::GetCharacterName(owner);
+            state->SetTribeTamingDinoSettings(dino);
             dino->TameDino(owner, true, 0, true, true, true);
             if (!IsTamed(dino) || dino->TargetingTeamField() != owner->TargetingTeamField()) {
                 dino->Destroy(true, false);

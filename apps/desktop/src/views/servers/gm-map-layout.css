@@ -1,0 +1,26 @@
+/* All map workbenches share DST's geometry: a full-height square when it fits,
+   with at least 220px for the rail. The inner layout reads its own workspace's size. */
+.dst-world-map, .ark-world-map {
+  --gm-map-rail-min: 220px;
+  --gm-map-gap: 16px;
+  min-width: 0; min-height: 0; width: 100%; height: 100%; container: gm-map-workspace / size;
+}
+.dst-map-layout, .ark-map-layout {
+  display: grid;
+  grid-template-columns: minmax(0, min(100cqh, calc(100cqw - var(--gm-map-rail-min) - var(--gm-map-gap)))) minmax(var(--gm-map-rail-min), 1fr);
+  height: 100%; gap: var(--gm-map-gap); align-items: start;
+}
+.dst-map-viewport, .dst-map-empty, .ark-map-canvas { width: 100%; aspect-ratio: 1; min-width: 0; }
+.dst-map-sidebar, .ark-map-rail {
+  min-width: 0; height: 100cqh; box-sizing: border-box;
+  overflow: hidden auto; overscroll-behavior: contain; padding: 10px 12px 10px 0;
+}
+.dst-map-sidebar .dst-map-toolbar, .ark-map-rail .ark-map-toolbar { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 8px; }
+.dst-map-toolbar select, .ark-map-toolbar select { min-width: 0; width: 100%; }
+@container gm-map-workspace (max-height: 660px) {
+  .dst-map-sidebar, .ark-map-rail { scrollbar-gutter: stable; }
+}
+@container gm-map-workspace (max-width: 560px) {
+  .dst-map-layout, .ark-map-layout { grid-template-columns: minmax(0, 1fr); grid-template-rows: 100cqw auto; height: auto; }
+  .dst-map-sidebar, .ark-map-rail { height: auto; overflow: visible; }
+}

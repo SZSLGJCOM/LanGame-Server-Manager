@@ -190,3 +190,12 @@ port_name = "rcon"
 password_setting_key = "rcon_password"
 enabled_setting_key = "rcon_enabled"
 destructive = true
+
+[runtime.startup_readiness]
+timeout_ms = 600000
+
+[runtime.startup_readiness.probe]
+kind = "a2s"
+port_name = "query"
+port_argument = "-QueryPort"
+ready_log = { kind = "launch_argument", name = "-abslog" }

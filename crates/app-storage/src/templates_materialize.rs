@@ -20,6 +20,7 @@ pub(crate) use prepared_workshop::{
 
 #[path = "templates_materialize/dontstarve.rs"]
 mod dontstarve;
+pub(crate) use dontstarve::is_default_dst_support_file;
 pub use dontstarve::is_managed_dst_map_observer;
 #[path = "templates_materialize/managed_config_merge.rs"]
 mod managed_config_merge;

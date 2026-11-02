@@ -134,6 +134,7 @@ pub async fn operate_ark_cluster(
                     commands_runtime_lifecycle::stop_instance_process(
                         state.clone(),
                         member.summary.id.clone(),
+                        None,
                     )
                     .await?;
                     Ok((

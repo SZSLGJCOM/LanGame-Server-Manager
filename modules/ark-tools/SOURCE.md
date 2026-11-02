@@ -32,6 +32,16 @@ The build emits `LgsmArkTools-ase.dll`, `LgsmArkTools-asa.dll`, and
 `asa-version.dll`. The installer selects an edition and deploys the plugin as
 `ArkApi/Plugins/LgsmArkTools/LgsmArkTools.dll` with its metadata and notices.
 
+The tool page keeps connection checking separate from uninstalling. Removal
+requires the entire instance to be stopped, and validates the recorded ownership
+and file hashes before changing files. It removes the LanGame plugin; when other
+plugins are present, their shared API framework remains. Otherwise the unchanged
+framework files installed by LanGame are removed too. Saved worlds, creatures,
+unknown files and framework caches are retained. The ownership record remains
+as installation provenance so a later install can reuse the retained directories.
+A bounded removal journal preserves originals through interruption or rollback;
+an unfinished transaction prevents server startup until recovery completes.
+
 The protocol uses authenticated RCON commands `LgsmArkTools.Status`, `Spawn`,
 `Inspect`, and `Players`, with a 32-character hexadecimal request ID and JSON replies
 prefixed by `LGSM_ARK_TOOLS `. Spawn calls the native world-coordinate API,
@@ -45,7 +55,13 @@ spawn. Restarting the server clears this in-memory table.
 
 `Players` is a read-only world-tick snapshot of authenticated player controllers,
 not saved or sleeping characters. The in-game `LinkedPlayerID` is kept separate
-from Steam/EOS account strings. Characters without a current position have null
+from Steam/EOS account strings. Each player record keeps the survivor's `name`
+separate from `accountName`, the platform name from the SDK's `GetSteamName`.
+Both names use explicit UTF-8 conversion (ASA `ToStringUTF8`, ASE `ToString`),
+then JSON Unicode escapes preserve them through the engines' RCON conversions.
+The host can match `accountId` to native `ListPlayers` rows to restore names
+without changing online membership, account identities, or action bindings.
+Characters without a current position have null
 XYZ values. Collection is limited to 512 players and 400 KiB of JSON; replies
 use UTF-8-safe RCON fragments of at most 8192 bytes. Reads do not consume mutation
 receipts, install extensions or retry mutations.

@@ -1165,6 +1165,7 @@ pub(crate) fn dispatch_command<'a>(
                     app_handle.state::<DesktopState>(),
                     arg(&args, "instanceId", "instance_id")?,
                     opt_arg(&args, "expectedWorldStart", "expected_world_start")?,
+                    opt_arg(&args, "startupAttemptId", "startup_attempt_id")?,
                 )
                 .await?,
             )
@@ -1174,6 +1175,7 @@ pub(crate) fn dispatch_command<'a>(
                 commands::stop_instance_process(
                     app_handle.state::<DesktopState>(),
                     arg(&args, "instanceId", "instance_id")?,
+                    opt_arg(&args, "startupAttemptId", "startup_attempt_id")?,
                 )
                 .await?,
             )
@@ -1440,9 +1442,20 @@ pub(crate) fn dispatch_command<'a>(
                     opt_arg(&args, "maxLines", "max_lines")?,
                     opt_arg(&args, "runId", "run_id")?,
                     opt_arg(&args, "source", "source")?,
+                    opt_arg(&args, "startupAttemptId", "startup_attempt_id")?,
+                    opt_arg(&args, "startupBeforeCursor", "startup_before_cursor")?,
                 )
                 .await?,
             )
+        }),
+        "record_startup_session_diagnostic" => boxed_command(|| async move {
+            to_json(commands::record_startup_session_diagnostic(
+                app_handle.state::<DesktopState>(),
+                arg(&args, "instanceId", "instance_id")?,
+                arg(&args, "attemptId", "attempt_id")?,
+                arg(&args, "diagnosticId", "diagnostic_id")?,
+                arg(&args, "message", "message")?,
+            ).await?)
         }),
         "create_instance_record" => boxed_command(|| async move {
             to_json(

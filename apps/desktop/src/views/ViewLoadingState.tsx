@@ -4,7 +4,7 @@ export function ViewLoadingState(props: { error: Error | null; canRetry: boolean
   const { t } = useI18n();
 
   return (
-    <div aria-live="polite" className="form-note" role={props.error ? "alert" : "status"}>
+    <div aria-live="polite" className="form-note view-loading-state" role={props.error ? "alert" : "status"}>
       <p>{props.error
         ? props.canRetry
           ? t("app.loadViewFailed", undefined, "This view could not be loaded. Try again.")

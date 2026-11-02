@@ -2,7 +2,9 @@ use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 use std::collections::VecDeque;
 use std::sync::Mutex;
+use std::time::Duration;
 use tauri::{Listener, Manager};
+use tokio::sync::{Notify, futures::Notified};
 
 const CAPACITY: usize = 256;
 const BATCH_SIZE: usize = 32;
@@ -11,6 +13,7 @@ const BATCH_SIZE: usize = 32;
 const MAX_EVENT_BYTES: usize = 2 * 1024 * 1024;
 const MAX_RETAINED_BYTES: usize = 32 * 1024 * 1024;
 const MAX_BATCH_BYTES: usize = 4 * 1024 * 1024;
+pub(super) const LONG_POLL_TIMEOUT: Duration = Duration::from_secs(15);
 pub(super) const RESET_EVENT: &str = "runtime-service-events-reset";
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
@@ -29,6 +32,7 @@ struct Batch {
 
 pub(super) struct Events {
     state: Mutex<EventState>,
+    changed: Notify,
 }
 
 struct QueuedEvent {
@@ -64,6 +68,7 @@ impl Default for Events {
                 retained_bytes: 0,
                 events: VecDeque::new(),
             }),
+            changed: Notify::new(),
         }
     }
 }
@@ -78,6 +83,8 @@ impl Events {
         };
         let Some(payload) = payload else {
             state.invalidate();
+            drop(state);
+            self.changed.notify_waiters();
             return;
         };
         if state.sequence == u64::MAX {
@@ -91,6 +98,8 @@ impl Events {
         let bytes = json_size(&event).unwrap_or(usize::MAX);
         if bytes > MAX_EVENT_BYTES {
             state.invalidate();
+            drop(state);
+            self.changed.notify_waiters();
             return;
         }
         state.sequence = event.sequence;
@@ -101,9 +110,50 @@ impl Events {
                 state.retained_bytes -= expired.bytes;
             }
         }
+        drop(state);
+        self.changed.notify_waiters();
     }
 
-    pub(super) fn after(&self, sequence: u64, generation: Option<&str>) -> Result<Value, String> {
+    pub(super) async fn wait_after(
+        &self,
+        sequence: u64,
+        generation: Option<&str>,
+        timeout: Duration,
+    ) -> Result<Value, String> {
+        let deadline = tokio::time::Instant::now() + timeout;
+        loop {
+            let (batch, changed) = self.observe_after(sequence, generation)?;
+            if batch.reset || !batch.events.is_empty() {
+                return serde_json::to_value(batch).map_err(|error| error.to_string());
+            }
+            if tokio::time::timeout_at(deadline, changed).await.is_err() {
+                // Recheck after the deadline: an event racing the timer still
+                // belongs to this cursor, and the next request must not replay it.
+                return serde_json::to_value(self.batch_after(sequence, generation)?)
+                    .map_err(|error| error.to_string());
+            }
+        }
+    }
+
+    fn observe_after(
+        &self,
+        sequence: u64,
+        generation: Option<&str>,
+    ) -> Result<(Batch, Notified<'_>), String> {
+        // notify_waiters reaches every Notified created before publication,
+        // including futures not yet polled. Subscribe before checking the queue
+        // so a publication between the empty check and await cannot be lost.
+        let changed = self.changed.notified();
+        Ok((self.batch_after(sequence, generation)?, changed))
+    }
+
+    #[cfg(test)]
+    fn after(&self, sequence: u64, generation: Option<&str>) -> Result<Value, String> {
+        serde_json::to_value(self.batch_after(sequence, generation)?)
+            .map_err(|error| error.to_string())
+    }
+
+    fn batch_after(&self, sequence: u64, generation: Option<&str>) -> Result<Batch, String> {
         let state = self
             .state
             .lock()
@@ -135,8 +185,7 @@ impl Events {
             batch.events.push(item.event.clone());
             bytes = next_bytes;
         }
-        drop(state);
-        serde_json::to_value(batch).map_err(|error| error.to_string())
+        Ok(batch)
     }
 }
 
@@ -211,6 +260,10 @@ pub(super) fn install(app: &tauri::AppHandle) {
         });
     }
 }
+
+#[cfg(test)]
+#[path = "events_wait_tests.rs"]
+mod wait_tests;
 
 #[cfg(test)]
 #[path = "events_budget_tests.rs"]

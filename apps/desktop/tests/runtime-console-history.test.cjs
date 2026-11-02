@@ -57,6 +57,25 @@ test("a restored document cannot reject current reads after an unobserved servic
   assert.equal(restored.snapshot_revision, undefined);
 });
 
+test("console cursors, partial rows and arrival ordering survive history without shared mutable arrays", () => {
+  const cache = createRuntimeConsoleHistoryCache();
+  const incoming = { ...document(["complete"]), console_rows: [{ stream_id: "s", line: "complete" }],
+    console_sources: [{ log_path: "native/shared.log", process_key: "main", display_name: "Main", run_id: 1,
+      stream_id: "s", started_at_unix_ms: 100, revision: 2, lines: ["complete"], partial_lines: ["partial"], total_lines: 1, truncated: false }] };
+  cache.write(scope(), incoming);
+  incoming.console_sources[0].partial_lines[0] = "mutated input";
+  incoming.console_rows[0].line = "mutated input";
+  const restored = cache.read(scope());
+  assert.equal(restored.console_sources[0].revision, 2);
+  assert.equal(restored.console_sources[0].stream_id, "s");
+  assert.deepEqual(restored.console_sources[0].partial_lines, ["partial"]);
+  assert.equal(restored.console_rows[0].line, "complete");
+  restored.console_sources[0].lines.push("mutated read");
+  restored.console_rows[0].line = "mutated read";
+  assert.deepEqual(cache.read(scope()).console_sources[0].lines, ["complete"]);
+  assert.equal(cache.read(scope()).console_rows[0].line, "complete");
+});
+
 test("pending startup history has its own operation identity before a run exists", () => {
   const cache = createRuntimeConsoleHistoryCache();
   const pending = scope({ runId: null, processKey: null, source: "startup", startupStartedAtUnixMs: 100 });

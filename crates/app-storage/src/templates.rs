@@ -6,6 +6,7 @@ use app_core::workshop_ids::normalize_reference as normalize_workshop_id_line;
 mod templates_materialize;
 pub(crate) use templates_materialize::ManagedConfigMergePlan;
 pub(crate) use templates_materialize::ManagedConfigMutation;
+pub(crate) use templates_materialize::is_default_dst_support_file;
 pub use templates_materialize::is_managed_dst_map_observer;
 #[cfg(test)]
 pub(crate) use templates_materialize::materialize_module_support_files;

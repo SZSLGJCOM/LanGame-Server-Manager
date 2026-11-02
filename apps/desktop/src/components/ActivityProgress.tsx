@@ -19,6 +19,8 @@ interface ActivityProgressProps {
   onStop?: () => void;
   stopRequested?: boolean;
   stopLabel?: string;
+  onDismiss?: () => void;
+  dismissLabel?: string;
 }
 
 export function ActivityProgress(props: ActivityProgressProps) {
@@ -26,7 +28,7 @@ export function ActivityProgress(props: ActivityProgressProps) {
   const percent = props.percent !== null && Number.isFinite(props.percent)
     ? Math.max(0, Math.min(100, props.percent)) : null;
   return (
-    <div className={`shell-task-activity${props.active ? " is-active" : ""}${props.error ? " is-error" : ""}${props.localProgress ? " has-local-progress" : ""}`}>
+    <div className={`shell-task-activity${props.active ? " is-active" : ""}${props.error ? " is-error" : ""}${props.localProgress ? " has-local-progress" : ""}${!props.active && props.onDismiss ? " has-dismiss" : ""}`}>
       <div className="shell-task-summary">
         <span className="shell-activity-text" title={props.title} role={props.error ? "alert" : undefined}>
           <span className="shell-task-phase">{props.label}</span>
@@ -54,6 +56,10 @@ export function ActivityProgress(props: ActivityProgressProps) {
           <ShellIcon name="square" />
         </button>
       ) : null}
+      {!props.active && props.onDismiss ? <button className="shell-activity-notice-close" type="button"
+        onClick={props.onDismiss} title={props.dismissLabel} aria-label={props.dismissLabel ?? "Close"}>
+        <ShellIcon name="x" />
+      </button> : null}
     </div>
   );
 }

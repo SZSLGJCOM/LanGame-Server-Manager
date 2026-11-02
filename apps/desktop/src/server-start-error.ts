@@ -5,7 +5,9 @@ import { readRuntimeStartWarnings } from "./runtime-start-warning";
 export function serverStartSuccessMessage(result: StartInstanceResult | undefined, instanceId: string): UiMessage {
   const warnings = readRuntimeStartWarnings(result?.warnings);
   if (!result || !warnings.length) return message("activity.serverStartSent", { id: instanceId });
-  const key = warnings.some((warning) => warning.code === "world_initialization_incomplete")
+  const key = warnings.some((warning) => warning.code === "startup_log_persistence_failed")
+    ? "activity.serverStartLogPersistenceFailed"
+    : warnings.some((warning) => warning.code === "world_initialization_incomplete")
     ? "activity.serverStartWorldInitializationIncomplete"
     : warnings.some((warning) => warning.code === "graceful_stop_unavailable")
     ? "activity.serverStartGracefulStopUnavailable"
@@ -56,6 +58,10 @@ export function readModuleNotReadyError(error: unknown): ModuleNotReadyError | n
     install_state: fields.install_state,
     message: fields.message
   };
+}
+
+export function isRuntimeStartCancelled(error: unknown): boolean {
+  return readStartErrorFields(error)?.code === "runtime_start_cancelled";
 }
 
 export function serverStartFailureMessage(error: unknown): UiMessage {

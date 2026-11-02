@@ -2389,6 +2389,7 @@ export async function invokeMock<T>(command: string, args?: Record<string, unkno
     case "stop_instance_process": {
       const instanceId = String(args?.instanceId ?? args?.instance_id ?? "srv-dst-1");
       const current = ensureMockInstanceDetails(instanceId);
+      const startupCancelled = current.summary.status.toLowerCase() === "starting";
       const summary: InstanceSummary = { ...current.summary, status: "Stopped", active_process_count: 0 };
       mockSuppressedRuntimeWindowInstances.delete(instanceId);
       upsertMockSummary(summary);
@@ -2398,7 +2399,7 @@ export async function invokeMock<T>(command: string, args?: Record<string, unkno
         active_run: null
       });
       mockLivePlayerStore.invalidate(instanceId);
-      if (current.auto_backup_on_stop) {
+      if (current.auto_backup_on_stop && !startupCancelled) {
         const createdAt = Date.now();
         const backup: InstanceBackupResult = {
           backup_id: `auto-stop-${createdAt}`,
@@ -2420,7 +2421,24 @@ export async function invokeMock<T>(command: string, args?: Record<string, unkno
       log.lines = [...log.lines, `[info] ${summary.name} stop command accepted`];
       log.total_lines = log.lines.length;
       mockLogDocumentStore.set(instanceId, clone(log));
-      return undefined as T;
+      return {
+        summary,
+        run_id: current.active_run?.run_id ?? null,
+        session_id: current.active_run?.session_id ?? null,
+        pid: current.active_run?.pid ?? null,
+        log_path: current.active_run?.log_path ?? null,
+        exit_code: current.active_run ? 0 : null,
+        process_count: current.active_run?.processes?.length ?? 0,
+        processes: (current.active_run?.processes ?? []).map(process => ({
+          run_id: process.run_id,
+          process_key: process.process_key,
+          display_name: process.display_name,
+          pid: process.pid,
+          log_path: process.log_path,
+          exit_code: 0
+        })),
+        outcome: startupCancelled ? "startup_cancelled" : "stopped"
+      } as T;
     }
     case "send_instance_runtime_command":
     case "send_instance_gm_command": {

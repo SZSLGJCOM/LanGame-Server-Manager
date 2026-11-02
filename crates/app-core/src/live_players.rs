@@ -1,12 +1,15 @@
 use serde::{Deserialize, Serialize};
 
-/// The native EOS NetID is an optional Epic account ID plus a required product ID.
+/// Native NetIDs preserve the Epic or Steam+EOS prefix and required product ID.
 pub fn is_humanitz_net_id(value: &str) -> bool {
-    let Some((epic, product)) = value.split_once('|') else {
+    let Some((account, product)) = value.split_once('|') else {
         return false;
     };
     let hex_id = |part: &str| part.len() == 32 && part.bytes().all(|byte| byte.is_ascii_hexdigit());
-    (epic.is_empty() || hex_id(epic)) && hex_id(product)
+    let steam_prefix = account.strip_suffix("_+_").is_some_and(|steam| {
+        steam.len() == 17 && steam.bytes().all(|byte| byte.is_ascii_digit())
+    });
+    (account.is_empty() || hex_id(account) || steam_prefix) && hex_id(product)
 }
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, Default)]
@@ -86,6 +89,8 @@ pub enum RuntimePlayerIdentityKind {
     PalworldPlayerUid,
     /// Native Soulmask Epic account and product identity, both required.
     SoulmaskAccountId,
+    /// Complete native HumanitZ NetID, including its account prefix and separator.
+    HumanitzNetId,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
@@ -225,6 +230,52 @@ mod tests {
     use serde_json::Value;
 
     use super::*;
+
+    #[test]
+    fn humanitz_net_id_accepts_only_complete_native_shapes() {
+        let epic = "0123456789abcdef0123456789ABCDEF";
+        let product = "FEDCBA9876543210fedcba9876543210";
+        let steam = "76561198000000001";
+        for value in [
+            format!("{epic}|{product}"),
+            format!("|{product}"),
+            format!("{steam}_+_|{product}"),
+        ] {
+            assert!(is_humanitz_net_id(&value), "{value}");
+        }
+        for value in [
+            steam.to_owned(),
+            product.to_owned(),
+            format!("{steam}|{product}"),
+            format!("{steam}_+|{product}"),
+            format!("{steam}_+_{epic}|{product}"),
+            format!("7656119800000000_+_|{product}"),
+            format!("765611980000000011_+_|{product}"),
+            format!("7656119800000000x_+_|{product}"),
+            format!("{steam}_+_|"),
+            format!("{steam}_+_|{}", "g".repeat(32)),
+            format!("{steam}_+_||{product}"),
+            format!("{steam}_+_|{product};kick all"),
+            format!(" {steam}_+_|{product}"),
+            format!("{steam}_+_|{product}\n"),
+            format!("{epic}|"),
+            "|".to_owned(),
+        ] {
+            assert!(!is_humanitz_net_id(&value), "{value}");
+        }
+    }
+
+    #[test]
+    fn humanitz_identity_uses_a_distinct_json_namespace() {
+        assert_eq!(
+            serde_json::to_value(RuntimePlayerIdentityKind::HumanitzNetId).unwrap(),
+            "humanitz_net_id"
+        );
+        assert_eq!(
+            serde_json::from_str::<RuntimePlayerIdentityKind>("\"humanitz_net_id\"").unwrap(),
+            RuntimePlayerIdentityKind::HumanitzNetId
+        );
+    }
 
     #[test]
     fn runtime_live_player_snapshot_serializes_public_fields_only() {

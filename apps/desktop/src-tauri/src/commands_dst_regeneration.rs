@@ -160,6 +160,7 @@ pub async fn regenerate_dontstarve_world(
                 super::commands_runtime_lifecycle::stop_instance_process(
                     state.clone(),
                     instance_id.clone(),
+                    None,
                 )
                 .await?;
             }
@@ -172,6 +173,7 @@ pub async fn regenerate_dontstarve_world(
                 state.clone(),
                 instance_id.clone(),
                 Some(preview),
+                None,
             )
         },
     )

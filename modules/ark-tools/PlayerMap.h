@@ -69,15 +69,20 @@ Json PlayerMap(UWorld* world, const std::string& id) {
         if (!player_id || !player->PlayerStateField()) continue; // Not yet authenticated/spawned.
         if (players.size() >= 512) return Error(id, "player_limit_exceeded");
         auto native_name = ServerApi::IApiUtils::GetCharacterName(player);
+        // Keep the platform account name separate from the survivor's name.
+        auto native_account_name = ServerApi::IApiUtils::GetSteamName(player);
 #ifdef LGSM_ASA
         auto name = native_name.ToStringUTF8();
+        auto account_name = native_account_name.ToStringUTF8();
         auto account = ServerApi::IApiUtils::GetEOSIDFromController(player).ToString();
 #else
         auto name = native_name.ToString(); // The ASE SDK uses CP_UTF8 here.
+        auto account_name = native_account_name.ToString();
         const auto steam_id = ServerApi::IApiUtils::GetSteamIdFromController(player);
         auto account = steam_id ? std::to_string(steam_id) : std::string();
 #endif
         Json record = {{"playerId", player_id}, {"name", MapPlayerText(name, 1024)},
+            {"accountName", MapPlayerText(account_name, 1024)},
             {"accountId", MapPlayerText(account, 256)}, {"team", player->TargetingTeamField()},
             {"x", nullptr}, {"y", nullptr}, {"z", nullptr}};
         auto* character = player->GetPlayerCharacter();

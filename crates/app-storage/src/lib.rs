@@ -36,6 +36,9 @@ mod ark_cluster_backups;
 mod ark_clusters;
 mod ark_maps;
 mod atomic_file;
+pub mod storage_migration;
+mod storage_migration_files;
+mod storage_migration_metadata;
 // Desktop-owned extension updates use the same bounded, synced publication and
 // cooperative compare-and-swap as native configuration writers.
 pub use atomic_file::{compare_and_swap_file_atomically, create_file_atomically};
@@ -64,6 +67,7 @@ mod instance_deletion;
 mod instance_reconciliation;
 mod instance_retirement_paths;
 mod instance_stored_settings;
+pub mod startup_sessions;
 pub use instance_reconciliation::{list_missing_instance_candidates, reconcile_missing_instance};
 pub use instance_stored_settings::read_instance_stored_settings;
 mod enshrouded_bans;
@@ -186,6 +190,8 @@ pub use program_install_records::{
     read_program_install_owner, register_instance_install, sync_instance_game_install,
 };
 mod runtime;
+mod runtime_protocol_probe;
+pub use runtime_protocol_probe::{ProcessProbeTarget, poll_owned_a2s_info, poll_owned_tcp};
 mod runtime_log_diagnostics;
 mod save_paths;
 mod settings;
@@ -257,17 +263,20 @@ pub use program_runtime::{
     instance_uses_library_program, resolve_instance_runtime_root,
 };
 pub use runtime::{
-    GameLogDocument, GameLogSnapshot, QueriedPlayerCount, StartedInstanceProcess,
-    WindroseNativeStage, ark_native_log_message, describe_expected_player_query_binding,
+    GameLogDocument, GameLogSnapshot, QueriedPlayerCount, StartedInstanceProcess, StartupLogReadiness,
+    ValheimLogHandoff, WindroseNativeStage, ark_native_log_message,
+    describe_expected_player_query_binding,
     list_active_instance_runs, mark_instance_process_started_with_identity,
     mark_instance_process_stopped, normalize_query_host, parse_a2s_info_payload,
     parse_minecraft_query_basic_response, parse_minecraft_query_challenge_response,
     query_a2s_player_count, query_live_player_count, read_active_instance_run,
-    read_game_log_snapshot, read_instance_details_and_runtime_health,
+    read_game_log_snapshot, read_game_log_snapshot_after_startup, read_instance_details_and_runtime_health,
     read_instance_details_and_runtime_overview, read_instance_game_log_document,
     read_instance_log_document, read_instance_restart_failure_count,
     read_instance_runtime_overview, read_log_path_snapshot, resolve_player_query_target,
-    steam_player_query_visibility_restriction, supports_live_player_query_protocol,
+    record_valheim_native_log, startup_log_line_is_current,
+    steam_player_query_visibility_restriction,
+    supports_live_player_query_protocol,
     windrose_native_stage,
 };
 pub use runtime_log_diagnostics::runtime_fatal_log_lines;
@@ -533,6 +542,10 @@ struct DirectoryCopyStats {
 
 #[derive(Debug, Error)]
 pub enum StorageError {
+    #[error("storage migration was cancelled; the original files were preserved")]
+    StorageMigrationCancelled,
+    #[error("storage migration cannot continue at {path}: {message}")]
+    InvalidStorageMigration { path: PathBuf, message: String },
     #[error("没有可安全使用的 LanGame 数据目录。请选择其他位置。\n{details}")]
     NoUsableStorageLocation { details: String },
     #[error("failed to create path {path}: {source}")]

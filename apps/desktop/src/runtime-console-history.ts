@@ -12,14 +12,15 @@ export interface RuntimeConsoleHistoryScope {
   runId: number | null;
   source: string;
   startupStartedAtUnixMs?: number;
+  startupAttemptId?: string;
 }
 
 export function runtimeConsoleStartupHistoryScope(
   moduleId: string,
-  boundary: { instanceId: string; startedAtUnixMs: number }
+  boundary: { instanceId: string; startedAtUnixMs: number; startupAttemptId?: string }
 ): RuntimeConsoleHistoryScope {
   return { instanceId: boundary.instanceId, moduleId, processKey: null, runId: null,
-    source: "startup", startupStartedAtUnixMs: boundary.startedAtUnixMs };
+    source: "startup", startupStartedAtUnixMs: boundary.startedAtUnixMs, startupAttemptId: boundary.startupAttemptId };
 }
 
 const MAX_LINES = 400;
@@ -37,7 +38,7 @@ export function createRuntimeConsoleHistoryCache() {
     if (scope.startupStartedAtUnixMs !== undefined) {
       return scope.runId === null && scope.processKey === null && scope.source === "startup"
         && Number.isSafeInteger(scope.startupStartedAtUnixMs) && scope.startupStartedAtUnixMs > 0
-        ? JSON.stringify([scope.instanceId, scope.moduleId, "startup", scope.startupStartedAtUnixMs]) : null;
+        ? JSON.stringify([scope.instanceId, scope.moduleId, "startup", scope.startupAttemptId ?? scope.startupStartedAtUnixMs]) : null;
     }
     return scope.runId !== null && Number.isSafeInteger(scope.runId) && scope.runId > 0
       ? JSON.stringify([scope.instanceId, scope.moduleId, scope.processKey, scope.runId, scope.source]) : null;
@@ -48,6 +49,15 @@ export function createRuntimeConsoleHistoryCache() {
     entries.delete(entryKey);
   };
   const copy = (snapshot: RuntimeConsoleHistorySnapshot): RuntimeConsoleHistorySnapshot => ({ ...snapshot, lines: [...snapshot.lines],
+    ...(snapshot.startup_session ? { startup_session: { ...snapshot.startup_session,
+      run_ids: [...snapshot.startup_session.run_ids],
+      snapshot: copy({ ...snapshot.startup_session.snapshot, startup_session: undefined }),
+      console_source: snapshot.startup_session.console_source ? { ...snapshot.startup_session.console_source,
+        lines: [...snapshot.startup_session.console_source.lines], partial_lines: [...snapshot.startup_session.console_source.partial_lines] } : null } } : {}),
+    ...(snapshot.console_sources ? { console_sources: snapshot.console_sources.map(source => ({ ...source,
+      lines: [...source.lines], partial_lines: [...source.partial_lines] })) } : {}),
+    ...(snapshot.console_rows ? { console_rows: snapshot.console_rows.map(row => ({ ...row })) } : {}),
+    ...(snapshot.console_refresh_paths ? { console_refresh_paths: [...snapshot.console_refresh_paths] } : {}),
     ...(snapshot.startup_stream_diagnostic ? { startup_stream_diagnostic: { ...snapshot.startup_stream_diagnostic } } : {}) });
 
   return {
@@ -63,14 +73,18 @@ export function createRuntimeConsoleHistoryCache() {
       // ordering, so the first current document must be able to replace them.
       // Startup captures remain subscribed for the operation's entire lifetime
       // and clear on service reset, so their current revisions remain ordered.
-      if (scope.startupStartedAtUnixMs === undefined) delete restored.snapshot_revision;
+      if (scope.startupStartedAtUnixMs === undefined) {
+        delete restored.snapshot_revision;
+        if (restored.console_sources) restored.console_refresh_paths = restored.console_sources.map(source => source.log_path);
+      }
       return restored;
     },
     write(scope: RuntimeConsoleHistoryScope, snapshot: RuntimeConsoleHistorySnapshot) {
       const entryKey = key(scope);
-      if (!entryKey || snapshot.read_error || (!snapshot.source_path
+      if (!entryKey || (snapshot.read_error && !snapshot.console_sources) || (!snapshot.source_path
         && !(scope.startupStartedAtUnixMs !== undefined && snapshot.startup_stream_diagnostic))) return;
-      const retained = { ...snapshot, lines: snapshot.lines.slice(-MAX_LINES),
+      const retained = { ...copy(snapshot), lines: snapshot.lines.slice(-MAX_LINES),
+        ...(snapshot.console_rows ? { console_rows: snapshot.console_rows.slice(-MAX_LINES).map(row => ({ ...row })) } : {}),
         ...(snapshot.startup_stream_diagnostic ? { startup_stream_diagnostic: { ...snapshot.startup_stream_diagnostic } } : {}),
         truncated: Boolean(snapshot.truncated) || snapshot.lines.length > MAX_LINES };
       const entryBytes = (JSON.stringify(retained).length + entryKey.length) * 2;

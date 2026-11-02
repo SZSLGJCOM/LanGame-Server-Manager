@@ -33,6 +33,34 @@ test("read-only query names remain selectable for details without inventing acco
   assert.match(html, /在线/);
 });
 
+test("ARK name enrichment keeps the live roster actionable without an installation warning", () => {
+  const snapshot = {
+    snapshot_id: "ark-names", instance_id: "ark", status: "ready", source: "runtime_action",
+    observed_at_unix_ms: 1000, expires_at_unix_ms: 10000, complete: true, truncated: false, stale: false,
+    current_players: 1, max_players: null,
+    entries: [{ ...player, display_name: "??", available_action_ids: ["kick_player"],
+      identifiers: [{ kind: "steam_id", value: "76561198000000001", stable: true }] }],
+    issue: { code: "names_unavailable", setting_keys: [], summary: "Native names were lossy." }
+  };
+  const presentation = deriveLivePlayerPresentation(snapshot, 2000, player.player_key);
+  assert.equal(presentation.kind, "ready");
+  assert.equal(presentation.stateVisible, false);
+  assert.equal(presentation.tableVisible, true);
+  assert.equal(presentation.actionsEnabled, true);
+  const enriched = { ...snapshot, issue: null,
+    entries: [{ ...snapshot.entries[0], display_name: "中文玩家" }] };
+  const enrichedPresentation = deriveLivePlayerPresentation(enriched, 2000, player.player_key);
+  assert.equal(enrichedPresentation.stateVisible, false);
+  assert.equal(enrichedPresentation.actionsEnabled, true);
+  const html = renderToStaticMarkup(React.createElement(LivePlayerTable, {
+    locale: "zh-CN", now: 2000, onSelect() {}, rows: enrichedPresentation.rows,
+    selectedPlayerKey: player.player_key, stale: false
+  }));
+  assert.match(html, /中文玩家/);
+  assert.match(html, /aria-pressed="true"/);
+  assert.doesNotMatch(html, /安装|更新|扩展|部分玩家名称/);
+});
+
 test("actionable players remain selectable and retained rows identify their old status", () => {
   const html = renderToStaticMarkup(React.createElement(LivePlayerTable, {
     locale: "zh-CN", now: 1_000, onSelect() {}, rows: [{ ...player, available_action_ids: ["kick"], identifiers: [{ kind: "steam_id", value: "76561198000000001", stable: true }] }], selectedPlayerKey: "query:1", stale: true

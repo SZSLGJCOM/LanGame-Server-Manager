@@ -39,6 +39,7 @@ struct OutputRecord {
     line: String,
     complete: bool,
     repeated: bool,
+    raw: Option<InstallConsoleOutput>,
 }
 
 impl CommandEvidence {
@@ -191,9 +192,28 @@ where
         line,
         complete,
         repeated,
+        raw: None,
     };
-    let mut stdout_forwarder = spawn_record_forwarder(stdout, tx.clone(), true, record);
-    let mut stderr_forwarder = spawn_record_forwarder(stderr, tx.clone(), true, record);
+    let raw = |output| OutputRecord {
+        line: String::new(),
+        complete: false,
+        repeated: false,
+        raw: Some(output),
+    };
+    let mut stdout_forwarder = spawn_record_forwarder(
+        stdout,
+        tx.clone(),
+        true,
+        record,
+        Some((InstallOutputSource::Stdout, raw)),
+    );
+    let mut stderr_forwarder = spawn_record_forwarder(
+        stderr,
+        tx.clone(),
+        true,
+        record,
+        Some((InstallOutputSource::Stderr, raw)),
+    );
     drop(tx);
 
     let mut excerpt_lines = VecDeque::new();
@@ -204,7 +224,7 @@ where
     let mut progress = SteamInstallOutput::new();
     let mut status = None;
     let mut channel_closed = false;
-    let mut log_tick = tokio::time::interval(Duration::from_millis(250));
+    let mut log_tick = tokio::time::interval(Duration::from_millis(33));
     log_tick.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Skip);
 
     loop {
@@ -265,6 +285,10 @@ where
             maybe_line = rx.recv(), if !channel_closed => {
                 match maybe_line {
                     Some(Ok(record)) => {
+                        if let Some(raw) = record.raw {
+                            on_progress(InstallProgressUpdate::raw(raw));
+                            continue;
+                        }
                         let trimmed = record.line.trim();
                         if trimmed.is_empty() {
                             continue;
@@ -417,7 +441,7 @@ pub(super) fn spawn_line_forwarder<R>(
 where
     R: AsyncRead + Unpin + Send + 'static,
 {
-    spawn_record_forwarder(reader, sender, false, |line, _, _| line)
+    spawn_record_forwarder(reader, sender, false, |line, _, _| line, None)
 }
 
 fn spawn_record_forwarder<R, T, F>(
@@ -425,6 +449,7 @@ fn spawn_record_forwarder<R, T, F>(
     sender: mpsc::Sender<Result<T, std::io::Error>>,
     include_completed_snapshots: bool,
     record: F,
+    raw_record: Option<(InstallOutputSource, fn(InstallConsoleOutput) -> T)>,
 ) -> AbortOnDropTask<()>
 where
     R: AsyncRead + Unpin + Send + 'static,
@@ -432,13 +457,16 @@ where
     F: Fn(String, bool, bool) -> T + Send + 'static,
 {
     AbortOnDropTask::new(tokio::spawn(async move {
+        let mut raw_cursor = raw_record
+            .as_ref()
+            .map(|(source, _)| super::install_progress::OutputCursor::new(*source));
         let mut read_buffer = [0_u8; STEAMCMD_OUTPUT_READ_CHUNK_BYTES];
         let mut line_buffer = Vec::with_capacity(STEAMCMD_OUTPUT_LINE_LIMIT_BYTES);
         let mut line_truncated = false;
         let mut last_snapshot = String::new();
         let mut snapshot_tick = tokio::time::interval_at(
-            tokio::time::Instant::now() + Duration::from_millis(250),
-            Duration::from_millis(250),
+            tokio::time::Instant::now() + Duration::from_millis(33),
+            Duration::from_millis(33),
         );
         snapshot_tick.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Skip);
         loop {
@@ -463,6 +491,14 @@ where
                     return;
                 }
             };
+            if let (Some(cursor), Some((_, make_raw))) = (&mut raw_cursor, &raw_record)
+                && sender
+                    .send(Ok(make_raw(cursor.chunk(&read_buffer[..read], read == 0))))
+                    .await
+                    .is_err()
+            {
+                return;
+            }
             if read == 0 {
                 if (!line_buffer.is_empty() || line_truncated)
                     && (include_completed_snapshots
@@ -669,14 +705,18 @@ mod command_tests {
         use tokio::io::AsyncWriteExt;
         let (mut writer, reader) = tokio::io::duplex(1024);
         let (sender, mut receiver) = mpsc::channel(8);
-        let mut forwarder =
-            spawn_record_forwarder(reader, sender, true, |line, complete, repeated| {
-                OutputRecord {
-                    line,
-                    complete,
-                    repeated,
-                }
-            });
+        let mut forwarder = spawn_record_forwarder(
+            reader,
+            sender,
+            true,
+            |line, complete, repeated| OutputRecord {
+                line,
+                complete,
+                repeated,
+                raw: None,
+            },
+            None,
+        );
         writer
             .write_all(b"ERROR! Download item 3817722715 failed (Access Denied)")
             .await
@@ -709,14 +749,18 @@ mod command_tests {
         use tokio::io::AsyncWriteExt;
         let (mut writer, reader) = tokio::io::duplex(1024);
         let (sender, mut receiver) = mpsc::channel(8);
-        let mut forwarder =
-            spawn_record_forwarder(reader, sender, true, |line, complete, repeated| {
-                OutputRecord {
-                    line,
-                    complete,
-                    repeated,
-                }
-            });
+        let mut forwarder = spawn_record_forwarder(
+            reader,
+            sender,
+            true,
+            |line, complete, repeated| OutputRecord {
+                line,
+                complete,
+                repeated,
+                raw: None,
+            },
+            None,
+        );
         writer
             .write_all(b"ERROR! Download item 3817722715 failed (Access Denied).")
             .await
@@ -735,6 +779,60 @@ mod command_tests {
         evidence.observe_line(&complete.line);
         assert!(evidence.workshop.permission_denial(1_623_730));
         forwarder.join().await.unwrap();
+    }
+
+    #[tokio::test]
+    async fn raw_pipe_output_preserves_byte_positions_duplicates_and_oversized_records() {
+        use tokio::io::AsyncWriteExt;
+        let (mut writer, reader) = tokio::io::duplex(1024);
+        let expected = format!("same\nsame\n\n{}\n", "玩家".repeat(2048)).into_bytes();
+        let sent = expected.clone();
+        let writing = tokio::spawn(async move {
+            writer.write_all(&sent).await.unwrap();
+        });
+        let (sender, mut receiver) = mpsc::channel(8);
+        let mut forwarder = spawn_record_forwarder(
+            reader,
+            sender,
+            true,
+            |line, complete, repeated| OutputRecord {
+                line,
+                complete,
+                repeated,
+                raw: None,
+            },
+            Some((InstallOutputSource::Stdout, |output| OutputRecord {
+                line: String::new(),
+                complete: false,
+                repeated: false,
+                raw: Some(output),
+            })),
+        );
+        let mut observed = Vec::new();
+        let mut identity = None;
+        let mut ended = false;
+        while let Some(record) = receiver.recv().await {
+            if let Some(InstallConsoleOutput::Raw {
+                stream_id,
+                source,
+                offset,
+                bytes,
+                finished,
+            }) = record.unwrap().raw
+            {
+                assert!(!ended);
+                assert_eq!(source, InstallOutputSource::Stdout);
+                assert_eq!(*identity.get_or_insert(stream_id), stream_id);
+                assert_eq!(offset, observed.len() as u64);
+                assert!(bytes.len() <= STEAMCMD_OUTPUT_READ_CHUNK_BYTES);
+                observed.extend(bytes);
+                ended = finished;
+            }
+        }
+        writing.await.unwrap();
+        forwarder.join().await.unwrap();
+        assert!(ended);
+        assert_eq!(observed, expected);
     }
 }
 

@@ -96,3 +96,10 @@ verification = "Barotrauma Dedicated Server 1.13.4.0 was run in an isolated inst
 [[runtime.port_roles]]
 role = "player"
 port_names = ["game", "query"]
+
+[runtime.startup_readiness]
+timeout_ms = 600000
+
+[runtime.startup_readiness.probe]
+kind = "runtime_log"
+source = { kind = "managed" }

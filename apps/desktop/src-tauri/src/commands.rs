@@ -206,6 +206,8 @@ pub(crate) mod commands_instance_retirement;
 pub(crate) mod commands_managed_save_control;
 #[path = "commands_native_bans.rs"]
 pub(crate) mod commands_native_bans;
+#[path = "commands_native_status_readiness.rs"]
+mod commands_native_status_readiness;
 #[path = "commands_player_access.rs"]
 pub(crate) mod commands_player_access;
 #[path = "commands_player_counts.rs"]
@@ -260,6 +262,8 @@ pub(crate) mod commands_storage;
 mod commands_storage_lifecycle;
 #[path = "commands_storage_management.rs"]
 pub(crate) mod commands_storage_management;
+#[path = "commands_storage_migration.rs"]
+pub(crate) mod commands_storage_migration;
 pub use commands_instance_retirement::{archive_instance_record, delete_instance_record};
 #[path = "dst_save_validation.rs"]
 mod dst_save_validation;
@@ -358,6 +362,7 @@ pub use commands_storage::{
     create_instance_backup, create_instance_record, delete_instance_backup, ensure_storage_ready,
     import_dontstarve_world_data, list_instance_backups, list_instances_from_storage,
     read_instance_details_from_storage, read_instance_log_document_from_storage,
+    record_startup_session_diagnostic,
     read_instance_runtime_overview_from_storage, read_instance_runtime_window_snapshot,
     read_palworld_operator_snapshot, read_sevendaystodie_operator_snapshot, rename_instance_backup,
     restore_instance_backup, suppress_instance_runtime_windows, sync_modules_to_storage,
@@ -1089,6 +1094,10 @@ pub async fn bootstrap(
         latest.snapshot = lightweight_system_snapshot(&latest, cached);
     }
 
+    commands_storage::project_pending_runtime_start_summaries(
+        state.inner(),
+        &mut latest.instances,
+    )?;
     Ok(BootstrapResponse {
         booted_at_unix_ms,
         state: latest,
@@ -1633,7 +1642,17 @@ pub async fn update_app_settings(
     let _archive_root_guard =
         app_storage::guard_archive_root_settings_update(&storage.paths, &next_settings)
             .await
-            .map_err(|error| error.to_string())?;
+            .map_err(|error| {
+                let message = error.to_string();
+                append_desktop_app_log(
+                    &storage,
+                    "error",
+                    "settings.paths.update.failed",
+                    &message,
+                    json!({ "phase": "archive_roots" }),
+                );
+                logged_error_message(&storage, message)
+            })?;
     let saved = app_storage::save_app_settings_with_paths(next_settings, &storage.paths).map_err(
         |error| {
             let message = error.to_string();
@@ -1642,7 +1661,7 @@ pub async fn update_app_settings(
                 "error",
                 "settings.paths.update.failed",
                 &message,
-                json!({}),
+                json!({ "phase": "persist_settings" }),
             );
             logged_error_message(&storage, message)
         },

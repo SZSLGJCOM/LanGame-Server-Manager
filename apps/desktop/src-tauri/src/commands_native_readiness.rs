@@ -14,8 +14,7 @@ pub(super) mod ark_maps;
 
 #[path = "commands_native_minecraft_readiness.rs"]
 mod minecraft_status;
-#[path = "commands_native_status_readiness.rs"]
-mod native_status;
+use crate::commands::commands_native_status_readiness as native_status;
 #[path = "commands_native_windrose_readiness.rs"]
 mod windrose_world;
 
@@ -189,7 +188,9 @@ impl SmokeManifest {
                     || !descriptor.runtime.player_actions.iter().any(|action| {
                         action.id == "list_online_players"
                             && action.transport == "humanitz_rcon"
-                            && action.command_template == "info"
+                            // The declared Players transport starts with the
+                            // same read-only info exchange used by this probe.
+                            && action.command_template == "Players"
                             && action.port_name.as_ref() == Some(port_name)
                             && action.password_setting_key.as_deref() == Some("rcon_password")
                             && action.enabled_setting_key.as_deref() == Some("rcon_enabled")

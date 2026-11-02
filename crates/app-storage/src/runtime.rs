@@ -8,12 +8,12 @@ use app_core::ModulePlayerQuerySpec;
 
 #[path = "runtime_ark_readiness.rs"]
 mod ark_readiness;
-use ark_readiness::analyze_ark_evolved_runtime_health;
 pub use ark_readiness::ark_native_log_message;
 #[path = "runtime_game_log.rs"]
 mod game_log;
 pub use game_log::{
-    GameLogDocument, GameLogSnapshot, read_game_log_snapshot, read_instance_game_log_document,
+    GameLogDocument, GameLogSnapshot, read_game_log_snapshot, read_game_log_snapshot_after_startup,
+    read_instance_game_log_document,
 };
 #[path = "runtime_console_health_evidence.rs"]
 mod console_health_evidence;
@@ -25,6 +25,8 @@ mod enshrouded_health;
 mod health_evidence;
 #[path = "runtime_health_snapshot.rs"]
 mod health_snapshot;
+#[path = "runtime_a2s_health.rs"]
+mod a2s_health;
 #[path = "runtime_nightingale_health.rs"]
 mod nightingale_health;
 #[path = "runtime_sonsoftheforest_health.rs"]
@@ -39,7 +41,13 @@ mod theforest_health;
 mod unturned_health;
 #[path = "runtime_windrose_health.rs"]
 mod windrose_health;
+#[path = "runtime_valheim_health.rs"]
+mod valheim_health;
+pub use valheim_health::{ValheimLogHandoff, record_valheim_native_log};
 pub use windrose_health::{WindroseNativeStage, windrose_native_stage};
+#[path = "runtime_startup_readiness.rs"]
+mod startup_readiness;
+pub use startup_readiness::{StartupLogReadiness, startup_log_line_is_current};
 #[path = "runtime_returntomoria_health.rs"]
 mod returntomoria_health;
 use std::io::{Read, Seek, SeekFrom};
@@ -53,7 +61,6 @@ const LOG_TAIL_MIN_READ_BYTES: u64 = 64 * 1024;
 const LOG_TAIL_MAX_READ_BYTES: u64 = 1024 * 1024;
 const DST_WRAPPER_LOG_DIRECTORY_ENTRY_LIMIT: usize = 4096;
 const PLAYER_QUERY_TIMEOUT_MS: u64 = 350;
-const ARK_EVOLVED_REQUIRED_UDP_PORT_NAMES: [&str; 2] = ["game", "query"];
 
 pub async fn read_active_instance_run(
     paths: &StoragePaths,
@@ -593,7 +600,37 @@ fn analyze_runtime_health_with_startup_evidence(
     ports: &[PortBinding],
 ) -> app_core::RuntimeHealth {
     let recent_health = analyze_runtime_health(module_id, status, recent_log, active_run, ports);
-    if module_id == "runescapedragonwilds"
+    if module_id == "valheim"
+        && matches!(status, InstanceStatus::Running | InstanceStatus::Starting)
+    {
+        // The console remains the run's public log. A bound native source is
+        // private health evidence and never replaces stdout or save/stop logs.
+        let Some(run) = active_run.filter(|run| {
+            run.run_id > 0
+                && run.log_path.is_some()
+                && run.log_path == recent_log.source_path
+        }) else {
+            return valheim_health::health(false, false);
+        };
+        let observed = valheim_health::observe_for_run(run);
+        if recent_health.status == "error" {
+            return valheim_health::health(false, true);
+        }
+        return match observed {
+            Ok(health) => health,
+            Err(error) => analyze_runtime_health(
+                module_id,
+                status,
+                &LogTailSnapshot {
+                    read_error: Some(error.to_string()),
+                    ..recent_log.clone()
+                },
+                active_run,
+                ports,
+            ),
+        };
+    }
+    if matches!(module_id, "runescapedragonwilds" | "nightingale")
         && matches!(status, InstanceStatus::Running | InstanceStatus::Starting)
         && recent_log.read_error.is_none()
         && let Some(run) = active_run
@@ -608,7 +645,12 @@ fn analyze_runtime_health_with_startup_evidence(
             truncated: false,
             read_error: None,
         };
-        match console_health_evidence::observe_dragonwilds(Path::new(path), run) {
+        let observed = if module_id == "nightingale" {
+            console_health_evidence::observe_nightingale(Path::new(path), run)
+        } else {
+            console_health_evidence::observe_dragonwilds(Path::new(path), run)
+        };
+        match observed {
             Ok(lines) => {
                 evidence.total_lines = lines.len();
                 evidence.lines = lines;
@@ -622,7 +664,9 @@ fn analyze_runtime_health_with_startup_evidence(
                 .lines
                 .iter()
                 .filter(|line| {
-                    line.contains("MapName[") && dragonwilds_health::event(line).is_none()
+                    module_id == "runescapedragonwilds"
+                        && line.contains("MapName[")
+                        && dragonwilds_health::event(line).is_none()
                 })
                 .cloned(),
         );
@@ -644,7 +688,6 @@ fn analyze_runtime_health_with_startup_evidence(
             | "soulmask"
             | "theforest"
             | "sonsoftheforest"
-            | "nightingale"
             | "windrose"
     ) && matches!(status, InstanceStatus::Running | InstanceStatus::Starting)
         && recent_health.status != "error"
@@ -670,7 +713,6 @@ fn analyze_runtime_health_with_startup_evidence(
                 "soulmask" => console_health_evidence::SessionKind::Soulmask,
                 "theforest" => console_health_evidence::SessionKind::TheForest,
                 "sonsoftheforest" => console_health_evidence::SessionKind::SonsOfTheForest,
-                "nightingale" => console_health_evidence::SessionKind::Nightingale,
                 "windrose" => console_health_evidence::SessionKind::Windrose,
                 _ => console_health_evidence::SessionKind::Unturned,
             };
@@ -776,7 +818,7 @@ fn analyze_runtime_health(
     status: &InstanceStatus,
     log_snapshot: &LogTailSnapshot,
     active_run: Option<&ActiveInstanceRun>,
-    ports: &[PortBinding],
+    _ports: &[PortBinding],
 ) -> app_core::RuntimeHealth {
     let module_id = module_id.trim().to_ascii_lowercase();
 
@@ -813,9 +855,12 @@ fn analyze_runtime_health(
         };
     }
 
-    let diagnostic_lines =
-        health_evidence::current_run_lines(&module_id, status, log_snapshot, active_run, true);
-    let diagnostic_lines = if module_id == "runescapedragonwilds" {
+    let diagnostic_lines = if module_id == "nightingale" {
+        nightingale_health::current_run_lines(log_snapshot, active_run, true)
+    } else {
+        health_evidence::current_run_lines(&module_id, status, log_snapshot, active_run, true)
+    };
+    let diagnostic_lines = if matches!(module_id.as_str(), "runescapedragonwilds" | "nightingale") {
         health_evidence::readiness_lines(diagnostic_lines.as_ref())
     } else {
         std::borrow::Cow::Borrowed(diagnostic_lines.as_ref())
@@ -841,8 +886,11 @@ fn analyze_runtime_health(
         };
     }
 
-    let current_lines =
-        health_evidence::current_run_lines(&module_id, status, log_snapshot, active_run, false);
+    let current_lines = if module_id == "nightingale" {
+        nightingale_health::current_run_lines(log_snapshot, active_run, false)
+    } else {
+        health_evidence::current_run_lines(&module_id, status, log_snapshot, active_run, false)
+    };
     let readiness_lines = health_evidence::readiness_lines(current_lines.as_ref());
     let lines = readiness_lines.as_ref();
 
@@ -869,6 +917,10 @@ fn analyze_runtime_health(
         };
     }
 
+    if module_id == "nightingale" {
+        return nightingale_health::analyze(lines);
+    }
+
     if matches!(
         module_id.as_str(),
         "unturned"
@@ -876,7 +928,6 @@ fn analyze_runtime_health(
             | "soulmask"
             | "theforest"
             | "sonsoftheforest"
-            | "nightingale"
             | "windrose"
     ) {
         let same_run = active_run.is_some_and(|run| {
@@ -895,7 +946,6 @@ fn analyze_runtime_health(
                 &[]
             }),
             "sonsoftheforest" => sonsoftheforest_health::analyze(lines),
-            "nightingale" => nightingale_health::analyze(lines),
             "windrose" => windrose_health::analyze(lines),
             _ => unturned_health::analyze(lines),
         };
@@ -945,54 +995,34 @@ fn analyze_runtime_health(
         };
     }
 
-    if module_id == "arksurvivalevolved"
-        && let Some(health) = analyze_ark_evolved_runtime_health(active_run, ports)
+    if module_id == "valheim"
+        && let Ok(mut readiness) = StartupLogReadiness::new(&module_id)
     {
+        for line in lines {
+            readiness.observe(line);
+        }
+        let mut health = valheim_health::health(readiness.is_ready(), readiness.has_failed());
+        if readiness.is_ready() {
+            // Steam's fixed marker is safe to show; PlayFab's message carries
+            // private join data and is never copied into health metadata.
+            health.matched_line = lines
+                .iter()
+                .rev()
+                .find(|line| startup_readiness::simple_ready_signal("valheim", line))
+                .cloned();
+        }
         return health;
     }
 
-    let module_ready_markers: &[&str] = match module_id.as_str() {
-        "necesse" => &["started server using port"],
-        "humanitz" => &["loghzsuccess: display: success => session created!"],
-        "sevendaystodie" => &["inf [steamworks.net] gameserver.init successful"],
-        "satisfactory" => &["server startup time elapsed and saving/level loading is done"],
-        "scum" => &["logscum: global stats:"],
-        "projectzomboid" => &["*** server started ****"],
-        "vrising" => &["[server] startup completed - disabling scene loading systems"],
-        _ => &[],
-    };
     if let Some(line) = lines
         .iter()
         .rev()
         .find(|line| matches_native_ready_signal(&module_id, line))
         .cloned()
-        .or_else(|| find_latest_matching_log_line(lines, module_ready_markers))
-        .or_else(|| {
-            // These listeners precede world/session readiness in their native logs.
-            if matches!(
-                module_id.as_str(),
-                "corekeeper" | "runescapedragonwilds" | "nightingale" | "arksurvivalascended"
-            ) {
-                return None;
-            }
-            find_latest_matching_log_line(
-                lines,
-                &[
-                    "lan server started on port",
-                    "server ready",
-                    "ready for connections",
-                    "listening on port",
-                    "listening on udp",
-                    "heartbeat ok",
-                    "server startup complete",
-                    "load map complete",
-                ],
-            )
-        })
     {
         return app_core::RuntimeHealth {
             status: String::from("ready"),
-            summary: String::from("The server reported a ready or listening signal."),
+            summary: String::from("The server reported its native startup completion signal."),
             reason: runtime_health_reason("ready_signal", &[]),
             matched_line: Some(line),
         };
@@ -1033,36 +1063,11 @@ fn enshrouded_session_state(line: &str) -> Option<bool> {
 
 fn matches_native_ready_signal(module_id: &str, line: &str) -> bool {
     let line = line.trim();
-    match module_id {
-        "arksurvivalascended" => ark_readiness::has_asa_ready_marker(&line.to_ascii_lowercase()),
-        "corekeeper" => line
-            .rsplit_once("timescale = ")
-            .is_some_and(|(_, value)| value == "0"),
-        "minecraft" => clock_log_message(line)
-            .and_then(|message| message.strip_prefix(" [Server thread/INFO]: Done ("))
-            .and_then(|message| message.strip_suffix("s)! For help, type \"help\""))
-            .and_then(|elapsed| elapsed.parse::<f64>().ok())
-            .is_some_and(|elapsed| elapsed.is_finite() && elapsed >= 0.0),
-        "valheim" => line
-            .strip_suffix(": Game server connected")
-            .is_some_and(|timestamp| {
-                timestamp.bytes().any(|byte| byte.is_ascii_digit())
-                    && timestamp
-                        .bytes()
-                        .all(|byte| byte.is_ascii_digit() || matches!(byte, b'/' | b':' | b' '))
-            }),
-        "barotrauma" => line == "Server started",
-        "palworld" => line
-            .strip_prefix("Running Palworld dedicated server on :")
-            .filter(|port| !port.is_empty() && port.bytes().all(|byte| byte.is_ascii_digit()))
-            .and_then(|port| port.parse::<u16>().ok())
-            .is_some_and(|port| port != 0),
-        "rimworld" => clock_log_message(line)
-            .and_then(|message| message.strip_prefix(" | Listening for users at "))
-            .and_then(|endpoint| endpoint.parse::<std::net::SocketAddr>().ok())
-            .is_some_and(|endpoint| endpoint.port() != 0),
-        _ => false,
+    if module_id == "dontstarve" {
+        // Retain DST's own health signal; startup uses its world nonce probe.
+        return line == "Server ready" || clock_log_message(line) == Some(": Server ready");
     }
+    startup_readiness::simple_ready_signal(module_id, line)
 }
 
 fn clock_log_message(line: &str) -> Option<&str> {
@@ -1114,7 +1119,12 @@ fn analyze_abiotic_factor_runtime_health(lines: &[String]) -> Option<app_core::R
         });
     }
 
-    if let Some(line) = find_latest_matching_log_line(lines, &["session short code:"]) {
+    if let Some(line) = lines
+        .iter()
+        .rev()
+        .find(|line| startup_readiness::simple_ready_signal("abioticfactor", line))
+        .cloned()
+    {
         return Some(app_core::RuntimeHealth {
             status: String::from("ready"),
             summary: String::from(
@@ -1175,30 +1185,6 @@ fn analyze_abiotic_factor_runtime_health(lines: &[String]) -> Option<app_core::R
     }
 
     None
-}
-
-fn ark_evolved_required_udp_ports(ports: &[PortBinding]) -> Vec<u16> {
-    let mut required_ports = ports
-        .iter()
-        .filter(|binding| binding.protocol.eq_ignore_ascii_case("udp"))
-        .filter(|binding| {
-            ARK_EVOLVED_REQUIRED_UDP_PORT_NAMES
-                .iter()
-                .any(|name| binding.name.eq_ignore_ascii_case(name))
-        })
-        .map(|binding| binding.port)
-        .collect::<Vec<_>>();
-    required_ports.sort_unstable();
-    required_ports.dedup();
-    required_ports
-}
-
-fn format_port_list(ports: &[u16]) -> String {
-    ports
-        .iter()
-        .map(u16::to_string)
-        .collect::<Vec<_>>()
-        .join(", ")
 }
 
 #[cfg(windows)]
@@ -2306,6 +2292,10 @@ fn known_module_runtime_log_path(
         return Some(install_root.join("SCUM/Saved/Logs/SCUM.log"));
     }
 
+    if module_id.eq_ignore_ascii_case("nightingale") {
+        return Some(install_root.join("NWX/Saved/Logs/NWX.log"));
+    }
+
     if module_id.eq_ignore_ascii_case("arksurvivalascended") {
         let instance_log = instance_logs_dir.join("ark-ascended-server.log");
         if instance_log.exists() {
@@ -2391,6 +2381,7 @@ fn module_runtime_log_is_authoritative(module_id: &str) -> bool {
         || module_id.eq_ignore_ascii_case("arksurvivalascended")
         || module_id.eq_ignore_ascii_case("conanexiles")
         || module_id.eq_ignore_ascii_case("runescapedragonwilds")
+        || module_id.eq_ignore_ascii_case("nightingale")
 }
 
 fn should_prefer_module_log(process_log: &Path, module_log: &Path) -> bool {

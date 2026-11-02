@@ -7,6 +7,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::thread::JoinHandle;
 use std::time::{Duration, Instant};
 
+use super::console_live_output::LiveConsolePreview;
 use super::pseudo_console_transcript::TerminalTranscript;
 use super::{
     OwnedWindowsHandle, RuntimeChild, RuntimeStdin, RuntimeStdinCancellation, WindowsSpawnedChild,
@@ -184,11 +185,22 @@ impl PseudoConsoleInput {
     }
 }
 
+#[cfg(test)]
 pub(super) fn spawn(
     plan: &super::SpawnCommand<'_>,
     log: impl Write + Send + 'static,
     run_in_background: bool,
     resource_group: Option<&super::RuntimeResourceGroup>,
+) -> io::Result<(RuntimeChild, Option<super::WindowsHiddenDesktop>)> {
+    spawn_with_preview(plan, log, run_in_background, resource_group, None)
+}
+
+pub(super) fn spawn_with_preview(
+    plan: &super::SpawnCommand<'_>,
+    log: impl Write + Send + 'static,
+    run_in_background: bool,
+    resource_group: Option<&super::RuntimeResourceGroup>,
+    preview: Option<LiveConsolePreview>,
 ) -> io::Result<(RuntimeChild, Option<super::WindowsHiddenDesktop>)> {
     spawn_with_output_mode(
         plan,
@@ -196,6 +208,7 @@ pub(super) fn spawn(
         run_in_background,
         resource_group,
         OutputMode::CompletedRows,
+        preview,
     )
 }
 
@@ -203,7 +216,14 @@ pub(super) fn spawn_interactive(
     plan: &super::SpawnCommand<'_>,
     output: impl Write + Send + 'static,
 ) -> io::Result<(RuntimeChild, Option<super::WindowsHiddenDesktop>)> {
-    spawn_with_output_mode(plan, output, true, None, OutputMode::InteractiveSnapshots)
+    spawn_with_output_mode(
+        plan,
+        output,
+        true,
+        None,
+        OutputMode::InteractiveSnapshots,
+        None,
+    )
 }
 
 fn spawn_with_output_mode(
@@ -212,6 +232,7 @@ fn spawn_with_output_mode(
     run_in_background: bool,
     resource_group: Option<&super::RuntimeResourceGroup>,
     mode: OutputMode,
+    preview: Option<LiveConsolePreview>,
 ) -> io::Result<(RuntimeChild, Option<super::WindowsHiddenDesktop>)> {
     super::process_environment::validate_windows_command(plan)?;
     let desktop = run_in_background
@@ -253,7 +274,7 @@ fn spawn_with_output_mode(
     terminal.reader = Some(
         std::thread::Builder::new()
             .name("managed-terminal-output".into())
-            .spawn(move || drain_output_in_mode(output, log, reader_state, mode))?,
+            .spawn(move || drain_output_in_mode(output, log, reader_state, mode, preview))?,
     );
     let spawn_result =
         spawn_attached_process(plan, handle, job.launch_job_handles(), desktop.as_ref());
@@ -334,6 +355,7 @@ fn spawn_attached_process(
     Ok(process)
 }
 
+#[cfg(test)]
 fn drain_output(output: File, log: impl Write, state: Arc<TerminalState>) {
     drain_output_with_reader(
         |buffer| read_pipe(&output, buffer),
@@ -348,26 +370,33 @@ fn drain_output_in_mode(
     log: impl Write,
     state: Arc<TerminalState>,
     mode: OutputMode,
+    preview: Option<LiveConsolePreview>,
 ) {
-    if mode == OutputMode::CompletedRows {
-        return drain_output(output, log, state);
-    }
     drain_output_with_reader_in_mode(
         |buffer| read_pipe(&output, buffer),
         log,
         state,
         OUTPUT_CLOSE_BUDGET,
         mode,
+        preview,
     );
 }
 
+#[cfg(test)]
 fn drain_output_with_reader(
     read: impl FnMut(&mut [u8]) -> io::Result<usize>,
     log: impl Write,
     state: Arc<TerminalState>,
     close_budget: Duration,
 ) {
-    drain_output_with_reader_in_mode(read, log, state, close_budget, OutputMode::CompletedRows);
+    drain_output_with_reader_in_mode(
+        read,
+        log,
+        state,
+        close_budget,
+        OutputMode::CompletedRows,
+        None,
+    );
 }
 
 fn drain_output_with_reader_in_mode(
@@ -376,6 +405,7 @@ fn drain_output_with_reader_in_mode(
     state: Arc<TerminalState>,
     close_budget: Duration,
     mode: OutputMode,
+    preview: Option<LiveConsolePreview>,
 ) {
     let mut transcript = TerminalTranscript::new(WIDTH, HEIGHT);
     let mut buffer = [0; 8192];
@@ -401,7 +431,14 @@ fn drain_output_with_reader_in_mode(
                     if parsed.is_err() || mode == OutputMode::InteractiveSnapshots {
                         transcript.drain_pending_rows(&mut text);
                     }
-                    let result = persist_transcript(&mut log, &text, parsed, mode);
+                    let result = persist_transcript_with_preview(
+                        &mut log,
+                        &text,
+                        parsed,
+                        mode,
+                        &transcript,
+                        preview.as_ref(),
+                    );
                     if let Err(error) = result {
                         if mode == OutputMode::CompletedRows {
                             eprintln!("Managed terminal output could not be persisted: {error}");
@@ -426,7 +463,14 @@ fn drain_output_with_reader_in_mode(
         // A broken read or bounded shutdown still owns its decoded final row.
         // Preserve that known prefix before reporting the missing stream tail.
         let completed = capture_failure.map_or(completed, Err);
-        let result = persist_transcript(&mut log, &text, completed, mode);
+        let result = persist_transcript_with_preview(
+            &mut log,
+            &text,
+            completed,
+            mode,
+            &transcript,
+            preview.as_ref(),
+        );
         if let Err(error) = result {
             if mode == OutputMode::CompletedRows {
                 eprintln!("Managed terminal output could not be completed: {error}");
@@ -434,12 +478,50 @@ fn drain_output_with_reader_in_mode(
             state.output_failed.store(true, Ordering::Release);
         }
     }
-    if let Err(error) = log.flush() {
+    let flushed = match preview {
+        Some(preview) => preview.update(|rows| {
+            rows.clear();
+            log.flush()
+        }),
+        None => log.flush(),
+    };
+    if let Err(error) = flushed {
         if mode == OutputMode::CompletedRows {
             eprintln!("Managed terminal output could not be flushed: {error}");
         }
         state.output_failed.store(true, Ordering::Release);
     }
+}
+
+fn persist_transcript_with_preview(
+    log: &mut impl Write,
+    text: &str,
+    parsed: io::Result<()>,
+    mode: OutputMode,
+    transcript: &TerminalTranscript,
+    preview: Option<&LiveConsolePreview>,
+) -> io::Result<()> {
+    let Some(preview) = preview else {
+        return persist_transcript(log, text, parsed, mode);
+    };
+    preview.update(|rows| {
+        let persisted = persist_transcript(log, text, parsed, mode);
+        // Buffered application-owned sinks must publish completed rows before
+        // the corresponding preview disappears. Partial snapshots never enter
+        // the sink, so readiness parsers still consume only completed rows.
+        let flushed = if !text.is_empty() || persisted.is_err() {
+            log.flush()
+        } else {
+            Ok(())
+        };
+        let result = persisted.and(flushed);
+        *rows = if result.is_ok() {
+            transcript.pending_rows()
+        } else {
+            Vec::new()
+        };
+        result
+    })
 }
 
 fn persist_transcript(

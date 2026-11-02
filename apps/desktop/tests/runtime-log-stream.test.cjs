@@ -3,7 +3,9 @@ const fs = require("node:fs");
 const path = require("node:path");
 const test = require("node:test");
 const vm = require("node:vm");
+const { createRequire } = require("node:module");
 const { transpileTypeScript } = require("../scripts/typescript_source_tools.cjs");
+require.extensions[".ts"] = (loaded, filename) => loaded._compile(transpileTypeScript(fs.readFileSync(filename, "utf8"), filename), filename);
 
 function loadRuntimeLogStream() {
   const sourcePath = path.join(__dirname, "..", "src", "runtime-log-stream.ts");
@@ -14,7 +16,7 @@ function loadRuntimeLogStream() {
   vm.runInNewContext(outputText, {
     module,
     exports: module.exports,
-    require
+    require: createRequire(sourcePath)
   }, { filename: sourcePath });
   return module.exports;
 }

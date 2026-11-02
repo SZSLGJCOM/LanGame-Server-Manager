@@ -245,15 +245,17 @@ async fn create_window(recovery: &Arc<Recovery>, app: &tauri::AppHandle) -> Resu
                     }
                     return;
                 }
-                if let Err(error) = crate::desktop_window::prepare(&window).and_then(|()| {
-                    if owner.lock().window_visible {
-                        window
-                            .show()
-                            .map_err(|error| format!("show recovered desktop window: {error}"))
-                    } else {
-                        Ok(())
-                    }
-                }) {
+                if let Err(error) = crate::desktop_window::prepare(&window, &owner.config.window)
+                    .and_then(|()| {
+                        if owner.lock().window_visible {
+                            window
+                                .show()
+                                .map_err(|error| format!("show recovered desktop window: {error}"))
+                        } else {
+                            Ok(())
+                        }
+                    })
+                {
                     // PendingCreation owns destruction after a failed placement.
                     let _ = reply.send(Err(format!("prepare recovered desktop window: {error}")));
                     return;

@@ -2,7 +2,8 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use tokio::io::{AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt};
 
-pub(super) const PROTOCOL: u32 = 1;
+// Version 2 requires waiting event reads; version 1 returns idle batches immediately.
+pub(crate) const PROTOCOL: u32 = 2;
 pub(super) const MAX_FRAME: usize = 16 * 1024 * 1024;
 
 #[derive(Debug, Serialize, Deserialize)]

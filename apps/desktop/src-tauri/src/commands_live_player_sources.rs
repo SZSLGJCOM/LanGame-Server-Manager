@@ -1,6 +1,9 @@
 use super::*;
 use crate::live_players::cache::CachedLivePlayerSnapshot;
 
+#[path = "commands_live_player_ark_names.rs"]
+mod ark_names;
+
 #[cfg(test)]
 #[path = "live_players/native_log_integration_tests.rs"]
 mod native_log_integration_tests;
@@ -367,7 +370,7 @@ pub(super) async fn collect_direct_players(
             observed_at,
         );
     }
-    let parsed = crate::live_players::response_codecs::parse(
+    let mut parsed = crate::live_players::response_codecs::parse(
         list.response_codec,
         text,
         &request_id,
@@ -381,6 +384,17 @@ pub(super) async fn collect_direct_players(
             false,
         )
     })?;
+    let issue = if list.response_codec == ModulePlayerListCodec::ArkListPlayers {
+        ark_names::supplement(
+            details,
+            action.process_key.as_deref(),
+            &request_id,
+            &mut parsed.entries,
+        )
+        .await
+    } else {
+        None
+    };
     Ok(CachedLivePlayerSnapshot {
         public_snapshot: RuntimeLivePlayerSnapshot {
             snapshot_id: request_id,
@@ -395,7 +409,7 @@ pub(super) async fn collect_direct_players(
             current_players: parsed.current_players,
             max_players: parsed.max_players,
             entries: parsed.entries,
-            issue: None,
+            issue,
         },
         private_action_bindings: parsed.bindings,
         collected_at: observed_at,

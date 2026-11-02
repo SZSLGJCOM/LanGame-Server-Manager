@@ -1,8 +1,11 @@
 export interface ArkMapView { zoom: number; x: number; y: number }
 
+export const ARK_MAP_MIN_ZOOM = 1;
+export const ARK_MAP_MAX_ZOOM = 12;
+
 /** The SVG fits a normalized 1000 x 1000 map using xMidYMid meet. */
 export function clampArkMapView(view: ArkMapView, viewport: { width: number; height: number }): ArkMapView {
-  const zoom = Math.min(12, Math.max(1, view.zoom));
+  const zoom = Math.min(ARK_MAP_MAX_ZOOM, Math.max(ARK_MAP_MIN_ZOOM, view.zoom));
   const size = 1000 / zoom, pixels = Math.min(viewport.width, viewport.height);
   const axis = (value: number, visible: number) => {
     const half = pixels > 0 ? size * visible / pixels / 2 : size / 2;

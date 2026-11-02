@@ -60,6 +60,34 @@
   padding: 20px 24px 24px;
 }
 
+/* Whole-page states use the actual space between navigation and activity bar. */
+.shell-content-scroll:has(.library-detail-empty, .library-view-loading, .storage-initialization-page,
+  > .shell-content-body > .view-loading-state) {
+  scrollbar-gutter: auto;
+}
+
+.shell-content-body:has(.library-detail-empty, .library-view-loading, .storage-initialization-page,
+  > .view-loading-state) {
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+}
+
+.shell-content-body > .view-loading-state {
+  flex: 1;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 12px;
+  padding: 24px;
+  text-align: center;
+}
+
+.shell-content-body > .view-loading-state > p {
+  margin: 0;
+}
+
 /* Keep application tools above navigation, with LAN centered in the window. */
 .shell-header {
   display: grid;

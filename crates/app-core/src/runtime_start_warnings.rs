@@ -9,6 +9,7 @@ pub enum RuntimeStartWarningCode {
     ManualSaveUnavailable,
     GracefulStopUnavailable,
     ProgramUpdateUsingInstalled,
+    StartupLogPersistenceFailed,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]

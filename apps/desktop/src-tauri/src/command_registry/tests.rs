@@ -30,10 +30,15 @@ fn desktop_execution_and_lan_access_are_independent() {
 fn current_user_maintenance_cannot_be_exposed_through_lan() {
     for name in [
         "uninstall_steamcmd",
+        "preview_app_storage_migration",
+        "read_app_storage_migration",
+        "execute_app_storage_migration",
+        "cancel_app_storage_migration",
         "preview_dontstarve_world_start",
         "regenerate_dontstarve_world",
         "read_ark_tools_status",
         "prepare_ark_tools",
+        "remove_ark_tools",
         "spawn_ark_creature",
         "read_knowledge_status",
         "update_knowledge_settings",
@@ -59,6 +64,11 @@ fn current_user_maintenance_cannot_be_exposed_through_lan() {
     for (name, completion) in [
         ("start_instance_process", Completion::Owned),
         ("read_instance_details_from_storage", Completion::Bounded),
+        (
+            "read_instance_log_document_from_storage",
+            Completion::Bounded,
+        ),
+        ("record_startup_session_diagnostic", Completion::Bounded),
         ("read_dontstarve_world_map", Completion::Bounded),
     ] {
         let command = find(name).unwrap();

@@ -32,6 +32,7 @@ pub(super) enum PreparationAttempt {
 struct OutputChunk {
     stream: usize,
     bytes: Vec<u8>,
+    raw: super::InstallConsoleOutput,
 }
 
 fn forward_output<R: AsyncRead + Unpin + Send + 'static>(
@@ -40,15 +41,31 @@ fn forward_output<R: AsyncRead + Unpin + Send + 'static>(
     sender: mpsc::Sender<std::io::Result<OutputChunk>>,
 ) -> AbortOnDropTask<()> {
     AbortOnDropTask::new(tokio::spawn(async move {
+        let source = if stream == 0 {
+            super::InstallOutputSource::Stdout
+        } else {
+            super::InstallOutputSource::Stderr
+        };
+        let mut cursor = super::install_progress::OutputCursor::new(source);
         let mut bytes = [0_u8; OUTPUT_CHUNK_BYTES];
         loop {
             match reader.read(&mut bytes).await {
-                Ok(0) => break,
+                Ok(0) => {
+                    let _ = sender
+                        .send(Ok(OutputChunk {
+                            stream,
+                            bytes: Vec::new(),
+                            raw: cursor.chunk(&[], true),
+                        }))
+                        .await;
+                    break;
+                }
                 Ok(length) => {
                     if sender
                         .send(Ok(OutputChunk {
                             stream,
                             bytes: bytes[..length].to_vec(),
+                            raw: cursor.chunk(&bytes[..length], false),
                         }))
                         .await
                         .is_err()
@@ -140,7 +157,7 @@ async fn capture_preparation_process<F: FnMut(SteamCmdPrepareProgress)>(
     let mut last_output = Instant::now();
     let mut status = None;
     let mut closed = false;
-    let mut log_poll = tokio::time::interval(Duration::from_millis(250));
+    let mut log_poll = tokio::time::interval(Duration::from_millis(33));
     log_poll.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Skip);
 
     let result = loop {
@@ -163,10 +180,12 @@ async fn capture_preparation_process<F: FnMut(SteamCmdPrepareProgress)>(
             }
             next = receiver.recv(), if !closed => match next {
                 Some(Ok(chunk)) => {
+                    reporter.raw(chunk.raw);
+                    if chunk.bytes.is_empty() { continue; }
                     last_output = Instant::now();
                     runtime.push(chunk.stream, &chunk.bytes);
                     let line = output.push(chunk.stream, &chunk.bytes);
-                    if !line.is_empty() { reporter.output(line, output.excerpt()); }
+                    if !line.is_empty() { reporter.output_from_pipe(line, output.excerpt()); }
                 }
                 Some(Err(source)) => break Err(SteamCmdError::PrepareSteamCmd {
                     output_excerpt: format!("SteamCMD output read failed: {source}\n{}", output.excerpt()),
@@ -289,14 +308,21 @@ async fn read_bootstrap_progress<F: FnMut(SteamCmdPrepareProgress)>(
             reporter.output(line, output.excerpt());
         }
     }
-    if flush_partial && !output.pending[2].is_empty() {
-        reporter.output(output.line(2), output.excerpt());
+    if !output.pending[2].is_empty() {
+        let line = output.line(2);
+        if flush_partial || line != output.log_preview {
+            reporter.output(line.clone(), output.excerpt());
+            output.log_preview = line;
+        }
+    } else {
+        output.log_preview.clear();
     }
     Ok(update.activity)
 }
 
 #[derive(Default)]
 struct PreparationOutput {
+    log_preview: String,
     pending: [VecDeque<u8>; 3],
     marker_tail: [Vec<u8>; 3],
     truncated: [bool; 3],
@@ -344,7 +370,12 @@ impl PreparationOutput {
     }
 
     fn line(&self, stream: usize) -> String {
-        let bytes = self.pending[stream].iter().copied().collect::<Vec<_>>();
+        let mut bytes = self.pending[stream].iter().copied().collect::<Vec<_>>();
+        if let Err(error) = std::str::from_utf8(&bytes)
+            && error.error_len().is_none()
+        {
+            bytes.truncate(error.valid_up_to());
+        }
         if self.truncated[stream] {
             const PREFIX: &str = "[line truncated] ";
             let line = String::from_utf8_lossy(&bytes);

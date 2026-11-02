@@ -93,7 +93,7 @@ async fn existing_instance_catalog_acceptance() -> Result<(), Box<dyn std::error
     )?;
     let status = client.request("runtime_service_status", json!({})).await?;
     if status["pid"].as_u64() != Some(u64::from(options.backend_pid))
-        || status["protocol"].as_u64() != Some(1)
+        || status["protocol"].as_u64() != Some(u64::from(crate::runtime_service::PROTOCOL))
         || status["shutdown_in_progress"].as_bool() != Some(false)
     {
         return Err("selected backend is not ready for acceptance".into());

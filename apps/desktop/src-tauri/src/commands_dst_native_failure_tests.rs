@@ -189,7 +189,7 @@ pub(super) async fn verify_shard_recovery(
         before, after,
         "both recovered shards must load their original world sessions and maps"
     );
-    let stopped = command_result(stop_instance_process(state.clone(), id.into()).await)?;
+    let stopped = command_result(stop_instance_process(state.clone(), id.into(), None).await)?;
     assert_eq!(stopped.process_count, 2);
     assert!(
         stopped

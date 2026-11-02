@@ -15,6 +15,8 @@ pub struct Projection {
 pub struct Player {
     pub player_id: u32,
     pub name: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub account_name: Option<String>,
     pub account_id: String,
     pub team: i32,
     pub x: Option<f64>,
@@ -68,6 +70,11 @@ pub fn snapshot(
             || player.account_id.len() > 256
             || player.name.chars().any(char::is_control)
             || player.account_id.chars().any(char::is_control)
+            || player.account_name.as_ref().is_some_and(|name| {
+                name.len() > 1024
+                    || name.chars().count() > 256
+                    || name.chars().any(char::is_control)
+            })
             || coordinates.iter().any(Option::is_some) && coordinates.iter().any(Option::is_none)
             || coordinates
                 .into_iter()
@@ -102,7 +109,23 @@ mod tests {
         let value = parse(&response()).unwrap();
         assert_eq!(value.players[0].player_id, 123);
         assert_eq!(value.players[0].account_id, "76561198000000000");
+        assert!(value.players[0].account_name.is_none());
         assert_eq!(value.players[0].x, Some(120.0));
+    }
+    #[test]
+    fn account_names_are_distinct_from_character_names_and_validated() {
+        let mut reply = response();
+        reply["players"][0]["accountName"] = "中文账户 🚀".into();
+        let parsed = parse(&reply).unwrap();
+        assert_eq!(parsed.players[0].name, "玩家 | Name");
+        assert_eq!(
+            parsed.players[0].account_name.as_deref(),
+            Some("中文账户 🚀")
+        );
+        for name in ["x".repeat(1025), "名".repeat(257), "name\ncommand".into()] {
+            reply["players"][0]["accountName"] = name.into();
+            assert!(parse(&reply).is_err());
+        }
     }
     #[test]
     fn rejects_foreign_map_edition_request_and_duplicate_players() {

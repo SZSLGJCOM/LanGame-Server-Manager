@@ -369,6 +369,37 @@ test("late bootstrap preserves independently updated jobs, modules and instances
   assert.equal(fresh.state.instances.some((item) => item.id === "retired"), false);
 });
 
+test("late bootstrap cannot replace committed custom archives before the next workspace selection", () => {
+  const requested = booted(1000);
+  requested.state.settings = { games_root: "E:/fixture/games", servers_root: "E:/fixture/instances",
+    archives_root: "E:/fixture/instances/.trash", steamcmd_root: "E:/fixture/steamcmd" };
+  const committed = { ...requested, state: { ...requested.state,
+    settings: { ...requested.state.settings, archives_root: "E:/fixture/custom-archives" } } };
+  const delayed = { ...requested, state: { ...requested.state, snapshot: booted(2000).state.snapshot } };
+  const result = mergeSnapshots(committed, delayed, requested);
+  assert.equal(result.state.settings, committed.state.settings,
+    "A response captured before migration must retain the settings published by completion");
+  assert.equal(result.state.snapshot, delayed.state.snapshot);
+
+  const draftFile = path.join(__dirname, "../src/views/system/app-path-settings-draft.ts");
+  const exports = {};
+  vm.runInNewContext(transpileTypeScript(fs.readFileSync(draftFile, "utf8"), draftFile), { exports });
+  const next = exports.updateAppPathDraft(result.state.settings, "servers_root", "D:/fixture/instances");
+  assert.equal(next.servers_root, "D:/fixture/instances");
+  assert.equal(next.archives_root, "D:/fixture/instances/.trash",
+    "A new workspace must migrate the committed custom archive into its own trash directory");
+});
+
+test("fresh bootstrap settings and a restarted host remain authoritative after migration", () => {
+  const current = booted(1000);
+  const fresh = { ...current, state: { ...current.state, settings: { games_root: "E:/updated-games" } } };
+  assert.equal(mergeSnapshots(current, fresh, current).state.settings, fresh.state.settings);
+  assert.equal(mergeSnapshots(current, fresh).state.settings, fresh.state.settings);
+  const changedWhileWaiting = { ...current, state: { ...current.state, settings: { games_root: "F:/committed-games" } } };
+  const restarted = { ...fresh, booted_at_unix_ms: 456 };
+  assert.equal(mergeSnapshots(changedWhileWaiting, restarted, current), restarted);
+});
+
 test("a late runtime list cannot revive a retired instance or undo a newer selection", () => {
   const requestedInstances = [{ id: "removed" }, { id: "other" }];
   let current = { ...booted(), state: { ...booted().state, instances: [{ id: "other" }] } };

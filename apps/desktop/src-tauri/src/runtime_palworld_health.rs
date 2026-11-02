@@ -44,13 +44,13 @@ struct Context {
 }
 
 #[derive(Clone, Debug, PartialEq)]
-struct WorldSample {
+pub(crate) struct WorldSample {
     world: String,
     uptime: f64,
 }
 
 #[derive(Clone, Debug, PartialEq)]
-enum Observation {
+pub(crate) enum Observation {
     World {
         sample: WorldSample,
         advancing: bool,
@@ -59,7 +59,7 @@ enum Observation {
 }
 
 impl Observation {
-    fn with_previous(self, previous: Option<&Self>) -> Self {
+    pub(crate) fn with_previous(self, previous: Option<&Self>) -> Self {
         match self {
             Self::World { sample, .. } => {
                 let advancing = matches!(previous, Some(Self::World { sample: old, .. })
@@ -70,7 +70,7 @@ impl Observation {
         }
     }
 
-    fn is_ready(&self) -> bool {
+    pub(crate) fn is_ready(&self) -> bool {
         matches!(
             self,
             Self::World {
@@ -454,7 +454,7 @@ fn world_sample(info: &[u8], metrics: &[u8]) -> Option<WorldSample> {
     })
 }
 
-async fn query_world(port: u16, password: &str) -> Observation {
+pub(crate) async fn query_world(port: u16, password: &str) -> Observation {
     let address = std::net::SocketAddr::from((std::net::Ipv4Addr::LOCALHOST, port));
     let result = tokio::time::timeout(QUERY_TIMEOUT, async {
         let info = http_api::fetch_json(address, "/v1/api/info", Some(password), QUERY_TIMEOUT)

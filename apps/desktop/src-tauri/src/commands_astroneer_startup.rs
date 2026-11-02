@@ -12,11 +12,9 @@ use app_storage::StorageBootstrap;
 use serde_json::Value;
 use std::fs::{self, File};
 use std::path::{Path, PathBuf};
-use std::sync::{Arc, Mutex};
-use std::time::{Duration, Instant};
+use std::sync::Mutex;
+use std::time::Duration;
 
-const CONSOLE_TIMEOUT: Duration = Duration::from_secs(120);
-const WORLD_TIMEOUT: Duration = Duration::from_secs(120);
 const POLL: Duration = Duration::from_secs(1);
 
 // No Clone/Debug: a plan authorizes one submission and contains a credential.
@@ -42,7 +40,7 @@ fn empty(path: &Path) -> Result<bool, String> {
         .map_err(|_| "ASTRONEER 存档目录检查不完整；未自动创建世界。".into())
 }
 
-fn enabled(settings: &Value) -> Result<bool, String> {
+pub(super) fn automatic_world_loading(settings: &Value) -> Result<bool, String> {
     match (
         settings.get("load_auto_save").and_then(Value::as_bool),
         settings
@@ -73,7 +71,7 @@ pub(super) fn prepare(instance: &InstanceDetails) -> Result<Option<Plan>, String
     }
     let settings: Value = serde_json::from_str(&instance.settings_json)
         .map_err(|_| "ASTRONEER 世界初始化配置无效。")?;
-    if !enabled(&settings)? {
+    if !automatic_world_loading(&settings)? {
         return Ok(None);
     }
     let instance_root = super::commands_program_storage::instance_root(instance)?;
@@ -143,82 +141,23 @@ pub(super) fn prepare(instance: &InstanceDetails) -> Result<Option<Plan>, String
 }
 
 #[derive(Clone)]
-struct Run {
-    run_id: i64,
-    session: String,
-    key: String,
-    pid: u32,
-    identity: ProcessIdentity,
+pub(super) struct SpawnedTarget {
+    pub pid: u32,
+    pub identity: ProcessIdentity,
 }
 
-fn run(instance: &InstanceDetails) -> Result<Run, String> {
-    let active = instance
-        .active_run
-        .as_ref()
-        .ok_or("ASTRONEER 当前启动记录不可用。")?;
-    if !matches!(
-        instance.summary.status,
-        InstanceStatus::Running | InstanceStatus::Starting
-    ) || active.process_count != 1
-        || active.processes.len() != 1
-        || instance.summary.active_process_count != 1
-        || active.run_id <= 0
-    {
-        return Err("ASTRONEER 当前启动进程不唯一；未发送创建命令。".into());
+impl SpawnedTarget {
+    fn verify(&self) -> Result<(), String> {
+        if self.pid == 0
+            || self.identity.creation_time == 0
+            || self.identity.image_path.is_empty()
+            || !app_runtime::process_matches_identity(self.pid, &self.identity)
+                .map_err(|_| "ASTRONEER 启动进程归属检查失败。")?
+        {
+            return Err("ASTRONEER 本次启动进程已退出或身份已改变。".into());
+        }
+        Ok(())
     }
-    let primary = &active.processes[0];
-    let session = active
-        .session_id
-        .as_ref()
-        .filter(|value| !value.is_empty())
-        .ok_or("ASTRONEER 启动会话不可用。")?;
-    if !primary.is_primary
-        || primary.process_key.trim().is_empty()
-        || primary.run_id != active.run_id
-        || primary.session_id != active.session_id
-        || primary.pid != active.pid
-        || primary.status != "running"
-        || primary.exit_code.is_some()
-        || primary.crash_flag
-    {
-        return Err("ASTRONEER 当前启动记录发生变化。".into());
-    }
-    Ok(Run {
-        run_id: active.run_id,
-        session: session.clone(),
-        key: primary.process_key.clone(),
-        pid: primary
-            .pid
-            .filter(|pid| *pid > 0)
-            .ok_or("ASTRONEER 当前进程不可用。")?,
-        identity: primary
-            .process_identity
-            .clone()
-            .filter(|value| value.creation_time > 0 && !value.image_path.is_empty())
-            .ok_or("ASTRONEER 当前进程身份不可用。")?,
-    })
-}
-
-fn tracked(
-    supervisor: &Arc<Mutex<app_runtime::RuntimeSupervisor>>,
-    id: &str,
-    expected: &Run,
-) -> Result<(), String> {
-    let mut supervisor = supervisor
-        .lock()
-        .map_err(|_| "ASTRONEER 运行归属检查失败。")?;
-    if !supervisor.tracked_instances().iter().any(|value| {
-        value.summary.id == id
-            && value.run_id == expected.run_id
-            && value.session_id.as_deref() == Some(&expected.session)
-            && value.pid == Some(expected.pid)
-    }) || !supervisor
-        .matches_running_process(id, expected.run_id, &expected.key, expected.pid)
-        .unwrap_or(false)
-    {
-        return Err("ASTRONEER 已不属于本次启动；停止自动世界初始化。".into());
-    }
-    Ok(())
 }
 
 fn check_stop_request(
@@ -233,7 +172,7 @@ fn check_stop_request(
         .map_err(|_| "ASTRONEER 停止请求检查失败。")?
         .accepts_exit(instance_id)
     {
-        return Err("ASTRONEER 已收到停止请求；停止自动世界初始化，服务器仍受管理。".into());
+        return Err("ASTRONEER 已收到停止请求；停止自动世界初始化，已有存档已保留。".into());
     }
     Ok(())
 }
@@ -242,37 +181,40 @@ async fn current(
     state: &DesktopState,
     storage: &StorageBootstrap,
     plan: &Plan,
-    expected: &Run,
+    expected: &SpawnedTarget,
     reservation: &RuntimeStartReservationLease,
 ) -> Result<(), String> {
-    if reservation.is_cancelled() {
-        return Err("ASTRONEER 启动初始化已取消；已有进程与数据仍受管理。".into());
-    }
+    reservation.ensure_current_for(&plan.instance_id)?;
     check_stop_request(&state.runtime_restart_scheduler, &plan.instance_id)?;
     super::ensure_storage_context_snapshot_current(state, storage, "ASTRONEER first world")?;
     let instance = app_storage::read_instance_details(&storage.paths, &plan.instance_id)
         .await
         .map_err(|error| error.to_string())?;
-    let actual = run(&instance)?;
-    if instance.summary.module_id != "astroneer"
+    validate_unregistered(&instance, plan)?;
+    let expected = expected.clone();
+    spawn_blocking_storage_context_task(reservation, move || expected.verify())
+        .await
+        .map_err(|_| "ASTRONEER 运行归属检查任务失败。")??;
+    reservation.ensure_current_for(&plan.instance_id)
+}
+
+fn validate_unregistered(instance: &InstanceDetails, plan: &Plan) -> Result<(), String> {
+    if instance.summary.id != plan.instance_id
+        || instance.summary.module_id != "astroneer"
         || instance.config_file_path != plan.config_path
         || instance.saves_path != plan.declared_saves
         || instance.settings_json != plan.settings
-        || port(&instance)? != plan.port
-        || actual.run_id != expected.run_id
-        || actual.session != expected.session
-        || actual.key != expected.key
-        || actual.pid != expected.pid
-        || actual.identity != expected.identity
+        || port(instance)? != plan.port
+        || instance.active_run.is_some()
+        || instance.summary.active_process_count != 0
+        || !matches!(
+            instance.summary.status,
+            InstanceStatus::Stopped | InstanceStatus::Error | InstanceStatus::Starting
+        )
     {
-        return Err("ASTRONEER 启动配置或进程代次已改变；停止自动世界初始化。".into());
+        return Err("ASTRONEER 启动配置或运行记录已改变；停止自动世界初始化。".into());
     }
-    let supervisor = state.runtime_supervisor.clone();
-    let id = plan.instance_id.clone();
-    let expected = expected.clone();
-    spawn_blocking_storage_context_task(reservation, move || tracked(&supervisor, &id, &expected))
-        .await
-        .map_err(|_| "ASTRONEER 运行归属检查任务失败。")?
+    Ok(())
 }
 
 fn selected<'a>(games: &'a Value, statistics: &Value) -> Option<&'a str> {
@@ -298,36 +240,23 @@ fn native_empty(games: &Value, statistics: &Value) -> bool {
         && statistics.get("saveGameName").and_then(Value::as_str) == Some("")
 }
 
-/// Call only after durable registration and supervisor.insert_running, while
-/// retaining the same program/mutation guards in the start worker. Errors are
-/// visible start warnings: they never stop, unregister or release the server.
-pub(super) async fn initialize(
+/// Call before durable Running registration, retaining the same reservation,
+/// owned bootstrap handle and program/mutation guards. The caller owns the
+/// common deadline, cancellation and failed-start cleanup; native data is kept.
+pub(super) async fn initialize_spawned(
     state: &DesktopState,
     storage: &StorageBootstrap,
     instance: &InstanceDetails,
     plan: Plan,
     reservation: &RuntimeStartReservationLease,
+    expected: SpawnedTarget,
 ) -> Result<(), String> {
-    if instance.summary.id != plan.instance_id {
-        return Err("ASTRONEER 初始化计划归属不匹配。".into());
-    }
-    let registered = app_storage::read_instance_details(&storage.paths, &plan.instance_id)
-        .await
-        .map_err(|error| error.to_string())?;
-    let expected = run(&registered)?;
+    validate_unregistered(instance, &plan)?;
+    reservation.ensure_current_for(&plan.instance_id)?;
     let mut native: Option<NativeProcess> = None;
-    let mut deadline = Instant::now() + CONSOLE_TIMEOUT;
     let mut submitted = false;
     loop {
         current(state, storage, &plan, &expected, reservation).await?;
-        if Instant::now() >= deadline {
-            return Err(if submitted {
-                "ASTRONEER 首个世界创建结果超时未知；服务器与数据已保留，不会自动重发。"
-            } else {
-                "ASTRONEER 原生控制台尚未就绪；未自动创建世界，服务器仍受管理。"
-            }
-            .into());
-        }
         let root = plan.root.clone();
         let root_run = expected.clone();
         let prior = native.clone();
@@ -340,9 +269,9 @@ pub(super) async fn initialize(
                     &root_run.identity,
                     &expected,
                 )?;
-                Ok(expected)
+                Ok(Some(expected))
             } else {
-                process::capture(
+                process::capture_optional(
                     GameProfile::Astroneer,
                     &root,
                     root_run.pid,
@@ -351,17 +280,16 @@ pub(super) async fn initialize(
             }
         })
         .await
-        .map_err(|_| "ASTRONEER 原生进程身份检查任务失败。")?;
+        .map_err(|_| "ASTRONEER 原生进程身份检查任务失败。")??;
         match captured {
-            Ok(process) => native = Some(process),
-            Err(error) if native.is_some() => return Err(error),
-            Err(_) => {
-                tokio::time::sleep(POLL).await;
+            Some(process) => native = Some(process),
+            None => {
+                tokio::select! { biased; _ = reservation.cancelled() => {}, _ = tokio::time::sleep(POLL) => {} }
                 continue;
             }
         }
         let responder = native.as_ref().ok_or("ASTRONEER Shipping 进程不可用。")?;
-        let games = console::query(
+        let games = console::query_checked(
             plan.port,
             &plan.password,
             Query::Games,
@@ -369,7 +297,7 @@ pub(super) async fn initialize(
             &responder.identity,
         )
         .await;
-        let statistics = console::query(
+        let statistics = console::query_checked(
             plan.port,
             &plan.password,
             Query::Statistics,
@@ -392,6 +320,12 @@ pub(super) async fn initialize(
         })
         .await
         .map_err(|_| "ASTRONEER 原生进程复核任务失败。")??;
+        if let Err(console::QueryError::Ownership(message)) = &games {
+            return Err(message.clone());
+        }
+        if let Err(console::QueryError::Ownership(message)) = &statistics {
+            return Err(message.clone());
+        }
         if let (Ok(games), Ok(statistics)) = (games, statistics) {
             if let Some(active) = selected(&games, &statistics) {
                 if !submitted || active == plan.label {
@@ -406,7 +340,6 @@ pub(super) async fn initialize(
                     );
                 }
                 submitted = true;
-                deadline = Instant::now() + WORLD_TIMEOUT;
                 console::create_once(
                     plan.port,
                     &plan.password,
@@ -417,7 +350,8 @@ pub(super) async fn initialize(
                         if reservation.is_cancelled() || !empty(&plan.saves)? {
                             return Err("ASTRONEER 世界创建前状态已改变；未重发命令。".into());
                         }
-                        tracked(&state.runtime_supervisor, &plan.instance_id, &expected)?;
+                        reservation.ensure_current_for(&plan.instance_id)?;
+                        expected.verify()?;
                         process::verify(
                             GameProfile::Astroneer,
                             &plan.root,

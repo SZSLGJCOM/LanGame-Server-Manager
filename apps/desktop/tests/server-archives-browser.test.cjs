@@ -19,7 +19,7 @@ for (const viewport of [{ width: 1560, height: 900 }, { width: 960, height: 600 
     assert.ok(report.checks.length >= 30, "Archive lifecycle acceptance did not finish");
     assert.deepEqual(report.stable_layout_phases, ["initial load failure", "archive switch loading", "archive switch complete",
       "archive selected", "archive refresh failure", "normal list restored", "failed deletion selected", "failed deletion with empty workspace",
-      "archive only switch", "archive only search", "archive only refresh loading", "archive only refresh failure"]);
+      "archive only search", "archive only refresh loading", "archive only refresh failure"]);
     assert.deepEqual(report.feedback_phases, ["busy error", "dismissal", "retry", "success", "external warning", "unmount", "inventory warning"]);
     assert.deepEqual(report.concurrency_phases, ["StrictMode shared read", "rapid switches", "mutation switches", "remount shared read"]);
     assert.deepEqual(report.preview_phases, ["loading", "module loading disclosure", "read-only saved values", "unique unknown field navigation", "unavailable states", "blocked recovery preview",

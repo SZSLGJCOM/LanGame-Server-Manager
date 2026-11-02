@@ -76,3 +76,25 @@ test("ARK source selection preserves the map run and source across the native bo
     { instanceId: "ark", runId: 23, source: "console", maxLines: 400 }
   ]);
 });
+
+test("startup pages and diagnostics use attempt identity and opaque cursor without accepting file paths", async () => {
+  const calls = [];
+  const api = loadApi(async (command, args) => { calls.push({ command, ...args }); return { lines: [] }; });
+  await api.readInstanceLogDocument("instance-a", 400, 23, "game", "attempt-a", "18446744073709551000");
+  await api.recordStartupSessionDiagnostic("instance-a", "attempt-a", "ui:read:abc", "Read failed");
+  assert.deepEqual(calls, [
+    { command: "read_instance_log_document_from_storage", instanceId: "instance-a", maxLines: 400, runId: 23, source: "game",
+      startupAttemptId: "attempt-a", startupBeforeCursor: "18446744073709551000" },
+    { command: "record_startup_session_diagnostic", instanceId: "instance-a", attemptId: "attempt-a", diagnosticId: "ui:read:abc", message: "Read failed" }
+  ]);
+});
+
+test("persisted startup diagnostics respect the service UTF-8 budget without splitting Unicode", async () => {
+  const calls = [];
+  const api = loadApi(async (_command, args) => { calls.push(args); });
+  await api.recordStartupSessionDiagnostic("a", "attempt", "error-1", "错误🎮".repeat(2000));
+  assert.ok(Buffer.byteLength(calls[0].message, "utf8") <= 4096);
+  assert.ok(calls[0].message.endsWith("\n[truncated]"));
+  assert.equal(calls[0].message.includes("\ufffd"), false);
+  assert.equal(calls[0].diagnosticId, "error-1");
+});

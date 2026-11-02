@@ -8,6 +8,30 @@ pub(super) enum Event {
     Exiting,
 }
 
+#[derive(Default)]
+pub(super) struct Readiness {
+    game: bool,
+    engine: bool,
+}
+
+impl Readiness {
+    pub(super) fn observe(&mut self, event: Event) {
+        match event {
+            Event::MapLoading => self.game = false,
+            Event::GameStarted => self.game = true,
+            Event::EngineInitialized => self.engine = true,
+            Event::Exiting => {
+                self.game = false;
+                self.engine = false;
+            }
+        }
+    }
+
+    pub(super) fn is_ready(&self) -> bool {
+        self.game && self.engine
+    }
+}
+
 pub(super) fn event(line: &str) -> Option<Event> {
     let line = line.trim();
     let message = if line.starts_with('[') {
@@ -30,34 +54,29 @@ pub(super) fn event(line: &str) -> Option<Event> {
 }
 
 pub(super) fn analyze(lines: &[String]) -> RuntimeHealth {
-    let mut game_started = false;
-    let mut initialized = false;
+    let mut readiness = Readiness::default();
     let mut game_line = None;
     let mut engine_line = None;
     for line in lines {
-        match event(line) {
-            Some(Event::MapLoading) => {
-                game_started = false;
+        let Some(event) = event(line) else { continue };
+        readiness.observe(event);
+        match event {
+            Event::MapLoading => {
                 game_line = Some(line.clone());
             }
-            Some(Event::GameStarted) => {
-                game_started = true;
+            Event::GameStarted => {
                 game_line = Some(line.clone());
             }
-            Some(Event::EngineInitialized) => {
-                initialized = true;
+            Event::EngineInitialized => {
                 engine_line = Some(line.clone());
             }
-            Some(Event::Exiting) => {
-                game_started = false;
-                initialized = false;
+            Event::Exiting => {
                 game_line = Some(line.clone());
                 engine_line = None;
             }
-            None => {}
         }
     }
-    let ready = game_started && initialized;
+    let ready = readiness.is_ready();
     RuntimeHealth {
         status: if ready { "ready" } else { "starting" }.into(),
         summary: if ready {

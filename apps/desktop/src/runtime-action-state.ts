@@ -1,9 +1,9 @@
 import { normalizeInstanceStatus } from "./instance-status";
 
 export type RuntimeActionIntent = "start" | "stop";
-export type RuntimeActionPending = "starting" | "stopping";
+export type RuntimeActionPending = "starting" | "cancelling" | "stopping";
 
-export type RuntimeActionIconName = "zap" | "square" | "refresh";
+export type RuntimeActionIconName = "zap" | "square" | "x" | "refresh";
 
 export interface ServerRuntimeActionModel {
   action: RuntimeActionIntent;
@@ -13,7 +13,8 @@ export interface ServerRuntimeActionModel {
   ariaBusy: boolean;
   iconName: RuntimeActionIconName;
   className: string;
-  labelKey: "common.start" | "common.stop" | "status.instance.starting" | "status.instance.stopping";
+  labelKey: "common.start" | "common.cancel" | "common.stop" | "servers.actions.cancellingStartup"
+    | "status.instance.starting" | "status.instance.stopping";
 }
 
 interface RuntimeProcessStateLike {
@@ -71,29 +72,30 @@ export function resolveServerRuntimeAction(
   const normalizedStatus = normalizeInstanceStatus(status);
   const pendingState = pending ?? null;
 
-  if (pendingState === "starting" || normalizedStatus === "starting") {
-    return {
-      action: "start",
-      pending: pendingState,
-      displayedStatus: "Starting",
-      disabled: true,
-      ariaBusy: true,
-      iconName: "refresh",
-      className: "ghost-button success server-list-card-primary-action is-busy",
-      labelKey: "status.instance.starting"
-    };
-  }
-
-  if (pendingState === "stopping" || normalizedStatus === "stopping") {
+  const cancellingStartup = pendingState === "cancelling";
+  if (cancellingStartup || pendingState === "stopping" || normalizedStatus === "stopping") {
     return {
       action: "stop",
       pending: pendingState,
-      displayedStatus: "Stopping",
+      displayedStatus: cancellingStartup ? "Starting" : "Stopping",
       disabled: true,
       ariaBusy: true,
       iconName: "refresh",
       className: "ghost-button danger server-list-card-primary-action is-busy",
-      labelKey: "status.instance.stopping"
+      labelKey: cancellingStartup ? "servers.actions.cancellingStartup" : "status.instance.stopping"
+    };
+  }
+
+  if (pendingState === "starting" || normalizedStatus === "starting") {
+    return {
+      action: "stop",
+      pending: pendingState,
+      displayedStatus: "Starting",
+      disabled: false,
+      ariaBusy: true,
+      iconName: "x",
+      className: "ghost-button danger server-list-card-primary-action",
+      labelKey: "common.cancel"
     };
   }
 

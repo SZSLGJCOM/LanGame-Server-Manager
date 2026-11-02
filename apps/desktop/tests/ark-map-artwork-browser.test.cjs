@@ -24,7 +24,7 @@ function artworkMiddleware(request, response, next) {
     response.end(`<svg xmlns="http://www.w3.org/2000/svg" width="${entry.width}" height="${entry.height}"><rect width="100%" height="100%" fill="#395e65"/><text x="20" y="50" fill="white">Controlled image boundary</text></svg>`);
   }
 }
-for (const viewport of [{ width: 1280, height: 800 }, { width: 960, height: 600 }]) {
+for (const viewport of [{ width: 1280, height: 800 }, { width: 960, height: 600 }, { width: 1366, height: 768 }, { width: 1920, height: 1080 }]) {
   test(`ARK artwork auto-selects edition and map at ${viewport.width}x${viewport.height}`, { timeout: 90000 }, async () => {
     const report = await runBrowserFixture({ fixturePath: 'ark-map-artwork-browser.html', viewport,
       fixtureMiddleware: artworkMiddleware, bundleWithMiddleware: true,

@@ -357,7 +357,7 @@ fn native_server_ready_signals_are_scoped_to_their_modules() {
         ),
         (
             "sevendaystodie",
-            "2026-09-08T18:58:57 24.041 INF [Steamworks.NET] GameServer.Init successful",
+            "2026-09-08T18:58:57 24.041 INF StartGame done",
         ),
         (
             "satisfactory",
@@ -532,7 +532,7 @@ async fn native_runtime_logs_do_not_read_the_package_or_another_instance() {
 fn runtime_health_log_reasons_keep_the_exact_matched_line() {
     for (module, line, reason) in [
         ("test", "[12:00] FATAL: raw diagnostic", "fatal_log_pattern"),
-        ("test", "[12:01] Server ready", "ready_signal"),
+        ("romestead", "Server ready", "ready_signal"),
         (
             "dontstarve",
             "[12:02] Failed to load modoverrides.lua",
@@ -675,7 +675,7 @@ const NATIVE_READY_SIGNALS: [(&str, &str); 4] = [
         "minecraft",
         "[16:44:17] [Server thread/INFO]: Done (0.170s)! For help, type \"help\"",
     ),
-    ("valheim", "09/08/2026 16:50:28: Game server connected"),
+    ("valheim", "09/08/2026 16:50:28: Opened Steam server"),
     ("barotrauma", "  Server started"),
     (
         "rimworld",
@@ -835,7 +835,7 @@ impl Drop for StartupLogFixture {
 #[test]
 fn runtime_health_recovers_current_run_ready_signal_beyond_recent_tail() {
     let fixture = StartupLogFixture::new();
-    let line = "[00:00:02] LAN server started on port 10999";
+    let line = "[00:00:02]: Server ready";
     let tail = fixture.write(&format!(
         "{line}\n{}",
         "Player query complete\n".repeat(200)

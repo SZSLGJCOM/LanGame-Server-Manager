@@ -56,6 +56,7 @@ impl SteamCmdPreparationTracker {
             updated_at: now,
             finished_at: None,
             progress: SteamCmdPrepareProgress {
+                console_output: None,
                 phase: SteamCmdPreparePhase::Queued,
                 detail: String::from("Waiting for the SteamCMD installation slot..."),
                 downloaded_bytes: None,
@@ -149,7 +150,12 @@ impl SteamCmdPreparationLease {
     }
 
     pub(crate) fn update(&self, progress: SteamCmdPrepareProgress) {
-        if self.finished {
+        if self.finished
+            || matches!(
+                progress.console_output,
+                Some(app_steamcmd::InstallConsoleOutput::Raw { .. })
+            )
+        {
             return;
         }
         let mut record = self
@@ -281,6 +287,7 @@ mod tests {
         let tracker = Arc::new(SteamCmdPreparationTracker::default());
         let lease = tracker.begin(String::from("first")).unwrap();
         lease.update(SteamCmdPrepareProgress {
+            console_output: None,
             phase: SteamCmdPreparePhase::Updating,
             detail: String::from("Downloading update"),
             downloaded_bytes: Some(10),
@@ -315,6 +322,7 @@ mod tests {
         let _second = tracker.begin(String::from("same-id")).unwrap();
         first.finish(Some(String::from("late error")));
         first.update(SteamCmdPrepareProgress {
+            console_output: None,
             phase: SteamCmdPreparePhase::Ready,
             detail: String::from("late success"),
             downloaded_bytes: None,

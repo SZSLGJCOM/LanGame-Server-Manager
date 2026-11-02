@@ -7,6 +7,29 @@ pub(super) enum Event {
     SessionReady,
 }
 
+#[derive(Default)]
+pub(super) struct Readiness {
+    world: bool,
+    session: bool,
+}
+
+impl Readiness {
+    pub(super) fn observe(&mut self, event: Event) {
+        match event {
+            Event::Reset => {
+                self.world = false;
+                self.session = false;
+            }
+            Event::WorldReady => self.world = true,
+            Event::SessionReady => self.session = true,
+        }
+    }
+
+    pub(super) fn is_ready(&self) -> bool {
+        self.world && self.session
+    }
+}
+
 pub(super) fn event(line: &str) -> Option<Event> {
     let line = line.trim();
     let message = if line.starts_with('[') {
@@ -35,22 +58,14 @@ pub(super) fn event(line: &str) -> Option<Event> {
 }
 
 pub(super) fn analyze(lines: &[String]) -> RuntimeHealth {
-    let mut world = false;
-    let mut session = false;
+    let mut readiness = Readiness::default();
     let mut matched = None;
     for line in lines {
-        match event(line) {
-            Some(Event::Reset) => {
-                world = false;
-                session = false;
-            }
-            Some(Event::WorldReady) => world = true,
-            Some(Event::SessionReady) => session = true,
-            None => continue,
-        }
+        let Some(event) = event(line) else { continue };
+        readiness.observe(event);
         matched = Some(line.clone());
     }
-    let ready = world && session;
+    let ready = readiness.is_ready();
     RuntimeHealth {
         status: if ready { "ready" } else { "starting" }.into(),
         summary: if ready {

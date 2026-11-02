@@ -26,6 +26,7 @@ const root = createRoot(fixture);
 const noOperation = () => {};
 let scenarios = 0;
 let starts = 0;
+let stops = 0;
 const consoleNode = () => fixture.querySelector<HTMLElement>("pre.server-runtime-console");
 const text = () => consoleNode()?.textContent ?? "";
 const runtimeListenerCount = () => bridge.entries.filter(entry => bridge.active.has(entry.id)
@@ -85,6 +86,9 @@ async function run() {
   let retained = runtime.log_tail;
   let finishStart: (() => void) | undefined;
   let failStart: ((error: Error) => void) | undefined;
+  let finishStop: (() => void) | undefined;
+  const startupAttemptIds: string[] = [];
+  const activities: string[] = [];
   Object.assign(globalThis, { isTauri: true });
   mockIPC((command, args) => command === "read_instance_log_document_from_storage" ? retained
     : invokeMock(command, args as Record<string, unknown>));
@@ -94,13 +98,24 @@ async function run() {
     instanceLaunchPlans: {}, instanceLaunchFailures: {}, section: "overview", onWorkspaceSectionChange: noOperation,
     selectedInstanceId: instance.id, selectedDetails: details, selectedBackups: [], selectedModuleDetails: moduleDetails,
     selectedModuleDetailsError: null, runtime, runtimeWindows: null, launchPlan: null, launchPlanError: null,
-    refreshIssue: null, onActivity: noOperation, onResumeAutoRefresh: noOperation, onSelectInstance: noOperation,
-    onStart: async id => {
+    refreshIssue: null, onActivity: activity => { activities.push(activity.key ?? ""); }, onResumeAutoRefresh: noOperation, onSelectInstance: noOperation,
+    onStart: async (id, _preview, operation) => {
       check(id === instance.id, "Start targeted the wrong instance");
+      check(operation?.markStartDispatched(), "The startup must own its dispatch before invoking the backend");
+      check(typeof operation?.startupAttemptId === "string" && !startupAttemptIds.includes(operation.startupAttemptId),
+        "Each startup must have a distinct cancellation identity");
+      startupAttemptIds.push(operation.startupAttemptId);
       starts++;
       await new Promise<void>((resolve, reject) => { finishStart = resolve; failStart = reject; });
     },
-    onStop: noOperation, onInstallModule: async () => {}, onOpenModuleLibrary: noOperation,
+    onStop: async (id, operation) => {
+      check(id === instance.id && operation?.cancelsStartup && !operation.localCancellation,
+        "The existing stop button must cancel the submitted startup of its own instance");
+      check(operation.startupAttemptId === startupAttemptIds.at(-1),
+        "Cancellation after navigation must retain the submitted startup identity");
+      stops++;
+      await new Promise<void>(resolve => { finishStop = resolve; });
+    }, onInstallModule: async () => {}, onOpenModuleLibrary: noOperation,
     onCreateInstance: noOperation, onPickDirectory: async () => null,
     onImportDontStarveWorldData: async () => { throw new Error("Unexpected world import"); },
     onOpenLocalPath: noOperation, onSendRuntimeCommand: async () => null, onSuppressRuntimeWindows: async () => {},
@@ -189,6 +204,24 @@ async function run() {
     "A same-source healthy event did not clear the recovered reader diagnostic");
   scenarios++;
 
+  // Top-level navigation unmounts ServersView, unlike selecting another instance.
+  await act(async () => { root.render(<div data-page="library">Create ASA instance</div>); });
+  check(runtimeListenerCount() === 2, "Leaving the server page must retain the pending operation's capture");
+  await act(async () => { emit(["STARTUP_PROGRESS_WHILE_IN_LIBRARY"]); });
+  await act(async () => { render(); });
+  const pendingButton = fixture.querySelector<HTMLButtonElement>(".server-list-card-primary-action");
+  check(pendingButton && !pendingButton.disabled && pendingButton.getAttribute("aria-busy") === "true"
+    && pendingButton.textContent?.includes("取消") && pendingButton.title === "取消"
+    && pendingButton.getAttribute("aria-label")?.startsWith("取消:") && pendingButton.classList.contains("danger"),
+    "Returning from the library must retain Starting with an accessible red Cancel button");
+  await settleUntil(() => pendingButton.getAnimations().every(animation => animation.playState !== "running"),
+    "Cancel button style transitions did not finish");
+  const startupCancelColor = getComputedStyle(pendingButton).color;
+  check(text().includes("BEFORE_LEAVING_STARTUP_PROGRESS") && text().includes("STARTUP_PROGRESS_WHILE_IN_LIBRARY"),
+    "Returning from the library lost startup progress or mixed in the previous run");
+  check(starts === 1, "Returning to the server page must not dispatch a duplicate start");
+  scenarios++;
+
   await tab("maintenance");
   check(runtimeListenerCount() === 4, "Pending startup must still own page and operation listeners before completion");
   retained = snapshot("fixture/tabs-startup.log", ["STARTUP_COMPLETE"]);
@@ -225,10 +258,10 @@ async function run() {
     props.selectedInstanceId = other.id;
     props.selectedDetails = otherDetails;
     props.runtime = { ...runtime, log_tail: retained };
-    render();
+    root.render(<div data-page="library">Create another instance</div>);
     failStart!(new Error("Fixture startup failure"));
   });
-  await settleUntil(() => runtimeListenerCount() === 2, "Failed off-page startup did not release its operation capture");
+  await settleUntil(() => runtimeListenerCount() === 0, "Failed off-page startup did not release its operation capture");
   retained = snapshot("fixture/after-failure.log", ["AFTER_FAILURE_RETAINED"]);
   await act(async () => {
     props.selectedInstanceId = instance.id;
@@ -238,6 +271,26 @@ async function run() {
   });
   await settleUntil(() => text().includes("AFTER_FAILURE_RETAINED"), "Returning after failure did not read its retained document");
   check(!text().includes("FAILED_STARTUP_ONLY"), "A failed operation revived its startup cache");
+  scenarios++;
+
+  retained = snapshot("fixture/backend-pending.log", ["NATIVE_STARTUP_VERIFICATION_60_PERCENT"]);
+  await act(async () => {
+    const starting = { ...instance, status: "Starting" as const, active_process_count: 0 };
+    props.instances = [starting, other];
+    props.selectedDetails = { ...details, summary: starting };
+    props.runtime = { ...runtime, log_tail: retained, health: { status: "starting",
+      summary: "Server startup is in progress.", reason: { code: "startup_pending", params: {} }, matched_line: null } };
+    render();
+  });
+  await settleUntil(() => text().includes("NATIVE_STARTUP_VERIFICATION_60_PERCENT"),
+    "A startup already owned by the backend must recover its current progress without a local request");
+  const recoveredStop = fixture.querySelector<HTMLButtonElement>(".server-list-card-primary-action");
+  check(recoveredStop && !recoveredStop.disabled && recoveredStop.textContent?.includes("取消"),
+    "Backend startup recovered after UI reload must expose Cancel");
+  await act(async () => { bridge.emit({ instance_id: instance.id, log_path: retained.source_path,
+    lines: ["NATIVE_STARTUP_VERIFICATION_80_PERCENT"], byte_offset: 1, emitted_at_unix_ms: Date.now() }); });
+  check(text().includes("NATIVE_STARTUP_VERIFICATION_80_PERCENT") && !text().includes("PREVIOUS_RUN_OUTPUT"),
+    "Recovered backend startup rejected its current log stream or displayed an old run");
   scenarios++;
 
   retained = snapshot("fixture/new-known-run.log", ["NEW_KNOWN_RUN_ONLY"]);
@@ -251,7 +304,44 @@ async function run() {
     render();
   });
   await settleUntil(() => text().includes("NEW_KNOWN_RUN_ONLY"), "A current run did not replace the failed startup scope");
+  const runningStop = fixture.querySelector<HTMLButtonElement>(".server-list-card-primary-action");
+  check(runningStop && !runningStop.disabled && runningStop.textContent?.includes("停止")
+    && runningStop.classList.contains("danger"), "A running server must show a red Stop button");
+  await settleUntil(() => runningStop.getAnimations().every(animation => animation.playState !== "running"),
+    "Stop button style transitions did not finish");
+  check(getComputedStyle(runningStop).color === startupCancelColor,
+    `Cancel and Stop colors differ: ${startupCancelColor} / ${getComputedStyle(runningStop).color}`);
   check(!/FAILED_STARTUP_ONLY|BEFORE_LEAVING_STARTUP_PROGRESS/.test(text()), "Current run history mixed with an old startup");
+  scenarios++;
+
+  await act(async () => {
+    props.instances = [instance, other];
+    props.selectedDetails = details;
+    props.runtime = { ...runtime, log_tail: retained };
+    render();
+  });
+  finishStart = undefined;
+  await click(".server-list-card-primary-action");
+  await settleUntil(() => Boolean(finishStart), "The cancellation scenario did not submit startup");
+  await act(async () => { root.render(<div data-page="library">Library during startup</div>); });
+  check(runtimeListenerCount() === 2, "Navigation must retain the start operation before cancellation");
+  await act(async () => { render(); });
+  const activityCount = activities.length;
+  await click(".server-list-card-primary-action");
+  await settleUntil(() => Boolean(finishStop), "The existing stop button did not submit startup cancellation");
+  const stoppingButton = fixture.querySelector<HTMLButtonElement>(".server-list-card-primary-action");
+  check(stoppingButton?.disabled && stoppingButton.textContent?.includes("取消中"),
+    "Cancellation must reject repeat clicks while cleanup is pending");
+  await act(async () => {
+    failStart!(new Error(JSON.stringify({ code: "runtime_start_cancelled" })));
+  });
+  check(stoppingButton.disabled && !activities.slice(activityCount).some(key => key.includes("error")),
+    "The cancelled start's late failure must not clear stopping or publish a startup error");
+  await act(async () => { finishStop!(); });
+  await settleUntil(() => !fixture.querySelector<HTMLButtonElement>(".server-list-card-primary-action")?.disabled
+    && runtimeListenerCount() === 2, "Completed cancellation must release its operation and startup capture");
+  check(fixture.querySelector(".server-list-card-primary-action")?.textContent?.includes("启动") && stops === 1,
+    "Completed cancellation must return the same button to startup without duplicate requests");
   scenarios++;
 
   await act(async () => { root.render(null); });
@@ -304,7 +394,7 @@ async function run() {
   await act(async () => { root.unmount(); });
   check(runtimeListenerCount() === 0, "The startup tabs fixture leaked runtime listeners");
   check(errors.length === 0, `Unexpected browser errors: ${errors.join("; ")}`);
-  return { status: "passed", scenarios, starts, browser_errors: errors };
+  return { status: "passed", scenarios, starts, stops, browser_errors: errors };
 }
 
 let watchdog: ReturnType<typeof setTimeout>;

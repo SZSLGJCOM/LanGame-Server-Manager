@@ -34,7 +34,8 @@ import { useI18n } from "../i18n";
 import { formatInstallState } from "../install-state-presentation";
 import { instancePanelReader, type InstancePanelLoadState, type InstancePanelPatch } from "../instance-panel-loader";
 import type { InstallationSnapshot } from "../library-installation-refresh";
-import { readModuleNotReadyError, serverStartFailureMessage, serverStartSuccessMessage } from "../server-start-error";
+import { isRuntimeStartCancelled, readModuleNotReadyError, serverStartFailureMessage, serverStartSuccessMessage } from "../server-start-error";
+import type { RuntimeActionOperation } from "../runtime-action-store";
 import { useInstanceSettingsSaveCoordinator } from "../views/settings/InstanceSettingsSaveContext";
 import type { useInstanceRetirement } from "./useInstanceRetirement";
 import type {
@@ -327,14 +328,29 @@ export function useInstanceActions(options: InstanceActionOptions) {
     }
   }
 
-  async function handleStartServer(instanceId: string, expectedWorldStart?: DstWorldStartPreview) {
+  async function handleStartServer(instanceId: string, expectedWorldStart?: DstWorldStartPreview, operation?: RuntimeActionOperation) {
+    if (operation && !operation.isCurrent()) return false;
     options.setActivity(message("activity.startingServer", { id: instanceId }));
     let result: StartInstanceResult;
     try {
       await settingsSaveCoordinator.flush(instanceId);
-      result = expectedWorldStart
-        ? await startInstance(instanceId, expectedWorldStart) : await startInstance(instanceId);
+      if (operation && !operation.markStartDispatched()) return false;
+      result = operation
+        ? await startInstance(instanceId, expectedWorldStart ?? null, operation.startupAttemptId)
+        : expectedWorldStart ? await startInstance(instanceId, expectedWorldStart) : await startInstance(instanceId);
     } catch (error) {
+      if (operation && !operation.isCurrent()) return false;
+      if (isRuntimeStartCancelled(error)) {
+        const cancelled = message("activity.serverStartupCancelled", { id: instanceId });
+        try {
+          await options.reloadBootstrap();
+          options.markRuntimeRefreshed();
+          if (!operation || operation.isCurrent()) options.setActivity(cancelled);
+        } catch (refreshError) {
+          if (!operation || operation.isCurrent()) reportOperationRefreshFailure(cancelled, refreshError);
+        }
+        return false;
+      }
       const errorMessage = describeError(error);
       options.setActivity({ ...serverStartFailureMessage(error), tone: "error" });
       void logFrontendEvent("error", "instance.start.frontend_failed", errorMessage, { instanceId }).catch(
@@ -351,34 +367,40 @@ export function useInstanceActions(options: InstanceActionOptions) {
       }
       return false;
     }
+    if (operation && !operation.isCurrent()) return false;
     const completed = serverStartSuccessMessage(result, instanceId);
     try {
-      await options.reloadBootstrap({ instanceId });
-      options.setSelectedInstanceId(instanceId);
+      await options.reloadBootstrap();
       options.markRuntimeRefreshed();
+      if (operation && !operation.isCurrent()) return false;
       options.setActivity(completed);
     } catch (error) {
+      if (operation && !operation.isCurrent()) return false;
       reportOperationRefreshFailure(completed, error);
     }
     return true;
   }
 
-  async function handleStopServer(instanceId: string) {
-    options.setActivity(message("activity.stoppingServer", { id: instanceId }));
+  async function handleStopServer(instanceId: string, operation?: RuntimeActionOperation) {
+    options.setActivity(message(operation?.cancelsStartup ? "activity.cancellingServerStartup" : "activity.stoppingServer", { id: instanceId }));
+    let startupCancelled = operation?.localCancellation === true;
     try {
-      await stopInstance(instanceId);
+      if (!startupCancelled) {
+        const result = operation?.startupAttemptId
+          ? await stopInstance(instanceId, operation.startupAttemptId) : await stopInstance(instanceId);
+        startupCancelled = result.outcome === "startup_cancelled";
+      }
     } catch (error) {
       const errorMessage = describeError(error);
-      options.setActivity(message("activity.stopServerFailed", { message: errorMessage }, { tone: "error" }));
+      options.setActivity(message(operation?.cancelsStartup ? "activity.cancelServerStartupFailed" : "activity.stopServerFailed", { message: errorMessage }, { tone: "error" }));
       void logFrontendEvent("error", "instance.stop.frontend_failed", errorMessage, { instanceId }).catch(
         () => undefined
       );
       return;
     }
-    const completed = message("activity.serverStopSent", { id: instanceId });
+    const completed = message(startupCancelled ? "activity.serverStartupCancelled" : "activity.serverStopSent", { id: instanceId });
     try {
-      await options.reloadBootstrap({ instanceId });
-      options.setSelectedInstanceId(instanceId);
+      await options.reloadBootstrap();
       options.markRuntimeRefreshed();
       options.setActivity(completed);
     } catch (error) {

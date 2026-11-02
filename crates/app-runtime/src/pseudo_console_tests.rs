@@ -298,6 +298,121 @@ fn terminal_close_marks_an_unclosed_output_channel_as_failed() {
 }
 
 #[test]
+fn live_preview_tracks_small_chunks_and_cr_edits_without_persisting_snapshots() {
+    let root = ProbeDirectory::create();
+    let path = root.0.join("terminal.log");
+    let log = std::io::BufWriter::new(File::create(&path).unwrap());
+    let preview = LiveConsolePreview::register(&path).unwrap();
+    let state = Arc::new(TerminalState::default());
+    let stages: &[(&[u8], &str, &[&str])] = &[
+        (b"loa", "", &["loa"]),
+        (b"ding", "", &["loading"]),
+        (b"\rready\x1b[K", "", &["ready"]),
+        (b"\r\n\xe7", "ready\n", &[]),
+        (b"\x8e", "ready\n", &[]),
+        (b"\xa9", "ready\n", &["玩"]),
+        ("家".as_bytes(), "ready\n", &["玩家"]),
+        (b"\r\nlast", "ready\n玩家\n", &["last"]),
+    ];
+    let mut stage = 0;
+    drain_output_with_reader_in_mode(
+        |buffer| {
+            if stage > 0 {
+                let (_, durable, pending) = stages[stage - 1];
+                crate::with_live_console_preview(&path, |rows| {
+                    assert_eq!(std::fs::read_to_string(&path).unwrap(), durable);
+                    assert_eq!(rows, pending);
+                })
+                .unwrap();
+            }
+            let Some((bytes, _, _)) = stages.get(stage) else {
+                return Ok(0);
+            };
+            buffer[..bytes.len()].copy_from_slice(bytes);
+            stage += 1;
+            Ok(bytes.len())
+        },
+        log,
+        Arc::clone(&state),
+        OUTPUT_CLOSE_BUDGET,
+        OutputMode::CompletedRows,
+        Some(preview),
+    );
+    assert!(!state.output_failed.load(Ordering::Acquire));
+    crate::with_live_console_preview(&path, |rows| {
+        assert!(rows.is_empty());
+        assert_eq!(
+            std::fs::read_to_string(&path).unwrap(),
+            "ready\n玩家\nlast\n"
+        );
+    })
+    .unwrap();
+}
+
+#[test]
+fn live_preview_exposes_a_real_console_prompt_before_newline_or_exit() {
+    let root = ProbeDirectory::create();
+    let path = root.0.join("terminal.log");
+    let log = File::create(&path).unwrap();
+    let preview = LiveConsolePreview::register(&path).unwrap();
+    let system = std::env::var_os("SystemRoot").unwrap();
+    let executable = Path::new(&system).join("System32/WindowsPowerShell/v1.0/powershell.exe");
+    let args = [
+        "-NoLogo",
+        "-NoProfile",
+        "-NonInteractive",
+        "-Command",
+        "[Console]::Write('loading-partial'); [void][Console]::ReadKey($true); [Console]::WriteLine(' complete'); [void][Console]::ReadKey($true)",
+    ]
+    .map(str::to_owned);
+    let command = crate::SpawnCommand {
+        executable: executable.to_str().unwrap(),
+        args: &args,
+        working_directory: &root.0,
+        environment: &Default::default(),
+    };
+    let (mut child, _) = spawn_with_preview(&command, log, false, None, Some(preview)).unwrap();
+    let deadline = Instant::now() + Duration::from_secs(15);
+    let read_snapshot = || {
+        crate::with_live_console_preview(&path, |rows| {
+            (std::fs::read_to_string(&path).unwrap(), rows.to_vec())
+        })
+        .unwrap()
+    };
+    loop {
+        let (durable, pending) = read_snapshot();
+        if pending.iter().any(|row| row == "loading-partial") {
+            assert!(durable.is_empty(), "{durable}");
+            break;
+        }
+        assert!(
+            Instant::now() < deadline,
+            "partial prompt was not published"
+        );
+        assert!(child.try_wait().unwrap().is_none(), "console exited early");
+        std::thread::sleep(Duration::from_millis(20));
+    }
+    let mut input = child.take_stdin().unwrap();
+    input.write_stdin_line("").unwrap();
+    loop {
+        let (durable, pending) = read_snapshot();
+        if durable.contains("loading-partial complete\n") {
+            assert_eq!(durable.matches("loading-partial complete\n").count(), 1);
+            assert!(pending.is_empty(), "{pending:?}");
+            break;
+        }
+        assert!(
+            Instant::now() < deadline,
+            "completed prompt was not persisted"
+        );
+        assert!(child.try_wait().unwrap().is_none(), "console exited early");
+        std::thread::sleep(Duration::from_millis(20));
+    }
+    drop(child);
+    assert!(read_snapshot().1.is_empty());
+}
+
+#[test]
 fn pseudo_console_provides_real_console_input_output_and_owned_cleanup() {
     let root = ProbeDirectory::create();
     let log_path = root.0.join("terminal.log");

@@ -207,12 +207,20 @@ const rosterBox = () => {
 };
 /** Zoom floats in the map's top-left corner, never in the rail. */
 function checkZoomOverlay() {
-  const viewport = element(".dst-map-viewport").getBoundingClientRect(), controls = element(".dst-map-viewport > .dst-map-controls");
+  const viewport = element(".dst-map-viewport").getBoundingClientRect(), controls = element(".dst-map-viewport > .map-zoom-controls");
   const box = controls.getBoundingClientRect();
   check(getComputedStyle(controls).position === "absolute" && box.left - viewport.left >= 0 && box.left - viewport.left <= 12 && box.top - viewport.top >= 0 && box.top - viewport.top <= 12
-    && box.width < viewport.width / 2 && !element(".dst-map-sidebar").querySelector(".dst-map-controls"), "Zoom controls must float in the map's top-left corner");
-  check(["放大", "缩小", "适应窗口"].every(label => controls.querySelector(`button[aria-label="${label}"], button[title="${label}"]`)) && Boolean(controls.querySelector("select.dst-map-zoom")),
+    && box.width < viewport.width / 2 && !element(".dst-map-sidebar").querySelector(".map-zoom-controls"), "Zoom controls must float in the map's top-left corner");
+  check(["放大", "缩小", "适应窗口"].every(label => controls.querySelector(`button[aria-label="${label}"], button[title="${label}"]`)) && Boolean(controls.querySelector("select.map-zoom-select")),
     "The overlay keeps zoom in/out, the percentage and fit");
+  const buttons = [...controls.querySelectorAll("button")], select = element<HTMLSelectElement>(".map-zoom-select");
+  check(buttons.length === 3 && buttons.every(button => {
+    const bounds = button.getBoundingClientRect(), icon = button.querySelector("svg")?.getBoundingClientRect();
+    return bounds.width === 26 && bounds.height === 26 && icon?.width === 15 && icon.height === 15;
+  }) && select.getBoundingClientRect().width === 84 && select.getBoundingClientRect().height === 26,
+  "Shared zoom controls use compact icon buttons and a readable percentage selector");
+  check([controls, ...buttons, select].every(node => getComputedStyle(node).backgroundColor === "rgba(0, 0, 0, 0)"),
+    "Map zoom controls retain transparent backgrounds");
 }
 
 async function run() {

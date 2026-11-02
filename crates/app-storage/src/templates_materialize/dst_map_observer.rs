@@ -25,6 +25,39 @@ const RESOURCES: [(&str, &[u8]); 3] = [
     ),
 ];
 
+pub(super) fn is_default_support_file(path: &Path, relative: &str) -> Result<bool, StorageError> {
+    if relative == "mods/modsettings.lua" {
+        return matches_generated_file(path, &enable_block(b"\n"));
+    }
+    let Some(name) = relative.strip_prefix("mods/lgsm_world_map_observer/") else {
+        return Ok(false);
+    };
+    let Some((_, expected)) = RESOURCES.iter().find(|(candidate, _)| *candidate == name) else {
+        return Ok(false);
+    };
+    matches_generated_file(path, expected)
+}
+
+/// Reuse is stricter than recognizing an owned helper for updates: only exact
+/// current defaults carry no previous instance settings or edited Lua forward.
+pub(super) fn matches_generated_file(path: &Path, expected: &[u8]) -> Result<bool, StorageError> {
+    reject_links(path).map_err(|error| failure(path, error))?;
+    let file = match File::open(path) {
+        Ok(file) => file,
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(false),
+        Err(error) => return Err(failure(path, error)),
+    };
+    let metadata = file.metadata().map_err(|error| failure(path, error))?;
+    if !metadata.is_file() || metadata.len() != expected.len() as u64 {
+        return Ok(false);
+    }
+    let mut bytes = Vec::with_capacity(expected.len());
+    file.take(expected.len() as u64 + 1)
+        .read_to_end(&mut bytes)
+        .map_err(|error| failure(path, error))?;
+    Ok(bytes == expected)
+}
+
 /// Recognize our complete internal helper without hiding a user's same-named
 /// directory. This shares the materializer's exact file and ownership contract.
 pub fn is_managed_dst_map_observer(directory: &Path) -> Result<bool, StorageError> {

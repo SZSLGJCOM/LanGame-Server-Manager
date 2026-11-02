@@ -1,4 +1,4 @@
-use super::{has_asa_ready_marker, native_line_is_current};
+use super::{native_line_is_current, native_ready_marker};
 use crate::atomic_file::compare_and_swap_optional_file_atomically;
 use crate::managed_console_log::owned_fs::{FileIdentity, identity, reject_links};
 use app_core::InstanceProcessState;
@@ -75,6 +75,7 @@ impl Entry {
 /// entry also belongs to an OS process, so restart and PID reuse cannot inherit
 /// readiness, and an older group snapshot cannot prune a newer map's evidence.
 pub(super) fn observe(
+    module_id: &str,
     native_path: &Path,
     process: &InstanceProcessState,
     group_run_id: i64,
@@ -82,6 +83,7 @@ pub(super) fn observe(
     recent_ready: bool,
 ) -> io::Result<bool> {
     observe_with(
+        module_id,
         native_path,
         process,
         group_run_id,
@@ -92,6 +94,7 @@ pub(super) fn observe(
 }
 
 fn observe_with(
+    module_id: &str,
     native_path: &Path,
     process: &InstanceProcessState,
     group_run_id: i64,
@@ -144,7 +147,7 @@ fn observe_with(
             ready: false,
         });
     entry.ready |= recent_ready;
-    advance(&mut file, file_identity, &mut entry, process)?;
+    advance(module_id, &mut file, file_identity, &mut entry, process)?;
     for attempt in 0..CAS_ATTEMPTS {
         if attempt > 0 {
             (checkpoint, expected) = load(&state_path)?;
@@ -270,6 +273,7 @@ fn load(path: &Path) -> io::Result<(Checkpoint, Option<Vec<u8>>)> {
 }
 
 fn advance(
+    module_id: &str,
     file: &mut File,
     file_identity: FileIdentity,
     entry: &mut Entry,
@@ -299,7 +303,13 @@ fn advance(
     }
     let bytes = region(file, entry.offset, SCAN_BYTES)?;
     for fragment in bytes.split_inclusive(|byte| *byte == b'\n') {
-        scan_fragment(&mut entry.partial, fragment, process, &mut entry.ready);
+        scan_fragment(
+            module_id,
+            &mut entry.partial,
+            fragment,
+            process,
+            &mut entry.ready,
+        );
     }
     entry.offset += bytes.len() as u64;
     entry.observed_length = file.metadata()?.len().max(entry.offset);
@@ -313,6 +323,7 @@ fn advance(
 }
 
 fn scan_fragment(
+    module_id: &str,
     partial: &mut PartialLine,
     fragment: &[u8],
     process: &InstanceProcessState,
@@ -331,12 +342,13 @@ fn scan_fragment(
             .extend_from_slice(&fragment[..needed.min(fragment.len())]);
         // The native timestamp/frame and final message fit this bounded prefix.
         // Searching later fragments could mistake a server name for readiness.
-        let text = String::from_utf8_lossy(&partial.prefix).to_ascii_lowercase();
-        partial.marker = has_asa_ready_marker(&text);
+        let text = String::from_utf8_lossy(&partial.prefix);
+        partial.marker = native_ready_marker(module_id, &text);
     }
     if complete {
         if !partial.skip
             && partial.marker
+            && (module_id != "arksurvivalevolved" || partial.length <= READY_PREFIX_BYTES as u64)
             && native_line_is_current(process, &String::from_utf8_lossy(&partial.prefix))
         {
             *ready = true;

@@ -6,6 +6,25 @@ pub(super) enum Event {
     Level(u8),
 }
 
+#[derive(Default)]
+pub(super) struct Readiness {
+    steam: bool,
+    level: bool,
+}
+
+impl Readiness {
+    pub(super) fn observe(&mut self, event: Event) {
+        match event {
+            Event::Steam(ready) => self.steam = ready,
+            Event::Level(progress) => self.level = progress == 100,
+        }
+    }
+
+    pub(super) fn is_ready(&self) -> bool {
+        self.steam && self.level
+    }
+}
+
 pub(super) fn event(line: &str) -> Option<Event> {
     let line = line.trim();
     if line == "Steam servers ready!" {
@@ -35,24 +54,22 @@ pub(super) fn event(line: &str) -> Option<Event> {
 }
 
 pub(super) fn analyze(lines: &[String]) -> RuntimeHealth {
-    let mut steam_ready = false;
-    let mut level_ready = false;
+    let mut readiness = Readiness::default();
     let mut steam_line = None;
     let mut level_line = None;
     for line in lines {
-        match event(line) {
-            Some(Event::Steam(ready)) => {
-                steam_ready = ready;
+        let Some(event) = event(line) else { continue };
+        readiness.observe(event);
+        match event {
+            Event::Steam(_) => {
                 steam_line = Some(line.clone());
             }
-            Some(Event::Level(progress)) => {
-                level_ready = progress == 100;
+            Event::Level(_) => {
                 level_line = Some(line.clone());
             }
-            None => {}
         }
     }
-    let ready = steam_ready && level_ready;
+    let ready = readiness.is_ready();
     RuntimeHealth {
         status: if ready { "ready" } else { "starting" }.into(),
         summary: if ready {
@@ -69,7 +86,7 @@ pub(super) fn analyze(lines: &[String]) -> RuntimeHealth {
             },
             &[],
         ),
-        matched_line: if steam_ready {
+        matched_line: if readiness.steam {
             level_line.or(steam_line)
         } else {
             steam_line.or(level_line)

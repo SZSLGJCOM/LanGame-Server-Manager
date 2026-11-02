@@ -302,7 +302,7 @@ fn validate_source(
             source == Source::RuntimeAction && identity == Identity::ConanUserId
         }
         Codec::HumanitzPlayers => {
-            source == Source::RuntimeAction && identity == Identity::PlayerName
+            source == Source::RuntimeAction && identity == Identity::HumanitzNetId
         }
         Codec::SevenDaysPlayers | Codec::SquadListPlayers => {
             source == Source::RuntimeAction
@@ -607,15 +607,29 @@ mod tests {
             spec(
                 "runtime_action",
                 "humanitz_players",
-                "player_name",
+                "humanitz_net_id",
                 "action_id = 'list'",
             )
         };
-        assert!(player_list_spec_from_toml(make(), &[action("humanitz_rcon", "info")]).is_ok());
-        assert!(player_list_spec_from_toml(make(), &[action("stdin", "info")]).is_err());
+        assert!(player_list_spec_from_toml(make(), &[action("humanitz_rcon", "Players")]).is_ok());
+        assert!(player_list_spec_from_toml(make(), &[action("stdin", "Players")]).is_err());
         assert!(
-            player_list_spec_from_toml(make(), &[action("humanitz_rcon", "info {{target}}")])
+            player_list_spec_from_toml(make(), &[action("humanitz_rcon", "Players {{target}}")])
                 .is_err()
         );
+        for identity in ["player_name", "eos_id", "steam_id"] {
+            assert!(
+                player_list_spec_from_toml(
+                    spec(
+                        "runtime_action",
+                        "humanitz_players",
+                        identity,
+                        "action_id = 'list'",
+                    ),
+                    &[action("humanitz_rcon", "Players")],
+                )
+                .is_err()
+            );
+        }
     }
 }

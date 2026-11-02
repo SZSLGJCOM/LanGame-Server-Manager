@@ -89,3 +89,9 @@ port_names = ["game"]
 [[runtime.port_roles]]
 role = "service"
 port_names = ["console"]
+
+[runtime.startup_readiness]
+timeout_ms = 600000
+
+[runtime.startup_readiness.probe]
+kind = "astroneer_world"

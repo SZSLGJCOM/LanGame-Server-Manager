@@ -1,4 +1,8 @@
 use super::*;
+use crate::startup_sessions::NativeStartupSource;
+
+#[path = "runtime_game_log_window.rs"]
+mod window;
 
 static GAME_LOG_READ_SEQUENCE: std::sync::Mutex<u64> = std::sync::Mutex::new(0);
 
@@ -43,6 +47,7 @@ pub struct GameLogDocument {
     pub run_id: i64,
     pub console_log_path: Option<String>,
     pub process: InstanceProcessState,
+    pub startup_boundary: Option<NativeStartupSource>,
 }
 
 pub(super) async fn load_instance_run_by_id(
@@ -70,16 +75,27 @@ pub fn read_game_log_snapshot(
     process: &InstanceProcessState,
     max_lines: usize,
 ) -> GameLogSnapshot {
-    ordered_snapshot(|| read_current_game_log_snapshot(source_path, process, max_lines))
+    read_game_log_snapshot_after_startup(source_path, process, max_lines, None)
+}
+
+/// Resume after the native records already retained in the startup transcript.
+/// The checkpoint is accepted only for the same process and unchanged file.
+pub fn read_game_log_snapshot_after_startup(
+    source_path: String,
+    process: &InstanceProcessState,
+    max_lines: usize,
+    boundary: Option<&NativeStartupSource>,
+) -> GameLogSnapshot {
+    ordered_snapshot(|| read_current_game_log_snapshot(source_path, process, max_lines, boundary))
 }
 
 fn read_current_game_log_snapshot(
     source_path: String,
     process: &InstanceProcessState,
     max_lines: usize,
+    boundary: Option<&NativeStartupSource>,
 ) -> LogTailSnapshot {
-    let mut snapshot = read_log_snapshot(Some(source_path), RUNTIME_STARTUP_SCAN_LINE_LIMIT);
-    let mut current = false;
+    let (mut snapshot, mut current) = window::read(source_path, process, boundary);
     snapshot.lines.retain(|line| {
         if ark_readiness::native_line_timestamp(line).is_some() {
             current = ark_readiness::native_line_is_current(process, line);
@@ -126,16 +142,24 @@ pub async fn read_instance_game_log_document(
         let native_path = app_core::ark_maps::native_log_path(
             &record.summary.module_id, &instance_logs_dir_from_record(&record), &run.process_key,
         ).map_err(invalid)?;
+        let root = crate::instance_reconciliation::checked_instance_root(paths, &record.config_dir)?;
+        let startup_boundary = crate::startup_sessions::read_latest(&root, instance_id)
+            .map_err(|source| StorageError::ReadPath {
+                path: root.join("logs").join("startup-session.json"), source,
+            })?
+            .filter(|receipt| receipt.run_ids.contains(&run_id))
+            .and_then(|receipt| receipt.native_sources.into_iter().find(|source| source.process_key == run.process_key));
         let read_process = process.clone();
+        let read_boundary = startup_boundary.clone();
         let document = tokio::task::spawn_blocking(move || {
-            read_game_log_snapshot(native_path.to_string_lossy().into_owned(), &read_process, max_lines)
+            read_game_log_snapshot_after_startup(native_path.to_string_lossy().into_owned(), &read_process, max_lines, read_boundary.as_ref())
         }).await.map_err(|error| StorageError::BlockingTaskFailed {
             operation: "game log document read", message: error.to_string(),
         })?;
         Ok(GameLogDocument {
             snapshot: document.snapshot, snapshot_revision: document.revision,
             process_key: run.process_key, display_name: run.display_name,
-            run_id, console_log_path: run.log_path, process,
+            run_id, console_log_path: run.log_path, process, startup_boundary,
         })
     }.await;
     pool.close().await;
@@ -193,3 +217,7 @@ mod tests {
         std::fs::remove_dir_all(root).unwrap();
     }
 }
+
+#[cfg(test)]
+#[path = "runtime_game_log_handoff_tests.rs"]
+mod handoff_tests;

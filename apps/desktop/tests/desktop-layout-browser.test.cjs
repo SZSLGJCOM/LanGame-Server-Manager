@@ -9,6 +9,8 @@ const viewports = [
   { width: 960, height: 600, scale: 1 },
   { width: 960, height: 520, scale: 2 },
   { width: 853, height: 453, scale: 1.5 },
+  { width: 786, height: 453, scale: 1.5 },
+  { width: 901, height: 520, scale: 2 },
   { width: 1920, height: 1080, scale: 1 },
   { width: 1560, height: 900, scale: 1.25 },
   { width: 1560, height: 900, scale: 1.5 },

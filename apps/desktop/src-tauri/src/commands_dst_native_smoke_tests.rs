@@ -601,7 +601,7 @@ async fn smoke_dst_native_world_generation_save_and_reload()
             )
             .await?;
         }
-        let stopped = command_result(stop_instance_process(state.clone(), id.clone()).await)?;
+        let stopped = command_result(stop_instance_process(state.clone(), id.clone(), None).await)?;
         assert_eq!(stopped.process_count, process_count);
         assert!(
             stopped

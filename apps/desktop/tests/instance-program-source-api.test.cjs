@@ -65,6 +65,10 @@ test("command arguments reach the native transport in their declared shape", asy
     [() => api.importDontStarveWorldData("fixture", "world.zip"), "import_dontstarve_world_data", { instanceId: "fixture", sourcePath: "world.zip", locale: "en-US" }],
     [() => api.searchSteamWorkshopItems(123, "mod", "trend", 2, "en-US", "collection"), "search_steam_workshop_items", { appId: 123, query: "mod", sort: "trend", page: 2, locale: "en-US", browseKind: "collection" }],
     [() => api.startInstance("fixture", { instance_id: "fixture", settings_json: "{}", shards: [{ shard: "Master", state: "existing", enabled: true }] }), "start_instance_process", { instanceId: "fixture", expectedWorldStart: { instance_id: "fixture", settings_json: "{}", shards: [{ shard: "Master", state: "existing", enabled: true }] } }],
+    [() => api.startInstance("fixture"), "start_instance_process", { instanceId: "fixture", expectedWorldStart: null }],
+    [() => api.startInstance("fixture", null, "f38a11b3-eaa3-4b2b-a7cc-247655a51477"), "start_instance_process", { instanceId: "fixture", expectedWorldStart: null, startupAttemptId: "f38a11b3-eaa3-4b2b-a7cc-247655a51477" }],
+    [() => api.stopInstance("fixture"), "stop_instance_process", { instanceId: "fixture" }],
+    [() => api.stopInstance("fixture", "f38a11b3-eaa3-4b2b-a7cc-247655a51477"), "stop_instance_process", { instanceId: "fixture", startupAttemptId: "f38a11b3-eaa3-4b2b-a7cc-247655a51477" }],
     [() => api.listOllamaModels("http://127.0.0.1:11434"), "assistant_list_ollama_models", { baseUrl: "http://127.0.0.1:11434" }],
     [() => api.readInstanceIsolation("fixture"), "read_instance_isolation", { input: { instance_id: "fixture" } }],
     [() => api.executeDeclaredRuntimePlayerAction("fixture", "ban", "player", ""), "execute_instance_manual_player_action", { input: { instance_id: "fixture", action_id: "ban", target: "player", role: null } }]

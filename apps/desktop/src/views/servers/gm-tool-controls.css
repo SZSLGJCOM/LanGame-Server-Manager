@@ -1,0 +1,17 @@
+/* DST and both ARK editions use the same four-column, fixed-height tool cells. */
+.dst-gm-tool-grid, .ark-spawn-tool-grid, .ark-world-tool-grid {
+  display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px;
+}
+.secondary-button.dst-gm-tool, .primary-button.dst-gm-tool, .dst-gm-amount,
+.secondary-button.ark-spawn-tool, .primary-button.ark-spawn-tool, .ark-spawn-setting {
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
+  width: 100%; min-width: 0; min-height: 0; height: 46px;
+  padding: 4px 2px; font-size: var(--text-meta); line-height: 1.2;
+}
+.dst-gm-tool > svg, .ark-spawn-tool > svg { width: 18px; height: 18px; flex: none; }
+.dst-gm-tool > span, .ark-spawn-tool > span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dst-gm-tool[aria-pressed="true"], .ark-spawn-tool[aria-pressed="true"] { border-color: var(--shell-focus); background: var(--shell-focus-soft); }
+.dst-gm-amount, .ark-spawn-setting {
+  box-sizing: border-box; border: 1px solid var(--border); border-radius: 8px;
+  background: var(--theme-card-surface); color: var(--shell-muted);
+}

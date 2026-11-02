@@ -236,7 +236,7 @@ async fn ark_evolved_runtime_overview_falls_back_to_entrypoint_log_when_shooterg
 
 #[cfg(windows)]
 #[tokio::test]
-async fn ark_evolved_runtime_overview_reports_ready_from_bound_udp_ports() {
+async fn ark_evolved_runtime_overview_requires_current_full_startup_after_bound_ports() {
     let root = unique_test_root();
     let paths = test_paths(&root);
     let descriptor = ark_test_descriptor(&root);
@@ -277,6 +277,7 @@ async fn ark_evolved_runtime_overview_reports_ready_from_bound_udp_ports() {
 
     let game_socket = std::net::UdpSocket::bind(("127.0.0.1", 0)).unwrap();
     let query_socket = std::net::UdpSocket::bind(("127.0.0.1", 0)).unwrap();
+    let rcon_listener = std::net::TcpListener::bind(("127.0.0.1", 0)).unwrap();
     replace_instance_ports_for_test(
         &paths,
         &created.summary.id,
@@ -291,6 +292,11 @@ async fn ark_evolved_runtime_overview_reports_ready_from_bound_udp_ports() {
                 protocol: String::from("udp"),
                 port: query_socket.local_addr().unwrap().port(),
             },
+            PortBinding {
+                name: String::from("rcon"),
+                protocol: String::from("tcp"),
+                port: rcon_listener.local_addr().unwrap().port(),
+            },
         ],
     )
     .await;
@@ -302,41 +308,77 @@ async fn ark_evolved_runtime_overview_reports_ready_from_bound_udp_ports() {
         .join("run-entrypoint.log");
     fs::write(&entrypoint_log_path, "bootstrap launch\n").unwrap();
 
-    let shooter_log_path = install_root
-        .join("ShooterGame")
-        .join("Saved")
-        .join("Logs")
-        .join("ShooterGame.log");
-    fs::create_dir_all(shooter_log_path.parent().unwrap()).unwrap();
-    fs::write(&shooter_log_path, "").unwrap();
+    let native_log_path = app_core::ark_maps::native_log_path(
+        "arksurvivalevolved",
+        entrypoint_log_path.parent().unwrap(),
+        "main",
+    )
+    .unwrap();
+    fs::write(&native_log_path, "").unwrap();
 
-    record_started_test_instance(
+    let identity = app_runtime::inspect_process_identity(std::process::id())
+        .unwrap()
+        .unwrap();
+    mark_instance_process_started_with_identity(
         &paths,
-        &created.summary.id,
-        std::process::id(),
-        &entrypoint_log_path.to_string_lossy(),
+        &StartedInstanceProcess {
+            instance_id: &created.summary.id,
+            session_id: Some("ase-owned-readiness"),
+            process_key: "main",
+            display_name: "ASE Ready",
+            pid: std::process::id(),
+            log_path: &entrypoint_log_path.to_string_lossy(),
+            is_primary: true,
+        },
+        Some(&identity),
     )
     .await
     .unwrap();
 
-    std::thread::sleep(Duration::from_millis(150));
-
     let overview = read_instance_runtime_overview(&paths, &created.summary.id)
         .await
         .unwrap();
-    assert_eq!(overview.health.status, "ready");
-    assert!(
-        overview
-            .health
-            .summary
-            .to_ascii_lowercase()
-            .contains("required udp ports"),
-        "unexpected runtime health summary: {}",
-        overview.health.summary
+    assert_eq!(
+        overview.health.status, "starting",
+        "owned listeners alone do not establish world readiness"
     );
     assert_eq!(
         overview.log_tail.source_path,
         Some(entrypoint_log_path.to_string_lossy().into_owned())
+    );
+
+    // SQLite's UTC clock produces a native record after this real test
+    // process's creation token, without a fixed sleep or a future fixture date.
+    let pool = connect_pool(&paths).await.unwrap();
+    let timestamp: String = sqlx::query_scalar(
+        "SELECT strftime('%Y.%m.%d-%H.%M.', 'now') || replace(strftime('%f', 'now'), '.', ':')",
+    )
+    .fetch_one(&pool)
+    .await
+    .unwrap();
+    pool.close().await;
+    fs::write(
+        &native_log_path,
+        format!("[{timestamp}][  0]Full Startup: 51.36 seconds (BP compile: 0.00 seconds)\n"),
+    )
+    .unwrap();
+    let ready = read_instance_runtime_overview(&paths, &created.summary.id)
+        .await
+        .unwrap();
+    assert_eq!(ready.health.status, "ready");
+    assert_eq!(ready.health.reason.code, "ready_signal");
+    assert_eq!(
+        ready.log_tail.source_path,
+        Some(native_log_path.to_string_lossy().into_owned())
+    );
+
+    drop(query_socket);
+    let missing_owned_port = read_instance_runtime_overview(&paths, &created.summary.id)
+        .await
+        .unwrap();
+    assert_eq!(
+        missing_owned_port.health.status, "starting",
+        "a retained final phase cannot replace the current process's required listener"
     );
 
     cleanup_root(&root);

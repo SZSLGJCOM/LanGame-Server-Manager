@@ -404,7 +404,8 @@ impl NativeCycleFixture<'_, '_> {
                 offsets,
             )
             .await;
-        let stopped = stop_instance_process(self.state.clone(), details.summary.id.clone()).await;
+        let stopped =
+            stop_instance_process(self.state.clone(), details.summary.id.clone(), None).await;
         let (lines, valid, terminal) = files::native_evidence(&native_log_path(details)?, cutoff)?;
         let cache = files::library_projection(&self.program_root.join(SDK_ROOT), &MOD_IDS)?;
         let record = json!({"cycle":cycle, "run_id":started.run_id, "pid":pid, "creation_time":identity.creation_time,

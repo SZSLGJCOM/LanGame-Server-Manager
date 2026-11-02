@@ -4,13 +4,18 @@ use std::collections::BTreeMap;
 use std::fs::{self, File, OpenOptions};
 use std::io::{Cursor, Read, Write};
 use std::path::{Component, Path, PathBuf};
-use std::time::Duration;
+
+use super::progress::{InstallPhase, InstallReporter, InstallUpdate};
 
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 
+#[path = "ark_tools_download.rs"]
+mod download;
 #[path = "ark_tools_install_files.rs"]
 mod files;
+#[path = "ark_tools_uninstall.rs"]
+mod removal;
 #[path = "ark_tools_install_transaction.rs"]
 mod transaction;
 
@@ -19,7 +24,6 @@ const PLUGIN: &str = "ArkApi/Plugins/LgsmArkTools/LgsmArkTools.dll";
 const INFO: &str = "ArkApi/Plugins/LgsmArkTools/PluginInfo.json";
 const NOTICES: &str = "ArkApi/Plugins/LgsmArkTools/THIRD_PARTY_NOTICES.txt";
 const MAX_FILE: usize = 16 * 1024 * 1024;
-const MAX_ARCHIVE: usize = 32 * 1024 * 1024;
 
 #[derive(Clone, Copy)]
 pub(super) struct EmbeddedArkTools {
@@ -31,6 +35,7 @@ pub(super) struct EmbeddedArkTools {
 #[serde(rename_all = "camelCase")]
 pub(super) struct InstallStatus {
     pub(super) ready: bool,
+    pub(super) can_uninstall: bool,
     pub(super) issue: Option<String>,
     pub(super) framework_version: &'static str,
 }
@@ -47,9 +52,6 @@ struct Profile {
     module_id: &'static str,
     executable: &'static str,
     version: &'static str,
-    url: &'static str,
-    archive_hash: &'static str,
-    archive_size: usize,
     payload: &'static [(&'static str, &'static str)],
 }
 
@@ -57,9 +59,6 @@ const ASE: Profile = Profile {
     module_id: "arksurvivalevolved",
     executable: "ShooterGameServer.exe",
     version: "ArkApi 3.56",
-    url: "https://github.com/ArkServerApi/AseApi/releases/download/3.56/ArkApi_3.56.zip",
-    archive_hash: "169533afd6529dcdb6c58e5b0bfd13f5d90f593f0e1188e4c156104db53e84f6",
-    archive_size: 11_003_472,
     payload: &[
         (
             "version.dll",
@@ -75,9 +74,6 @@ const ASA: Profile = Profile {
     module_id: "arksurvivalascended",
     executable: "ArkAscendedServer.exe",
     version: "AsaApi 2.03",
-    url: "https://github.com/ArkServerApi/AsaApi/releases/download/2.03/AsaApi_2.03.zip",
-    archive_hash: "ac72fb29436198ac062cd273e1c496b1ef4e6ffddeec08243d11d9b35e8b8ae3",
-    archive_size: 28_800_286,
     payload: &[
         (
             "ArkApi/AsaApi.dll",
@@ -188,9 +184,10 @@ fn expected(
     Ok(result)
 }
 
-fn status(profile: &Profile, issue: Option<String>) -> InstallStatus {
+fn status(profile: &Profile, issue: Option<String>, can_uninstall: bool) -> InstallStatus {
     InstallStatus {
         ready: issue.is_none(),
+        can_uninstall,
         issue,
         framework_version: profile.version,
     }
@@ -201,25 +198,43 @@ pub(super) fn inspect(
     module_id: &str,
     embedded: EmbeddedArkTools,
 ) -> Result<InstallStatus, String> {
-    let profile = profile(module_id)?;
+    inspect_profile(root, profile(module_id)?, embedded)
+}
+
+fn inspect_profile(
+    root: &Path,
+    profile: &Profile,
+    embedded: EmbeddedArkTools,
+) -> Result<InstallStatus, String> {
     let wanted = expected(profile, embedded)?;
     let (bin, _pins) = files::runtime(root, profile.executable)?;
-    if transaction::pending(&bin)? {
-        return Ok(status(profile, Some("ARK preparation was interrupted; stop this instance and use the tool page to recover preparation".into())));
+    let removing = removal::pending(&bin)?;
+    if removing || transaction::pending(&bin)? {
+        return Ok(status(profile, Some("ARK preparation or removal was interrupted; stop this instance and use the tool page to recover".into()), removing));
     }
     let owned = files::ownership(&bin, profile, &wanted)?;
     let Some(owned) = owned else {
         return Ok(status(
             profile,
             Some("Prepare the ARK server extension while this instance is stopped".into()),
+            false,
         ));
     };
+    let can_uninstall = removal::available(&bin, &owned)?;
+    if !can_uninstall {
+        return Ok(status(
+            profile,
+            Some("Prepare the ARK server extension while this instance is stopped".into()),
+            false,
+        ));
+    }
     for (path, hash) in &wanted {
         let actual = files::read(&bin, path)?;
         if actual.as_ref().map(|b| digest(b)).as_ref() != Some(hash) {
             return Ok(status(
                 profile,
                 Some(format!("ARK extension preparation is required: {path}")),
+                can_uninstall,
             ));
         }
     }
@@ -227,17 +242,37 @@ pub(super) fn inspect(
         return Ok(status(
             profile,
             Some("Update the ARK server extension while this instance is stopped".into()),
+            can_uninstall,
         ));
     }
-    Ok(status(profile, None))
+    Ok(status(profile, None, can_uninstall))
+}
+
+pub(super) fn uninstall(
+    root: &Path,
+    module_id: &str,
+    embedded: EmbeddedArkTools,
+) -> Result<bool, String> {
+    let profile = profile(module_id)?;
+    let wanted = expected(profile, embedded)?;
+    removal::remove(root, profile, &wanted)
 }
 
 pub(super) async fn install(
     root: PathBuf,
     module_id: String,
     embedded: EmbeddedArkTools,
+    preference: app_network::SourcePreference,
+    report: InstallReporter,
 ) -> Result<InstallStatus, String> {
     let profile = profile(&module_id)?;
+    let package = download::package(&module_id)?;
+    report(InstallUpdate {
+        phase: InstallPhase::Checking,
+        source: None,
+        downloaded_bytes: None,
+        total_bytes: None,
+    });
     // Fail before networking if an unowned loader or modified configuration
     // would be overwritten. The command keeps lifecycle admission throughout.
     let wanted = expected(profile, embedded)?;
@@ -245,7 +280,7 @@ pub(super) async fn install(
     let check_wanted = wanted.clone();
     let already_ready = tokio::task::spawn_blocking(move || {
         let (bin, _pins) = files::runtime(&check_root, profile.executable)?;
-        transaction::recover(&bin, profile, &check_wanted)?;
+        removal::recover_all(&bin, profile, &check_wanted)?;
         let owned = files::ownership(&bin, profile, &check_wanted)?;
         files::preflight(&bin, profile, &check_wanted, owned.as_ref())?;
         inspect(&check_root, profile.module_id, embedded).map(|s| s.ready)
@@ -253,26 +288,18 @@ pub(super) async fn install(
     .await
     .map_err(|e| format!("ARK extension inspection task failed: {e}"))??;
     if already_ready {
-        return Ok(status(profile, None));
+        return Ok(status(profile, None, true));
     }
-    let client = reqwest::Client::builder()
-        .connect_timeout(Duration::from_secs(10))
-        .build()
-        .map_err(|e| e.to_string())?;
-    let request = client.get(profile.url).build().map_err(|e| e.to_string())?;
-    let response = app_network::read_public_bytes(
-        &client,
-        request,
-        Duration::from_secs(90),
-        MAX_ARCHIVE,
-        app_network::SourcePreference::InternationalFirst,
-    )
-    .await
-    .map_err(|e| format!("ARK dependency download failed: {e}"))?;
-    let bytes = response.bytes;
+    let bytes = download::fetch(package, preference, &report).await?;
     tokio::task::spawn_blocking(move || {
-        let mut payload = unpack(profile, &bytes)?;
+        let mut payload = unpack(profile, package, &bytes)?;
         payload.extend(embedded_files(profile, embedded)?);
+        report(InstallUpdate {
+            phase: InstallPhase::Installing,
+            source: None,
+            downloaded_bytes: None,
+            total_bytes: None,
+        });
         publish(&root, profile, payload, &wanted)?;
         inspect(&root, &module_id, embedded)
     })
@@ -280,8 +307,12 @@ pub(super) async fn install(
     .map_err(|e| format!("ARK extension preparation task failed: {e}"))?
 }
 
-fn unpack(profile: &Profile, bytes: &[u8]) -> Result<BTreeMap<String, Vec<u8>>, String> {
-    if bytes.len() != profile.archive_size || digest(bytes) != profile.archive_hash {
+fn unpack(
+    profile: &Profile,
+    package: &download::Package,
+    bytes: &[u8],
+) -> Result<BTreeMap<String, Vec<u8>>, String> {
+    if bytes.len() != package.size || digest(bytes) != package.sha256 {
         return Err("The ARK dependency archive does not match the pinned release checksum".into());
     }
     let mut zip = zip::ZipArchive::new(Cursor::new(bytes)).map_err(|e| e.to_string())?;
@@ -348,13 +379,15 @@ fn publish_with(
     wanted: &BTreeMap<String, String>,
     before_publish: impl Fn(usize) -> Result<(), String>,
 ) -> Result<(), String> {
+    let (bin, _pins) = files::runtime(root, profile.executable)?;
+    removal::recover_all(&bin, profile, wanted)?;
     transaction::publish(root, profile, payload, wanted, before_publish)
 }
 
 pub(super) fn ensure_can_start(root: &Path) -> Result<(), String> {
     let (bin, _pins) = files::runtime_directory(root)?;
-    if transaction::pending(&bin)? {
-        return Err("ARK preparation was interrupted; keep this instance stopped and use the ARK tool page to recover preparation before starting".into());
+    if transaction::pending(&bin)? || removal::pending(&bin)? {
+        return Err("ARK preparation or removal was interrupted; keep this instance stopped and use the ARK tool page to recover before starting".into());
     }
     Ok(())
 }
@@ -367,7 +400,7 @@ pub(super) fn has_owned_asa_framework(
 ) -> Result<bool, String> {
     let wanted = expected(&ASA, embedded)?;
     let (bin, _pins) = files::runtime(root, ASA.executable)?;
-    if transaction::pending(&bin)? {
+    if transaction::pending(&bin)? || removal::pending(&bin)? {
         return Ok(false);
     }
     let Some(owned) = files::ownership(&bin, &ASA, &wanted)? else {

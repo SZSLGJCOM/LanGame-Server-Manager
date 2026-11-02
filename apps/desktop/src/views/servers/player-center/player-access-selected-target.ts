@@ -1,5 +1,6 @@
 import {
   canonicalPlayerAccessIdentity,
+  isHumanitzNetId,
   normalizePlayerAccessMutationEntry,
   parsePlayerAccessCodec,
   playerAccessObjectIdentityKeys
@@ -145,6 +146,14 @@ export function resolveSelectedRosterTarget(
     case "dst_klei_id":
       candidate = identityValue(player, ["klei_user_id"]);
       break;
+    case "humanitz_net_id": {
+      const identities = player.identifiers.filter((identifier) => identifier.kind === "humanitz_net_id");
+      if (!identities.length || identities.some((identifier) => !identifier.stable || !isHumanitzNetId(identifier.value))) return null;
+      const values = new Set(identities.map((identifier) => identifier.value));
+      if (values.size !== 1) return null;
+      candidate = identities[0].value;
+      break;
+    }
     case "ark_account_id":
       candidate = identityValue(player, ["ark_account_id", "steam_id", "eos_id"]);
       break;
@@ -185,8 +194,6 @@ export function resolveSelectedRosterTarget(
       candidate = identityValue(player, ["enshrouded_account_id"]);
       break;
     // IPs have no live identity namespace.
-    // HumanitZ info provides names only; an EOS PUID is not its composite NetID.
-    case "humanitz_net_id":
     case "minecraft_ip_csv":
       return null;
   }

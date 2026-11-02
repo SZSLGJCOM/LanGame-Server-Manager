@@ -14,7 +14,7 @@ const MANIFEST: &str = "ownership.json";
 const MANIFEST_LIMIT: u64 = 1024 * 1024;
 
 #[derive(Clone, Serialize, Deserialize)]
-pub(super) struct Part {
+pub(crate) struct Part {
     pub file: String,
     pub identity: FileIdentity,
     pub start: u64,
@@ -29,13 +29,37 @@ struct FileMove {
 }
 
 #[derive(Clone, Serialize, Deserialize)]
-pub(super) struct Ledger {
+pub(crate) struct Ledger {
     format: String,
     owner: String,
     next_sequence: u64,
     pub runs: BTreeMap<String, Vec<Part>>,
     moves: Vec<FileMove>,
     deletions: Vec<Part>,
+}
+
+impl Ledger {
+    pub(crate) fn has_pending_recovery(&self) -> bool {
+        !self.moves.is_empty() || !self.deletions.is_empty()
+    }
+}
+
+/// Parse and validate ownership without opening a store or replaying its writes.
+pub(crate) fn parse_ledger(bytes: &[u8], manifest_identity: &FileIdentity) -> io::Result<Ledger> {
+    if bytes.len() as u64 > MANIFEST_LIMIT {
+        return Err(io::Error::other(
+            "console ownership ledger exceeds its limit",
+        ));
+    }
+    let ledger: Ledger = serde_json::from_slice(bytes)?;
+    if ledger.format != "langame-managed-console"
+        || uuid::Uuid::parse_str(&ledger.owner).is_err()
+        || ledger.runs.len() > 128
+    {
+        return Err(io::Error::other("invalid console ownership ledger"));
+    }
+    validation::validate(&ledger, manifest_identity)?;
+    Ok(ledger)
 }
 
 pub(super) struct Store {
@@ -65,19 +89,7 @@ impl Store {
         let manifest_identity = identity(&file)?;
         let mut bytes = Vec::new();
         file.take(MANIFEST_LIMIT + 1).read_to_end(&mut bytes)?;
-        if bytes.len() as u64 > MANIFEST_LIMIT {
-            return Err(io::Error::other(
-                "console ownership ledger exceeds its limit",
-            ));
-        }
-        let ledger: Ledger = serde_json::from_slice(&bytes)?;
-        if ledger.format != "langame-managed-console"
-            || uuid::Uuid::parse_str(&ledger.owner).is_err()
-            || ledger.runs.len() > 128
-        {
-            return Err(io::Error::other("invalid console ownership ledger"));
-        }
-        validation::validate(&ledger, &manifest_identity)?;
+        let ledger = parse_ledger(&bytes, &manifest_identity)?;
         let mut store = Self {
             directory: directory.to_path_buf(),
             ledger,
@@ -156,7 +168,7 @@ impl Store {
     }
 
     pub fn recover(&mut self) -> io::Result<()> {
-        if self.ledger.moves.is_empty() && self.ledger.deletions.is_empty() {
+        if !self.ledger.has_pending_recovery() {
             return Ok(());
         }
         for movement in &self.ledger.moves {

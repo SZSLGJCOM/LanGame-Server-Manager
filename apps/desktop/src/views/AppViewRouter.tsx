@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import type { RuntimeActionOperation } from "../runtime-action-store";
 import { createDeferredModule } from "../deferred-module";
 import { useDeferredModule } from "../hooks/useDeferredModule";
 import type { LibraryPageMode, RuntimeRefreshIssue } from "../app-state";
@@ -7,9 +8,9 @@ import type { AiSettings } from "../ai-settings";
 import type { ServerModuleInstallation } from "../server-primary-action";
 import type { SteamInstallationAccountContext } from "../steam-installation-account";
 import type { InstancePanelLoadState } from "../instance-panel-loader";
+import type { StorageMigrationModel } from "../hooks/useStorageMigration";
 import type { InstanceRetirementKind } from "../hooks/useInstanceRetirement";
 import type {
-  AppPathSettingsInput,
   BackgroundJob,
   BindAddressCandidate,
   BootstrapResponse,
@@ -119,7 +120,7 @@ interface AppViewRouterProps {
   ) => Promise<InstancePlayerAccessMutationResult>;
   onExecutePlayerAction?: (input: ExecuteInstancePlayerActionInput) => Promise<ExecuteInstancePlayerActionResult>;
   onStorageChanged: () => Promise<void>;
-  onSaveAppSettings: (settings: AppPathSettingsInput) => void | Promise<void>;
+  storageMigration: StorageMigrationModel;
   onSearchChange: (value: string) => void;
   onSendRuntimeCommand: (
     instanceId: string,
@@ -129,8 +130,8 @@ interface AppViewRouterProps {
   ) => Promise<InstanceRuntimeCommandResult | null>;
   onSuppressRuntimeWindows: (instanceId: string) => Promise<void>;
   onSelectInstance: (instanceId: string) => void;
-  onStartServer: (instanceId: string, expectedWorldStart?: DstWorldStartPreview) => void | Promise<void>;
-  onStopServer: (instanceId: string) => void | Promise<void>;
+  onStartServer: (instanceId: string, expectedWorldStart?: DstWorldStartPreview, operation?: RuntimeActionOperation) => void | Promise<void>;
+  onStopServer: (instanceId: string, operation?: RuntimeActionOperation) => void | Promise<void>;
 }
 
 export function AppViewRouter(props: AppViewRouterProps) {
@@ -162,7 +163,7 @@ export function AppViewRouter(props: AppViewRouterProps) {
           steamCmdMessage={props.steamCmdMessage}
           onOpenInstance={props.onOpenInstance}
           onPickDirectory={props.onPickDirectory}
-          onSaveAppSettings={props.onSaveAppSettings}
+          storageMigration={props.storageMigration}
           onEnsureSteamCmd={props.onEnsureSteamCmd}
           onUninstallSteamCmd={props.onUninstallSteamCmd}
         />

@@ -182,7 +182,8 @@ export type RuntimePlayerIdentityKind =
   | "enshrouded_account_id"
   | "valheim_platform_id"
   | "necesse_ban_id"
-  | "soulmask_account_id";
+  | "soulmask_account_id"
+  | "humanitz_net_id";
 
 export interface ModulePlayerListSpec {
   scope: ModulePlayerListScope;
@@ -626,13 +627,51 @@ export interface RuntimeDiagnosticSignal {
   actionable: boolean;
 }
 
+export interface RuntimeConsoleSourceSnapshot {
+  log_path: string;
+  process_key: string | null;
+  display_name: string | null;
+  run_id: number | null;
+  started_at_unix_ms: number;
+  stream_id: string;
+  revision: number;
+  lines: string[];
+  partial_lines: string[];
+  total_lines: number;
+  truncated: boolean;
+  read_error?: string | null;
+}
+
 export interface LogTailSnapshot {
+  /** The latest owned startup attempt, independent of the selected game log. */
+  startup_session?: RuntimeStartupSession | null;
   snapshot_revision?: number;
+  console_sources?: RuntimeConsoleSourceSnapshot[];
+  /** Client transcript ordering; retained alongside source cursors in session memory. */
+  console_rows?: { stream_id: string; line: string }[];
+  /** Sources whose cached cursor must be confirmed by this subscription/read. */
+  console_refresh_paths?: string[];
   source_path?: string | null;
   total_lines?: number;
   lines: string[];
   truncated?: boolean | null;
   read_error?: string | null;
+}
+
+export interface RuntimeStartupSession {
+  attempt_id: string;
+  status: "starting" | "succeeded" | "failed" | "cancelled" | "interrupted";
+  started_at_unix_ms: number;
+  finished_at_unix_ms: number | null;
+  source_path: string;
+  run_ids: number[];
+  error: string | null;
+  reader_error: string | null;
+  snapshot: LogTailSnapshot;
+  console_source: RuntimeConsoleSourceSnapshot | null;
+  before_cursor: string | null;
+  retained_start_cursor: string;
+  line_generation: string;
 }
 
 export type RuntimeLogSource = "game" | "console";
@@ -1003,7 +1042,7 @@ interface RuntimeModStartWarning {
 }
 
 interface RuntimeWorldStartWarning {
-  code: "world_initialization_incomplete" | "manual_save_unavailable" | "graceful_stop_unavailable" | "program_update_using_installed";
+  code: "world_initialization_incomplete" | "manual_save_unavailable" | "graceful_stop_unavailable" | "program_update_using_installed" | "startup_log_persistence_failed";
   provider: null;
   reason: null;
   item_ids: [];
@@ -1050,6 +1089,25 @@ export interface StartInstanceResult {
   processes: StartedProcess[];
   launch_plans: ProcessLaunchPlan[];
   startup_schedule: RuntimeStartupSchedule;
+}
+
+export interface StopInstanceResult {
+  summary: InstanceSummary;
+  run_id: number | null;
+  session_id: string | null;
+  pid: number | null;
+  log_path: string | null;
+  exit_code: number | null;
+  process_count: number;
+  processes: {
+    run_id: number;
+    process_key: string;
+    display_name: string;
+    pid: number | null;
+    log_path: string | null;
+    exit_code: number | null;
+  }[];
+  outcome: "stopped" | "startup_cancelled";
 }
 
 export interface ModuleInstallResult {

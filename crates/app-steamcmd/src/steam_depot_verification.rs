@@ -324,7 +324,7 @@ impl<'a> VerificationReporter<'a> {
     }
 
     fn report_if_due(&mut self) {
-        if self.last_report.elapsed() >= Duration::from_millis(250) {
+        if self.last_report.elapsed() >= Duration::from_millis(100) {
             (self.on_progress)(self.progress.clone());
             self.last_report = Instant::now();
         }

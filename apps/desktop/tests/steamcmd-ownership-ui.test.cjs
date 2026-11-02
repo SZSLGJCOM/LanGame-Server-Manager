@@ -15,7 +15,7 @@ const desktopRoot = path.resolve(__dirname, "..");
 const readSource = (...segments) => fs.readFileSync(path.join(desktopRoot, ...segments), "utf8");
 const typesSource = readSource("src", "types.ts");
 const statusSource = readSource("src", "steamcmd-ui.ts");
-const systemViewSource = readSource("src", "views", "SystemView.tsx");
+const systemViewSource = readSource("src", "views", "system", "StoragePathsPanel.tsx");
 const mockSource = readSource("src", "api-mock.ts");
 const {
   describeSteamCmdStatus,

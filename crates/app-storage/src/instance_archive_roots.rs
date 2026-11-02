@@ -149,46 +149,23 @@ pub(crate) fn validate_archive_root(paths: &StoragePaths) -> Result<(), StorageE
     let root = normalize_path(&paths.archives_root)?;
     let instances = normalize_path(&paths.instances_root)?;
     let historical = normalize_path(&paths.instances_root.join(".trash"))?;
-    let is_historical = contains(&root, &historical) && contains(&historical, &root);
-    if overlaps(&root, &instances) && !is_historical {
-        return Err(invalid(
-            &root,
-            "The instance archive directory must be separate from the instance root; only its existing .trash archive directory is supported inside it.",
-        ));
-    }
     let games = normalize_path(&paths.games_root)?;
-    // Existing short layouts can put libraries and instances in one common
-    // container. Preserve its default .trash leaf; database ownership checks
-    // still reject overlap with every actual installation and save directory.
-    let historical_in_common_container =
-        is_historical && contains(&games, &root) && !contains(&root, &games);
-    if overlaps(&root, &games) && !historical_in_common_container {
-        return Err(invalid(
-            &root,
-            "The instance archive directory overlaps the program directory. Choose a separate empty directory.",
-        ));
-    }
-    for protected in [
-        normalize_path(&paths.steamcmd_root)?,
-        normalize_path(&paths.logs_root)?,
-        normalize_bundled_directory(&paths.modules_root)?,
-        normalize_bundled_directory(&paths.migrations_root)?,
-    ] {
-        if overlaps(&root, &protected) {
-            return Err(invalid(
-                &root,
-                "The instance archive directory overlaps a program, SteamCMD, module, log, or migration directory. Choose a separate empty directory.",
-            ));
-        }
-    }
-    for protected in [&paths.database_path, &paths.settings_path] {
-        if overlaps(&root, &normalize_resource_path(protected)?) {
-            return Err(invalid(
-                &root,
-                "The instance archive directory overlaps the application database or settings. Choose a separate empty directory.",
-            ));
-        }
-    }
+    validate_archive_layout(
+        &root,
+        &instances,
+        &historical,
+        &games,
+        &[
+            normalize_path(&paths.steamcmd_root)?,
+            normalize_path(&paths.logs_root)?,
+            normalize_bundled_directory(&paths.modules_root)?,
+            normalize_bundled_directory(&paths.migrations_root)?,
+        ],
+        &[
+            normalize_resource_path(&paths.database_path)?,
+            normalize_resource_path(&paths.settings_path)?,
+        ],
+    )?;
     ensure_same_volume(
         &root,
         &nearest_directory_identity(&instances)?,
@@ -196,10 +173,106 @@ pub(crate) fn validate_archive_root(paths: &StoragePaths) -> Result<(), StorageE
     )
 }
 
+/// A whole-target takeover rebuilds its descendants. Inspect only the outer
+/// target and external ancestors; old inner files and links are retained in
+/// the target backup, never interpreted as the future archive layout.
+pub(crate) fn validate_migration_archive_root(paths: &StoragePaths) -> Result<(), StorageError> {
+    let targets = crate::storage_migration_files::normalize_destinations(&[
+        paths.instances_root.clone(),
+        paths.archives_root.clone(),
+        paths.games_root.clone(),
+        paths.steamcmd_root.clone(),
+    ])?;
+    let [instances, root, games, steamcmd] = targets.as_slice() else {
+        return Err(invalid(
+            &paths.archives_root,
+            "Migration destination normalization returned an invalid layout.",
+        ));
+    };
+    validate_archive_layout(
+        root,
+        instances,
+        &instances.join(".trash"),
+        games,
+        &[
+            steamcmd.clone(),
+            normalize_path(&paths.logs_root)?,
+            normalize_bundled_directory(&paths.modules_root)?,
+            normalize_bundled_directory(&paths.migrations_root)?,
+        ],
+        &[
+            normalize_resource_path(&paths.database_path)?,
+            normalize_resource_path(&paths.settings_path)?,
+        ],
+    )?;
+    ensure_same_volume(
+        root,
+        &nearest_directory_identity(migration_target_parent(instances, &targets)?)?,
+        &nearest_directory_identity(migration_target_parent(root, &targets)?)?,
+    )
+}
+
+fn migration_target_parent<'a>(
+    path: &Path,
+    targets: &'a [PathBuf],
+) -> Result<&'a Path, StorageError> {
+    targets
+        .iter()
+        .filter(|target| contains(target, path))
+        .min_by_key(|target| target.components().count())
+        .and_then(|outer| outer.parent())
+        .ok_or_else(|| invalid(path, "Migration target has no external parent."))
+}
+
+fn validate_archive_layout(
+    root: &Path,
+    instances: &Path,
+    historical: &Path,
+    games: &Path,
+    protected_directories: &[PathBuf],
+    protected_files: &[PathBuf],
+) -> Result<(), StorageError> {
+    let is_historical = contains(root, historical) && contains(historical, root);
+    if overlaps(root, instances) && !is_historical {
+        return Err(invalid(
+            root,
+            "The instance archive directory must be separate from the instance root; only its existing .trash archive directory is supported inside it.",
+        ));
+    }
+    // Existing short layouts can put libraries and instances in one common
+    // container. Preserve its default .trash leaf; database ownership checks
+    // still reject overlap with every actual installation and save directory.
+    let historical_in_common_container =
+        is_historical && contains(games, root) && !contains(root, games);
+    if overlaps(root, games) && !historical_in_common_container {
+        return Err(invalid(
+            root,
+            "The instance archive directory overlaps the program directory. Choose a separate empty directory.",
+        ));
+    }
+    for protected in protected_directories {
+        if overlaps(root, protected) {
+            return Err(invalid(
+                root,
+                "The instance archive directory overlaps a program, SteamCMD, module, log, or migration directory. Choose a separate empty directory.",
+            ));
+        }
+    }
+    for protected in protected_files {
+        if overlaps(root, protected) {
+            return Err(invalid(
+                root,
+                "The instance archive directory overlaps the application database or settings. Choose a separate empty directory.",
+            ));
+        }
+    }
+    Ok(())
+}
+
 /// Module and migration locations are application-owned and may be assembled
 /// from CARGO_MANIFEST_DIR/../../. Inspect the original chain before collapsing
 /// its parent components, so a link cannot disappear during normalization.
-fn normalize_bundled_directory(path: &Path) -> Result<PathBuf, StorageError> {
+pub(crate) fn normalize_bundled_directory(path: &Path) -> Result<PathBuf, StorageError> {
     if !path.is_absolute() {
         return normalize_path(path);
     }
@@ -250,13 +323,20 @@ fn nearest_directory_identity(path: &Path) -> Result<FileIdentity, StorageError>
             return Err(invalid(path, "No existing directory ancestor was found."));
         }
     }
-    native::open(&ancestor, true, false)
-        .and_then(|node| node.identity())
-        .map_err(|source| StorageError::ReadPath {
-            path: ancestor,
-            source,
-        })
+    let identity = if ancestor.parent().is_none() {
+        crate::storage_migration_files::volume_root_identity(&ancestor)
+    } else {
+        native::open(&ancestor, true, false).and_then(|node| node.identity())
+    };
+    identity.map_err(|source| StorageError::ReadPath {
+        path: ancestor,
+        source,
+    })
 }
+
+#[cfg(test)]
+#[path = "instance_archive_migration_roots_tests.rs"]
+mod migration_tests;
 
 fn ensure_same_volume(
     path: &Path,

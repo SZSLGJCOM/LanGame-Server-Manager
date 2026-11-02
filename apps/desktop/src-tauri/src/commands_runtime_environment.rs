@@ -27,6 +27,14 @@ pub(super) async fn prepare(
     } else if module.summary.id == "minecraft" && !root.join("server.jar").is_file() {
         return Err("Minecraft 服务端程序缺失，请先完成服务端安装。".into());
     }
+    let mut console = log_path
+        .map(|path| {
+            super::commands_runtime_prestart_update::PrestartConsole::open_for_startup(
+                path, storage,
+            )
+        })
+        .transpose()
+        .map_err(|error| format!("启动日志无法打开：{error}"))?;
     let job_id = new_background_job_id("instance-runtime-environment", &instance.summary.id);
     let lease = InstallationJobLease::begin(state, job_id.clone())?;
     insert_background_job(
@@ -49,23 +57,24 @@ pub(super) async fn prepare(
     )?;
     let cancellation = lease.cancellation().clone();
     let mut progress_error = None;
-    let mut last_message = String::new();
     let mut on_progress = |update: InstallProgressUpdate| {
+        if progress_error.is_some() {
+            return;
+        }
+        if let Some(console) = &mut console
+            && let Err(error) = console.update(&update)
+        {
+            progress_error.get_or_insert_with(|| format!("启动日志写入失败：{error}"));
+            cancellation.cancel();
+            return;
+        }
+        if update.is_raw_output() {
+            return;
+        }
         let result = lease.update(|job| apply_install_progress(job, &update));
         if let Err(error) = result {
             progress_error.get_or_insert(error);
             cancellation.cancel();
-        }
-        let message = format!("{}\n{}", update.detail, update.output_excerpt);
-        if last_message != message {
-            if let Some(path) = log_path
-                && let Err(error) =
-                    append_startup_console_line(path, &update.detail, &update.output_excerpt)
-            {
-                progress_error.get_or_insert(error);
-                cancellation.cancel();
-            }
-            last_message = message;
         }
     };
     let mut preparation = Box::pin(async {
@@ -151,6 +160,13 @@ pub(super) async fn prepare(
     };
     // Drop the progress callback's borrows before final job publication.
     drop(preparation);
+    drop(on_progress);
+    if let Some(console) = console
+        && let Err(error) = console.finish()
+    {
+        progress_error.get_or_insert_with(|| format!("启动日志收尾失败：{error}"));
+    }
+    let output_failed = progress_error.is_some();
     let result = if cancellation.is_cancelled() || reservation.is_cancelled() {
         Err(progress_error.unwrap_or_else(|| "运行环境准备已取消，实例未启动。".into()))
     } else {
@@ -163,7 +179,7 @@ pub(super) async fn prepare(
         }
         Err(error) => {
             fail_install_progress(job, 1.0);
-            if cancellation.is_cancelled() || reservation.is_cancelled() {
+            if !output_failed && (cancellation.is_cancelled() || reservation.is_cancelled()) {
                 job.status = JobStatus::Cancelled;
             }
             job.detail = Some(error.clone());

@@ -4,8 +4,9 @@ import type { BootstrapResponse } from "./types";
 export function mergeBootstrapSnapshot(current: BootstrapResponse, latest: BootstrapResponse, requested?: BootstrapResponse): BootstrapResponse {
   if (current.booted_at_unix_ms !== latest.booted_at_unix_ms) return latest;
   // A bootstrap request also waits for telemetry. Independent readers and
-  // mutations may have published newer collections while that request waited.
+  // mutations may have published newer settings or collections while it waited.
   if (requested) latest = { ...latest, state: { ...latest.state,
+    settings: current.state.settings !== requested.state.settings ? current.state.settings : latest.state.settings,
     jobs: current.state.jobs !== requested.state.jobs ? current.state.jobs : latest.state.jobs,
     modules: current.state.modules !== requested.state.modules ? current.state.modules : latest.state.modules,
     instances: current.state.instances !== requested.state.instances ? current.state.instances : latest.state.instances

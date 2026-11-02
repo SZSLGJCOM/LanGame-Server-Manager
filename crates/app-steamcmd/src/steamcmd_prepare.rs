@@ -37,6 +37,8 @@ pub struct SteamCmdPrepareProgress {
     pub downloaded_bytes: Option<u64>,
     pub total_bytes: Option<u64>,
     pub output_excerpt: String,
+    #[serde(skip)]
+    pub console_output: Option<super::InstallConsoleOutput>,
 }
 
 pub async fn ensure_steamcmd_installed(
@@ -296,11 +298,13 @@ impl<F: FnMut(SteamCmdPrepareProgress)> PrepareReporter<F> {
                 downloaded_bytes: None,
                 total_bytes: None,
                 output_excerpt: String::new(),
+                console_output: None,
             },
         }
     }
 
     pub(super) fn stage(&mut self, phase: SteamCmdPreparePhase, detail: &str) {
+        self.current.console_output = None;
         self.current.phase = phase;
         self.current.detail = detail.to_owned();
         self.current.downloaded_bytes = None;
@@ -309,12 +313,28 @@ impl<F: FnMut(SteamCmdPrepareProgress)> PrepareReporter<F> {
     }
 
     pub(super) fn download(&mut self, downloaded: u64, total: Option<u64>) {
+        self.current.console_output = Some(super::InstallConsoleOutput::Progress {
+            retain_boundaries: true,
+            preview: true,
+        });
         self.current.downloaded_bytes = Some(downloaded);
         self.current.total_bytes = total;
         (self.on_progress)(self.current.clone());
     }
 
     pub(super) fn output(&mut self, line: String, excerpt: String) {
+        self.output_with_preview(line, excerpt, true);
+    }
+
+    pub(super) fn output_from_pipe(&mut self, line: String, excerpt: String) {
+        self.output_with_preview(line, excerpt, false);
+    }
+
+    fn output_with_preview(&mut self, line: String, excerpt: String, preview: bool) {
+        self.current.console_output = Some(super::InstallConsoleOutput::Progress {
+            retain_boundaries: false,
+            preview,
+        });
         let lower = line.to_ascii_lowercase();
         let applying_update = [
             "extracting package",
@@ -341,6 +361,17 @@ impl<F: FnMut(SteamCmdPrepareProgress)> PrepareReporter<F> {
         self.current.detail = line;
         self.current.output_excerpt = excerpt;
         (self.on_progress)(self.current.clone());
+    }
+
+    pub(super) fn raw(&mut self, output: super::InstallConsoleOutput) {
+        (self.on_progress)(SteamCmdPrepareProgress {
+            phase: self.current.phase,
+            detail: String::new(),
+            downloaded_bytes: None,
+            total_bytes: None,
+            output_excerpt: String::new(),
+            console_output: Some(output),
+        });
     }
 
     fn ready(&mut self, mut status: SteamCmdStatus) -> Result<SteamCmdStatus, SteamCmdError> {

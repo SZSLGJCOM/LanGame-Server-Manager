@@ -2038,6 +2038,27 @@ impl SpawnedProcessStopReport {
     }
 }
 
+pub(super) fn force_stop_spawned_processes(
+    spawned_processes: &mut [(ProcessLaunchPlan, app_runtime::SpawnedProcess)],
+) -> SpawnedProcessStopReport {
+    let statuses = spawned_processes
+        .iter_mut()
+        .map(|(plan, spawned)| {
+            let result = app_runtime::force_stop_spawned_process(spawned);
+            // Only the original owner can confirm full-tree cancellation. Even an
+            // absent root PID must not turn a missing/failed owner into success.
+            SpawnedProcessStopStatus {
+                process_key: plan.process_key.clone(),
+                pid: spawned.pid,
+                still_running: result.is_err(),
+                exit_code: result.as_ref().ok().copied().flatten(),
+                error: result.err().map(|error| error.to_string()),
+            }
+        })
+        .collect();
+    SpawnedProcessStopReport { statuses }
+}
+
 pub(super) fn stop_spawned_processes(
     spawned_processes: &mut [(ProcessLaunchPlan, app_runtime::SpawnedProcess)],
 ) -> SpawnedProcessStopReport {
@@ -2060,7 +2081,7 @@ pub(super) fn stop_spawned_processes(
                     true
                 }
             };
-            if still_running {
+            if still_running && spawned.child.is_none() {
                 if let Err(error) = kill_process_by_pid(pid, &process_identity) {
                     errors.push(format!("forced process-tree cleanup failed: {error}"));
                 }
@@ -2083,6 +2104,10 @@ pub(super) fn stop_spawned_processes(
                         process_matches_identity(pid, &process_identity).unwrap_or(true);
                 }
             }
+
+            // An errored stop retains its original child/tree owner. A dead root
+            // PID cannot prove that this owner's descendants have exited.
+            still_running |= spawned.child.is_some();
 
             SpawnedProcessStopStatus {
                 process_key: plan.process_key.clone(),

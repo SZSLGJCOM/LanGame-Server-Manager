@@ -161,8 +161,8 @@ export function validateRosterEntryInput(
     }
     if (codec === "humanitz_net_id") {
       return selectLocaleText(locale,
-        "请输入完整 NetID：EpicAccountId|ProductUserId 或 |ProductUserId，每个非空部分均为 32 位十六进制。旧 Steam64 ID 只能保留或删除，不能作为新的 NetID 添加。",
-        "Enter the complete NetID: EpicAccountId|ProductUserId or |ProductUserId, with 32 hexadecimal digits per nonempty part. Existing Steam64 IDs can be retained or removed, not added as new NetIDs.");
+        "请输入完整 NetID：Steam64_+_|ProductUserId、EpicAccountId|ProductUserId 或 |ProductUserId。Steam64 为 17 位数字，EpicAccountId 和 ProductUserId 为 32 位十六进制。单独的旧 Steam64 ID 只能保留或删除。",
+        "Enter the complete NetID: Steam64_+_|ProductUserId, EpicAccountId|ProductUserId or |ProductUserId. Steam64 has 17 digits; EpicAccountId and ProductUserId have 32 hexadecimal digits. Existing standalone Steam64 IDs can only be retained or removed.");
     }
     if (codec === "uint64") {
       return selectLocaleText(

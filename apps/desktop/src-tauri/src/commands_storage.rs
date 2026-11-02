@@ -3,6 +3,10 @@ use super::*;
 #[path = "commands_program_update_policy.rs"]
 mod program_update_policy;
 
+#[path = "commands_runtime_start_projection.rs"]
+mod runtime_start_projection;
+pub(super) use runtime_start_projection::project_pending_runtime_start_summaries;
+
 #[cfg(test)]
 #[path = "commands_storage_context_tests.rs"]
 mod context_tests;
@@ -248,6 +252,8 @@ pub async fn list_instances_from_storage(
     if state.is_storage_ready() {
         state.autostart.capture(&storage, &instances)?;
     }
+    let mut instances = instances;
+    project_pending_runtime_start_summaries(state.inner(), &mut instances)?;
     Ok(instances)
 }
 
@@ -275,13 +281,18 @@ pub async fn read_instance_details_from_storage(
         .await
         .map_err(|error| error.to_string())?;
     reconcile_runtime_state(&state).await?;
-    read_instance_details_with_runtime_recovery(
+    let mut instance = read_instance_details_with_runtime_recovery(
         state.inner(),
         &_storage_context_operation,
         &storage.paths,
         &instance_id,
     )
-    .await
+    .await?;
+    project_pending_runtime_start_summaries(
+        state.inner(),
+        std::slice::from_mut(&mut instance.summary),
+    )?;
+    Ok(instance)
 }
 
 pub(super) async fn read_instance_details_with_runtime_recovery(
@@ -613,9 +624,6 @@ pub async fn read_instance_runtime_overview_from_storage(
         .await;
     crate::runtime_palworld_health::apply(&state, &storage.paths, &instance, &mut overview.health)
         .await;
-    if let Some(pending_log) = pending_start_console_log_snapshot(&state, &instance_id, 32) {
-        overview.log_tail = pending_log;
-    }
     let module_runtime = runtime_by_module.get(&instance.summary.module_id);
     if module_runtime.is_some_and(|runtime| {
         runtime.player_count_source == app_core::ModulePlayerCountSource::PlayerList
@@ -670,6 +678,12 @@ pub async fn read_instance_runtime_overview_from_storage(
             pending_restart.recent_crash_count
         );
     }
+    runtime_start_projection::project_pending_runtime_start_overview(
+        state.inner(),
+        &instance_id,
+        &mut overview,
+    )
+    .await?;
     if let Some(diagnostic) = build_runtime_performance_diagnostic(
         &instance,
         module_runtime.map(|runtime| &runtime.performance),
@@ -829,12 +843,20 @@ pub async fn read_sevendaystodie_operator_snapshot(
     Ok(build_sevendaystodie_operator_snapshot(&instance).await)
 }
 
+#[path = "commands_startup_session.rs"]
+pub(crate) mod startup_session;
+pub use startup_session::record_startup_session_diagnostic;
+
 #[derive(serde::Serialize)]
 pub struct RuntimeLogDocument {
     #[serde(flatten)]
     snapshot: LogTailSnapshot,
     #[serde(skip_serializing_if = "Option::is_none")]
     snapshot_revision: Option<u64>,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    console_sources: Vec<crate::runtime_log_stream::document::ConsoleSourceDocument>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    startup_session: Option<startup_session::StartupSessionDocument>,
 }
 
 #[tauri::command]
@@ -845,6 +867,8 @@ pub async fn read_instance_log_document_from_storage(
     max_lines: Option<usize>,
     run_id: Option<i64>,
     source: Option<String>,
+    startup_attempt_id: Option<String>,
+    startup_before_cursor: Option<String>,
 ) -> Result<RuntimeLogDocument, String> {
     if source
         .as_deref()
@@ -862,36 +886,125 @@ pub async fn read_instance_log_document_from_storage(
         .await
         .map_err(|error| error.to_string())?;
     reconcile_runtime_state(&state).await?;
+    let startup_page = startup_attempt_id.is_some();
+    let startup_session = startup_session::read(
+        &state,
+        &storage,
+        &instance_id,
+        if startup_page {
+            max_lines.unwrap_or(400)
+        } else {
+            400
+        },
+        startup_attempt_id,
+        startup_before_cursor,
+    )
+    .await?;
+    if startup_page {
+        return Ok(RuntimeLogDocument {
+            snapshot: LogTailSnapshot {
+                source_path: None,
+                lines: Vec::new(),
+                total_lines: 0,
+                truncated: false,
+                read_error: None,
+            },
+            snapshot_revision: None,
+            console_sources: Vec::new(),
+            startup_session,
+        });
+    }
     if source.as_deref() == Some("game") {
         // Reconciliation precedes the lock; start/stop hold this same instance
         // lock through process registration and file generation changes.
         let _instance_mutation = state.acquire_instance_mutation(&instance_id).await;
+        let limit = max_lines.unwrap_or(200).clamp(1, 400);
         let document = app_storage::read_instance_game_log_document(
             &storage.paths,
             &instance_id,
-            max_lines.unwrap_or(200),
+            limit,
             run_id.ok_or("Game log requires a run ID")?,
         )
         .await
         .map_err(|error| error.to_string())?;
+        // Only the complete workspace document participates in patch streaming.
+        // Smaller reads keep their explicit limit and independent file revision.
+        if limit < 400 {
+            return Ok(RuntimeLogDocument {
+                snapshot: document.snapshot,
+                snapshot_revision: Some(document.snapshot_revision),
+                console_sources: Vec::new(),
+                startup_session,
+            });
+        }
         super::commands_runtime_lifecycle::start_runtime_game_log_stream(
             &app_handle,
             &state,
             &instance_id,
             &document,
         )?;
+        let cached = match document.snapshot.source_path.as_deref() {
+            Some(path) => state
+                .runtime_log_streams
+                .lock()
+                .map_err(|_| "runtime log stream registry lock poisoned")?
+                .native_document(&instance_id, path, document.run_id),
+            None => None,
+        };
+        let (snapshot, revision) = if let Some((cached, _)) =
+            cached.filter(|(cached, completed)| {
+                // Only a completed error may yield to disk recovery. A live stream
+                // must publish recovery itself so its next patch keeps the same base.
+                !completed
+                    || cached.snapshot.read_error.is_none()
+                    || document.snapshot.read_error.is_some()
+            }) {
+            (cached.snapshot, cached.revision)
+        } else {
+            (document.snapshot, document.snapshot_revision)
+        };
         return Ok(RuntimeLogDocument {
-            snapshot: document.snapshot,
-            snapshot_revision: Some(document.snapshot_revision),
+            snapshot,
+            snapshot_revision: Some(revision),
+            console_sources: Vec::new(),
+            startup_session,
         });
     }
-    if run_id.is_none()
-        && let Some(snapshot) =
-            pending_start_console_log_snapshot(&state, &instance_id, max_lines.unwrap_or(200))
-    {
+    let pending_console_scope = if run_id.is_none() {
+        state
+            .runtime_start_reservations
+            .lock()
+            .map_err(|_| "runtime start reservation lock poisoned")?
+            .pending_console_scope(&instance_id)
+    } else {
+        None
+    };
+    if let Some((path, since)) = pending_console_scope {
+        let snapshot = if startup_session
+            .as_ref()
+            .is_some_and(|session| session.owns_path(&path))
+        {
+            LogTailSnapshot {
+                source_path: None,
+                lines: Vec::new(),
+                total_lines: 0,
+                truncated: false,
+                read_error: None,
+            }
+        } else {
+            app_storage::read_log_path_snapshot(path, max_lines.unwrap_or(200))
+        };
+        let mut console_sources = state
+            .runtime_log_streams
+            .lock()
+            .map_err(|_| "runtime log stream registry lock poisoned")?
+            .console_documents(&instance_id, None, max_lines.unwrap_or(200), Some(since));
+        console_sources.retain(|source| source.process_key.as_deref() != Some("startup"));
         return Ok(RuntimeLogDocument {
             snapshot,
             snapshot_revision: None,
+            console_sources,
+            startup_session,
         });
     }
     read_instance_log_document(
@@ -901,11 +1014,23 @@ pub async fn read_instance_log_document_from_storage(
         run_id,
     )
     .await
-    .map(|snapshot| RuntimeLogDocument {
-        snapshot,
-        snapshot_revision: None,
-    })
     .map_err(|error| error.to_string())
+    .and_then(|snapshot| {
+        let console_sources = match snapshot.source_path.as_deref() {
+            Some(path) => state
+                .runtime_log_streams
+                .lock()
+                .map_err(|_| "runtime log stream registry lock poisoned")?
+                .console_documents(&instance_id, Some(path), max_lines.unwrap_or(200), None),
+            None => Vec::new(),
+        };
+        Ok(RuntimeLogDocument {
+            snapshot,
+            snapshot_revision: None,
+            console_sources,
+            startup_session,
+        })
+    })
 }
 
 #[tauri::command]

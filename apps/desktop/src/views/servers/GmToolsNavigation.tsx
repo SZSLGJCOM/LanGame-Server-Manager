@@ -26,6 +26,21 @@ export function GmToolsNavigation({ moduleId, tools, selectedId, onSelect }: Pro
   const { locale, t } = useI18n();
   const groups = useMemo(() => {
     const result: { id: string; title: string; nodes: ConfigurationSectionNode[] }[] = [];
+    if (moduleId === "arksurvivalascended" || moduleId === "arksurvivalevolved") {
+      const title = selectLocaleText(locale, "GM 工具", "GM tools");
+      const panels: { id: string; icon: ShellIconName; zh: string; en: string }[] = [
+        { id: "ark_spawn_creature", icon: "zap", zh: "生成恐龙", en: "Spawn creatures" },
+        { id: "ark_give_item_to_player", icon: "package", zh: "生成物品", en: "Spawn items" }
+      ];
+      result.push({ id: "ark-gm-panels", title, nodes: panels.map((panel, order) => {
+        const name = selectLocaleText(locale, panel.zh, panel.en);
+        const tool = tools.find(value => value.id === panel.id);
+        return { id: panel.id, title: name, icon: panel.icon, order,
+          description: t(`servers.gmTools.tools.${panel.id}.description`, undefined, tool?.description ?? ""),
+          breadcrumb: [title, name], items: [], actionable: true, children: [] };
+      }) });
+      return result;
+    }
     if (moduleId === "dontstarve") {
       // The map is always the main surface; these entries only switch its right-hand tool panel.
       const title = selectLocaleText(locale, "GM 工具", "GM tools");

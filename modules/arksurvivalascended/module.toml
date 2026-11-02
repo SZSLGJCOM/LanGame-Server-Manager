@@ -249,3 +249,10 @@ port_names = ["game", "peer", "query"]
 [[runtime.port_roles]]
 role = "service"
 port_names = ["rcon"]
+
+[runtime.startup_readiness]
+timeout_ms = 1800000
+
+[runtime.startup_readiness.probe]
+kind = "runtime_log"
+source = { kind = "launch_argument", name = "-abslog" }

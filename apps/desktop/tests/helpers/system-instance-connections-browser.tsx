@@ -1,3 +1,4 @@
+import { unavailableStorageMigration } from "./storage-migration-fixture";
 import React, { act, StrictMode, type ComponentProps } from "react";
 import { createRoot } from "react-dom/client";
 import { bootstrapApp, createInstance, readInstanceDetails, updateInstance } from "../../src/api";
@@ -57,7 +58,7 @@ async function run() {
     bindAddressCandidates: [{ address: "0.0.0.0", kind: "all" }, { address: "192.0.2.42", kind: "lan" },
       { address: "198.51.100.4", kind: "overlay" }],
     steamCmdStatus: null, steamCmdBusy: false, steamCmdProgress: null, steamCmdMessage: "",
-    onOpenInstance: (id) => { opened.push(id); }, onPickDirectory: async () => null, onSaveAppSettings: noOperation,
+    onOpenInstance: (id) => { opened.push(id); }, onPickDirectory: async () => null, storageMigration: unavailableStorageMigration,
     onEnsureSteamCmd: noOperation, onUninstallSteamCmd: noOperation
   };
   const render = async () => { await act(async () => {

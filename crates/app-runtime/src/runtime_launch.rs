@@ -124,6 +124,8 @@ fn spawn(
     let mut output = None;
     #[cfg(windows)]
     let spawn_result = (|| -> std::io::Result<_> {
+        // A raw terminal preview must never bypass the credential-filtered sink.
+        let preview_allowed = modio_tokens.is_empty();
         let writer: Option<Box<dyn std::io::Write + Send>> = if modio_tokens.is_empty() {
             writer
         } else {
@@ -147,7 +149,16 @@ fn spawn(
                 Some(writer) => writer,
                 None => Box::new(open_file()?),
             };
-            return pseudo_console::spawn(&command, sink, run_in_background, resource_group);
+            let preview = preview_allowed
+                .then(|| console_live_output::LiveConsolePreview::register(&log_path))
+                .transpose()?;
+            return pseudo_console::spawn_with_preview(
+                &command,
+                sink,
+                run_in_background,
+                resource_group,
+                preview,
+            );
         }
         let stdout = match writer {
             Some(writer) => {

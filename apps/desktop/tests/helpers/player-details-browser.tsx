@@ -3,6 +3,7 @@ import React, { act, useState } from "react";
 import { createRoot } from "react-dom/client";
 import schema from "../../../../modules/enshrouded/schema.json";
 import dstSchema from "../../../../modules/dontstarve/schema.json";
+import humanitzSchema from "../../../../modules/humanitz/schema.json";
 import nativeHashFixture from "../../../../modules/enshrouded/reference-fixtures/2026-10-16-native_account_hash.json";
 import { I18nProvider, useI18n } from "../../src/i18n";
 import { createPlayerCenterState, derivePlayerCenterViewModel, reducePlayerCenterState } from "../../src/domain/live-player-state";
@@ -29,6 +30,7 @@ const nativeSteamCase = nativeHashFixture.cases.find((entry) => entry.platform =
 if (!nativeSteamCase) throw new Error("Synthetic native Steam hash evidence is missing");
 const nativeAccountId = nativeSteamCase.native_hash;
 const nativeSteamId = nativeSteamCase.synthetic_platform_id;
+const humanitzNetId = `76561190000000000_+_|${"a".repeat(32)}`;
 const now = 1_000_000;
 addEventListener("error", (event) => errors.push(event.message));
 addEventListener("unhandledrejection", (event) => errors.push(String(event.reason)));
@@ -42,7 +44,9 @@ const nativeActions: ModulePlayerActionDetails[] = [
   { ...action, id: "kick_player" },
   { ...action, id: "ban_player", kind: "ban", label: "Ban player", label_zh_cn: "封禁玩家" }
 ];
+const humanitzKickAction: ModulePlayerActionDetails = { ...action, id: "kick_player", label_zh_cn: "踢出" };
 type Scenario = "enshrouded" | "read-only" | "workspace-read-only" | "expired" | "unavailable" | "metadata" | "dontstarve-admin" | "dontstarve-admin-listed" | "dontstarve-player"
+  | "humanitz-native" | "humanitz-names-only" | "humanitz-incomplete-id"
   | "enshrouded-unsupported-build" | "enshrouded-not-installed" | "enshrouded-loading" | "enshrouded-load-failed"
   | "enshrouded-protocol-incomplete"
   | "enshrouded-unban-unsupported" | "enshrouded-unban-loading" | "enshrouded-unban-load-failed" | "enshrouded-unban-ready" | "enshrouded-unban-incomplete" | "enshrouded-unban-stopped"
@@ -58,6 +62,7 @@ function Fixture({ scenario }: { scenario: Scenario }) {
   const { locale, t } = useI18n();
   const enshrouded = scenario.startsWith("enshrouded");
   const dontstarve = scenario.startsWith("dontstarve");
+  const humanitz = scenario.startsWith("humanitz");
   const nativeScenario = enshrouded && scenario !== "enshrouded";
   const unbanScenario = scenario.startsWith("enshrouded-unban-");
   const extensionStatus = extensionScenarios[scenario];
@@ -67,11 +72,16 @@ function Fixture({ scenario }: { scenario: Scenario }) {
   const expired = scenario === "expired" || scenario === "enshrouded-native-stale";
   const workspaceReadOnly = scenario === "workspace-read-only";
   const sessionControls = expired || workspaceReadOnly || scenario === "unavailable";
-  const moduleId = enshrouded ? "enshrouded" : dontstarve ? "dontstarve" : "fixture";
+  const moduleId = enshrouded ? "enshrouded" : dontstarve ? "dontstarve" : humanitz ? "humanitz" : "fixture";
   const row: RuntimeLivePlayerEntry = dontstarve ? { ...player, player_key: "dst:current:1",
     identifiers: [{ kind: "klei_user_id", value: "KU_abcdefgh", stable: true }], available_action_ids: ["kick_userid"],
     role: scenario === "dontstarve-admin" || scenario === "dontstarve-admin-listed" ? "admin" : null,
     attributes: [{ key: "character", value: "walter" }] }
+    : humanitz ? { ...player, player_key: "humanitz:current:1",
+    identifiers: scenario === "humanitz-names-only" ? [] : [{ kind: "humanitz_net_id",
+      value: scenario === "humanitz-incomplete-id" ? humanitzNetId.slice(0, -1) : humanitzNetId, stable: true }],
+    // The collector binds a kick only after validating the complete native identity.
+    available_action_ids: scenario === "humanitz-native" ? ["kick_player"] : [] }
     : nativeScenario ? { ...player, player_key: "native-player",
     identifiers: unknownExtension ? [] : steamOnly ? [{ kind: "steam_id", value: nativeSteamId, stable: true }]
       : [{ kind: "steam_id", value: nativeSteamId, stable: true }, { kind: "enshrouded_account_id", value: nativeAccountId, stable: true }],
@@ -82,7 +92,7 @@ function Fixture({ scenario }: { scenario: Scenario }) {
     session_started_at_unix_ms: now - 3_660_000, role: "Guest", attributes: [{ key: "World", value: "测试世界" }] }
     : expired || workspaceReadOnly ? { ...player, available_action_ids: ["kick"] } : player;
   const snapshot: RuntimeLivePlayerSnapshot = { instance_id: `details-${scenario}`, snapshot_id: `snapshot-${scenario}`,
-    source: dontstarve ? "structured_log" : nativeScenario && !unknownExtension ? "file_ipc" : "server_query", status: "ready", observed_at_unix_ms: now, expires_at_unix_ms: expired ? now - 1 : now + 30_000,
+    source: dontstarve ? "structured_log" : humanitz ? "runtime_action" : nativeScenario && !unknownExtension ? "file_ipc" : "server_query", status: "ready", observed_at_unix_ms: now, expires_at_unix_ms: expired ? now - 1 : now + 30_000,
     stale: false, complete: true, truncated: false, current_players: 1, max_players: 16, entries: [row],
     issue: protocolIncomplete ? { code: "protocol_incomplete", setting_keys: [], summary: "Native identity and query count are in transition." }
       : extensionStatus ? { code: "extension_unavailable", extension_status: extensionStatus, setting_keys: [],
@@ -92,10 +102,11 @@ function Fixture({ scenario }: { scenario: Scenario }) {
   const [dstAdminList, setDstAdminList] = useState(scenario === "dontstarve-admin-listed" ? "KU_abcdefgh\nKU_otheradmin" : "");
   const details: InstanceDetails = { summary: { id: snapshot.instance_id, name: "Player details", module_id: moduleId,
     status: "Running", active_process_count: 1, autostart: false, bind_ip: "127.0.0.1" }, ports: [],
-    settings_json: JSON.stringify(dontstarve ? { admin_list: dstAdminList, whitelist: "", blocklist: "" } : { banned_player_ids: bannedIds }), config_file_path: "", saves_path: "",
+    settings_json: JSON.stringify(dontstarve ? { admin_list: dstAdminList, whitelist: "", blocklist: "" }
+      : humanitz ? { admin_steam_ids: "", reserved_player_steam_ids: "", banned_player_steam_ids: "" } : { banned_player_ids: bannedIds }), config_file_path: "", saves_path: "",
     backup_uses_declared_saves_path: false, auto_backup_on_stop: false, backup_retention_count: 3 };
   const moduleDetails: ModuleDetails = { summary: { id: moduleId, name: moduleId, version: "1", install_state: "Installed", supported_platforms: ["windows"] },
-    default_ports: [], runtime: {}, schema_json: JSON.stringify(dontstarve ? dstSchema : schema) };
+    default_ports: [], runtime: {}, schema_json: JSON.stringify(dontstarve ? dstSchema : humanitz ? humanitzSchema : schema) };
   const access = usePlayerAccess({ details, moduleDetails, onApplyPlayerAccessMutation: async (input) => {
     mutations++;
     rosterRequests.push(input);
@@ -108,10 +119,10 @@ function Fixture({ scenario }: { scenario: Scenario }) {
   return <main style={{ width: "1000px", height: "650px", margin: "32px auto", display: "grid", minHeight: 0 }}>
     <section className="player-access-workbench">
       <OnlinePlayersView moduleId={moduleId} readOnly={workspaceReadOnly} locale={locale} now={now}
-        declaredActions={dontstarve ? [{ ...action, id: "kick_userid" }] : nativeScenario ? [...nativeActions, ...(unbanScenario ? [{ ...action, id: "unban_player", label: "Unban", label_zh_cn: "解封" }] : [])] : sessionControls ? [action] : []}
-        playerActionIds={dontstarve ? ["kick_userid"] : nativeScenario ? ["kick_player", "ban_player"] : sessionControls ? ["kick"] : []} error={null} loading={false} runtime={null} runtimeAvailable={scenario !== "enshrouded-unban-stopped"}
+        declaredActions={dontstarve ? [{ ...action, id: "kick_userid" }] : humanitz ? [humanitzKickAction] : nativeScenario ? [...nativeActions, ...(unbanScenario ? [{ ...action, id: "unban_player", label: "Unban", label_zh_cn: "解封" }] : [])] : sessionControls ? [action] : []}
+        playerActionIds={dontstarve ? ["kick_userid"] : humanitz ? ["kick_player"] : nativeScenario ? ["kick_player", "ban_player"] : sessionControls ? ["kick"] : []} error={null} loading={false} runtime={null} runtimeAvailable={scenario !== "enshrouded-unban-stopped"}
         snapshot={state.snapshot} presentation={derivePlayerCenterViewModel(state, now).livePlayers} t={t}
-        access={enshrouded || dontstarve ? access : undefined} onRefresh={async () => {}}
+        access={enshrouded || dontstarve || humanitz ? access : undefined} onRefresh={async () => {}}
         onExecutePlayerAction={async (input) => {
           commands++;
           if (nativeScenario) {
@@ -201,6 +212,23 @@ function selectedRowText() {
 }
 async function run() {
   await act(prepareBrowserLocaleCatalogs);
+  for (const scenario of ["humanitz-native", "humanitz-names-only", "humanitz-incomplete-id"] as const) {
+    await draw(scenario);
+    const managementButtons = () => [nativeAction("踢出"), ...["admin_steam_ids", "banned_player_steam_ids", "reserved_player_steam_ids"]
+      .map((field) => element<HTMLButtonElement>(`[data-roster-field="${field}"] [data-operation="add"]`))];
+    check(managementButtons().every((button) => button.disabled), "HumanitZ management requires a selected player");
+    await selectWithKeyboard();
+    if (scenario === "humanitz-native") {
+      check(managementButtons().every((button) => !button.disabled),
+        "HumanitZ complete Steam and EOS NetID enables kick, administrator, ban and reserved-slot controls");
+      check(selectedRowText().includes(humanitzNetId), "HumanitZ selected player retains the complete native NetID");
+    } else {
+      check(managementButtons().every((button) => button.disabled),
+        `HumanitZ ${scenario === "humanitz-names-only" ? "names-only" : "incomplete identity"} keeps all four management controls disabled`);
+      verifyDisabledDescriptions();
+    }
+  }
+  check(commands === 0 && mutations === 0, "HumanitZ button inspection sends no player commands or roster mutations");
   await draw("enshrouded"); await selectWithKeyboard(); verifyDisabledDescriptions();
   check(fixture?.textContent?.includes("匿名查询记录的时长无法可靠对应到玩家姓名"), "Unknown duration explains anonymous player records");
   check(fixture?.textContent?.includes("Steam ID 不能替代") && fixture.textContent.includes("停服编辑，启动后生效"), "Native bans explain their exact identity and lifecycle");

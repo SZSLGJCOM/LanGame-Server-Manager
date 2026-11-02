@@ -4,6 +4,20 @@ use super::*;
 mod dst_map_observer;
 pub use dst_map_observer::is_managed_dst_map_observer;
 
+/// Only the no-Workshop defaults may survive into a new instance. A generated
+/// header alone does not establish that a file contains no operator settings.
+pub(crate) fn is_default_dst_support_file(
+    path: &Path,
+    relative: &str,
+) -> Result<bool, StorageError> {
+    if relative == "mods/dedicated_server_mods_setup.lua" {
+        let expected = render_dst_mod_setup(&Map::new());
+        dst_map_observer::matches_generated_file(path, expected.as_bytes())
+    } else {
+        dst_map_observer::is_default_support_file(path, relative)
+    }
+}
+
 #[cfg(test)]
 static FAIL_NEXT_SETUP_WRITE: std::sync::Mutex<Option<PathBuf>> = std::sync::Mutex::new(None);
 

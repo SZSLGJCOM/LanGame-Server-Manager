@@ -20,5 +20,4 @@
 .ark-creature-spawner .ark-spawn-dock { flex: 0 1 auto; min-height: 0; grid-template-rows: minmax(0, 1fr) auto; gap: 4px; padding-top: 6px; }
 .ark-creature-spawner .ark-spawn-options { min-height: 0; }
 .ark-creature-spawner .gmt-ark-catalog-assist, .ark-creature-spawner .gmt-ark-catalog-toolbar { gap: 4px; }
-.ark-creature-spawner .ark-spawn-tool, .ark-creature-spawner .ark-spawn-setting { min-height: 48px; padding-block: 4px; }
 .ark-creature-spawner__choices [aria-pressed="true"] { border-color: var(--shell-text); }

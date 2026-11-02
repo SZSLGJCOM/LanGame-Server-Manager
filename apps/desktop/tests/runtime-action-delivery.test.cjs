@@ -40,7 +40,7 @@ test("server start reports failure and prevents lifecycle broadcast", () => {
   assert.match(actionsSource, /return true;[\s\S]*?catch \(error\)[\s\S]*?return false;/);
   assert.match(
     appSource,
-    /const started = await handleStartServer\(instanceId, expectedWorldStart\);[\s\S]*?if \(started\) \{[\s\S]*?maybeRunLifecycleBroadcast\(instanceId, "startup"\)/
+    /const started = await handleStartServer\(instanceId, expectedWorldStart, operation\);[\s\S]*?if \(started\) \{[\s\S]*?maybeRunLifecycleBroadcast\(instanceId, "startup"\)/
   );
 });
 
@@ -62,12 +62,13 @@ test("runtime polling remains active while start and stop mutations run", () => 
 test("server start immediately selects the runtime console before awaiting the backend", () => {
   assert.match(
     serversSource,
-    /if \(intent === "start"\) \{[\s\S]*?props\.onSelectInstance\(instanceId\);[\s\S]*?setActiveDetailTab\("runtime"\);[\s\S]*?props\.onWorkspaceSectionChange\("overview"\);[\s\S]*?await props\.onStart\(instanceId, expectedWorldStart\);/
+    /if \(intent === "start"\) \{[\s\S]*?props\.onSelectInstance\(instanceId\);[\s\S]*?setActiveDetailTab\("runtime"\);[\s\S]*?props\.onWorkspaceSectionChange\("overview"\);[\s\S]*?await props\.onStart\(instanceId, expectedWorldStart, operation\);/
   );
   assert.match(
     serversSource,
-    /startupPending=\{runtimeActionsByInstanceId\[props\.selectedDetails\.summary\.id\] === "starting"\}/
+    /startupPending=\{selectedStartupPending\}/
   );
+  assert.match(serversSource, /selectedStartupPending = runtimeActionsByInstanceId[\s\S]*?normalizeInstanceStatus[\s\S]*?=== "starting"/);
 });
 
 test("LanGameCMD follows the pending startup log before a runtime path is known", () => {

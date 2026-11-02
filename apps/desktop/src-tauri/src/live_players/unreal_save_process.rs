@@ -187,14 +187,53 @@ pub(crate) fn capture(
     pid: u32,
     identity: &ProcessIdentity,
 ) -> Result<NativeProcess, String> {
+    capture_optional(profile, root, pid, identity)?
+        .ok_or_else(|| "The current Shipping process is unavailable.".into())
+}
+
+/// Startup can observe the owned bootstrap before it creates its Shipping
+/// child. Only that absence is pending; ambiguity and changed ownership fail.
+pub(crate) fn capture_optional(
+    profile: GameProfile,
+    root: &Path,
+    pid: u32,
+    identity: &ProcessIdentity,
+) -> Result<Option<NativeProcess>, String> {
     super::transport::verify_process(pid, identity)
         .map_err(|_| "The managed bootstrap identity changed.")?;
-    let process = select(profile, &entries(profile, root)?, pid, identity)?;
-    super::transport::verify_process(process.pid, &process.identity)
-        .map_err(|_| "The Shipping process identity changed.")?;
+    let process = select_optional(profile, &entries(profile, root)?, pid, identity)?;
+    if let Some(process) = &process {
+        super::transport::verify_process(process.pid, &process.identity)
+            .map_err(|_| "The Shipping process identity changed.")?;
+    }
     super::transport::verify_process(pid, identity)
         .map_err(|_| "The managed bootstrap identity changed.")?;
     Ok(process)
+}
+
+fn select_optional(
+    profile: GameProfile,
+    entries: &[Entry],
+    pid: u32,
+    identity: &ProcessIdentity,
+) -> Result<Option<NativeProcess>, String> {
+    if entries.iter().any(|entry| {
+        Path::new(&entry.identity.image_path)
+            .file_name()
+            .is_some_and(|name| {
+                name.to_string_lossy()
+                    .eq_ignore_ascii_case(profile.shipping())
+            })
+    }) {
+        return select(profile, entries, pid, identity).map(Some);
+    }
+    if entries.len() != 1
+        || entries[0].pid != pid
+        || !app_runtime::process_identities_match(identity, &entries[0].identity)
+    {
+        return Err("The native startup directory is not owned by this bootstrap alone.".into());
+    }
+    Ok(None)
 }
 pub(crate) fn verify(
     profile: GameProfile,
@@ -222,6 +261,91 @@ pub(crate) fn stopped(profile: GameProfile, root: &Path) -> Result<(), String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn pending_shipping_requires_the_exact_current_bootstrap_only() {
+        let root = ProcessIdentity {
+            creation_time: 10,
+            image_path: "D:/game/AstroServer.exe".into(),
+        };
+        let bootstrap = Entry {
+            pid: 5,
+            parent: 1,
+            identity: root.clone(),
+        };
+        assert!(
+            select_optional(
+                GameProfile::Astroneer,
+                std::slice::from_ref(&bootstrap),
+                5,
+                &root
+            )
+            .unwrap()
+            .is_none()
+        );
+        assert!(select_optional(GameProfile::Astroneer, &[], 5, &root).is_err());
+        assert!(
+            select_optional(
+                GameProfile::Astroneer,
+                &[
+                    bootstrap.clone(),
+                    Entry {
+                        pid: 7,
+                        ..bootstrap.clone()
+                    }
+                ],
+                5,
+                &root
+            )
+            .is_err()
+        );
+        let child = Entry {
+            pid: 20,
+            parent: 5,
+            identity: ProcessIdentity {
+                creation_time: 11,
+                image_path: "D:/game/Astro/Binaries/Win64/AstroServer-Win64-Shipping.exe".into(),
+            },
+        };
+        assert_eq!(
+            select_optional(
+                GameProfile::Astroneer,
+                &[bootstrap, child.clone()],
+                5,
+                &root
+            )
+            .unwrap()
+            .unwrap()
+            .pid,
+            20
+        );
+        assert!(
+            select_optional(
+                GameProfile::Astroneer,
+                &[Entry {
+                    parent: 99,
+                    ..child.clone()
+                }],
+                5,
+                &root
+            )
+            .is_err()
+        );
+        assert!(
+            select_optional(
+                GameProfile::Astroneer,
+                &[Entry {
+                    identity: ProcessIdentity {
+                        creation_time: 9,
+                        ..child.identity
+                    },
+                    ..child
+                }],
+                5,
+                &root
+            )
+            .is_err()
+        );
+    }
     #[test]
     fn dragonwilds_accepts_only_the_owned_shipping_generation() {
         let root = ProcessIdentity {

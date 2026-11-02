@@ -82,12 +82,12 @@ fn report(
     instance: &InstanceDetails,
     context: &super::super::commands_runtime_prestart_update::PrestartUpdateLogContext<'_>,
     warning: Option<&app_core::RuntimeStartWarning>,
-) {
+) -> Result<(), String> {
     let message = warning
         .map(|warning| warning.message.as_str())
         .unwrap_or("Thunderstore 模组已按原始根包和版本策略检查，继续启动。");
     if let Some(path) = context.console_log_path {
-        let _ = append_prestart_update_console_line(path, message, "");
+        append_prestart_update_console_line(path, message, "")?;
     }
     append_desktop_app_log(
         storage,
@@ -96,6 +96,7 @@ fn report(
         message,
         json!({"source":context.source,"instance_id":instance.summary.id,"module_id":instance.summary.module_id,"warning":warning.map(|warning|warning.code)}),
     );
+    Ok(())
 }
 
 /// Never call the public Mod installer here: it reacquires stopped-instance
@@ -292,7 +293,7 @@ async fn update_before_start_inner(
         request.instance,
         &request.context,
         warnings.first(),
-    );
+    )?;
     Ok(ThunderstoreStartOutcome {
         install_guard: Arc::try_unwrap(install).map_err(
             |_| "Thunderstore verification has not released its private-program lifecycle lease",

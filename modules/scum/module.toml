@@ -81,3 +81,10 @@ source = "file_ipc"
 response_codec = "scum_players"
 identity_kind = "session_id"
 refresh_interval_ms = 30000
+
+[runtime.startup_readiness]
+timeout_ms = 600000
+
+[runtime.startup_readiness.probe]
+kind = "runtime_log"
+source = { kind = "install", relative_path = "SCUM/Saved/Logs/SCUM.log" }

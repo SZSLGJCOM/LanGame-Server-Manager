@@ -82,7 +82,7 @@ impl Fixture {
             "active_run":{"run_id":1,"session_id":"same-session","pid":100,"log_path":null,"process_count":process_count,"processes":processes}
         })).unwrap();
         for map in app_core::ark_maps::processes(&instance).unwrap() {
-            fs::write(map.native_log_path, "[2026.09.30-01.02.04:001][ 1]Server has completed startup and is now advertising for join.\n").unwrap();
+            fs::write(map.native_log_path, final_ready_line(module_id)).unwrap();
         }
         Self { root, instance }
     }
@@ -106,6 +106,14 @@ impl Drop for Fixture {
 }
 
 const READY_ENDPOINTS: &str = "UDP 127.0.0.1:7777 *:* 100\nUDP 127.0.0.1:27015 *:* 100\nUDP 127.0.0.1:7787 *:* 101\nUDP 127.0.0.1:27025 *:* 101\n";
+
+fn final_ready_line(module_id: &str) -> &'static str {
+    if module_id == "arksurvivalevolved" {
+        "[2026.09.30-01.02.04:001][ 1]Full Startup: 51.36 seconds (BP compile: 0.00 seconds)\n"
+    } else {
+        "[2026.09.30-01.02.04:001][ 1]Server has completed startup and is now advertising for join.\n"
+    }
+}
 
 #[test]
 fn every_enabled_ark_map_requires_its_own_registered_process_and_ports() {
@@ -147,6 +155,58 @@ fn asa_primary_readiness_does_not_hide_a_loading_or_failed_secondary_map() {
     assert_eq!(failed.status, "error");
     assert_eq!(failed.reason.code, "fatal_log_pattern");
     assert!(failed.summary.contains("Desert"));
+}
+
+#[test]
+fn ase_bound_ports_and_early_banner_cannot_replace_each_maps_full_startup() {
+    let fixture = Fixture::new("arksurvivalevolved");
+    fs::write(
+        fixture.extra_log(),
+        "[2026.09.30-01.02.04:001][ 1]Server: \"Fixture\" has successfully started!\n",
+    )
+    .unwrap();
+    assert_eq!(fixture.health(READY_ENDPOINTS).status, "starting");
+    fs::write(
+        fixture.extra_log(),
+        final_ready_line("arksurvivalevolved").replace("01.02.04:001", "01.01.59:999"),
+    )
+    .unwrap();
+    assert_eq!(
+        fixture.health(READY_ENDPOINTS).status,
+        "starting",
+        "a prior process's final phase is not current readiness"
+    );
+    let mut text = "[2026.09.30-01.02.03:500][ 1]Loading synthetic assets\n".repeat(30_000);
+    text.push_str(final_ready_line("arksurvivalevolved"));
+    text.push_str(&"[2026.09.30-01.02.05:000][ 1]Periodic status\n".repeat(300));
+    fs::write(fixture.extra_log(), text).unwrap();
+    let mut ready = false;
+    for _ in 0..4 {
+        ready = fixture.health(READY_ENDPOINTS).status == "ready";
+        if ready {
+            break;
+        }
+    }
+    assert!(
+        ready,
+        "full startup beyond both fixed log windows must remain discoverable"
+    );
+}
+
+#[test]
+fn ase_single_map_uses_the_same_final_phase_as_multiple_maps() {
+    let fixture = Fixture::with_additional_maps("arksurvivalevolved", vec![]);
+    let map = app_core::ark_maps::processes(&fixture.instance)
+        .unwrap()
+        .remove(0);
+    fs::write(
+        &map.native_log_path,
+        "[2026.09.30-01.02.04:001][ 1]Server: \"Fixture\" has successfully started!\n",
+    )
+    .unwrap();
+    assert_eq!(fixture.health(READY_ENDPOINTS).status, "starting");
+    fs::write(&map.native_log_path, final_ready_line("arksurvivalevolved")).unwrap();
+    assert_eq!(fixture.health(READY_ENDPOINTS).status, "ready");
 }
 
 #[test]
@@ -352,13 +412,27 @@ fn asa_map_health_eventually_reaches_a_ready_marker_beyond_prefix_and_tail() {
 fn prior_native_failure_does_not_override_the_current_map_run() {
     for edition in ["arksurvivalevolved", "arksurvivalascended"] {
         let fixture = Fixture::new(edition);
-        fs::write(fixture.extra_log(), "[2026.09.30-01.01.59:999][ 1]FATAL: previous map run failed\n[2026.09.30-01.02.04:001][ 1]Server has completed startup and is now advertising for join. (7.13GB Mem)\n").unwrap();
+        fs::write(
+            fixture.extra_log(),
+            format!(
+                "[2026.09.30-01.01.59:999][ 1]FATAL: previous map run failed\n{}",
+                final_ready_line(edition)
+            ),
+        )
+        .unwrap();
         assert_eq!(
             fixture.health(READY_ENDPOINTS).status,
             "ready",
             "{edition}: stale failure must not apply to the next process"
         );
-        fs::write(fixture.extra_log(), "[2026.09.30-01.02.04:001][ 1]Server has completed startup and is now advertising for join. (7.13GB Mem)\n[2026.09.30-01.02.05:000][ 1]FATAL: current map run failed\n").unwrap();
+        fs::write(
+            fixture.extra_log(),
+            format!(
+                "{}[2026.09.30-01.02.05:000][ 1]FATAL: current map run failed\n",
+                final_ready_line(edition)
+            ),
+        )
+        .unwrap();
         assert_eq!(
             fixture.health(READY_ENDPOINTS).status,
             "error",

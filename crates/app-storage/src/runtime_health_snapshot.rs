@@ -21,6 +21,8 @@ pub(super) async fn read(
     let status = record.summary.status.clone();
     let health_run = data.active_run.clone();
     let health_ports = data.ports.clone();
+    let health_host = record.summary.bind_ip.clone();
+    let module_paths = paths.clone();
     let config_file_path = record.config_dir.join("instance.json");
     let status_health_root = if module_id == "returntomoria" {
         Some(effective_instance_install_root(record)?)
@@ -63,6 +65,47 @@ pub(super) async fn read(
                 .as_ref()
                 .and_then(|root| returntomoria_health::analyze(&status, root, health_run.as_ref()))
                 .unwrap_or(health)
+        } else {
+            health
+        };
+        // Protocol readiness remains authoritative after the start barrier.
+        // Player-count polling is independent and cannot supply ownership proof.
+        // ARK already evaluates every map in its dedicated group health path.
+        let health = if !app_core::ark_maps::is_ark(&module_id)
+            && matches!(health.status.as_str(), "starting" | "ready")
+        {
+            let descriptor = load_module_descriptor(&module_paths, &module_id)?;
+            let spec = descriptor
+                .as_ref()
+                .and_then(|module| module.runtime.startup_readiness.as_ref());
+            let health = if spec.is_some_and(|spec| {
+                matches!(
+                    &spec.probe,
+                    app_core::startup_readiness::StartupReadinessProbe::A2s {
+                        ready_log: Some(_),
+                        ..
+                    }
+                )
+            }) {
+                a2s_health::log_health(
+                    &module_id,
+                    &status,
+                    &health_scan,
+                    health_run.as_ref(),
+                    &health_ports,
+                    health,
+                )
+            } else {
+                health
+            };
+            a2s_health::apply(
+                spec,
+                &status,
+                &health_host,
+                health_run.as_ref(),
+                &health_ports,
+                health,
+            )
         } else {
             health
         };

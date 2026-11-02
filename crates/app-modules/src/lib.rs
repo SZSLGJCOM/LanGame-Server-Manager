@@ -18,6 +18,7 @@ use thiserror::Error;
 
 mod catalog;
 pub use catalog::discover_modules;
+mod startup_readiness;
 
 mod player_list;
 use player_list::player_list_spec_from_toml;
@@ -132,6 +133,7 @@ struct ModuleTomlWorkshop {
 
 #[derive(Debug, Deserialize)]
 struct ModuleTomlRuntime {
+    startup_readiness: Option<app_core::ModuleStartupReadinessSpec>,
     player_count_source: Option<ModulePlayerCountSource>,
     bind_address: Option<ModuleBindAddressSpec>,
     port_roles: Option<Vec<ModulePortRoleSpec>>,
@@ -287,6 +289,9 @@ pub enum ModuleDiscoveryError {
     InvalidJoinProfile { path: PathBuf, message: String },
     #[error("module manifest {path} has an invalid runtime bind address policy: {message}")]
     InvalidBindAddress { path: PathBuf, message: String },
+
+    #[error("invalid startup readiness in {path}: {message}")]
+    InvalidStartupReadiness { path: PathBuf, message: String },
     #[error("module manifest {path} has an invalid runtime player list contract: {message}")]
     InvalidPlayerList { path: PathBuf, message: String },
     #[error("module manifest {path} has an invalid storage contract: {message}")]
@@ -307,6 +312,7 @@ fn runtime_spec_from_toml(
     player_management: Option<ModuleTomlPlayerManagement>,
 ) -> Result<ModuleRuntimeSpec, String> {
     let runtime = runtime.unwrap_or(ModuleTomlRuntime {
+        startup_readiness: None,
         player_count_source: None,
         bind_address: None,
         port_roles: None,
@@ -356,6 +362,7 @@ fn runtime_spec_from_toml(
     }
 
     Ok(ModuleRuntimeSpec {
+        startup_readiness: runtime.startup_readiness,
         program_sharing: app_core::InstanceProgramMode::Independent,
         player_count_source,
         bind_address: runtime.bind_address.unwrap_or_default(),

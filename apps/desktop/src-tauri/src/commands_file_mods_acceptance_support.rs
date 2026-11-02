@@ -276,7 +276,8 @@ pub(super) async fn run_cycle(
         .await;
     // Stop even on a readiness failure. The outer NativeCleanup owns error paths
     // that return before this point and never targets another DesktopState.
-    let stopped = stop_instance_process(cycle.state.clone(), details.summary.id.clone()).await;
+    let stopped =
+        stop_instance_process(cycle.state.clone(), details.summary.id.clone(), None).await;
     stopped?;
     if read_active_instance_run(&cycle.storage.paths, &details.summary.id)
         .await?

@@ -14,14 +14,16 @@ interface ActivityBarProps {
   store: ActivityNoticeStore;
   entries: ActivityBarEntry[];
   progress?: ReactNode;
+  progressEntries?: ActivityBarEntry[];
 }
 
-export function ActivityBar({ store, entries: suppliedEntries, progress }: ActivityBarProps) {
+export function ActivityBar({ store, entries: suppliedEntries, progress: suppliedProgress, progressEntries = [] }: ActivityBarProps) {
+  const progress = suppliedProgress ?? progressEntries[0]?.content;
   const { t, locale } = useI18n();
   const copy = isChineseLocale(locale) ? {
-    previous: "上一条消息", next: "下一条消息", pause: "暂停轮播", resume: "继续轮播", details: "消息详情"
+    previous: "上一条消息", next: "下一条消息", pause: "暂停轮播", resume: "继续轮播", details: "消息详情", closeDetails: "收起消息详情"
   } : {
-    previous: "Previous message", next: "Next message", pause: "Pause rotation", resume: "Resume rotation", details: "Message details"
+    previous: "Previous message", next: "Next message", pause: "Pause rotation", resume: "Resume rotation", details: "Message details", closeDetails: "Close message details"
   };
   const notices = useSyncExternalStore(store.subscribe, store.getSnapshot, store.getSnapshot);
   const dismissLabel = t("servers.mods.closeToast", undefined, "Close");
@@ -156,14 +158,17 @@ export function ActivityBar({ store, entries: suppliedEntries, progress }: Activ
     {expanded && (entries.length > 0 || progress) ? <section className="shell-activity-panel" id={panelId} role="dialog" aria-label={copy.details}>
       <div className="shell-activity-panel-heading">
         <strong>{copy.details}</strong>
-        <button type="button" className="shell-activity-panel-close" ref={panelClose} aria-label={dismissLabel}
+        <button type="button" className="shell-activity-panel-close" ref={panelClose} aria-label={copy.closeDetails}
           onClick={() => closePanel()}><ShellIcon name="x" /></button>
       </div>
       <ActivityNoticeDetails.Provider value={true}><div className="shell-activity-panel-list">{entries.map((entry) =>
         <div className="shell-activity-panel-item" key={entry.id}>{entry.content}</div>)}
-        {progress ? <div className="shell-activity-panel-item"><ActivityProgressDetails.Provider value={true}>
-          {progress}
+        {suppliedProgress ? <div className="shell-activity-panel-item"><ActivityProgressDetails.Provider value={true}>
+          {suppliedProgress}
         </ActivityProgressDetails.Provider></div> : null}
+        {progressEntries.map(entry => <div className="shell-activity-panel-item" key={entry.id}>
+          <ActivityProgressDetails.Provider value={true}>{entry.content}</ActivityProgressDetails.Provider>
+        </div>)}
       </div></ActivityNoticeDetails.Provider>
     </section> : null}
   </div>;

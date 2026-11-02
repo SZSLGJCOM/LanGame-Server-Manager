@@ -154,7 +154,9 @@ async fn execute_assistant_lifecycle_operation(
             .map_err(|error| error.to_string())?;
         ensure_assistant_lifecycle_stopped(&current)?;
         validate_assistant_lifecycle_saved_state(&expected, &current)?;
-        if expected.active_run.as_ref().map(|run| run.run_id) != Some(stopped.run_id)
+        if stopped.outcome != app_core::StopInstanceOutcome::Stopped
+            || stopped.run_id.is_none()
+            || expected.active_run.as_ref().map(|run| run.run_id) != stopped.run_id
             || stopped.summary.id != target
             || stopped.summary.module_id != expected.summary.module_id
         {
@@ -170,7 +172,7 @@ async fn execute_assistant_lifecycle_operation(
         output.verification = Some(AssistantOperationVerification {
             status: AssistantVerificationStatus::Verified,
             summary: output.message.clone(),
-            run_id: Some(stopped.run_id),
+            run_id: stopped.run_id,
             evidence: stopped_evidence,
             can_continue: false,
         });

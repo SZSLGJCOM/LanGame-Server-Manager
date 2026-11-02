@@ -276,6 +276,9 @@ pub(in crate::commands) fn report_progress(
     update: &InstallProgressUpdate,
 ) {
     // Ready means the installer settled; creation still owns the job and lease.
+    if update.is_raw_output() {
+        return;
+    }
     let _ = job.update(|job| apply_install_progress(job, update));
 }
 

@@ -18,6 +18,7 @@ struct StreamLimits {
     final_reads: usize,
     final_budget: Duration,
     poll_interval: Duration,
+    read_retries: usize,
 }
 
 const LIMITS: StreamLimits = StreamLimits {
@@ -25,7 +26,8 @@ const LIMITS: StreamLimits = StreamLimits {
     pending_bytes: 64 * 1024,
     final_reads: 256,
     final_budget: Duration::from_secs(2),
-    poll_interval: Duration::from_millis(250),
+    poll_interval: Duration::from_millis(33),
+    read_retries: 3,
 };
 const INCOMPLETE: &str = "[LanGame] Console streaming ended before all final output could be read. Check the retained log files for additional output.";
 
@@ -53,6 +55,18 @@ pub(crate) fn start_runtime_log_stream(
     let Some(lease) = lease else {
         return Ok(());
     };
+    state
+        .runtime_log_streams
+        .lock()
+        .map_err(|_| String::from("runtime log stream registry lock poisoned"))?
+        .begin_console_document(
+            instance_id,
+            log_path,
+            lease,
+            process_key,
+            display_name,
+            run_id,
+        );
     spawn_runtime_log_stream(
         app_handle,
         instance_id,
@@ -80,7 +94,7 @@ fn spawn_runtime_log_stream(
     let display_name = display_name.map(String::from);
     let log_path = log_path.to_owned();
     tauri::async_runtime::spawn(async move {
-        run_stream(
+        let complete = run_stream(
             PathBuf::from(&log_path),
             LIMITS,
             || {
@@ -90,14 +104,31 @@ fn spawn_runtime_log_stream(
                     .map(|streams| streams.status(&instance_id, &log_path, lease))
                     .unwrap_or(RuntimeLogStreamStatus::Cancelled)
             },
-            |lines, byte_offset, stream_error| {
+            |lines, byte_offset, stream_error, partial_lines, reset| {
+                let lines: Vec<_> = lines
+                    .iter()
+                    .map(|line| app_core::abiotic_output::redact_modio_token_text(line))
+                    .collect();
+                let partial_lines = partial_lines
+                    .iter()
+                    .map(|line| app_core::abiotic_output::redact_modio_token_text(line))
+                    .collect();
                 let state = app.state::<DesktopState>();
-                let Ok(streams) = state.runtime_log_streams.lock() else {
+                let Ok(mut streams) = state.runtime_log_streams.lock() else {
                     return;
                 };
                 // Keep generation validation and event publication under the same
                 // short lock: cancellation/replacement cannot slip between them.
                 if streams.is_active(&instance_id, &log_path, lease) {
+                    let console = streams.publish_console_document(
+                        &instance_id,
+                        &log_path,
+                        lease,
+                        &lines,
+                        partial_lines,
+                        reset,
+                    );
+                    streams.set_console_offset(&instance_id, &log_path, lease, byte_offset);
                     let _ = app.emit(
                         RUNTIME_LOG_STREAM_EVENT,
                         RuntimeLogStreamPayload {
@@ -112,6 +143,8 @@ fn spawn_runtime_log_stream(
                             snapshot: None,
                             snapshot_revision: None,
                             stream_error,
+                            console,
+                            document_patch: None,
                         },
                     );
                 }
@@ -119,6 +152,9 @@ fn spawn_runtime_log_stream(
         )
         .await;
         if let Ok(mut streams) = app.state::<DesktopState>().runtime_log_streams.lock() {
+            if !complete {
+                streams.invalidate_console_document(&instance_id, &log_path, lease);
+            }
             streams.release(&instance_id, &log_path, lease);
         }
     });
@@ -128,57 +164,110 @@ async fn run_stream(
     path: PathBuf,
     limits: StreamLimits,
     status: impl Fn() -> RuntimeLogStreamStatus,
-    emit: impl Fn(Vec<String>, u64, Option<String>),
-) {
+    emit: impl Fn(Vec<String>, u64, Option<String>, Vec<String>, bool),
+) -> bool {
     let mut tail = RuntimeLogTailState::default();
     let mut final_deadline = None;
     let mut final_reads = 0;
+    let mut first_read = true;
+    let mut previous_partial = Vec::new();
+    let mut consecutive_failures = 0;
     loop {
         let before_read = status();
         if before_read == RuntimeLogStreamStatus::Cancelled {
-            break;
+            break false;
         }
         if before_read == RuntimeLogStreamStatus::ProducerFinished {
             let deadline =
                 final_deadline.get_or_insert_with(|| Instant::now() + limits.final_budget);
             if Instant::now() >= *deadline || final_reads >= limits.final_reads {
-                emit(Vec::new(), tail.byte_offset, Some(INCOMPLETE.to_owned()));
-                break;
+                emit(
+                    Vec::new(),
+                    tail.byte_offset,
+                    Some(persist_stream_diagnostic(&path, INCOMPLETE.to_owned()).await),
+                    previous_partial.clone(),
+                    false,
+                );
+                break false;
             }
             final_reads += 1;
         }
         let read_path = path.clone();
         let previous_offset = tail.byte_offset;
+        let previous_generation = tail.source_generation();
         let read = tokio::task::spawn_blocking(move || {
-            let delta = read_runtime_log_delta_bounded(
-                &read_path,
-                &mut tail,
-                limits.read_bytes,
-                limits.pending_bytes,
-            );
-            (tail, delta)
+            // A failed read must not commit a partially changed generation/cursor.
+            let previous_tail = tail.clone();
+            let mut partial = Vec::new();
+            let delta = app_runtime::with_live_console_preview(&read_path, |preview| {
+                let delta = read_runtime_log_delta_bounded(
+                    &read_path,
+                    &mut tail,
+                    limits.read_bytes,
+                    limits.pending_bytes,
+                )?;
+                partial.extend(tail.partial_preview());
+                // The preview and file are sampled under the producer's lock.
+                // Do not show its current row ahead of unread committed bytes.
+                if !delta.limit_exhausted {
+                    partial.extend_from_slice(preview);
+                }
+                Ok::<_, std::io::Error>(delta)
+            })
+            .and_then(|result| result);
+            if delta.is_err() {
+                tail = previous_tail;
+            }
+            (tail, delta, partial)
         })
         .await;
         // A stop/cancel may have arrived while filesystem I/O was in progress.
         if status() == RuntimeLogStreamStatus::Cancelled {
-            break;
+            break false;
         }
-        let (next_tail, result) = match read {
+        let (next_tail, result, partial) = match read {
             Ok(result) => result,
             Err(error) => {
                 emit(
                     Vec::new(),
                     previous_offset,
-                    Some(format!("{INCOMPLETE} Reader task failed: {error}")),
+                    Some(
+                        persist_stream_diagnostic(
+                            &path,
+                            format!("{INCOMPLETE} Reader task failed: {error}"),
+                        )
+                        .await,
+                    ),
+                    previous_partial.clone(),
+                    false,
                 );
-                break;
+                break false;
             }
         };
         tail = next_tail;
+        let mut catch_up = false;
         match result {
             Ok(delta) => {
-                if !delta.lines.is_empty() || delta.stream_error.is_some() {
-                    emit(delta.lines, delta.byte_offset, delta.stream_error);
+                consecutive_failures = 0;
+                let reset = first_read || previous_generation != tail.source_generation();
+                catch_up = delta.limit_exhausted && delta.bytes_read > 0;
+                if reset
+                    || !delta.lines.is_empty()
+                    || delta.stream_error.is_some()
+                    || partial != previous_partial
+                {
+                    emit(
+                        delta.lines,
+                        delta.byte_offset,
+                        match delta.stream_error {
+                            Some(error) => Some(persist_stream_diagnostic(&path, error).await),
+                            None => None,
+                        },
+                        partial.clone(),
+                        reset,
+                    );
+                    previous_partial = partial;
+                    first_read = false;
                 }
                 // An idle live writer is not EOF. The producer must have been
                 // closed before this read began, including its output drain.
@@ -186,42 +275,79 @@ async fn run_stream(
                     && (delta.bytes_read == 0 || !delta.limit_exhausted)
                 {
                     let final_delta = finish_runtime_log_tail(&mut tail);
-                    if !final_delta.lines.is_empty() || final_delta.stream_error.is_some() {
+                    let complete = final_delta.stream_error.is_none();
+                    if !final_delta.lines.is_empty()
+                        || final_delta.stream_error.is_some()
+                        || !previous_partial.is_empty()
+                    {
                         emit(
                             final_delta.lines,
                             final_delta.byte_offset,
-                            final_delta.stream_error,
+                            match final_delta.stream_error {
+                                Some(error) => Some(persist_stream_diagnostic(&path, error).await),
+                                None => None,
+                            },
+                            Vec::new(),
+                            false,
                         );
                     }
-                    break;
+                    break complete;
                 }
             }
             Err(error)
                 if error.kind() == ErrorKind::NotFound
-                    && before_read == RuntimeLogStreamStatus::Active => {}
+                    && before_read == RuntimeLogStreamStatus::Active
+                    && first_read
+                    && tail.byte_offset == 0 => {}
             Err(error) => {
+                consecutive_failures += 1;
+                let retry = consecutive_failures <= limits.read_retries;
+                let message = if retry {
+                    format!(
+                        "[LanGame] Console log read failed; retrying ({consecutive_failures}/{}): {error}",
+                        limits.read_retries
+                    )
+                } else {
+                    format!("{INCOMPLETE} Log read failed: {error}")
+                };
                 emit(
                     Vec::new(),
                     tail.byte_offset,
-                    Some(format!("{INCOMPLETE} Log read failed: {error}")),
+                    Some(persist_stream_diagnostic(&path, message).await),
+                    previous_partial.clone(),
+                    false,
                 );
-                break;
+                if retry {
+                    tokio::time::sleep(Duration::from_millis(
+                        50 * (1 << (consecutive_failures - 1)),
+                    ))
+                    .await;
+                    continue;
+                }
+                break false;
             }
         }
         if status() == RuntimeLogStreamStatus::Active {
-            tokio::time::sleep(limits.poll_interval).await;
+            if catch_up {
+                tokio::task::yield_now().await;
+            } else {
+                tokio::time::sleep(limits.poll_interval).await;
+            }
         }
     }
 }
 
-/// Cancellation is distinct from producer completion (for example a failed
-/// start whose cleanup could not prove the game had stopped).
-pub(crate) fn stop_runtime_log_streams_for_instance(
-    state: &tauri::State<'_, DesktopState>,
-    instance_id: &str,
-) {
-    if let Ok(mut streams) = state.runtime_log_streams.lock() {
-        streams.release_instance(instance_id);
+async fn persist_stream_diagnostic(path: &std::path::Path, message: String) -> String {
+    let path = path.to_path_buf();
+    let diagnostic = message.clone();
+    match tokio::task::spawn_blocking(move || {
+        app_storage::startup_sessions::record_reader_error(&path, &diagnostic)
+    })
+    .await
+    {
+        Ok(Ok(())) => message,
+        Ok(Err(error)) => format!("{message}; could not persist the reader diagnostic: {error}"),
+        Err(error) => format!("{message}; reader diagnostic task failed: {error}"),
     }
 }
 
@@ -278,6 +404,8 @@ pub(crate) async fn wait_for_shutdown(app: &tauri::AppHandle) {
                     snapshot: None,
                     snapshot_revision: None,
                     stream_error: Some(INCOMPLETE.to_owned()),
+                    console: None,
+                    document_patch: None,
                 },
             );
             streams.release_path(&instance_id, &log_path);

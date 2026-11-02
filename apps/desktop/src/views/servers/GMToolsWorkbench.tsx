@@ -1,7 +1,6 @@
 import { ActivityNotice } from "../../components/ActivityNotice";
-import { InlineConfirmAction } from "../../components/InlineConfirmAction";
 import { ConfigurationActionHelp } from "../settings/ConfigurationFieldHelp";
-import { useEffect, useId, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { describeError } from "../../app-state";
 import { sendInstanceGmCommand } from "../../api";
 import { ShellIcon } from "../../components/ShellIcon";
@@ -15,6 +14,7 @@ import {
   buildGmToolCommand,
   getGmToolCatalog,
   getInitialGmToolValues,
+  type GmCommandBuildResult,
   type GmToolDefinition,
   type GmToolField,
   type GmToolFieldOption
@@ -23,9 +23,10 @@ import { GmExecutionNotice } from "./GmExecutionNotice";
 import { gmToolConfigurationIssue, useGmToolExecution } from "./gm-tool-execution";
 import { ArkCreatureSpawner } from "./ArkCreatureSpawner";
 import { ArkItemSpawnPanel } from "./ArkItemSpawnPanel";
+import { ArkWorldToolsPanel } from "./ArkWorldToolsPanel";
 import { ArkWorldMapWorkbench, type ArkMapToolContext } from "./ArkWorldMapWorkbench";
 import { DST_GM_PANELS, DstWorldMapWorkbench } from "./DstWorldMapWorkbench";
-import { GmToolsNavigation } from "./GmToolsNavigation";
+import { GmToolsWorkspace } from "./GmToolsWorkspace";
 import "./gm-tool-execution.css";
 
 interface GMToolsWorkbenchProps {
@@ -96,48 +97,58 @@ function isFieldVisible(field: GmToolField, values: Record<string, string>): boo
 
 
 export function GMToolsWorkbench(props: GMToolsWorkbenchProps) {
-  return isArkModule(props.details.summary.module_id)
-    ? <section className="gmt-workbench gmt-ark-map-workbench"><ArkWorldMapWorkbench details={props.details}>
-      {context => <GMToolsForm details={props.details} arkContext={context} />}
-    </ArkWorldMapWorkbench></section>
-    : <GMToolsForm {...props} />;
-}
-
-function GMToolsForm(props: GMToolsWorkbenchProps & { arkContext?: ArkMapToolContext }) {
-  const { locale, t } = useI18n();
-  const navigationId = useId();
-  const navigationToggle = useRef<HTMLButtonElement>(null);
-  const content = useRef<HTMLDivElement>(null);
-  const [navigationOpen, setNavigationOpen] = useState(false);
   const moduleId = props.details.summary.module_id;
-  const [arkCatalogSearchByField, setArkCatalogSearchByField] = useState<Record<string, string>>({});
   const dontStarve = moduleId === "dontstarve";
+  const ark = isArkModule(moduleId);
   const catalog = useMemo(() => getGmToolCatalog(moduleId), [moduleId]);
   const firstToolId = dontStarve ? DST_GM_PANELS[0] : catalog?.tools[0]?.id ?? "";
   const [activeToolId, setActiveToolId] = useState(firstToolId);
+  useEffect(() => setActiveToolId(firstToolId), [firstToolId, moduleId, props.details.settings_json, props.details.summary.id]);
+  if (!catalog) return null;
+  const selectedId = dontStarve ? DST_GM_PANELS.find(panel => panel === activeToolId) ?? DST_GM_PANELS[0]
+    : catalog.tools.find(tool => tool.id === activeToolId)?.id ?? firstToolId;
+  return <GmToolsWorkspace instanceId={props.details.summary.id} moduleId={moduleId} tools={catalog.tools}
+    selectedId={selectedId} onSelect={setActiveToolId} map={ark || dontStarve}>
+    {dontStarve ? <DstWorldMapWorkbench details={props.details} panel={DST_GM_PANELS.find(panel => panel === selectedId) ?? DST_GM_PANELS[0]} />
+      : ark ? <ArkWorldMapWorkbench details={props.details}>
+        {context => <GMToolsForm details={props.details} activeToolId={selectedId} arkContext={context} />}
+      </ArkWorldMapWorkbench> : <GMToolsForm {...props} activeToolId={selectedId} />}
+  </GmToolsWorkspace>;
+}
+
+function GMToolsForm(props: GMToolsWorkbenchProps & { activeToolId: string; arkContext?: ArkMapToolContext }) {
+  const { locale, t } = useI18n();
+  const moduleId = props.details.summary.module_id;
+  const [arkCatalogSearchByField, setArkCatalogSearchByField] = useState<Record<string, string>>({});
+  const catalog = useMemo(() => getGmToolCatalog(moduleId), [moduleId]);
   const [valuesByToolId, setValuesByToolId] = useState<Record<string, Record<string, string>>>({});
   const [feedback, setFeedback] = useState<string | null>(null);
   const [feedbackTone, setFeedbackTone] = useState<"error" | "warning" | "success" | "info">("info");
-  const [playerFromMap, setPlayerFromMap] = useState<number | null>(null);
+  const [itemTargetMode, setItemTargetMode] = useState<"player" | "manual">("player");
   const [resultScope, setResultScope] = useState<string | null>(null);
   const execution = useGmToolExecution(props.details.summary.id, props.arkContext?.send ?? sendInstanceGmCommand, describeError);
   const sendingToolId = execution.sendingToolId;
 
   useEffect(() => {
-    setActiveToolId(firstToolId);
     setValuesByToolId({});
+    setItemTargetMode("player");
     setFeedback(null);
     setArkCatalogSearchByField({});
-    setNavigationOpen(false);
-  }, [firstToolId, moduleId, props.details.settings_json, props.details.summary.id]);
-  useEffect(() => { setValuesByToolId({}); setPlayerFromMap(null); setFeedback(null); }, [props.arkContext?.scopeKey]);
+  }, [moduleId, props.details.settings_json, props.details.summary.id]);
+  useEffect(() => { setValuesByToolId({}); setItemTargetMode("player"); setFeedback(null); }, [props.arkContext?.scopeKey]);
+  useEffect(() => setFeedback(null), [props.activeToolId]);
 
-  const activeTool = catalog?.tools.find((tool) => tool.id === activeToolId) ?? catalog?.tools[0] ?? null;
-  const dstPanel = DST_GM_PANELS.find(panel => panel === activeToolId) ?? DST_GM_PANELS[0];
-  const toolValues = activeTool
+  const activeTool = catalog?.tools.find((tool) => tool.id === props.activeToolId) ?? catalog?.tools[0] ?? null;
+  const savedToolValues = activeTool
     ? valuesByToolId[activeTool.id] ?? getInitialGmToolValues(activeTool)
     : {};
-  const commandPreview = !dontStarve && activeTool && activeTool.id !== "ark_spawn_creature"
+  const selectedItemPlayer = props.arkContext?.live ? props.arkContext.selectedPlayer : null;
+  const useSelectedItemPlayer = props.arkContext && activeTool?.id === "ark_give_item_to_player" && itemTargetMode === "player";
+  // Derive the target from the current snapshot so changing or clearing selection cannot reuse an old ID.
+  const toolValues = useSelectedItemPlayer
+    ? { ...savedToolValues, playerId: selectedItemPlayer ? String(selectedItemPlayer.playerId) : "" }
+    : savedToolValues;
+  const commandPreview = activeTool && activeTool.id !== "ark_spawn_creature"
     ? buildGmToolCommand(moduleId, activeTool.id, toolValues, t)
     : null;
   const visibleActiveFields = activeTool
@@ -147,9 +158,8 @@ function GMToolsForm(props: GMToolsWorkbenchProps & { arkContext?: ArkMapToolCon
   const commandTargetRunning = props.arkContext ? props.arkContext.running && Boolean(props.arkContext.scope) : commandPreview?.processKey
     ? runtimeProcessKeyIsRunning(props.details.active_run, commandPreview.processKey)
     : instanceRunning;
-  const availabilityIssue = (visibleActiveFields.some(field => field.key === "playerId") && playerFromMap !== null
-    && (!props.arkContext?.live || props.arkContext.selectedPlayer?.playerId !== playerFromMap)
-    ? selectLocaleText(locale, "所选玩家位置已过期或已离开，请重新选取或手动输入玩家 ID。", "The selected player is stale or has left. Select again or enter a player ID manually.") : null)
+  const availabilityIssue = (useSelectedItemPlayer && !selectedItemPlayer
+    ? selectLocaleText(locale, "请在地图或名单中选择在线玩家，或展开手动目标输入玩家 ID。", "Select a live player on the map or roster, or expand the manual target to enter a player ID.") : null)
     || commandPreview?.error
     || (commandPreview ? gmToolConfigurationIssue(props.details, commandPreview, locale) : null)
     || (!commandTargetRunning
@@ -160,7 +170,6 @@ function GMToolsForm(props: GMToolsWorkbenchProps & { arkContext?: ArkMapToolCon
     : null);
 
   function updateField(tool: GmToolDefinition, field: GmToolField, value: string) {
-    if (field.key === "playerId") setPlayerFromMap(null);
     setValuesByToolId((current) => ({
       ...current,
       [tool.id]: {
@@ -170,6 +179,13 @@ function GMToolsForm(props: GMToolsWorkbenchProps & { arkContext?: ArkMapToolCon
       }
     }));
     setFeedback(null);
+  }
+
+  async function sendPreparedTool(toolId: string, preview: GmCommandBuildResult) {
+    if (execution.busy) return;
+    setFeedback(null);
+    setResultScope(props.arkContext?.scopeKey ?? null);
+    await execution.run(toolId, preview);
   }
 
   async function sendActiveTool() {
@@ -197,67 +213,38 @@ function GMToolsForm(props: GMToolsWorkbenchProps & { arkContext?: ArkMapToolCon
       return;
     }
 
-    setFeedback(null);
-    setResultScope(props.arkContext?.scopeKey ?? null);
-    await execution.run(activeTool.id, commandPreview);
+    await sendPreparedTool(activeTool.id, commandPreview);
   }
 
   if (!catalog) return null;
 
   return (
-    <section className={`configuration-workspace gmt-workbench${dontStarve ? " gmt-workbench--map" : ""}`}>
-      <div className="configuration-workspace__body" data-navigation-open={navigationOpen || undefined}
-        onKeyDown={event => {
-          if (event.key === "Escape" && !event.nativeEvent.isComposing && navigationOpen) {
-            event.stopPropagation(); setNavigationOpen(false); navigationToggle.current?.focus();
-          }
-        }}>
-        <button type="button" ref={navigationToggle} className="configuration-workspace__navigation-toggle"
-          aria-expanded={navigationOpen} aria-controls={navigationId}
-          onClick={() => setNavigationOpen(open => !open)}>
-          <ShellIcon name="list" aria-hidden="true" />
-          {t("servers.gmTools.actions", undefined, "GM actions")}
-          <ShellIcon name="chevron-right" aria-hidden="true" />
-        </button>
-        <aside id={navigationId} className="configuration-workspace__sidebar gmt-tools-sidebar"
-          aria-label={t("servers.gmTools.actions", undefined, "GM actions")}>
-          <GmToolsNavigation moduleId={moduleId} tools={catalog.tools} selectedId={dontStarve ? dstPanel : activeTool?.id ?? ""}
-            onSelect={id => {
-              setActiveToolId(id); setFeedback(null); setNavigationOpen(false);
-              content.current?.scrollTo({ top: 0 });
-              if (navigationToggle.current?.getClientRects().length) navigationToggle.current.focus();
-            }} />
-        </aside>
-        <div ref={content} className="configuration-workspace__main" data-configuration-scroll-owner>
-          <div className="configuration-workspace__content">
-        {props.arkContext ? <label className="ark-map-tool-picker">
-          <select className="gmt-select" aria-label={t("servers.gmTools.actions", undefined, "GM actions")} value={activeTool?.id ?? ""} onChange={event => { setActiveToolId(event.target.value); setFeedback(null); }}>
-            {catalog.tools.map(tool => <option key={tool.id} value={tool.id}>{localizedToolTitle(t, tool)}</option>)}
-          </select></label> : null}
+    <>
         {isArkModule(moduleId) ? (
           <div className="ark-creature-tool" hidden={activeTool?.id !== "ark_spawn_creature"}>
             <ArkCreatureSpawner
               instanceId={props.details.summary.id}
+              instanceName={props.details.summary.name}
               moduleId={moduleId}
               status={props.details.summary.status}
               settingsJson={props.details.settings_json}
               processKey={props.arkContext?.scope?.processKey ?? "main"}
               runId={props.arkContext?.scope?.runId ?? null}
               runtimeRunning={props.arkContext?.running}
+              extensionStatus={props.arkContext?.extension}
               selectedPlayer={props.arkContext?.selectedPlayer ?? null}
             />
           </div>
         ) : null}
-        {dontStarve ? <DstWorldMapWorkbench details={props.details} panel={dstPanel} /> : activeTool?.id === "ark_spawn_creature" ? null
+        {activeTool?.id === "ark_spawn_creature" ? null
           : props.arkContext && activeTool?.id === "ark_give_item_to_player" ? <ArkItemSpawnPanel tool={activeTool} values={toolValues}
             query={arkCatalogSearchByField[toolValues.itemMode ?? "blueprint"] ?? ""}
             onQueryChange={query => setArkCatalogSearchByField(current => ({ ...current, [toolValues.itemMode ?? "blueprint"]: query }))}
-            update={(field, value) => updateField(activeTool, field, value)} selectedPlayer={props.arkContext.selectedPlayer}
-            onUsePlayer={() => { const player = props.arkContext?.selectedPlayer, field = activeTool.fields.find(value => value.key === "playerId");
-              if (player && field) { updateField(activeTool, field, String(player.playerId)); setPlayerFromMap(player.playerId); } }}
+            update={(field, value) => updateField(activeTool, field, value)} selectedPlayer={selectedItemPlayer}
+            targetMode={itemTargetMode} onTargetModeChange={mode => { setItemTargetMode(mode); setFeedback(null); }}
             busy={execution.busy} sending={sendingToolId === activeTool.id} issue={availabilityIssue} onSubmit={() => void sendActiveTool()}
             feedback={feedback ? <ActivityNotice tone={feedbackTone} onDismiss={() => setFeedback(null)}>{feedback}</ActivityNotice> : null}
-            result={execution.result && resultScope === props.arkContext.scopeKey ? <GmExecutionNotice result={execution.result} /> : null} />
+            result={execution.result?.toolId === activeTool.id && resultScope === props.arkContext.scopeKey ? <GmExecutionNotice result={execution.result} /> : null} />
           : activeTool ? (
           <form
             className="gmt-form"
@@ -272,14 +259,6 @@ function GMToolsForm(props: GMToolsWorkbenchProps & { arkContext?: ArkMapToolCon
                 <p className="gmt-form-desc">{localizedToolDescription(t, activeTool)}</p>
               </div>
             </div>
-
-            {props.arkContext && visibleActiveFields.some(field => field.key === "playerId") ? <button type="button"
-              className="secondary-button ark-map-use-player" disabled={!props.arkContext.selectedPlayer}
-              onClick={() => { const player = props.arkContext?.selectedPlayer, field = activeTool.fields.find(field => field.key === "playerId");
-                if (player && field) { updateField(activeTool, field, String(player.playerId)); setPlayerFromMap(player.playerId); } }}>
-              {props.arkContext.selectedPlayer ? selectLocaleText(locale, `使用所选玩家 · ${props.arkContext.selectedPlayer.name || props.arkContext.selectedPlayer.playerId}`,
-                `Use selected player · ${props.arkContext.selectedPlayer.name || props.arkContext.selectedPlayer.playerId}`)
-                : selectLocaleText(locale, "在地图或名单中选择在线玩家", "Select a live player on the map or roster")}</button> : null}
 
             {visibleActiveFields.length > 0 ? (
               <div className="gmt-fields-grid settings-schema-grid">
@@ -370,25 +349,6 @@ function GMToolsForm(props: GMToolsWorkbenchProps & { arkContext?: ArkMapToolCon
             <div className="gmt-actions-row">
               {feedback ? <ActivityNotice tone={feedbackTone} onDismiss={() => setFeedback(null)}>{feedback}</ActivityNotice> : null}
               <ConfigurationActionHelp reason={availabilityIssue || null}>
-              {activeTool.id === "ark_destroy_wild_dinos" ? (
-                <InlineConfirmAction
-                  scopeKey={`gmt:${activeTool.id}`}
-                  className="gmt-btn gmt-btn--danger"
-                  disabled={Boolean(availabilityIssue) || execution.busy}
-                  confirmation={selectLocaleText(locale, "将清除所有野生生物，无法撤销。确认执行？", "This removes every wild creature and cannot be undone. Continue?")}
-                  onConfirm={() => sendActiveTool()}
-                >
-                <ShellIcon
-                  name={sendingToolId === activeTool.id ? "loader" : "send"}
-                  className={sendingToolId === activeTool.id ? "gmt-btn-icon gmt-btn-icon--spin" : "gmt-btn-icon"}
-                />
-                {execution.busy && !sendingToolId
-                  ? selectLocaleText(locale, "等待上一条请求…", "Waiting for the earlier request…")
-                  : sendingToolId === activeTool.id
-                  ? t("servers.gmTools.sendingShort", undefined, "Sending...")
-                  : localizedToolSubmitLabel(t, activeTool)}
-                </InlineConfirmAction>
-              ) : (
               <button
                 type="submit"
                 className="gmt-btn gmt-btn--primary"
@@ -404,7 +364,6 @@ function GMToolsForm(props: GMToolsWorkbenchProps & { arkContext?: ArkMapToolCon
                   ? t("servers.gmTools.sendingShort", undefined, "Sending...")
                   : localizedToolSubmitLabel(t, activeTool)}
               </button>
-              )}
               </ConfigurationActionHelp>
             </div>
             {execution.result && (!props.arkContext || resultScope === props.arkContext.scopeKey) ? <GmExecutionNotice result={execution.result} /> : null}
@@ -417,9 +376,10 @@ function GMToolsForm(props: GMToolsWorkbenchProps & { arkContext?: ArkMapToolCon
             </div>
           </div>
         )}
-          </div>
-        </div>
-      </div>
-    </section>
+        {props.arkContext ? <ArkWorldToolsPanel details={props.details} context={props.arkContext}
+          busy={execution.busy} sendingToolId={sendingToolId} onSend={sendPreparedTool}
+          result={execution.result && ["ark_set_time", "ark_destroy_wild_dinos"].includes(execution.result.toolId)
+            && resultScope === props.arkContext.scopeKey ? <GmExecutionNotice result={execution.result} /> : null} /> : null}
+    </>
   );
 }

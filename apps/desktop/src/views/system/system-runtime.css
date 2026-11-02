@@ -71,20 +71,22 @@
 
 .system-path-list {
   display: grid;
+  /* Keep the four desktop storage roles side by side on smaller displays. */
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 20px;
+  gap: 12px;
 }
 
 .system-path-row {
   display: grid;
-  grid-template-columns: 24px minmax(0, 1fr) auto;
+  grid-template-columns: 20px minmax(0, 1fr);
+  align-content: start;
   align-items: center;
-  gap: 10px;
+  gap: 6px 8px;
   min-width: 0;
   min-height: 47px;
   padding: 6px 0;
   border-right: 1px solid var(--system-panel-border-soft);
-  padding-right: 20px;
+  padding-right: 12px;
 }
 
 .system-path-row:last-child {
@@ -95,8 +97,8 @@
 .system-path-row-icon {
   display: grid;
   place-items: center;
-  width: 24px;
-  height: 24px;
+  width: 20px;
+  height: 20px;
   color: var(--system-panel-muted);
 }
 
@@ -106,18 +108,19 @@
 }
 
 .system-path-row-copy {
-  display: grid;
-  gap: 3px;
-  min-width: 0;
+  display: contents;
 }
 
 .system-runtime-label {
   color: var(--system-panel-text);
   font-size: var(--text-secondary);
   font-weight: var(--font-weight-medium);
+  white-space: nowrap;
 }
 
 .system-runtime-path {
+  grid-column: 1 / -1;
+  min-width: 0;
   overflow: hidden;
   color: var(--system-panel-muted);
   font-family: var(--font-mono);
@@ -127,8 +130,10 @@
 }
 
 .system-runtime-path-actions {
+  grid-column: 1 / -1;
   display: flex;
   align-items: center;
+  justify-content: flex-end;
   gap: 4px;
 }
 
@@ -200,23 +205,6 @@
 .system-path-feedback.is-error {
   background: var(--theme-danger-bg);
   color: var(--theme-danger-text);
-}
-
-@media (max-width: 1020px) {
-  .system-path-list {
-    grid-template-columns: minmax(0, 1fr);
-    gap: 0;
-  }
-
-  .system-path-row {
-    border-right: 0;
-    border-bottom: 1px solid var(--system-panel-border-soft);
-    padding-right: 0;
-  }
-
-  .system-path-row:last-child {
-    border-bottom: 0;
-  }
 }
 
 @media (prefers-reduced-motion: reduce) {

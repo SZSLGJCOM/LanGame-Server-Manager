@@ -17,6 +17,7 @@ fn scope() -> StartedScope {
 
 fn stopped() -> StopInstanceResult {
     StopInstanceResult {
+        outcome: app_core::StopInstanceOutcome::Stopped,
         summary: InstanceSummary {
             id: "test-instance".into(),
             module_id: "fixture".into(),
@@ -27,7 +28,7 @@ fn stopped() -> StopInstanceResult {
             port_count: 0,
             autostart: false,
         },
-        run_id: 11,
+        run_id: Some(11),
         session_id: Some("session-current".into()),
         pid: Some(101),
         log_path: None,
@@ -111,7 +112,7 @@ fn existing_stop_evidence_requires_exact_session_and_process_set() {
     for mutate in [
         (|result: &mut StopInstanceResult| result.session_id = Some("old-session".into()))
             as fn(&mut StopInstanceResult),
-        |result| result.run_id = 10,
+        |result| result.run_id = Some(10),
         |result| result.pid = Some(999),
         |result| result.summary.id = "another-instance".into(),
         |result| result.summary.module_id = "another-module".into(),

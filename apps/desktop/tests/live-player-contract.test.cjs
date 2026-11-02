@@ -88,7 +88,7 @@ test("TypeScript live-player unions mirror the Rust JSON vocabulary", () => {
   ]);
   assert.deepEqual(typeAliasValues("RuntimePlayerIdentityKind"), [
     "klei_user_id", "steam_id", "ark_account_id", "conan_user_id", "eos_id", "player_name", "session_id",
-    "palworld_user_id", "palworld_player_uid", "minecraft_uuid", "astroneer_guid", "enshrouded_account_id", "valheim_platform_id", "necesse_ban_id", "soulmask_account_id"
+    "palworld_user_id", "palworld_player_uid", "minecraft_uuid", "astroneer_guid", "enshrouded_account_id", "valheim_platform_id", "necesse_ban_id", "soulmask_account_id", "humanitz_net_id"
   ]);
   assert.deepEqual(typeAliasValues("RuntimeLivePlayerStatus"), [
     "ready",

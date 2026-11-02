@@ -98,6 +98,7 @@ function mountWorkbench(registration, options = {}) {
     // This hook-only fixture observes the selected live document, not the
     // separately retained IPC response. Browser fixtures verify its rendering.
     snapshot: () => states[6] ?? null,
+    diagnostic: () => states[10] ?? null,
     receive: (payload) => {
       const event = { instance_id: instanceId, log_path: logPath, lines: [],
         byte_offset: ++emittedByteOffset, emitted_at_unix_ms: 1, ...payload };

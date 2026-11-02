@@ -22,6 +22,8 @@ pub(super) enum SessionKind {
     SonsOfTheForest,
     Nightingale,
     Windrose,
+    Conan,
+    Rust,
 }
 
 impl SessionKind {
@@ -36,16 +38,20 @@ impl SessionKind {
             Self::SonsOfTheForest => ".sonsoftheforest-session.json",
             Self::Nightingale => ".nightingale-session.json",
             Self::Windrose => ".windrose-session.json",
+            Self::Conan => ".conan-startup.json",
+            Self::Rust => ".rust-startup.json",
         }
     }
 
     fn valid(self, state: &Checkpoint) -> bool {
-        if !matches!(self, Self::Dragonwilds)
-            && (state.native_process.is_some()
-                || state.fatal.is_some()
-                || !state.native_head.is_empty()
-                || state.native_latest_end.is_some()
-                || state.native_fatal_end.is_some())
+        if !matches!(
+            self,
+            Self::Dragonwilds | Self::Nightingale | Self::Conan | Self::Rust
+        ) && (state.native_process.is_some()
+            || state.fatal.is_some()
+            || !state.native_head.is_empty()
+            || state.native_latest_end.is_some()
+            || state.native_fatal_end.is_some())
         {
             return false;
         }
@@ -163,14 +169,38 @@ impl SessionKind {
                         .as_ref()
                         .is_none_or(|line| super::sonsoftheforest_health::event(line).is_some())
             }
-            Self::Nightingale => {
-                state.steam.is_none()
+            Self::Nightingale | Self::Conan | Self::Rust => {
+                let native_offsets_valid = if state.native_process.is_some() {
+                    state.latest.is_some() == state.native_latest_end.is_some()
+                        && state.fatal.is_some() == state.native_fatal_end.is_some()
+                        && [
+                            (state.latest.as_ref(), state.native_latest_end),
+                            (state.fatal.as_ref(), state.native_fatal_end),
+                        ]
+                        .into_iter()
+                        .all(|(line, end)| {
+                            end.is_none_or(|end| {
+                                end <= state.offset
+                                    && line.is_some_and(|line| end >= line.len() as u64)
+                            })
+                        })
+                } else {
+                    state.native_head.is_empty()
+                        && state.native_latest_end.is_none()
+                        && state.native_fatal_end.is_none()
+                };
+                native_offsets_valid
+                    && state.steam.is_none()
                     && state.online_session.is_none()
                     && state.engine_initialized.is_none()
                     && state
                         .latest
                         .as_ref()
-                        .is_none_or(|line| super::nightingale_health::event(line).is_some())
+                        .is_none_or(|line| self.native_transition_is_fatal(line) == Some(false))
+                    && state
+                        .fatal
+                        .as_deref()
+                        .is_none_or(|line| self.native_transition_is_fatal(line) == Some(true))
             }
             Self::Windrose => {
                 state.steam.is_none()
@@ -242,13 +272,39 @@ impl SessionKind {
                     state.latest = Some(line.into());
                 }
             }
-            Self::Nightingale if super::nightingale_health::event(line).is_some() => {
-                state.latest = Some(line.into())
+            Self::Nightingale | Self::Conan | Self::Rust => {
+                match self.native_transition_is_fatal(line) {
+                    Some(true) => state.fatal = Some(line.into()),
+                    Some(false) => state.latest = Some(line.into()),
+                    None => {}
+                }
             }
             Self::Windrose if super::windrose_health::windrose_native_stage(line).is_some() => {
                 state.latest = Some(line.into())
             }
             _ => {}
+        }
+    }
+
+    fn native_transition_is_fatal(self, line: &str) -> Option<bool> {
+        match self {
+            Self::Dragonwilds => super::dragonwilds_health::event(line)
+                .map(|event| matches!(event, super::dragonwilds_health::Event::Fatal)),
+            Self::Nightingale if super::nightingale_health::is_fatal(line) => Some(true),
+            Self::Nightingale => super::nightingale_health::event(line).map(|_| false),
+            Self::Conan | Self::Rust => {
+                let module = if matches!(self, Self::Conan) {
+                    "conanexiles"
+                } else {
+                    "rust"
+                };
+                if !crate::runtime_fatal_log_lines(module, &[line.to_owned()]).is_empty() {
+                    Some(true)
+                } else {
+                    super::startup_readiness::simple_ready_signal(module, line).then_some(false)
+                }
+            }
+            _ => None,
         }
     }
 }
@@ -320,6 +376,52 @@ pub(super) fn observe_dragonwilds(
         Some(process),
         shared_native,
     )
+}
+
+pub(super) fn observe_nightingale(
+    path: &Path,
+    run: &app_core::ActiveInstanceRun,
+) -> io::Result<Vec<String>> {
+    if run.log_path.as_deref().map(Path::new) == Some(path) {
+        return observe_with_process(SessionKind::Nightingale, path, run.run_id, None, false);
+    }
+    let Some(process) = super::nightingale_health::native_source_process(path, run) else {
+        return Ok(Vec::new());
+    };
+    observe_with_process(
+        SessionKind::Nightingale,
+        path,
+        run.run_id,
+        Some(process),
+        true,
+    )
+}
+
+/// A2S modules with a final world phase reuse the same bounded transcript
+/// observer. Conan's reused native file needs its current OS creation token;
+/// Rust's managed transcript must be exactly the recorded run's source.
+pub(super) fn observe_a2s_world(
+    module_id: &str,
+    path: &Path,
+    run: &app_core::ActiveInstanceRun,
+) -> io::Result<Vec<String>> {
+    let kind = match module_id {
+        "conanexiles" => SessionKind::Conan,
+        "rust" => SessionKind::Rust,
+        _ => return Err(io::Error::other("unsupported A2S world log contract")),
+    };
+    if run.log_path.as_deref().map(Path::new) == Some(path) {
+        return observe_with_process(kind, path, run.run_id, None, false);
+    }
+    if module_id == "rust" {
+        return Err(io::Error::other(
+            "Rust startup evidence requires its managed run transcript",
+        ));
+    }
+    let Some(process) = super::health_evidence::dragonwilds_primary(run) else {
+        return Ok(Vec::new());
+    };
+    observe_with_process(kind, path, run.run_id, Some(process), true)
 }
 
 fn observe_with_process(
@@ -576,19 +678,16 @@ fn advance(
                         || process.is_some_and(|process| {
                             super::ark_readiness::native_line_is_current(process, &line)
                                 || (super::ark_readiness::native_line_timestamp(&line).is_none()
-                                    && matches!(
-                                        super::dragonwilds_health::event(&line),
-                                        Some(super::dragonwilds_health::Event::Fatal)
-                                    ))
+                                    && kind.native_transition_is_fatal(&line) == Some(true))
                         });
                     if is_current {
                         kind.consume(state, &line);
-                        if matches!(kind, SessionKind::Dragonwilds) {
-                            match super::dragonwilds_health::event(&line) {
-                                Some(super::dragonwilds_health::Event::Fatal) => {
+                        if matches!(kind, SessionKind::Dragonwilds) || shared_native {
+                            match kind.native_transition_is_fatal(&line) {
+                                Some(true) => {
                                     state.native_fatal_end = Some(chunk_start + index as u64)
                                 }
-                                Some(_) => {
+                                Some(false) => {
                                     state.native_latest_end = Some(chunk_start + index as u64)
                                 }
                                 None => {}

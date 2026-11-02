@@ -279,3 +279,10 @@ port_names = ["game", "query"]
 [[runtime.port_roles]]
 role = "service"
 port_names = ["rcon"]
+
+[runtime.startup_readiness]
+timeout_ms = 600000
+
+[runtime.startup_readiness.probe]
+kind = "runtime_log"
+source = { kind = "managed" }

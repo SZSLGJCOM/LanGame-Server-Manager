@@ -118,6 +118,7 @@ function parseIdentityKind(value: string | null): RuntimePlayerIdentityKind | nu
     case "palworld_player_uid":
     case "necesse_ban_id":
     case "soulmask_account_id":
+    case "humanitz_net_id":
     case "minecraft_uuid":
     case "astroneer_guid":
     case "enshrouded_account_id":
@@ -204,7 +205,8 @@ function sampleEntries(context: MockLivePlayerContext): RuntimeLivePlayerEntry[]
     valheim_platform_id: ["Steam_76561198000000001", "Xbox_NativeAccount_A7"],
     player_name: ["HostAlice", "Bob"],
     necesse_ban_id: ["HostAlice", "Bob"],
-    soulmask_account_id: [`${"1".repeat(32)}|${"2".repeat(32)}`, `${"3".repeat(32)}|${"4".repeat(32)}`]
+    soulmask_account_id: [`${"1".repeat(32)}|${"2".repeat(32)}`, `${"3".repeat(32)}|${"4".repeat(32)}`],
+    humanitz_net_id: [`76561198000000001_+_|${"1".repeat(32)}`, `76561198000000002_+_|${"2".repeat(32)}`]
   };
   function sampleIdentities(index: 0 | 1): RuntimeLivePlayerEntry["identifiers"] {
     if (namesOnly) return [];

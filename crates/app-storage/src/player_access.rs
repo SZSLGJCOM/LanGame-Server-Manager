@@ -843,7 +843,7 @@ fn normalize_entry(
                 return Err(invalid_player_access_input(
                     module_id,
                     field_key,
-                    "enter the complete HumanitZ NetID (EpicAccountId|ProductUserId or |ProductUserId), with 32 hexadecimal digits per nonempty part; old Steam IDs can only be retained or removed",
+                    "enter the complete HumanitZ NetID (Steam64_+_|ProductUserId, EpicAccountId|ProductUserId or |ProductUserId); Steam64 requires 17 digits and each EOS ID requires 32 hexadecimal digits; old standalone Steam IDs can only be retained or removed",
                 ));
             }
             Ok(NormalizedEntry {
@@ -1704,18 +1704,21 @@ mod tests {
     fn humanitz_net_id_keeps_native_spelling_and_retired_ids_are_remove_only() {
         let schema = field_schema(json!({"type":"string","format":"textarea"}));
         let full = "0123456789abcdef0123456789ABCDEF|FEDCBA9876543210fedcba9876543210";
-        let entry = normalize_entry(
-            "humanitz",
-            "admin_steam_ids",
-            PlayerAccessCodec::HumanitzNetId,
-            &schema,
-            PlayerAccessMutationOperation::Add,
-            &json!(full),
-        )
-        .unwrap();
-        assert_eq!(entry.stored, json!(full));
-        assert_eq!(entry.canonical_identity, full);
-        assert_eq!(entry.live_target, full);
+        let steam_eos = "76561198000000001_+_|FEDCBA9876543210fedcba9876543210";
+        for target in [full, steam_eos] {
+            let entry = normalize_entry(
+                "humanitz",
+                "admin_steam_ids",
+                PlayerAccessCodec::HumanitzNetId,
+                &schema,
+                PlayerAccessMutationOperation::Add,
+                &json!(target),
+            )
+            .unwrap();
+            assert_eq!(entry.stored, json!(target));
+            assert_eq!(entry.canonical_identity, target);
+            assert_eq!(entry.live_target, target);
+        }
         let old = json!("76561198000000001");
         assert!(
             normalize_entry(

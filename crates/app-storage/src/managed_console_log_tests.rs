@@ -75,6 +75,36 @@ fn generated_segments_expire_in_order_and_the_surviving_offsets_remain_contiguou
 }
 
 #[test]
+fn startup_pages_share_the_live_readers_cumulative_positions_after_retention() {
+    let fixture = Fixture::new();
+    let writer = fixture.writer();
+    for index in 0..10 {
+        let line = format!("{index:02}{}\n", "x".repeat(61));
+        writer.write_all(line.as_bytes()).unwrap();
+    }
+    let tail =
+        crate::startup_sessions::read_log_page_aligned(&fixture.path(), None, 2, Some((640, 10)))
+            .unwrap();
+    assert_eq!(tail.retained_start_cursor, "384");
+    assert_eq!(tail.snapshot.total_lines, 10);
+    assert!(tail.snapshot.lines[0].starts_with("08"));
+    let older = crate::startup_sessions::read_log_page_aligned(
+        &fixture.path(),
+        tail.before_cursor.as_deref(),
+        2,
+        Some((640, 10)),
+    )
+    .unwrap();
+    assert_eq!(older.snapshot.total_lines, 8);
+    assert!(older.snapshot.lines[0].starts_with("06"));
+    assert!(older.before_cursor.is_none());
+    assert!(
+        crate::startup_sessions::read_log_page_aligned(&fixture.path(), None, 2, Some((128, 2)))
+            .is_err()
+    );
+}
+
+#[test]
 fn separate_opens_share_output_order_and_never_interleave_records() {
     let fixture = Fixture::new();
     let first = ManagedConsoleLog::open(fixture.path()).unwrap();

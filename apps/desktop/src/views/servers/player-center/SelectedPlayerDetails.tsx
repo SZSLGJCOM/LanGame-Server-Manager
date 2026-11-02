@@ -18,6 +18,7 @@ function identityLabel(kind: RuntimePlayerIdentityKind, locale: LocaleCode): str
     case "valheim_platform_id": return "Platform User ID";
     case "enshrouded_account_id": return selectLocaleText(locale, "原生 accountId", "Native accountId");
     case "eos_id": return "EOS ID";
+    case "humanitz_net_id": return "HumanitZ NetID";
     case "minecraft_uuid": return "Minecraft UUID";
     case "player_name": return selectLocaleText(locale, "玩家名称", "Player name");
     case "session_id": return selectLocaleText(locale, "会话 ID", "Session ID");

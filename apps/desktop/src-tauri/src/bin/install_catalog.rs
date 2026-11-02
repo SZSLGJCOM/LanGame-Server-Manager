@@ -522,6 +522,9 @@ async fn run_catalog() -> Result<(), Box<dyn Error>> {
             },
             ModuleInstallCallbacks {
                 on_progress: |update: app_steamcmd::InstallProgressUpdate| {
+                    if update.is_raw_output() {
+                        return;
+                    }
                     emit(json!({"event":"progress", "module_id":id,
                 "percent":update.progress_percent, "detail":update.detail}));
                 },

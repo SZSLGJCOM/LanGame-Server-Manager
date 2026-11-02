@@ -1,9 +1,17 @@
-use std::collections::HashMap;
+use crate::runtime_log_stream::document::{ConsoleSourceDocument, ConsoleStreamUpdate};
+use crate::runtime_log_stream::document_patch::NativeLogDocument;
+use std::collections::{HashMap, VecDeque};
+
+#[path = "runtime_game_documents.rs"]
+mod game_documents;
 
 #[derive(Debug, Default)]
 pub struct RuntimeLogStreams {
     active: HashMap<(String, String), StreamEntry>,
     next_generation: u64,
+    last_console_epoch: u128,
+    completed_documents: VecDeque<(String, ConsoleSourceDocument)>,
+    completed_native_documents: VecDeque<((String, String), NativeLogDocument)>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -16,6 +24,8 @@ struct StreamEntry {
     lease: RuntimeLogStreamLease,
     producer_finished: bool,
     owner: Option<(String, RuntimeLogStreamLease)>,
+    document: Option<ConsoleSourceDocument>,
+    native_document: Option<NativeLogDocument>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -39,6 +49,8 @@ impl RuntimeLogStreams {
         let lease = RuntimeLogStreamLease {
             generation: self.next_generation,
         };
+        self.completed_documents
+            .retain(|(id, document)| stream_key(id, &document.log_path) != key);
         // A replacement run may use a different filename. Retire completed
         // streams before its first event; active sibling shards keep their leases.
         self.active
@@ -49,6 +61,8 @@ impl RuntimeLogStreams {
                 lease,
                 producer_finished: false,
                 owner: None,
+                document: None,
+                native_document: None,
             },
         );
         Some(lease)
@@ -84,15 +98,181 @@ impl RuntimeLogStreams {
         let lease = RuntimeLogStreamLease {
             generation: self.next_generation,
         };
+        self.completed_native_documents
+            .retain(|(stored_key, _)| *stored_key != key);
         self.active.insert(
             key,
             StreamEntry {
                 lease,
                 producer_finished: false,
                 owner: Some(owner),
+                document: None,
+                native_document: None,
             },
         );
         Some(lease)
+    }
+
+    pub(crate) fn begin_console_document(
+        &mut self,
+        instance_id: &str,
+        log_path: &str,
+        lease: RuntimeLogStreamLease,
+        process_key: Option<&str>,
+        display_name: Option<&str>,
+        run_id: Option<i64>,
+    ) {
+        if !self.is_active(instance_id, log_path, lease) {
+            return;
+        }
+        let epoch = self.next_console_epoch();
+        if let Some(entry) = self.active.get_mut(&stream_key(instance_id, log_path)) {
+            entry.document = Some(ConsoleSourceDocument::new(
+                log_path,
+                process_key,
+                display_name,
+                run_id,
+                epoch,
+            ));
+        }
+    }
+
+    pub(crate) fn invalidate_console_document(
+        &mut self,
+        instance_id: &str,
+        log_path: &str,
+        lease: RuntimeLogStreamLease,
+    ) {
+        if let Some(entry) = self.active.get_mut(&stream_key(instance_id, log_path))
+            && entry.lease == lease
+            && let Some(document) = &mut entry.document
+        {
+            document.requires_readback = true;
+        }
+    }
+
+    fn next_console_epoch(&mut self) -> u128 {
+        let now = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map_or(0, |time| time.as_millis());
+        self.last_console_epoch = now.max(self.last_console_epoch + 1);
+        self.last_console_epoch
+    }
+
+    pub(crate) fn publish_console_document(
+        &mut self,
+        instance_id: &str,
+        log_path: &str,
+        lease: RuntimeLogStreamLease,
+        lines: &[String],
+        partial_lines: Vec<String>,
+        reset: bool,
+    ) -> Option<ConsoleStreamUpdate> {
+        if !self.is_active(instance_id, log_path, lease) {
+            return None;
+        }
+        let epoch = if reset { self.next_console_epoch() } else { 0 };
+        self.active
+            .get_mut(&stream_key(instance_id, log_path))?
+            .document
+            .as_mut()
+            .map(|document| document.publish(lines, partial_lines, reset, epoch))
+    }
+
+    /// The same mutex guards publication and readback, so every returned cursor
+    /// identifies exactly the rows in its document, including its mutable tail.
+    pub(crate) fn set_console_offset(
+        &mut self,
+        instance_id: &str,
+        log_path: &str,
+        lease: RuntimeLogStreamLease,
+        byte_offset: u64,
+    ) {
+        if let Some(entry) = self.active.get_mut(&stream_key(instance_id, log_path))
+            && entry.lease == lease
+            && let Some(document) = &mut entry.document
+        {
+            document.reader_byte_offset = byte_offset;
+        }
+    }
+
+    pub(crate) fn console_documents(
+        &mut self,
+        instance_id: &str,
+        log_path: Option<&str>,
+        max_lines: usize,
+        since: Option<u128>,
+    ) -> Vec<ConsoleSourceDocument> {
+        let selected = log_path.map(|path| stream_key(instance_id, path).1);
+        let mut documents = Vec::new();
+        for (id, document) in self
+            .active
+            .iter_mut()
+            .filter_map(|((id, _), entry)| {
+                entry
+                    .document
+                    .as_mut()
+                    .map(|document| (id.as_str(), document))
+            })
+            .chain(
+                self.completed_documents
+                    .iter_mut()
+                    .map(|(id, document)| (id.as_str(), document)),
+            )
+        {
+            if id != instance_id
+                || selected
+                    .as_ref()
+                    .is_some_and(|path| *path != stream_key(id, &document.log_path).1)
+                || since.is_some_and(|since| document.started_at_unix_ms < since)
+            {
+                continue;
+            }
+            // Filtering precedes file I/O. An old failed run must not be read
+            // or published into a newly reserved startup's source collection.
+            document.refresh_readback();
+            let mut snapshot = document.clone();
+            let discard = snapshot.lines.len().saturating_sub(max_lines.clamp(1, 400));
+            if discard > 0 {
+                snapshot.lines.drain(..discard);
+                snapshot.truncated = true;
+            }
+            documents.push(snapshot);
+        }
+        self.trim_completed_console_documents();
+        documents.sort_by_key(|document| document.started_at_unix_ms);
+        documents
+    }
+
+    fn trim_completed_console_documents(&mut self) {
+        let document_bytes = |document: &ConsoleSourceDocument| {
+            document
+                .lines
+                .iter()
+                .chain(&document.partial_lines)
+                .map(String::len)
+                .sum::<usize>()
+                + document.read_error.as_ref().map_or(0, String::len)
+        };
+        let mut bytes: usize = self
+            .completed_documents
+            .iter()
+            .map(|(_, document)| document_bytes(document))
+            .sum();
+        while self.completed_documents.len() > 128 || bytes > 32 * 1024 * 1024 {
+            if let Some((_, document)) = self.completed_documents.pop_front() {
+                bytes -= document_bytes(&document);
+            }
+        }
+    }
+
+    pub(crate) fn invalidate_completed_console_path(&mut self, instance_id: &str, log_path: &str) {
+        let key = stream_key(instance_id, log_path);
+        for (id, document) in &mut self.completed_documents {
+            if stream_key(id, &document.log_path) == key {
+                document.requires_readback = true;
+            }
+        }
     }
 
     pub fn release(
@@ -105,7 +285,19 @@ impl RuntimeLogStreams {
             return false;
         }
         let key = stream_key(instance_id, log_path);
-        self.active.remove(&key);
+        let mut released = self.active.remove(&key);
+        if let Some(document) = released
+            .as_mut()
+            .and_then(|entry| entry.native_document.take())
+        {
+            self.retain_native_document(key.clone(), document);
+        }
+        if let Some(document) = released.and_then(|entry| entry.document) {
+            self.completed_documents
+                .push_back((instance_id.into(), document));
+            // Keep failed-source metadata for disk recovery after EOF too.
+            self.trim_completed_console_documents();
+        }
         // Finished children own their final drain; an unexpectedly ended parent
         // cannot leave an active native watcher behind.
         self.active.retain(|(id, _), entry| {
@@ -118,11 +310,16 @@ impl RuntimeLogStreams {
 
     pub fn release_instance(&mut self, instance_id: &str) {
         self.active.retain(|(id, _), _| id != instance_id);
+        self.completed_documents.retain(|(id, _)| id != instance_id);
+        self.completed_native_documents
+            .retain(|((id, _), _)| id != instance_id);
     }
 
     pub fn release_path(&mut self, instance_id: &str, log_path: &str) {
         let key = stream_key(instance_id, log_path);
         self.active.remove(&key);
+        self.completed_native_documents
+            .retain(|(stored_key, _)| *stored_key != key);
         self.active.retain(|(id, _), entry| {
             id != instance_id || entry.owner.as_ref().is_none_or(|(path, _)| *path != key.1)
         });
@@ -184,6 +381,10 @@ fn stream_key(instance_id: &str, log_path: &str) -> (String, String) {
         log_path.replace('\\', "/").to_ascii_lowercase(),
     )
 }
+
+#[cfg(test)]
+#[path = "runtime_console_documents_tests.rs"]
+mod document_tests;
 
 #[cfg(test)]
 mod tests {

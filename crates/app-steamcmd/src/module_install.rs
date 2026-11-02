@@ -715,7 +715,7 @@ where
 fn with_retry_context(mut update: InstallProgressUpdate, retry: usize) -> InstallProgressUpdate {
     // Keep the real attempt visible after the brief backoff message has passed.
     // This context belongs to the operation, not to either native output stream.
-    if retry > 0 {
+    if retry > 0 && !update.is_raw_output() {
         update.detail = format!("Retry {retry}: {}", update.detail);
     }
     update

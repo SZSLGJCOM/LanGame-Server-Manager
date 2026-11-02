@@ -30,9 +30,10 @@ interface SteamCmdActivityProps {
   onStop?: () => void;
   stopPending?: boolean;
   stopError?: string | null;
+  onDismiss?: () => void;
 }
 
-export function SteamCmdActivity({ snapshot, message, locale, t, onStop, stopPending, stopError }: SteamCmdActivityProps) {
+export function SteamCmdActivity({ snapshot, message, locale, t, onStop, stopPending, stopError, onDismiss }: SteamCmdActivityProps) {
   const { extraSeconds, elapsedSeconds: elapsed, bytesPerSecond: rate } = useDownloadMetrics(snapshot);
   const phase = t(`steamcmd.prepare.${snapshot.phase}`);
   const percent = steamCmdDownloadPercent(snapshot);
@@ -63,6 +64,7 @@ export function SteamCmdActivity({ snapshot, message, locale, t, onStop, stopPen
     <ActivityProgress label={snapshot.cancelled ? t("steamcmd.cancelled") : stopping ? t("steamcmd.stopping") : error ? t("steamcmd.failed") : phase} detail={statusDetail} title={title}
       active={snapshot.active} error={Boolean(error)} percent={percent} transfer={transfer}
       onStop={snapshot.cancellable ? onStop : undefined} stopRequested={Boolean(stopping)} stopLabel={t(stopping ? "installation.stopping" : "installation.stop")}
+      onDismiss={onDismiss} dismissLabel={t("servers.mods.closeToast", undefined, "Close")}
       speed={speed} speedTitle={speedTitle} speedLabel={t("steamcmd.speed")} elapsedLabel={elapsedLabel} />
   );
 }

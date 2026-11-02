@@ -155,6 +155,18 @@ for (const moduleId of ["humanitz", "squad"]) {
     assert.equal(counted.current_players, listed.entries.length);
     assert.equal(counted.current_players, listed.current_players);
     assert.equal(counted.current_players, 2);
+    if (moduleId === "humanitz") {
+      assert.equal(module.runtime.player_list.identity_kind, "humanitz_net_id");
+      assert.deepEqual(module.runtime.player_list.player_action_ids, ["kick_player"]);
+      assert.equal(module.runtime.player_actions.find((action) => action.id === "list_online_players").command_template, "Players");
+      for (const player of listed.entries) {
+        assert.deepEqual(player.available_action_ids, ["kick_player"]);
+        assert.equal(player.identifiers.length, 1);
+        assert.equal(player.identifiers[0].kind, "humanitz_net_id");
+        assert.equal(player.identifiers[0].stable, true);
+        assert.match(player.identifiers[0].value, /^[0-9]{17}_\+_\|[0-9a-f]{32}$/i);
+      }
+    }
     await readCount();
     assert.equal((await invokeMock("read_instance_live_players", { instanceId })).snapshot_id, listed.snapshot_id,
       "Reading counts must not invalidate an already-current player action snapshot");

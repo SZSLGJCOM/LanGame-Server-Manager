@@ -160,13 +160,13 @@ async function run() {
   check(calls.slice(cancelledCalls).every(call => call.shard === "volcano"), "Cancelled follow must stop candidate scans");
 
   await act(async () => {
-    const zoom = element<HTMLSelectElement>("select.dst-map-zoom");
+    const zoom = element<HTMLSelectElement>("select.map-zoom-select");
     Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, "value")!.set!.call(zoom, "2");
     zoom.dispatchEvent(new Event("change", { bubbles: true }));
   });
   await act(async () => element(".dst-map-viewport").dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowRight", bubbles: true, cancelable: true })));
   const savedCenter = center();
-  check(element<HTMLSelectElement>("select.dst-map-zoom").value === "2", "The camera must record explicit zoom");
+  check(element<HTMLSelectElement>("select.map-zoom-select").value === "2", "The camera must record explicit zoom");
   await render(false);
   await wait(() => !fixture.querySelector("canvas"), "Leaving the map must unmount it");
   let saved = await readDstMapCache(details.summary.id, "volcano");
@@ -180,7 +180,7 @@ async function run() {
   await render();
   await loaded();
   check(selectedShard() === "volcano", "Returning must restore the user's selected shard");
-  check(element<HTMLSelectElement>("select.dst-map-zoom").value === "2", "Returning to a cached shard must restore zoom before the server responds");
+  check(element<HTMLSelectElement>("select.map-zoom-select").value === "2", "Returning to a cached shard must restore zoom before the server responds");
   check(Math.abs(center().x - savedCenter.x) < .1, "Returning must restore the cached center");
   hold = false;
   await act(async () => { for (const request of pending.splice(0)) request.resolve(packet(request.input)); });

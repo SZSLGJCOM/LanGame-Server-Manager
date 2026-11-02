@@ -93,7 +93,7 @@ const OBJECT_IDENTITY_KEYS = [
 const MINECRAFT_UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const MINECRAFT_COMPACT_UUID_PATTERN = /^[0-9a-f]{32}$/i;
 const MINECRAFT_PLAYER_NAME_PATTERN = /^[A-Za-z0-9_]{1,16}$/;
-const HUMANITZ_NET_ID_PATTERN = /^(?:[0-9a-fA-F]{32})?\|[0-9a-fA-F]{32}$/;
+const HUMANITZ_NET_ID_PATTERN = /^(?:[0-9a-fA-F]{32}|[0-9]{17}_\+_)?\|[0-9a-fA-F]{32}$/;
 export function isHumanitzNetId(value: string): boolean {
   return HUMANITZ_NET_ID_PATTERN.test(value) && !Array.from(value).some((character) => UNICODE_CONTROL_PATTERN.test(character));
 }

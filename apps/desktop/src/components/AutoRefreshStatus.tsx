@@ -1,5 +1,6 @@
 import { formatDateTime, useI18n, type LocaleCode } from "../i18n";
 import type { RuntimeRefreshIssue } from "../app-state";
+import { ShellIcon } from "./ShellIcon";
 
 interface AutoRefreshStatusProps {
   intervalMs: number;
@@ -7,6 +8,7 @@ interface AutoRefreshStatusProps {
   paused: boolean;
   failureLimit: number;
   onResume: () => void;
+  onDismiss?: () => void;
 }
 
 function formatRefreshTime(locale: LocaleCode, timestamp: number): string {
@@ -53,6 +55,10 @@ export function AutoRefreshStatus(props: AutoRefreshStatusProps) {
           {t("autoRefresh.resume")}
         </button>
       ) : null}
+      {props.issue && props.onDismiss ? <button type="button" className="shell-activity-notice-close"
+        onClick={props.onDismiss} aria-label={t("servers.mods.closeToast", undefined, "Close")}>
+        <ShellIcon name="x" />
+      </button> : null}
     </div>
   );
 }

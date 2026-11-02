@@ -1,6 +1,6 @@
 use super::{
-    DesktopState, StorageContextOperationGuard, StorageContextOperationLease,
-    StorageContextShutdownGuard,
+    ActiveStorageOperation, DesktopState, StorageContextOperationGuard,
+    StorageContextOperationLease, StorageContextShutdownGuard, StorageOperationScope,
 };
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -49,10 +49,11 @@ impl DesktopState {
                     let cancellation = Arc::new(AtomicBool::new(false));
                     coordinator.active_operations.insert(
                         operation_id,
-                        (
-                            "application server shutdown".into(),
-                            Arc::clone(&cancellation),
-                        ),
+                        ActiveStorageOperation {
+                            name: "application server shutdown".into(),
+                            scope: StorageOperationScope::MigratablePaths,
+                            cancellation: Arc::clone(&cancellation),
+                        },
                     );
                     return Ok(StorageContextOperationGuard {
                         _lease: Arc::new(StorageContextOperationLease {
@@ -91,9 +92,9 @@ impl DesktopState {
                     .lock()
                     .map_err(|_| String::from("storage context coordinator lock poisoned"))?;
                 let mut names = Vec::new();
-                for (name, cancellation) in coordinator.active_operations.values() {
-                    cancellation.store(true, Ordering::SeqCst);
-                    names.push(name.clone());
+                for operation in coordinator.active_operations.values() {
+                    operation.cancellation.store(true, Ordering::SeqCst);
+                    names.push(operation.name.clone());
                 }
                 if coordinator.transition_in_progress {
                     names.push(String::from("application path update"));

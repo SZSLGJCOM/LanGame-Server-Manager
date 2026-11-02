@@ -449,14 +449,14 @@ test("DST GM prefab picker uses a compact custom chooser instead of a giant nati
 
 test("DST item spawn panel pins its options in the GM tool grid", () => {
   const source = fs.readFileSync(path.join(desktopRoot, "src", "views", "servers", "DstItemSpawnPanel.tsx"), "utf8");
-  const css = fs.readFileSync(path.join(desktopRoot, "src", "views", "servers", "dst-world-map.css"), "utf8");
+  const css = fs.readFileSync(path.join(desktopRoot, "src", "views", "servers", "gm-tool-controls.css"), "utf8");
   const giveTool = getGmToolCatalog("dontstarve")?.tools.find((tool) => tool.id === "dst_give_item_to_player");
 
   assert.deepEqual(giveTool?.fields.map((field) => field.key).slice(0, 3), ["shard", "playerId", "amount"]);
   assert.match(source, /getInitialGmToolValues\(tool\)/);
   assert.match(source, /<DstPrefabCategories /);
   assert.match(source, /className="primary-button dst-gm-tool dst-gm-send"/);
-  assert.match(css, /\.primary-button\.dst-gm-tool, \.dst-gm-amount \{[^}]*height: 46px/);
+  assert.match(css, /\.primary-button\.dst-gm-tool,[^{]*\.ark-spawn-setting \{[^}]*height: 46px/);
   assert.doesNotMatch(css, /dst-gm-spawn-row|dst-gm-check/);
 });
 

@@ -29,7 +29,7 @@ fn graceful_spawn_probe() {
     if role == "detached" {
         assert_ne!(unsafe { FreeConsole() }, 0);
     }
-    if role == "parent" {
+    if matches!(role.as_str(), "parent" | "starting") {
         let child = Command::new(std::env::current_exe().unwrap())
             .args(["--exact", PROBE, "--ignored", "--nocapture"])
             .env(ROLE, "leaf")
@@ -141,7 +141,7 @@ impl Fixture {
             ),
             "native fixture ready"
         );
-        if role == "parent" {
+        if matches!(role, "parent" | "starting") {
             let pid = fs::read_to_string(fixture.root.join("leaf.pid"))
                 .unwrap()
                 .parse()
@@ -334,4 +334,160 @@ fn graceful_spawn_missing_job_is_unknown_and_cannot_signal_or_finalize() {
     };
     native.job = Some(job);
     fixture.assert_retained();
+}
+
+#[test]
+fn force_spawn_cancellation_ends_unready_root_and_descendant_without_interrupt() {
+    // These probes have only acknowledged fixture setup. Neither advertises a
+    // game-ready marker or cooperates with Ctrl-C while startup is in progress.
+    let mut fixture = Fixture::new("starting");
+    let started = Instant::now();
+    assert_eq!(
+        force_stop_spawned_process(&mut fixture.spawned).unwrap(),
+        Some(1)
+    );
+    assert!(
+        started.elapsed() < Duration::from_secs(10),
+        "must bypass the 20-second console wait"
+    );
+    assert!(fixture.root_handle.wait_for_exit(0).unwrap());
+    assert!(
+        fixture
+            .leaf_handle
+            .as_ref()
+            .unwrap()
+            .wait_for_exit(0)
+            .unwrap()
+    );
+    assert!(!fixture.root.join("starting.interrupts").exists());
+    assert!(!fixture.root.join("leaf.interrupts").exists());
+    assert!(fixture.spawned.child.is_none() && fixture.spawned.hidden_desktop.is_none());
+}
+
+#[test]
+fn force_spawn_cancellation_finishes_descendants_after_the_root_exited() {
+    let mut fixture = Fixture::new("starting");
+    fixture.root_handle.terminate().unwrap();
+    assert!(fixture.root_handle.wait_for_exit(5000).unwrap());
+    let leaf = fixture.leaf_handle.as_ref().unwrap();
+    assert!(leaf.is_running().unwrap());
+    fixture.spawned.pid = leaf.pid;
+    fixture.spawned.process_identity = leaf.identity().unwrap();
+    assert_eq!(
+        force_stop_spawned_process(&mut fixture.spawned).unwrap(),
+        Some(1)
+    );
+    assert!(leaf.wait_for_exit(0).unwrap());
+    assert!(!fixture.root.join("starting.interrupts").exists());
+    assert!(!fixture.root.join("leaf.interrupts").exists());
+    assert!(fixture.spawned.child.is_none() && fixture.spawned.hidden_desktop.is_none());
+}
+
+#[test]
+fn force_spawn_cancellation_failure_retains_the_full_tree_for_retry() {
+    let mut fixture = Fixture::new("starting");
+    let RuntimeChild::Windows(native) = fixture.spawned.child.as_mut().unwrap() else {
+        panic!("native owner");
+    };
+    let full_access =
+        windows_process_job::restrict_job_to_query_for_test(native.job.as_mut().unwrap()).unwrap();
+    let result = force_stop_spawned_process(&mut fixture.spawned);
+    assert!(
+        matches!(result, Err(RuntimeProcessError::WaitTrackedProcess { source, .. }) if source.raw_os_error() == Some(5))
+    );
+    assert!(fixture.root_handle.is_running().unwrap());
+    assert!(fixture.leaf_handle.as_ref().unwrap().is_running().unwrap());
+    assert!(!fixture.root.join("starting.interrupts").exists());
+    fixture.assert_retained();
+    let RuntimeChild::Windows(native) = fixture.spawned.child.as_mut().unwrap() else {
+        panic!("native owner retained");
+    };
+    native.job = Some(full_access);
+    force_stop_spawned_process(&mut fixture.spawned).unwrap();
+    assert!(fixture.root_handle.wait_for_exit(0).unwrap());
+    assert!(
+        fixture
+            .leaf_handle
+            .as_ref()
+            .unwrap()
+            .wait_for_exit(0)
+            .unwrap()
+    );
+}
+
+#[test]
+fn force_spawn_cancellation_cannot_finalize_without_the_tree_owner() {
+    let mut fixture = Fixture::new("starting");
+    let RuntimeChild::Windows(native) = fixture.spawned.child.as_mut().unwrap() else {
+        panic!("native owner");
+    };
+    let job = native.job.take().unwrap();
+    let result = force_stop_spawned_process(&mut fixture.spawned);
+    assert!(
+        matches!(result, Err(RuntimeProcessError::WaitTrackedProcess { source, .. }) if source.kind() == std::io::ErrorKind::Unsupported)
+    );
+    assert!(fixture.root_handle.is_running().unwrap());
+    assert!(fixture.leaf_handle.as_ref().unwrap().is_running().unwrap());
+    assert!(!fixture.root.join("starting.interrupts").exists());
+    assert!(fixture.spawned.hidden_desktop.is_some());
+    let RuntimeChild::Windows(native) = fixture.spawned.child.as_mut().unwrap() else {
+        panic!("native owner retained");
+    };
+    native.job = Some(job);
+    fixture.assert_retained();
+}
+
+#[test]
+fn force_spawn_cancellation_keeps_ownership_when_the_original_handle_cannot_be_waited() {
+    let mut fixture = Fixture::new("starting");
+    let RuntimeChild::Windows(native) = fixture.spawned.child.as_mut().unwrap() else {
+        panic!("native owner");
+    };
+    let mut restricted = std::ptr::null_mut();
+    let current = unsafe { GetCurrentProcess() };
+    // Pin the same original process with query-only access. Job termination can
+    // succeed, but waiting this handle must fail until the caller restores it.
+    assert_ne!(
+        unsafe {
+            DuplicateHandle(
+                current,
+                native.process_handle as *mut _,
+                current,
+                &mut restricted,
+                PROCESS_QUERY_LIMITED_INFORMATION,
+                0,
+                0,
+            )
+        },
+        0
+    );
+    let original = OwnedWindowsHandle::new(std::mem::replace(
+        &mut native.process_handle,
+        restricted as usize,
+    ) as *mut _);
+    let result = force_stop_spawned_process(&mut fixture.spawned);
+    assert!(
+        matches!(result, Err(RuntimeProcessError::WaitTrackedProcess { source, .. }) if source.raw_os_error() == Some(5))
+    );
+    assert!(fixture.root_handle.wait_for_exit(0).unwrap());
+    assert!(
+        fixture
+            .leaf_handle
+            .as_ref()
+            .unwrap()
+            .wait_for_exit(0)
+            .unwrap()
+    );
+    assert!(fixture.spawned.hidden_desktop.is_some());
+    let RuntimeChild::Windows(native) = fixture.spawned.child.as_mut().unwrap() else {
+        panic!("native owner retained after failed exit confirmation");
+    };
+    assert!(native.job.is_some());
+    let restricted = OwnedWindowsHandle::new(std::mem::replace(
+        &mut native.process_handle,
+        original.into_raw() as usize,
+    ) as *mut _);
+    drop(restricted);
+    force_stop_spawned_process(&mut fixture.spawned).unwrap();
+    assert!(fixture.spawned.child.is_none() && fixture.spawned.hidden_desktop.is_none());
 }

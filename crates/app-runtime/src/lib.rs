@@ -35,6 +35,8 @@ pub use elevated_launcher::{
     request_elevated_firewall, run_elevated_firewall_if_requested,
     run_elevated_launcher_if_requested,
 };
+mod console_live_output;
+pub use console_live_output::{LiveConsolePreview, with_live_console_preview};
 mod interactive_console;
 mod runtime_launch;
 pub use interactive_console::EphemeralConsole;
@@ -55,6 +57,7 @@ pub use windows_runtime_requirements::{
 };
 #[cfg(all(test, windows))]
 mod windows_resource_limits_tests;
+pub use spawned_process_lifecycle::force_stop_spawned_process;
 pub use spawned_process_lifecycle::{
     stabilize_spawned_process, stop_spawned_process, stop_spawned_process_gracefully,
     stop_spawned_unreal_process_gracefully,

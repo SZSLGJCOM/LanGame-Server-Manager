@@ -228,7 +228,7 @@ async function run() {
   };
   function Harness() {
     const { t } = useI18n();
-    return <AppShell {...shellProps} activityText={resolveUiMessage(t, activity)} activityTone={activity.tone}>
+    return <AppShell {...shellProps} activityText={resolveUiMessage(t, activity)} activityMessage={activity} activityTone={activity.tone}>
       {showCreationForm ? <div style={{ width: 380 }}><LibraryServerActions {...createProps} creating={creating} /></div>
         : <ServersView {...viewProps} />}
       {localNotices.map((notice) => <ActivityNotice key={notice.id} tone={notice.tone} details={notice.details}
@@ -281,6 +281,15 @@ async function run() {
   activity = warningMessage;
   await act(async () => { render(); });
   unchanged(baseline, "warning feedback"); await feedbackInsideFooter(warningMessage.fallback!); scenarios++;
+
+  await pressEnter(element<HTMLButtonElement>(".shell-activity-feedback .shell-activity-notice-close"));
+  await act(async () => { render(); });
+  check(!fixture.querySelector(".shell-activity-feedback"), "Dismissed operation warning returned on a normal rerender");
+  activity = { ...warningMessage };
+  await act(async () => { render(); });
+  await feedbackInsideFooter(warningMessage.fallback!);
+  check(fixture.querySelector(".shell-activity-feedback .shell-activity-notice-close"), "Repeated warning from a new operation lost its close button");
+  unchanged(baseline, "dismissed and repeated operation warning"); scenarios++;
 
   activity = { key: "fixture.activity.error", fallback: startupError, tone: "error" };
   shellProps.runtimeRefreshIssue = issue; shellProps.runtimeAutoRefreshPaused = true; viewProps.refreshIssue = issue;
@@ -458,6 +467,43 @@ async function run() {
     "A task-only failure must expose its complete diagnosis");
   await closeMessages();
   unchanged(baseline, "task-only failure details"); scenarios++;
+
+  check(!fixture.querySelector(".shell-task-activity.is-active .shell-activity-notice-close"), "Running tasks must not expose notification dismissal");
+  await pressEnter(element<HTMLButtonElement>(".shell-task-activity .shell-activity-notice-close"));
+  await act(async () => { render(); });
+  check(!fixture.querySelector(".shell-task-activity, .shell-activity-feedback"), "Closing SteamCMD failure left the error or its duplicate feedback visible");
+  shellProps.steamCmdProgress = { ...steamCmd, operation_id: "fixture-steamcmd-next" };
+  await act(async () => { render(); });
+  check(fixture.querySelector(".shell-task-activity.is-active"), "A later SteamCMD operation stayed hidden");
+  check(!fixture.querySelector(".shell-task-activity .shell-activity-notice-close"), "Active SteamCMD operation can be hidden");
+  shellProps.steamCmdProgress = { ...shellProps.steamCmdProgress, active: false, error: taskFailure };
+  await act(async () => { render(); });
+  check(fixture.querySelector(".shell-task-activity .shell-activity-notice-close"), "A new failed operation cannot be dismissed");
+  await pressEnter(element<HTMLButtonElement>(".shell-task-activity .shell-activity-notice-close"));
+  unchanged(baseline, "SteamCMD outcome dismissal and new operation"); scenarios++;
+
+  activity = { key: "fixture.dismiss.error", fallback: "DISMISS_OPERATION_ERROR", tone: "error" };
+  shellProps.steamCmdProgress = null;
+  shellProps.runtimeRefreshIssue = issue;
+  await act(async () => { render(); });
+  await selectActivity(".shell-activity-feedback", "DISMISS_OPERATION_ERROR");
+  await pressEnter(element<HTMLButtonElement>(".shell-activity-feedback .shell-activity-notice-close"));
+  await refreshInsideFooter();
+  await pressEnter(element<HTMLButtonElement>(".auto-refresh-status .shell-activity-notice-close"));
+  shellProps.runtimeRefreshIssue = { ...issue, failedAt: issue.failedAt + 5000, consecutiveFailures: 2 };
+  await act(async () => { render(); });
+  check(!fixture.querySelector(".auto-refresh-status, .shell-activity-feedback"), "Polling resurrected an acknowledged error");
+  shellProps.runtimeAutoRefreshPaused = true;
+  await act(async () => { render(); });
+  check(!fixture.querySelector(".auto-refresh-status-alert-message"), "Paused refresh restored the dismissed diagnosis");
+  check(fixture.querySelector(".auto-refresh-status-resume"), "Dismissing the diagnosis hid the required resume action");
+  shellProps.runtimeRefreshIssue = null; shellProps.runtimeAutoRefreshPaused = false;
+  await act(async () => { render(); });
+  shellProps.runtimeRefreshIssue = issue;
+  await act(async () => { render(); });
+  await refreshInsideFooter();
+  await pressEnter(element<HTMLButtonElement>(".auto-refresh-status .shell-activity-notice-close"));
+  unchanged(baseline, "refresh warning acknowledgement and recovery"); scenarios++;
   check(errors.length === 0, `Unexpected browser errors: ${errors.join("; ")}`);
   const finalServerBounds = bounds();
   shellProps.jobs = []; shellProps.steamCmdProgress = null; shellProps.runtimeRefreshIssue = null; shellProps.runtimeAutoRefreshPaused = false;

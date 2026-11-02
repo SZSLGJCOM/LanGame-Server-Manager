@@ -59,6 +59,6 @@ export function manualPlayerActionTargetError(
   if (moduleId !== "humanitz" || !["kick_player", "ban_player", "unban_player"].includes(action.id)
     || isHumanitzNetId(target)) return null;
   return locale === "zh-CN"
-    ? "请输入完整 NetID：EpicAccountId|ProductUserId 或 |ProductUserId，每个非空部分均为 32 位十六进制。短 ID、Steam64 ID 和玩家名不能用于该操作。"
-    : "Enter the complete NetID: EpicAccountId|ProductUserId or |ProductUserId, with 32 hexadecimal digits per nonempty part. Short IDs, Steam64 IDs and player names cannot target this action.";
+    ? "请输入完整 NetID：Steam64_+_|ProductUserId、EpicAccountId|ProductUserId 或 |ProductUserId。Steam64 为 17 位数字，EpicAccountId 和 ProductUserId 为 32 位十六进制。单独的 Steam64 ID、短 ID 和玩家名不能用于该操作。"
+    : "Enter the complete NetID: Steam64_+_|ProductUserId, EpicAccountId|ProductUserId or |ProductUserId. Steam64 has 17 digits; EpicAccountId and ProductUserId have 32 hexadecimal digits. A standalone Steam64 ID, short ID or player name cannot target this action.";
 }

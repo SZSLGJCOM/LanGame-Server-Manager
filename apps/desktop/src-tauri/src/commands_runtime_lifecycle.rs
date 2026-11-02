@@ -20,6 +20,19 @@ pub(super) mod rust_shutdown;
 mod shutdown_batch;
 #[path = "commands_shutdown_wait.rs"]
 mod shutdown_wait;
+#[path = "commands_runtime_start_cleanup.rs"]
+mod startup_cleanup;
+#[path = "commands_startup_log_cursor.rs"]
+mod startup_log_cursor;
+#[path = "commands_startup_palworld.rs"]
+mod startup_palworld;
+#[path = "commands_startup_probe.rs"]
+mod startup_probe;
+#[path = "commands_startup_readiness.rs"]
+mod startup_readiness;
+#[path = "commands_startup_sources.rs"]
+mod startup_sources;
+use super::commands_native_status_readiness as startup_status;
 #[path = "commands_windrose_lifecycle.rs"]
 mod windrose_lifecycle;
 
@@ -50,6 +63,15 @@ fn failed_start_error_with_cleanup(
         ),
         None => primary_error,
     }
+}
+
+fn runtime_start_cancelled_error(instance_id: &str) -> String {
+    json!({
+        "code": "runtime_start_cancelled",
+        "instance_id": instance_id,
+        "message": "Server startup was cancelled.",
+    })
+    .to_string()
 }
 
 #[tauri::command]
@@ -112,8 +134,16 @@ pub async fn start_instance_process(
     state: tauri::State<'_, DesktopState>,
     instance_id: String,
     expected_world_start: Option<DstWorldStartPreview>,
+    startup_attempt_id: Option<String>,
 ) -> Result<StartInstanceResult, String> {
-    start_instance_process_inner(app_handle, state, instance_id, expected_world_start).await
+    start_instance_process_inner(
+        app_handle,
+        state,
+        instance_id,
+        expected_world_start,
+        startup_attempt_id,
+    )
+    .await
 }
 
 pub(super) async fn start_instance_process_inner(
@@ -121,23 +151,37 @@ pub(super) async fn start_instance_process_inner(
     state: tauri::State<'_, DesktopState>,
     instance_id: String,
     expected_world_start: Option<DstWorldStartPreview>,
+    startup_attempt_id: Option<String>,
 ) -> Result<StartInstanceResult, String> {
     let _storage_context_operation = state.begin_storage_context_operation("runtime start")?;
     let storage = state.bootstrap_storage()?;
+    // Publish the cancellable attempt before the first asynchronous setup step.
+    let reservation = reserve_runtime_instance_start_for_attempt(
+        &state,
+        &storage,
+        &instance_id,
+        "manual",
+        startup_attempt_id.as_deref(),
+    )?;
     initialize_database(&storage.paths)
         .await
         .map_err(|error| error.to_string())?;
     reconcile_runtime_state(&state).await?;
 
-    start_instance_process_after_reconcile(
+    start_instance_process_with_reserved_evidence(
         Some(&app_handle),
         &state,
         &storage,
         instance_id,
         "manual",
-        expected_world_start,
+        RuntimeStartPreconditions {
+            world_start: expected_world_start,
+            ..Default::default()
+        },
+        reservation,
     )
     .await
+    .map_err(|failure| failure.message)
 }
 
 pub(super) async fn start_instance_process_after_reconcile(
@@ -311,6 +355,7 @@ pub(super) async fn start_instance_process_after_reconcile_reserved(
     let instance = read_instance_details(&storage.paths, &instance_id)
         .await
         .map_err(|error| error.to_string())?;
+    begin_owned_startup_session(app_handle, state, &instance, runtime_start_reservation).await?;
     // Native configuration can write into an exclusively used library before
     // launch. Reserve its program source before either rendering or starting.
     let program_root = app_storage::resolve_instance_runtime_root(
@@ -452,28 +497,9 @@ pub(super) async fn start_instance_process_after_reconcile_reserved(
         Some(private_root.as_str()),
     );
     let startup_log_stamp = current_unix_ms();
-    let prestart_update_log_path = {
-        let mut update_log_plans =
-            build_process_launch_plans_for_instance(&storage.settings, &module, &instance)?;
-        assign_process_log_paths_with_stamp(&instance, &mut update_log_plans, startup_log_stamp)?;
-        update_log_plans.first().map(|plan| plan.log_path.clone())
-    };
-    if let Some(log_path) = prestart_update_log_path.as_deref() {
-        publish_pending_start_console_log_path(
-            app_handle,
-            state,
-            &instance_id,
-            log_path,
-            None,
-            Some("Startup"),
-            None,
-        )?;
-        let _ = append_startup_console_line(
-            log_path,
-            &format!("Preparing {} startup...", instance.summary.name),
-            "",
-        );
-    }
+    let prestart_update_log_path = runtime_start_reservation
+        .startup_session()?
+        .map(|(_, session)| session.source_path);
     let install_guard = program_guards
         .1
         .take()
@@ -696,16 +722,7 @@ pub(super) async fn start_instance_process_after_reconcile_reserved(
         .await
         .map_err(|error| format!("First-world preparation task failed: {error}"))?;
     program_guards = guards;
-    let first_world_plan = match first_world_plan {
-        Ok(plan) => plan,
-        Err(error) => {
-            start_warnings.push(app_core::RuntimeStartWarning::world_initialization(
-                error,
-                prestart_update_log_path.clone(),
-            ));
-            None
-        }
-    };
+    let first_world_plan = first_world_plan?;
     for (key, value) in save_preparation.environment {
         if key == "DOTNET_STARTUP_HOOKS" {
             super::commands_managed_save_control::validate_startup_hook_environment(
@@ -944,6 +961,19 @@ pub(super) async fn start_instance_process_after_reconcile_reserved(
         )
         .await?;
     super::commands_asa_startup_budget::validate_mod_start_plans(&instance, &launch_plans)?;
+    let startup_readiness = if failed_bind_message.is_none() {
+        Some(
+            startup_readiness::StartupSession::prepare(
+                &instance,
+                module.runtime.startup_readiness.as_ref(),
+                &launch_plans,
+                runtime_start_reservation,
+            )
+            .await?,
+        )
+    } else {
+        None
+    };
     let serialize_asa_mod_startup = asa_mod_startup::requires_barrier(
         &module.summary.id,
         launch_plans.len(),
@@ -972,7 +1002,8 @@ pub(super) async fn start_instance_process_after_reconcile_reserved(
             )
             .await
         {
-            let cleanup = stop_spawned_processes(&mut spawned_processes);
+            let cleanup =
+                startup_cleanup::cleanup(&mut spawned_processes, runtime_start_reservation).await?;
             if !cleanup.has_survivors() {
                 return Err(failed_start_error_with_cleanup(error, &cleanup));
             }
@@ -1000,8 +1031,14 @@ pub(super) async fn start_instance_process_after_reconcile_reserved(
             source,
             runtime_start_reservation,
         ) {
-            let cleanup = stop_spawned_processes(&mut spawned_processes);
-            return Err(failed_start_error_with_cleanup(error, &cleanup));
+            let cleanup =
+                startup_cleanup::cleanup(&mut spawned_processes, runtime_start_reservation).await?;
+            if !cleanup.has_survivors() {
+                return Err(failed_start_error_with_cleanup(error, &cleanup));
+            }
+            failed_bind_message = Some(failed_start_error_with_cleanup(error, &cleanup));
+            startup_cleanup::retain_survivors(&mut spawned_processes, &cleanup);
+            break;
         }
         let spawn_result = if plan.launch_plan.requires_admin || !cfg!(windows) {
             app_runtime::spawn_launch_plan_in_resource_group(
@@ -1032,8 +1069,15 @@ pub(super) async fn start_instance_process_after_reconcile_reserved(
         match spawn_result {
             Ok(spawned) => spawned_processes.push((plan.clone(), spawned)),
             Err(error) => {
-                let cleanup = stop_spawned_processes(&mut spawned_processes);
-                return Err(failed_start_error_with_cleanup(error.to_string(), &cleanup));
+                let cleanup =
+                    startup_cleanup::cleanup(&mut spawned_processes, runtime_start_reservation)
+                        .await?;
+                if !cleanup.has_survivors() {
+                    return Err(failed_start_error_with_cleanup(error, &cleanup));
+                }
+                failed_bind_message = Some(failed_start_error_with_cleanup(error, &cleanup));
+                startup_cleanup::retain_survivors(&mut spawned_processes, &cleanup);
+                break;
             }
         }
     }
@@ -1049,8 +1093,15 @@ pub(super) async fn start_instance_process_after_reconcile_reserved(
         match detect_startup_exit(&mut spawned_processes, Duration::from_millis(1500)) {
             Ok(exit) => exit,
             Err(error) => {
-                let cleanup = stop_spawned_processes(&mut spawned_processes);
-                return Err(failed_start_error_with_cleanup(error, &cleanup));
+                let cleanup =
+                    startup_cleanup::cleanup(&mut spawned_processes, runtime_start_reservation)
+                        .await?;
+                if !cleanup.has_survivors() {
+                    return Err(failed_start_error_with_cleanup(error, &cleanup));
+                }
+                failed_bind_message = Some(failed_start_error_with_cleanup(error, &cleanup));
+                startup_cleanup::retain_survivors(&mut spawned_processes, &cleanup);
+                None
             }
         }
     } else {
@@ -1065,8 +1116,13 @@ pub(super) async fn start_instance_process_after_reconcile_reserved(
             "instance `{instance_id}` process `{}` exited during startup with code {exit_label}; see log {}",
             failed_plan.display_name, failed_plan.log_path
         );
-        let cleanup = stop_spawned_processes(&mut spawned_processes);
-        return Err(failed_start_error_with_cleanup(startup_error, &cleanup));
+        let cleanup =
+            startup_cleanup::cleanup(&mut spawned_processes, runtime_start_reservation).await?;
+        if !cleanup.has_survivors() {
+            return Err(failed_start_error_with_cleanup(startup_error, &cleanup));
+        }
+        failed_bind_message = Some(failed_start_error_with_cleanup(startup_error, &cleanup));
+        startup_cleanup::retain_survivors(&mut spawned_processes, &cleanup);
     }
 
     if failed_bind_message.is_none()
@@ -1087,7 +1143,8 @@ pub(super) async fn start_instance_process_after_reconcile_reserved(
     {
         let bind_error =
             super::commands_asa_startup_budget::mod_failure_for_instance(error, &instance_id);
-        let cleanup = stop_spawned_processes(&mut spawned_processes);
+        let cleanup =
+            startup_cleanup::cleanup(&mut spawned_processes, runtime_start_reservation).await?;
         if !cleanup.has_survivors() {
             return Err(failed_start_error_with_cleanup(bind_error, &cleanup));
         }
@@ -1114,28 +1171,53 @@ pub(super) async fn start_instance_process_after_reconcile_reserved(
         );
     }
 
-    if module.summary.id == "dontstarve"
-        && failed_bind_message.is_none()
-        && let Err(error) = dst_lifecycle::wait_until_ready(
-            state,
-            storage,
-            &instance,
-            &mut spawned_processes,
-            source,
-            runtime_start_reservation,
-        )
-        .await
-    {
-        let cleanup = stop_spawned_processes(&mut spawned_processes);
-        if !cleanup.has_survivors() {
-            return Err(failed_start_error_with_cleanup(error, &cleanup));
+    if failed_bind_message.is_none() {
+        let ready = match startup_readiness {
+            Some(session) => {
+                session
+                    .wait_until_ready(
+                        &mut spawned_processes,
+                        startup_readiness::StartupContext {
+                            state,
+                            storage,
+                            instance: &instance,
+                            source,
+                            session_id: session_id
+                                .as_deref()
+                                .ok_or("Startup session is missing")?,
+                            reservation: runtime_start_reservation,
+                            first_world_plan,
+                        },
+                    )
+                    .await
+            }
+            None => Err("Startup readiness session is missing".into()),
+        };
+        let ready = match ready {
+            Ok(()) => match runtime_start_reservation.confirm_ready() {
+                Ok(true) => Ok(()),
+                Ok(false) => Err(runtime_start_cancelled_error(&instance_id)),
+                Err(error) => Err(error),
+            },
+            Err(error) => Err(error),
+        };
+        if let Err(error) = ready {
+            let cleanup =
+                startup_cleanup::cleanup(&mut spawned_processes, runtime_start_reservation).await?;
+            if !cleanup.has_survivors() {
+                return Err(if runtime_start_reservation.cancelled_by_user() {
+                    runtime_start_cancelled_error(&instance_id)
+                } else {
+                    failed_start_error_with_cleanup(error, &cleanup)
+                });
+            }
+            failed_bind_message = Some(failed_start_error_with_cleanup(error, &cleanup));
+            spawned_processes = std::mem::take(&mut spawned_processes)
+                .into_iter()
+                .zip(cleanup.statuses.iter())
+                .filter_map(|(process, status)| status.still_running.then_some(process))
+                .collect();
         }
-        failed_bind_message = Some(failed_start_error_with_cleanup(error, &cleanup));
-        spawned_processes = std::mem::take(&mut spawned_processes)
-            .into_iter()
-            .zip(cleanup.statuses.iter())
-            .filter_map(|(process, status)| status.still_running.then_some(process))
-            .collect();
     }
 
     let performance_applications = spawned_processes
@@ -1204,7 +1286,9 @@ pub(super) async fn start_instance_process_after_reconcile_reserved(
                 registered_processes.push(process);
             }
             Err(error) => {
-                let cleanup = stop_spawned_processes(&mut spawned_processes);
+                let cleanup =
+                    startup_cleanup::cleanup(&mut spawned_processes, runtime_start_reservation)
+                        .await?;
                 for (process, status) in registered_processes.iter().zip(cleanup.statuses.iter()) {
                     if status.still_running {
                         continue;
@@ -1325,32 +1409,6 @@ pub(super) async fn start_instance_process_after_reconcile_reserved(
     if source == "manual" {
         cancel_pending_runtime_restart(state, storage, &instance_id, &instance.summary.name);
     }
-    if let Some(plan) = first_world_plan {
-        // Registration already owns the live process. A first-world warning
-        // cannot undo that start or discard its native data. Keep both program
-        // guards through the one-shot command and its actual selection checks.
-        if let Err(error) = super::commands_astroneer_startup::initialize(
-            state,
-            storage,
-            &instance,
-            plan,
-            runtime_start_reservation,
-        )
-        .await
-        {
-            append_desktop_app_log(
-                storage,
-                "warn",
-                "astroneer.first_world.start_warning",
-                &error,
-                json!({"instance_id":instance_id,"run_id":primary_process.run_id}),
-            );
-            start_warnings.push(app_core::RuntimeStartWarning::world_initialization(
-                error,
-                Some(primary_process.log_path.clone()),
-            ));
-        }
-    }
     drop(program_guards);
     if source == "auto_restart" && !start_warnings.is_empty() {
         let warning_job = BackgroundJob {
@@ -1447,7 +1505,17 @@ pub(super) fn reserve_runtime_instance_start(
     instance_id: &str,
     source: &str,
 ) -> Result<RuntimeStartReservationLease, String> {
-    match state.try_reserve_runtime_start(instance_id, source)? {
+    reserve_runtime_instance_start_for_attempt(state, storage, instance_id, source, None)
+}
+
+fn reserve_runtime_instance_start_for_attempt(
+    state: &tauri::State<'_, DesktopState>,
+    storage: &StorageBootstrap,
+    instance_id: &str,
+    source: &str,
+    attempt_id: Option<&str>,
+) -> Result<RuntimeStartReservationLease, String> {
+    match state.try_reserve_runtime_start_for_attempt(instance_id, source, attempt_id)? {
         RuntimeStartReservationAttempt::Reserved(reservation) => Ok(reservation),
         RuntimeStartReservationAttempt::ShutdownInProgress => Err(
             runtime_start_blocked_by_app_exit_error(storage, instance_id, source),
@@ -1486,6 +1554,9 @@ fn ensure_runtime_start_allowed(
     source: &str,
     reservation: &RuntimeStartReservationLease,
 ) -> Result<(), String> {
+    if reservation.cancelled_by_user() {
+        return Err(runtime_start_cancelled_error(instance_id));
+    }
     // A failed shutdown reopens admission, but must never revive its old starts.
     if state.shutdown_in_progress.load(Ordering::SeqCst) || reservation.is_cancelled() {
         return Err(runtime_start_blocked_by_app_exit_error(
@@ -1561,7 +1632,7 @@ pub(super) fn publish_pending_start_console_log_path(
 
 pub(super) use runtime_logs::{
     finish_runtime_log_stream_for_process, start_runtime_game_log_stream, start_runtime_log_stream,
-    stop_runtime_log_stream_for_process, stop_runtime_log_streams_for_instance,
+    stop_runtime_log_stream_for_process,
 };
 
 pub(super) fn pending_start_console_log_path(
@@ -1609,44 +1680,9 @@ pub(super) async fn stop_dst_survivors_for_restart(
 pub async fn stop_instance_process(
     state: tauri::State<'_, DesktopState>,
     instance_id: String,
+    startup_attempt_id: Option<String>,
 ) -> Result<StopInstanceResult, String> {
-    state
-        .runtime_restart_scheduler
-        .lock()
-        .map_err(|_| String::from("runtime restart scheduler lock poisoned"))?
-        .request_stop(&instance_id);
-    state.autostart.cancel(&instance_id)?;
-    stop_instance_process_with_precondition(state, instance_id, None).await
-}
-
-pub(super) async fn stop_instance_process_with_precondition(
-    state: tauri::State<'_, DesktopState>,
-    instance_id: String,
-    expected_instance: Option<InstanceDetails>,
-) -> Result<StopInstanceResult, String> {
-    let storage_context_operation = state.begin_storage_context_operation("runtime stop")?;
-    let storage = state.bootstrap_storage()?;
-    initialize_database(&storage.paths)
-        .await
-        .map_err(|error| error.to_string())?;
-    reconcile_runtime_state(&state).await?;
-    let _instance_lock = state.acquire_instance_mutation(&instance_id).await;
-
-    let active_run = read_active_instance_run(&storage.paths, &instance_id)
-        .await
-        .map_err(|error| error.to_string())?
-        .ok_or_else(|| InstanceRunConflict::NotRunning.into_error(&instance_id))?;
-    let details = read_instance_details(&storage.paths, &instance_id)
-        .await
-        .map_err(|error| error.to_string())?;
-    if let Some(expected) = expected_instance {
-        if serde_json::to_value(&details).map_err(|error| error.to_string())?
-            != serde_json::to_value(&expected).map_err(|error| error.to_string())?
-        {
-            return Err(
-                "The server changed after the stop preview. Request a new confirmation.".into(),
-            );
-        }
+    if startup_attempt_id.is_none() {
         state
             .runtime_restart_scheduler
             .lock()
@@ -1654,109 +1690,15 @@ pub(super) async fn stop_instance_process_with_precondition(
             .request_stop(&instance_id);
         state.autostart.cancel(&instance_id)?;
     }
-    let shutdown_by_module = load_module_shutdown_specs(&storage, InstanceShutdownSource::Manual);
-    let shutdown = shutdown_by_module.get(&details.summary.module_id);
+    super::commands_instance_stop::stop_instance(state, instance_id, None, startup_attempt_id).await
+}
 
-    append_desktop_app_log(
-        &storage,
-        "info",
-        "instance.stop.started",
-        "Stopping managed instance with its declared shutdown strategy.",
-        json!({
-            "instance_id": instance_id.as_str(),
-            "instance_name": details.summary.name.as_str(),
-            "module_id": details.summary.module_id.as_str(),
-            "has_shutdown_strategy": shutdown.is_some(),
-        }),
-    );
-
-    let stop_result = super::commands_instance_stop::stop_run(
-        &state,
-        &storage,
-        &storage_context_operation,
-        &details,
-        &active_run,
-        shutdown,
-        InstanceShutdownSource::Manual,
-    )
-    .await;
-    let stopped_processes = match stop_result {
-        Ok(stopped) => stopped,
-        Err(error) => {
-            append_desktop_app_log(
-                &storage,
-                "error",
-                "instance.stop.failed",
-                &error,
-                json!({
-                    "instance_id": instance_id.as_str(),
-                    "instance_name": details.summary.name.as_str(),
-                    "module_id": details.summary.module_id.as_str(),
-                }),
-            );
-            return Err(error);
-        }
-    };
-
-    let instances = list_instances(&storage.paths)
-        .await
-        .map_err(|error| error.to_string())?;
-    let summary =
-        find_instance_summary(&instances, &instance_id).unwrap_or_else(|| InstanceSummary {
-            id: instance_id.clone(),
-            name: instance_id.clone(),
-            module_id: String::new(),
-            status: InstanceStatus::Stopped,
-            active_process_count: 0,
-            bind_ip: String::from("0.0.0.0"),
-            port_count: 0,
-            autostart: false,
-        });
-
-    update_state_instances(&state, instances)?;
-
-    super::commands_instance_stop::backup_after_stop(
-        &storage,
-        &details,
-        InstanceShutdownSource::Manual,
-    )
-    .await;
-
-    let primary_process = stopped_processes
-        .iter()
-        .find(|process| process.run_id == active_run.run_id)
-        .or_else(|| stopped_processes.first())
-        .cloned();
-
-    let result = StopInstanceResult {
-        summary,
-        run_id: active_run.run_id,
-        session_id: active_run.session_id.clone(),
-        pid: primary_process.as_ref().and_then(|process| process.pid),
-        log_path: primary_process
-            .as_ref()
-            .and_then(|process| process.log_path.clone()),
-        exit_code: primary_process
-            .as_ref()
-            .and_then(|process| process.exit_code),
-        process_count: stopped_processes.len(),
-        processes: stopped_processes,
-    };
-
-    append_desktop_app_log(
-        &storage,
-        "info",
-        "instance.stop.completed",
-        "Managed instance stopped successfully.",
-        json!({
-            "instance_id": instance_id.as_str(),
-            "instance_name": details.summary.name.as_str(),
-            "module_id": details.summary.module_id.as_str(),
-            "process_count": result.process_count,
-        }),
-    );
-
-    Ok(result)
+pub(super) async fn stop_instance_process_with_precondition(
+    state: tauri::State<'_, DesktopState>,
+    instance_id: String,
+    expected_instance: Option<InstanceDetails>,
+) -> Result<StopInstanceResult, String> {
+    super::commands_instance_stop::stop_instance(state, instance_id, expected_instance, None).await
 }
 
 #[derive(Clone, Copy)]

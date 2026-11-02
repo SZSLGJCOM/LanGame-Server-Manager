@@ -1,4 +1,5 @@
 import { prepareBrowserLocaleCatalogs } from "./browser-locale-catalogs";
+import { checkStoragePathLayout } from "./storage-path-layout";
 import React, { act, StrictMode, type ComponentProps } from "react";
 import { createRoot } from "react-dom/client";
 import { bootstrapApp, readModuleDetails } from "../../src/api";
@@ -7,8 +8,17 @@ import { createDefaultAiSettings } from "../../src/ai-settings";
 import { createInitialAppUpdateState } from "../../src/app-update-model";
 import { I18nProvider } from "../../src/i18n";
 import { AppShell } from "../../src/components/AppShell";
+import { useArkToolsInstallationStore } from "../../src/components/ArkToolsInstallationContext";
+import type { ArkToolsInstallationStore } from "../../src/ark-tools-installation-store";
+import type { ArkToolsInstallProgress } from "../../src/ark-tools-installation";
 import { LibraryView } from "../../src/views/LibraryView";
 import { SystemView } from "../../src/views/SystemView";
+import { StorageInitializationView } from "../../src/components/StorageInitializationView";
+import { ViewLoadingState } from "../../src/views/ViewLoadingState";
+import { createAppPathSettingsDraft } from "../../src/views/system/app-path-settings-draft";
+import { useStorageMigration, type StorageMigrationModel } from "../../src/hooks/useStorageMigration";
+import type { StorageMigrationApi, StorageMigrationStatus } from "../../src/storage-migration-types";
+import type { AppPathSettingsInput } from "../../src/types";
 import type { ModuleProgramInventory } from "../../src/storage-management-types";
 import "../../src/app.css";
 
@@ -76,7 +86,10 @@ function centeredIn(selector: string, container: string) {
   const centerX = bounds.left + parent.clientLeft + (parent.clientWidth + parseFloat(style.paddingLeft) - parseFloat(style.paddingRight)) / 2;
   const centerY = bounds.top + parent.clientTop + (parent.clientHeight + parseFloat(style.paddingTop) - parseFloat(style.paddingBottom)) / 2;
   check(Math.abs(rect.x + rect.width / 2 - centerX) <= 2 && Math.abs(rect.y + rect.height / 2 - centerY) <= 2
-    && getComputedStyle(target).textAlign === "center", `${selector} is horizontally and vertically centered inside ${container}`);
+    && getComputedStyle(target).textAlign === "center",
+    `${selector} must be centered inside ${container}: ${JSON.stringify({ centerX, centerY,
+      actualX: rect.x + rect.width / 2, actualY: rect.y + rect.height / 2, scrollTop: parent.scrollTop,
+      parentHeight: parent.clientHeight, contentHeight: parent.scrollHeight })}`);
 }
 async function reach(selector: string) {
   const target = element(selector);
@@ -151,20 +164,65 @@ async function run() {
   let chosenDirectory: string | null = null;
   let pickerStart: string | null | undefined;
   let saveError: string | null = null;
-  const pathWrites: Array<Parameters<ComponentProps<typeof SystemView>["onSaveAppSettings"]>[0]> = [];
+  let saveWait: Promise<void> | null = null;
+  let previewWait: Promise<void> | null = null;
+  const pathWrites: AppPathSettingsInput[] = [];
+  const pathAttempts: typeof pathWrites = [];
   let openedModules = 0;
   let returnedToCatalog = 0;
   const created: Array<{ name: string; module_id: string }> = [];
-  const systemProps: ComponentProps<typeof SystemView> = {
+  const systemProps: Omit<ComponentProps<typeof SystemView>, "storageMigration"> = {
     snapshot: bootstrap.state.snapshot, instances: bootstrap.state.instances, bindAddressCandidates: [], appSettings: bootstrap.state.settings,
     steamCmdStatus: null, steamCmdBusy: false, steamCmdProgress: null, steamCmdMessage: "",
     onOpenInstance: () => { openedInstances++; },
     onPickDirectory: async (current) => { directoryPicks++; pickerStart = current; return chosenDirectory; },
-    onSaveAppSettings: async (next) => {
-      if (saveError) throw new Error(saveError);
-      systemProps.appSettings = { ...systemProps.appSettings, ...next };
-      pathWrites.push(next); render();
-    }, onEnsureSteamCmd: noOperation, onUninstallSteamCmd: noOperation
+    onEnsureSteamCmd: noOperation, onUninstallSteamCmd: noOperation
+  };
+  let migrationSnapshot: StorageMigrationStatus | null = null;
+  let migrationModel: StorageMigrationModel;
+  let migrationSequence = 0;
+  let systemVisible = true;
+  let arkStore: ArkToolsInstallationStore;
+  let arkProgress: ArkToolsInstallProgress = { instanceId: "fixture-ark", operationId: "fixture-ark-install", active: true,
+    phase: "downloading", source: "fixture", downloadedBytes: 50, totalBytes: 100, elapsedSeconds: 1, error: null };
+  function ArkActivityFixture() { arkStore = useArkToolsInstallationStore(); return null; }
+  // Explicit synthetic service boundary; the real observer and panel run unchanged.
+  const migrationApi: StorageMigrationApi = {
+    available: () => config.page === "system",
+    read: async () => migrationSnapshot,
+    preview: async input => {
+      if (previewWait) await previewWait;
+      const current = createAppPathSettingsDraft(systemProps.appSettings);
+      migrationSnapshot = { operation_id: `layout-migration-${++migrationSequence}`, phase: "ready", input: { ...input },
+        roots: (Object.keys(input) as Array<keyof AppPathSettingsInput>).filter(key => input[key] !== current[key])
+          .map(key => ({ source: current[key], target: input[key] })),
+        total_files: 3, total_bytes: 4096, completed_files: 0, completed_bytes: 0, reused_files: 0,
+        conflicts: [], conflict_count: 0, can_cancel: true, recovery_required: false,
+        error: null, cleanup_warnings: [], preserved_destinations: [] };
+      return { ...migrationSnapshot, phase: "checking" };
+    },
+    execute: async operationId => {
+      check(migrationSnapshot?.operation_id === operationId && migrationSnapshot.phase === "ready", "Migration must use its reviewed identity");
+      const next = { ...migrationSnapshot.input };
+      pathAttempts.push(next);
+      migrationSnapshot = { ...migrationSnapshot, phase: "copying" };
+      const complete = () => {
+        check(migrationSnapshot?.operation_id === operationId, "A deferred result changed migration identity");
+        migrationSnapshot = { ...migrationSnapshot, phase: saveError ? "failed" : "completed", can_cancel: false,
+          error: saveError, completed_files: saveError ? 0 : 3, completed_bytes: saveError ? 0 : 4096,
+          preserved_destinations: saveError ? [] : migrationSnapshot.roots.slice(0, 1).map(root => ({
+            original_path: root.target, backup_path: `${root.target}.previous-contents` })) };
+        if (!saveError) pathWrites.push(next);
+      };
+      if (saveWait) void saveWait.then(() => { complete(); migrationModel.recheck(); });
+      else complete();
+      return migrationSnapshot;
+    },
+    cancel: async operationId => {
+      check(migrationSnapshot?.operation_id === operationId, "Cancellation must use the existing migration");
+      migrationSnapshot = { ...migrationSnapshot, phase: "cancelled", can_cancel: false };
+      return migrationSnapshot;
+    }
   };
   const sampleDetails = await readModuleDetails("minecraft");
   // Synthetic identities prevent remote store/media requests; the page, real
@@ -195,10 +253,19 @@ async function run() {
     onOpenModule: () => { openedModules++; }, onBackToCatalog: () => { returnedToCatalog++; },
     onInstall: noOperation, onUninstall: noOperation, onCreateServer: async (value) => { created.push(value); }
   };
+  let pageState: React.ReactNode = null;
+  function Harness() {
+    migrationModel = useStorageMigration(async status => {
+      systemProps.appSettings = { ...systemProps.appSettings, ...status.input };
+    }, systemProps.appSettings, migrationApi);
+    return <AppShell {...shellProps} storageMigration={migrationModel}>
+      <ArkActivityFixture />
+      {pageState ?? (config.page === "system" ? systemVisible ? <SystemView {...systemProps} storageMigration={migrationModel} />
+        : <div className="fixture-away-page">Another workspace</div> : <LibraryView {...libraryProps} />)}
+    </AppShell>;
+  }
   function render() {
-    root.render(<StrictMode><I18nProvider><AppShell {...shellProps}>
-      {config.page === "system" ? <SystemView {...systemProps} /> : <LibraryView {...libraryProps} />}
-    </AppShell></I18nProvider></StrictMode>);
+    root.render(<StrictMode><I18nProvider><Harness /></I18nProvider></StrictMode>);
   }
   await act(async () => { await prepareBrowserLocaleCatalogs(); render(); });
   const pageSelector = config.page === "system" ? ".system-dashboard-page"
@@ -207,14 +274,43 @@ async function run() {
   await settleUntil(() => element(".shell-locale-button").textContent === (config.locale === "en-US" ? "ZH" : "EN"),
     "Requested interface language did not load");
   await act(async () => { await new Promise<void>((resolve) => requestAnimationFrame(() => resolve())); });
+  await settleUntil(() => !migrationModel.recovering, "Migration recovery did not settle");
   shellGeometry();
   horizontalFit(pageSelector);
   const controls: Record<string, Awaited<ReturnType<typeof compactAction>>> = {};
   if (config.page === "system") {
+    let retries = 0;
+    const onRetry = () => { retries++; };
+    pageState = <StorageInitializationView state={{ status: "pending", attempt: 0 }} onRetry={onRetry} />;
+    await act(async () => { render(); });
+    centeredIn(".storage-initialization-content", ".shell-content-scroll");
+    const failure = { status: "failed" as const, attempt: 0, error: "Storage could not be opened.",
+      databasePath: null, logPath: null, logDirectory: null };
+    pageState = <StorageInitializationView state={failure} onRetry={onRetry} />;
+    await act(async () => { render(); });
+    centeredIn(".storage-initialization-content", ".shell-content-scroll");
+    pageState = <StorageInitializationView state={{ ...failure, error: "Diagnostic details.\n".repeat(60) }} onRetry={onRetry} />;
+    await act(async () => { render(); });
+    await pressEnter(await reach(".storage-initialization-details summary"));
+    check(element<HTMLDetailsElement>(".storage-initialization-details").open, "Full diagnostics must expand");
+    await pressEnter(await reach(".storage-initialization-retry-button"));
+    check(retries === 1, "Long diagnostics must keep the retry action reachable");
+    shellGeometry();
+    pageState = <ViewLoadingState error={null} canRetry={false} onRetry={onRetry} />;
+    await act(async () => { render(); });
+    centeredIn(".view-loading-state > p", ".shell-content-scroll");
+    pageState = <ViewLoadingState error={new Error("Fixture view load failure")} canRetry onRetry={onRetry} />;
+    await act(async () => { render(); });
+    await pressEnter(await reach(".view-loading-state button"));
+    check(Number(retries) === 2, "Centered view-load failures must retain retry behavior");
+    pageState = null;
+    await act(async () => { render(); });
+    await settleUntil(() => Boolean(fixture.querySelector(".system-dashboard-page")), "The system page must return after a whole-page state");
     horizontalFit(".system-command-grid");
     await reach(".system-panel-head h2");
     check(getComputedStyle(element(".system-panel-head h2")).fontSize === "16px", "System section titles must use the compact heading role");
     controls.directoryPicker = await compactAction(".system-path-picker-button");
+    checkStoragePathLayout(fixture, check);
     for (const metric of fixture.querySelectorAll<HTMLElement>(".system-top-metric")) {
       metric.scrollIntoView({ block: "nearest" });
       visible(metric, "System metric");
@@ -226,43 +322,161 @@ async function run() {
     check(directoryPicks === 1, "System directory picker is not keyboard operable");
     const archiveRow = '.system-path-row[data-path-key="archives_root"]';
     const pathAction = (index: number) => `${archiveRow} .system-runtime-path-actions button:nth-child(${index})`;
+    const choosePath = (key: string) => `.system-path-row[data-path-key="${key}"] .system-path-picker-button`;
+    const displayedPath = (key: string) => element(`.system-path-row[data-path-key="${key}"] .system-runtime-path`).textContent;
+    const runtimeAction = () => element<HTMLButtonElement>(".system-runtime-check-button");
+    const completed = () => settleUntil(() => migrationModel.status?.phase === "completed" && !migrationModel.pending
+      && !migrationModel.refreshing && !runtimeAction().disabled, "Automatic migration did not finish");
+    const openActivity = async () => { if (!fixture.querySelector(".shell-activity-panel")) await pressEnter(await reach(".shell-activity-expand")); };
+    const closeActivity = async () => { if (fixture.querySelector(".shell-activity-panel")) await pressEnter(await reach(".shell-activity-panel-close")); };
     const originalPaths = systemProps.appSettings;
     const copiedPaths: string[] = [];
     const openedPaths: string[] = [];
     Object.defineProperty(navigator, "clipboard", { configurable: true, value: { writeText: async (value: string) => { copiedPaths.push(value); } } });
     Object.assign(window, { isTauri: true, __TAURI_INTERNALS__: { invoke: (command: string, args: { path?: string } = {}) => {
       if (command === "open_local_path") { openedPaths.push(args.path!); return Promise.resolve(); }
+      if (command === "read_ark_tools_install_progress") return Promise.resolve(arkProgress);
       return invokeMock(command, args);
     } } });
-    check([...fixture.querySelectorAll(".system-path-row")].map((row) => row.getAttribute("data-path-key")).join(",")
+    check([...fixture.querySelectorAll(".system-path-row")].map(row => row.getAttribute("data-path-key")).join(",")
       === "games_root,servers_root,archives_root,steamcmd_root", "Archive directory is the third ordinary path row before SteamCMD");
-    check(!fixture.querySelector(".system-storage-management,.storage-management-panel"), "System has no retired storage management interface");
+    check(!fixture.querySelector(".system-storage-management,.storage-management-panel,.system-path-editor-footer,.system-path-save-button,.system-path-discard-button,.system-path-migration-review"),
+      "Idle system paths must have four rows without a permanent migration form or retired storage interface");
     await pressEnter(await reach(pathAction(1))); await pressEnter(await reach(pathAction(2)));
     check(copiedPaths[0] === originalPaths.archives_root && openedPaths[0] === originalPaths.archives_root,
       "Archive copy/open controls use the configured archive directory exactly");
-    await pressEnter(await reach(pathAction(3)));
-    check(pickerStart === originalPaths.archives_root && pathWrites.length === 0, "Cancelled archive chooser starts at current directory and does not save");
-    chosenDirectory = "  D:/Fixture archives  ";
-    await pressEnter(await reach(pathAction(3)));
-    await settleUntil(() => pathWrites.length === 1 && !element<HTMLButtonElement>(pathAction(3)).disabled, "Archive path save did not complete");
+    check(!fixture.querySelector(pathAction(3)) && !fixture.querySelector(choosePath("archives_root"))
+      && element(`${archiveRow} .system-runtime-label`).textContent === (config.locale === "zh-CN" ? "实例归档区" : "Instance archives"),
+      "Archives must display only their label, path and copy/open controls");
+    await pressEnter(await reach(choosePath("steamcmd_root")));
+    check(pickerStart === originalPaths.steamcmd_root && migrationSequence === 0 && !fixture.querySelector(".system-storage-dialog"),
+      "Cancelling a native chooser must not create a migration");
+    let finishPreview = () => {};
+    previewWait = new Promise<void>(resolve => { finishPreview = resolve; });
+    chosenDirectory = "  D:/Fixture steamcmd  ";
+    await pressEnter(await reach(choosePath("steamcmd_root")));
+    check(pathWrites.length === 0 && systemProps.appSettings.steamcmd_root === originalPaths.steamcmd_root
+      && displayedPath("steamcmd_root") === originalPaths.steamcmd_root && migrationModel.draft?.steamcmd_root === "D:/Fixture steamcmd"
+      && !fixture.querySelector(".system-path-unapplied"),
+      "Automatic preflight must retain configured paths while checking the separate trimmed target");
+    check(!fixture.querySelector("dialog,.system-migration-apply") && runtimeAction().disabled
+      && element<HTMLButtonElement>(pathAction(1)).disabled && element<HTMLButtonElement>(pathAction(2)).disabled,
+      "Pending paths must guard runtime, copy and open actions without opening confirmation");
+    systemProps.appSettings = { ...systemProps.appSettings };
+    await act(async () => { render(); });
+    check(displayedPath("steamcmd_root") === originalPaths.steamcmd_root && migrationModel.draft?.steamcmd_root === "D:/Fixture steamcmd"
+      && pathWrites.length === 0, "A refreshed settings snapshot changed the configured path or erased the pending selection");
+    await act(async () => { finishPreview(); }); previewWait = null;
+    await completed();
     const saved = pathWrites[0];
-    check(Object.keys(saved).sort().join(",") === "archives_root,games_root,servers_root,steamcmd_root"
-      && saved.archives_root === "D:/Fixture archives" && saved.games_root === originalPaths.games_root
-      && saved.servers_root === originalPaths.servers_root && saved.steamcmd_root === originalPaths.steamcmd_root,
-      "Archive chooser saves the trimmed path while preserving all other configured roots");
-    check(element(`${archiveRow} .system-runtime-path`).textContent === "D:/Fixture archives", "Saved archive path is displayed from updated settings");
+    check(pathWrites.length === 1 && Object.keys(saved).sort().join(",") === "archives_root,games_root,servers_root,steamcmd_root"
+      && saved.archives_root === originalPaths.archives_root && saved.games_root === originalPaths.games_root
+      && saved.servers_root === originalPaths.servers_root && saved.steamcmd_root === "D:/Fixture steamcmd",
+      "A selection automatically submits all four paths while preserving unchanged roots");
     await pressEnter(await reach(pathAction(1))); await pressEnter(await reach(pathAction(2)));
-    check(copiedPaths[1] === "D:/Fixture archives" && openedPaths[1] === "D:/Fixture archives", "Copy and open follow the successfully updated archive path");
-    chosenDirectory = " D:/Fixture archives "; await pressEnter(await reach(pathAction(3)));
-    check(pathWrites.length === 1, "Choosing the same archive directory does not submit another save");
-    chosenDirectory = "D:/Next archives"; saveError = "ARCHIVE_PATH_WRITE_FAILED";
-    await pressEnter(await reach(pathAction(3)));
-    await settleUntil(() => Boolean(fixture.textContent?.includes(saveError!)), "Archive path save error lost its original cause");
-    check(pathWrites.length === 1 && element(`${archiveRow} .system-runtime-path`).textContent === "D:/Fixture archives",
-      "Failed archive path save keeps the last successful path and remains retryable");
-    saveError = null; await pressEnter(await reach(pathAction(3)));
-    await settleUntil(() => pathWrites.length === 2, "Archive path save could not be retried");
-    check(!fixture.textContent?.includes("ARCHIVE_PATH_WRITE_FAILED"), "Successful path retry clears its previous failure");
+    check(displayedPath("archives_root") === saved.archives_root && copiedPaths.at(-1) === saved.archives_root
+      && openedPaths.at(-1) === saved.archives_root, "Configured path controls follow the confirmed migration");
+    chosenDirectory = " D:/Fixture steamcmd "; const sequenceBeforeSame = migrationSequence;
+    await pressEnter(await reach(choosePath("steamcmd_root")));
+    check(pathWrites.length === 1 && migrationSequence === sequenceBeforeSame && !fixture.querySelector(".system-storage-dialog"),
+      "Selecting the same folder must not create another migration");
+    chosenDirectory = "D:/Next steamcmd"; saveError = "STEAMCMD_PATH_WRITE_FAILED";
+    await pressEnter(await reach(choosePath("steamcmd_root")));
+    await settleUntil(() => migrationModel.status?.phase === "failed", "Migration failure did not become visible");
+    await openActivity();
+    check(pathWrites.length === 1 && displayedPath("steamcmd_root") === "D:/Fixture steamcmd" && migrationModel.draft?.steamcmd_root === "D:/Next steamcmd"
+      && systemProps.appSettings.steamcmd_root === "D:/Fixture steamcmd"
+      && element(".shell-activity-panel").textContent?.includes(saveError)
+      && !element(".system-runtime-panel").textContent?.includes(saveError),
+      "Failed migration must show the configured path and retain its target and diagnostic only for activity recovery");
+    const picksBeforeRetry = directoryPicks;
+    saveError = null; await pressEnter(await reach(".shell-activity-panel .system-migration-retry")); await completed(); await closeActivity();
+    check(pathWrites.length === 2 && !fixture.textContent?.includes("STEAMCMD_PATH_WRITE_FAILED") && directoryPicks === picksBeforeRetry,
+      "Successful retry must clear failure without selecting paths again");
+    chosenDirectory = "D:/Discarded steamcmd"; saveError = "TARGET_BUSY";
+    await pressEnter(await reach(choosePath("steamcmd_root")));
+    await settleUntil(() => migrationModel.status?.phase === "failed", "Discard case did not fail");
+    systemProps.appSettings = { ...systemProps.appSettings, games_root: "D:/Refreshed server files" };
+    await act(async () => { render(); });
+    await openActivity(); await pressEnter(await reach(".shell-activity-panel .system-migration-discard")); await closeActivity();
+    check(pathWrites.length === 2 && displayedPath("steamcmd_root") === "D:/Next steamcmd"
+      && displayedPath("games_root") === "D:/Refreshed server files" && !runtimeAction().disabled,
+      "Discard must retain the latest configuration and clear pending paths");
+    saveError = null;
+
+    systemProps.appSettings = { ...originalPaths, servers_root: "E:\\LanGame\\instances", archives_root: "E:\\LanGame\\instances\\.trash" };
+    await act(async () => { render(); });
+    let finishSave = () => {};
+    saveWait = new Promise<void>(resolve => { finishSave = resolve; });
+    const attemptsBeforeSave = pathAttempts.length;
+    chosenDirectory = " D:\\LanGame\\instances ";
+    await pressEnter(await reach(choosePath("servers_root")));
+    await settleUntil(() => migrationModel.status?.phase === "copying", "A checked workspace did not automatically migrate");
+    check(displayedPath("servers_root") === "E:\\LanGame\\instances" && displayedPath("archives_root") === "E:\\LanGame\\instances\\.trash"
+      && migrationModel.draft?.servers_root === "D:\\LanGame\\instances" && migrationModel.draft?.archives_root === "D:\\LanGame\\instances\\.trash"
+      && systemProps.appSettings.servers_root === "E:\\LanGame\\instances" && pathWrites.length === 2,
+      "E: to D: must preflight the workspace and its default archives together without an intermediate write");
+    check(pathAttempts.length === attemptsBeforeSave + 1 && pathWrites.length === 2 && runtimeAction().disabled
+      && [...fixture.querySelectorAll<HTMLButtonElement>(".system-path-row button")].every(button => button.disabled),
+      "Running migration must lock targets and prevent duplicate submission");
+    check(!fixture.querySelector(".system-storage-dialog"), "Automatic migration opens a confirmation dialog");
+    systemVisible = false;
+    await act(async () => { render(); });
+    check(Boolean(fixture.querySelector(".fixture-away-page")) && Boolean(fixture.querySelector(".shell-activity-bar .system-migration-activity")),
+      "Leaving system settings must preserve migration activity");
+    await act(async () => { arkStore.recover("fixture-ark", "Fixture ARK"); });
+    await settleUntil(() => Boolean(fixture.querySelector(".shell-activity-progress")?.textContent?.includes("Fixture ARK")),
+      "Migration must not replace the existing ARK activity");
+    await pressEnter(await reach(".shell-activity-expand"));
+    check(Boolean(fixture.querySelector(".shell-activity-panel .system-migration-activity"))
+      && Boolean(fixture.querySelector(".shell-activity-panel")?.textContent?.includes("Fixture ARK")),
+      "Global task details retain both ARK and storage migration progress");
+    await pressEnter(await reach(".shell-activity-panel-close"));
+    arkProgress = { ...arkProgress, active: false, phase: "failed", error: "fixture observation complete" };
+    await settleUntil(() => arkStore.getSnapshot().some(entry => !entry.observing && entry.progress?.phase === "failed"),
+      "Synthetic ARK observation did not settle");
+    await act(async () => { arkStore.dismiss(arkProgress.operationId); });
+    systemVisible = true;
+    await act(async () => { render(); });
+    check(displayedPath("servers_root") === "E:\\LanGame\\instances" && migrationModel.draft?.servers_root === "D:\\LanGame\\instances",
+      "Returning to system settings changed the configured path or lost the submitted target");
+    await act(async () => { finishSave(); }); saveWait = null;
+    await completed();
+    check(pathWrites.length === 3 && pathWrites.at(-1)?.servers_root === "D:\\LanGame\\instances"
+      && pathWrites.at(-1)?.archives_root === "D:\\LanGame\\instances\\.trash"
+      && pathWrites.at(-1)?.games_root === originalPaths.games_root && pathWrites.at(-1)?.steamcmd_root === originalPaths.steamcmd_root
+      && !fixture.querySelector(".system-path-migration-review,.system-migration-open"),
+      "Successful migration must apply the full combination and return to the compact main panel");
+
+    systemProps.appSettings = { ...originalPaths, servers_root: "E:\\LanGame\\instances", archives_root: "E:\\Custom archives" };
+    await act(async () => { render(); });
+    let finishExternalPreview = () => {};
+    previewWait = new Promise<void>(resolve => { finishExternalPreview = resolve; });
+    chosenDirectory = "D:\\Custom instances";
+    await pressEnter(await reach(choosePath("servers_root")));
+    check(displayedPath("servers_root") === "E:\\LanGame\\instances" && displayedPath("archives_root") === "E:\\Custom archives"
+      && migrationModel.draft?.servers_root === "D:\\Custom instances" && migrationModel.draft.archives_root === "D:\\Custom instances\\.trash"
+      && pathWrites.length === 3 && !fixture.querySelector(choosePath("archives_root")),
+      "External archives must be included in the pending workspace migration without a separate chooser or early path publication");
+    check(!element(".shell-activity-bar").textContent?.includes(config.locale === "zh-CN" ? "同盘" : "volume"),
+      "Automatic archive migration must not direct the user to choose another volume");
+    await act(async () => { finishExternalPreview(); }); previewWait = null;
+    await completed();
+    check(pathWrites.length === 4 && pathWrites[3].servers_root === "D:\\Custom instances"
+      && pathWrites[3].archives_root === "D:\\Custom instances\\.trash"
+      && displayedPath("archives_root") === "D:\\Custom instances\\.trash",
+      "The workspace and its old external archives must be committed by the same migration");
+    chosenDirectory = null; const previewsBeforeCancel = migrationSequence;
+    await pressEnter(await reach(choosePath("servers_root")));
+    check(displayedPath("servers_root") === systemProps.appSettings.servers_root && migrationModel.draft === null
+      && displayedPath("archives_root") === "D:\\Custom instances\\.trash" && migrationSequence === previewsBeforeCancel,
+      "Cancelling a chooser must preserve the committed workspace and archive destination");
+    for (const [key, next] of [["games_root", "D:\\Server files"], ["steamcmd_root", "D:\\Tools\\steamcmd"]]) {
+      chosenDirectory = next; await pressEnter(await reach(choosePath(key))); await completed();
+    }
+    check(pathWrites.length === 6 && JSON.stringify(pathWrites.at(-1)) === JSON.stringify({
+      games_root: "D:\\Server files", servers_root: "D:\\Custom instances", archives_root: "D:\\Custom instances\\.trash", steamcmd_root: "D:\\Tools\\steamcmd"
+    }), "Server-file and SteamCMD selections must preserve the committed workspace and archive path");
     for (const fallback of [
       { workspace: "D:/LanGame/instances/", expected: "D:/LanGame/instances/.trash", missing: true },
       { workspace: "D:\\LanGame\\instances\\", expected: "D:\\LanGame\\instances\\.trash", missing: false }
@@ -270,23 +484,29 @@ async function run() {
       systemProps.appSettings = { ...originalPaths, servers_root: fallback.workspace, archives_root: "  " };
       if (fallback.missing) Reflect.deleteProperty(systemProps.appSettings, "archives_root");
       await act(async () => { render(); });
-      const displayedPath = await reach(`${archiveRow} .system-runtime-path`);
-      check(displayedPath.textContent === fallback.expected && displayedPath.title === fallback.expected,
-        "Unset archive directory displays its concrete default location, including the full-path tooltip");
+      const path = await reach(`${archiveRow} .system-runtime-path`);
+      check(path.textContent === fallback.expected && path.title === fallback.expected, "Unset archives show the concrete default and full tooltip");
       await pressEnter(await reach(pathAction(1))); await pressEnter(await reach(pathAction(2)));
-      check(copiedPaths.at(-1) === fallback.expected && openedPaths.at(-1) === fallback.expected,
-        "Default archive copy and open use exactly the displayed directory");
-      chosenDirectory = null;
+      check(copiedPaths.at(-1) === fallback.expected && openedPaths.at(-1) === fallback.expected, "Default archive copy/open use its displayed path");
       const previousWrites = pathWrites.length;
-      await pressEnter(await reach(pathAction(3)));
-      check(pickerStart === fallback.expected && pathWrites.length === previousWrites,
-        "Unset archive chooser starts at the concrete default and cancellation does not save");
+      check(!fixture.querySelector(choosePath("archives_root")), "Default archives must not offer a separate chooser");
       chosenDirectory = "D:/Updated server files";
-      await pressEnter(await reach('.system-path-row[data-path-key="games_root"] .system-path-picker-button'));
-      await settleUntil(() => pathWrites.length === previousWrites + 1, "Other directory change did not save");
-      check(pathWrites.at(-1)?.archives_root === fallback.expected,
-        "Changing another directory preserves the effective archive location instead of sending an empty value");
+      await pressEnter(await reach(choosePath("games_root"))); await completed();
+      check(pathWrites.length === previousWrites + 1 && pathWrites.at(-1)?.archives_root === fallback.expected,
+        "Changing another path must preserve the effective default archive location");
     }
+    const retainedTarget = migrationModel.status?.preserved_destinations[0];
+    check(retainedTarget && !fixture.querySelector(".system-migration-preserved")
+      && element(".shell-activity-bar").textContent?.includes(config.locale === "zh-CN" ? "目录迁移已完成" : "Folder migration completed"),
+      "A preserved target must leave only the normal completion label in the compact activity bar");
+    await openActivity();
+    check(element(".shell-activity-panel .system-migration-preserved code").textContent === retainedTarget.backup_path
+      && !fixture.querySelector(".shell-activity-panel .system-migration-warnings"), "Activity details must expose the backup without misreporting a cleanup warning");
+    const attemptsBeforeOpen = pathAttempts.length;
+    await pressEnter(await reach(".shell-activity-panel .system-migration-backup-open"));
+    check(openedPaths.at(-1) === retainedTarget.backup_path && pathAttempts.length === attemptsBeforeOpen,
+      "The backup action must open only the preserved target, without repeating migration");
+    await closeActivity();
     systemProps.instances = [];
     systemProps.snapshot = { ...systemProps.snapshot, running_instances: 0, total_online_players: 0,
       total_player_capacity: 0, player_count_queried_instances: 0, player_count_queryable_instances: 0,
@@ -295,7 +515,14 @@ async function run() {
     await act(async () => { render(); });
     await reach(".system-instance-empty");
     centeredIn(".system-instance-empty", ".system-instance-list");
+    const emptyBounds = element(".system-instance-empty").getBoundingClientRect();
+    const listBounds = element(".system-instance-list").getBoundingClientRect();
+    check(emptyBounds.top >= listBounds.top && emptyBounds.bottom <= listBounds.bottom,
+      "Path settings must not compress the instance overview until its content is clipped");
     shellGeometry();
+    await reach(".system-runtime-panel");
+    horizontalFit(".system-runtime-panel");
+    check(!fixture.querySelector("dialog,.system-path-migration-review,.system-path-editor-footer,.system-path-unapplied"), "Completed migration must leave only the four configured path rows");
   } else if (config.page === "catalog") {
     await reach(".library-catalog-search-input");
     await reach(".library-catalog-focus-title");
@@ -333,8 +560,13 @@ async function run() {
     horizontalFit(".library-sidebar-server-actions");
     const mediaBox = element(".library-detail-stage-media").getBoundingClientRect();
     const sidebarBox = element(".library-sidebar-summary").getBoundingClientRect();
-    check(sidebarBox.height <= mediaBox.height + 1,
-      "The detail sidebar must not exceed the media card inside the full desktop shell");
+    if (innerWidth <= 900) {
+      check(sidebarBox.top >= mediaBox.bottom, "Small desktop details must stack controls below the media");
+      check(Math.abs(sidebarBox.width - mediaBox.width) <= 1, "Stacked detail sections must use the same available width");
+    } else {
+      check(sidebarBox.height <= mediaBox.height + 1,
+        "The detail sidebar must not exceed the media card inside the full desktop shell");
+    }
     await reach(".library-create-server-form .text-input");
     await input(".library-create-server-form .text-input", "布局验证服务器");
     await pressEnter(await reach('.library-create-server-form button[type="submit"]'));
@@ -347,14 +579,19 @@ async function run() {
     libraryProps.selectedModuleId = null;
     libraryProps.selectedModuleDetails = null;
     await act(async () => { render(); });
-    await reach(".panel-card--centered .empty-state");
-    centeredIn(".panel-card--centered .empty-state", ".panel-card--centered");
+    await reach(".library-detail-empty .empty-state");
+    centeredIn(".library-detail-empty .empty-state", ".shell-content-scroll");
+    const emptyScroll = element(".shell-content-scroll");
+    check(emptyScroll.scrollHeight <= emptyScroll.clientHeight + 1, "The whole-page empty state must not retain decorative overflow");
+    check(!fixture.querySelector(".library-detail-empty .panel-card"), "A whole-page empty state must not add a fixed-height card");
     shellGeometry();
   }
   for (const scroll of fixture.querySelectorAll<HTMLElement>(".shell-content-scroll, .system-command-grid, .library-catalog-rail")) {
     scroll.scrollTop = 0; scroll.scrollLeft = 0;
   }
-  if (config.page === "system") await reach(".system-instance-empty");
+  if (config.page === "system") {
+    await reach(".system-runtime-panel");
+  }
   check(errors.length === 0, `Unexpected browser errors: ${errors.join("; ")}`);
   return { status: "passed", checks, page: config.page, locale: config.locale,
     viewport: { width: innerWidth, height: innerHeight }, controls, browser_errors: errors };

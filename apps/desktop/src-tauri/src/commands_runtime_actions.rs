@@ -172,7 +172,7 @@ pub(super) fn resolve_declared_runtime_action(
         && !target.is_some_and(app_core::is_humanitz_net_id)
     {
         return Err(String::from(
-            "HumanitZ player actions require the complete NetID (EpicAccountId|ProductUserId or |ProductUserId); short IDs and Steam64 IDs are not accepted.",
+            "HumanitZ player actions require the complete NetID (Steam64_+_|ProductUserId, EpicAccountId|ProductUserId or |ProductUserId); short IDs and standalone Steam64 IDs are not accepted.",
         ));
     }
 

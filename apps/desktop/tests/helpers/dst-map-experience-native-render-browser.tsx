@@ -126,17 +126,17 @@ async function run() {
   check(context && canvas.width === snapshot.width * 4, "The production terrain canvas must use captured native geometry");
   check(context.getImageData(Math.floor(canvas.width / 2), Math.floor(canvas.height / 2), 1, 1).data[3] > 0,
     "The native terrain must contain actual painted pixels");
-  check(element<HTMLSelectElement>("select.dst-map-zoom").value === "1", "The initial map must use the production full-map view");
+  check(element<HTMLSelectElement>("select.map-zoom-select").value === "1", "The initial map must use the production full-map view");
 
   let cameraRestored = false;
   if (options.mode === "camera") {
     await act(async () => {
-      const zoomSelect = element<HTMLSelectElement>("select.dst-map-zoom");
+      const zoomSelect = element<HTMLSelectElement>("select.map-zoom-select");
       Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, "value")!.set!.call(zoomSelect, "4");
       zoomSelect.dispatchEvent(new Event("change", { bubbles: true }));
     });
     await act(async () => element(".dst-map-viewport").dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowRight", bubbles: true, cancelable: true })));
-    const selected = camera(snapshot), zoom = Number(element<HTMLSelectElement>("select.dst-map-zoom").value);
+    const selected = camera(snapshot), zoom = Number(element<HTMLSelectElement>("select.map-zoom-select").value);
     check(zoom === 4 && selected.scale > 0, "The production zoom overlay must change the camera");
     await render(false);
     let cached = await readDstMapCache(options.instanceId, options.shard);
@@ -148,7 +148,7 @@ async function run() {
       `The actual production hook must persist the camera in IndexedDB: ${JSON.stringify({ cachedView: cached?.view, selected, zoom })}`);
     await render(); await loaded(snapshot.width);
     const restored = camera(snapshot);
-    check(Number(element<HTMLSelectElement>("select.dst-map-zoom").value) === zoom && Math.abs(restored.x - selected.x) < .1
+    check(Number(element<HTMLSelectElement>("select.map-zoom-select").value) === zoom && Math.abs(restored.x - selected.x) < .1
       && Math.abs(restored.y - selected.y) < .1, "Remounting the production Workbench must restore the saved camera without resetting its center");
     cameraRestored = true;
   }

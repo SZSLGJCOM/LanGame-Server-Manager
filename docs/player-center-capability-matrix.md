@@ -52,7 +52,7 @@ Conan、Palworld 的目录和格式由安装包读写函数核对；Necesse、Un
 | `corekeeper` | read_only | — | `admin`, `block` | `codec:a2s_players` |
 | `dontstarve` | structured | — | `admin`, `allow`, `block` | `codec:dst_client_table_v1` |
 | `enshrouded` | structured | `unban_player` | `block` | `codec:enshrouded_native_players` |
-| `humanitz` | read_only | `kick_player` | `admin`, `block`, `priority` | `codec:humanitz_players` |
+| `humanitz` | structured | — | `admin`, `block`, `priority` | `codec:humanitz_players` |
 | `minecraft` | read_only | `kick_player`, `ban_player`, `unban_player`, `op_player`, `deop_player`, `whitelist_add`, `whitelist_remove` | `admin`, `allow`, `block` | `codec:minecraft_players` |
 | `necesse` | read_only | `check_permission`, `set_permission`, `ban_player`, `unban_player` | `admin` | `codec:necesse_players` |
 | `nightingale` | read_only | — | — | `codec:nightingale_players` |
@@ -80,11 +80,12 @@ Conan、Palworld 的目录和格式由安装包读写函数核对；Necesse、Un
 
 - **饥荒联机版**：Master 分片生成带请求标识的结构化名单，通过原生 `GetPlayerClientTable()` 排除独立服务器 Host 记录，保留尚未选角的真人；玩家页、概览和全局人数使用同一名单，按唯一 Klei ID 计数。保留原有 Klei ID 和控制台踢出能力，发送时再次核对目标仍在线；发送成功只表示命令已提交，不代表玩家已经离线。运行时 `admin` 表示有效权限，与持久 `admin_list` 成员身份不同；服务器所有者、Steam 组权限或本次启动已载入的配置也可能使玩家成为管理员。仅有名单内的条目可移除，名单修改下次启动应用，不能据此宣称已撤销其他来源的管理员权限。
 - **Rust、ARK ASA/ASE、Conan Exiles、Project Zomboid、Squad**：分别解析服务器直接响应，校验当前协议的身份字段和可绑定动作。ARK 的 Steam、Epic 和 EOS 标识按实际格式区分；Conan 使用其内部 UserID，不能把全部 ID 都标成 Steam ID。
+- **ARK 中文账户名**：`ListPlayers` 的人数、在线身份和管理绑定保持权威；名称含问号或替换字符时，优先从当前地图对应账号的原生 `.arkprofile` 读取 `MyData.PlayerName`，核对档案内 `UniqueID`，严格解码 UTF-16。此路径不要求安装扩展，支持 ASE profile v1 与 ASA profile v7；不扫描历史玩家、不读取备份、不把角色名当账户名。首次档案尚未生成、昵称尚未保存或档案暂时不可读时，已安装的 `LgsmArkTools` 可补充实时名称；仍无可靠来源则保留查询名称，下一次刷新继续尝试，列表不增加安装提示。存档只读且限制单文件与整次读取量，账号、权限和在线人数不从存档推导。
 - **7 Days to Die**：Telnet `listplayers` 提供名称、平台账号和跨平台账号；管理目标使用服务器 `InternalId` 对应的跨平台账号，缺失时才使用平台账号。已识别的 Steam / EOS 账号支持从在线行踢出和立即封禁 10 年；不会用可复用的实体 ID 执行动作。即时封禁后从本实例原生 `serveradmin.xml` 核验目标记录，再保存到管理器黑名单并刷新左侧名单；保留原生到期时间的时分秒，不把发送命令等同于保存成功。管理员、白名单和持久黑名单从左侧切换，在线选中玩家后可直接填写名单操作所需参数。黑名单中的解除封禁同时移除持久条目，并在服务器运行时发送离线账号解封命令；其他未声明即时同步的名单变更仍在下次启动生效。契约依据本机安装包静态核验，协议样本为合成数据，不代表完成了真实多人服务器验收。
 - **Minecraft Java**：RCON `list uuids` 提供名称和 UUID。格式依据本机安装的 Mojang 26.2 服务端；行只读。
 - **Palworld**：REST API 返回名称、平台用户 ID 和延迟。当前运行的完整名单支持踢出和封禁，动作绑定响应中的 `userId`；解封通过手动用户 ID 操作执行。广播、保存和停服同样使用 REST API，成功必须收到 HTTP 200。新建实例默认启用 REST API 并生成管理员密码；已有实例需启用 REST API。官方已弃用 RCON，LanGame 不再通过它管理 Palworld。[官方 REST API](https://docs.palworldgame.com/category/rest-api/)
 - **Nightingale**：HTTP `/status` 提供人数和名称；503 表示尚未就绪，不当成空名单。当前接口不提供可绑定管理动作的稳定身份。
-- **HumanitZ**：原生 RCON 响应不能按标准 Source RCON 的请求 ID 和空命令结束帧读取。专用传输使用 `info` 的人数与 `Players:` 名称段判断完成，名称行只读；没有完整边界则失败。已测试 build 23914958 的默认 EOS 会话模式不回复 A2S，隔离副本改用 Steam 会话后可回复；生产保留原生联机方式，名单与人数使用认证后的完整 RCON 响应。默认关闭的 RCON 需要配置并启用，缺失或失败时人数保持未知。管理员、预留名额和封禁名单均使用包含 `|` 的完整 NetID，并保留原始大小写；将 `ReserveSlots` 设为 `MaxPlayers` 可通过 `F_ReservedSlots.txt` 限制准入。原生游戏已停用独立的 `F_MVPAccess.txt` 名单，管理器保留已有文件及设置数据，移除对应编辑入口。
+- **HumanitZ**：原生 RCON 响应不能按标准 Source RCON 的请求 ID 和空命令结束帧读取。专用传输先用完整 `info` 确认人数，再读取 `Players` 的原生姓名与完整 NetID 行，核对行数后才发布身份与踢出绑定；零人仅由完整 `info` 确认，不用超时推断。build 26335264 已观察到 `Steam64_+_|ProductUserId`，同时保留 `EpicAccountId|ProductUserId` 和 `|ProductUserId`；原始大小写及前缀不可丢失，昵称不作为管理目标。名单变化造成计数不一致时本轮查询失败。已测试 build 23914958 的默认 EOS 会话模式不回复 A2S，生产保留原生联机方式。默认关闭的 RCON 需要配置并启用，缺失或失败时人数保持未知。管理员和预留名额名单重启生效；封禁名单通过原生 ban/unban 发送，回包不代表副作用已核实。将 `ReserveSlots` 设为 `MaxPlayers` 可通过 `F_ReservedSlots.txt` 限制准入。原生游戏已停用独立的 `F_MVPAccess.txt` 名单，管理器保留已有文件及设置数据，移除对应编辑入口。
 - **Necesse、Romestead、Terraria**：发送只读命令后，从当前日志位置读取新增输出；人数、记录格式及完整行必须吻合。采集期间串行发送控制台命令，历史日志不进入本次快照。此类没有请求标识的控制台名单只读；Terraria 支持安装包内的本地化人数结束语。
 - **Astroneer**：原生 TCP 控制台执行 `DSListPlayers`，只取 `inGame=true` 的玩家。需要非空控制台密码及独立 TCP 端口；空密码时配置模板关闭接口。GUID 按 Astroneer 身份显示，不标成 Steam ID。
 - **Soulmask**：通过原生 Echo TCP 管理口执行 `lp`，按页码读取所有页面，并使用本轮随机未知命令的响应确认每页结束；最后 `dc` 仅关闭管理连接。Steam ID 来自在线表，列表只读，既有手工管理保留。

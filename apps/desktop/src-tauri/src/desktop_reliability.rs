@@ -6,6 +6,7 @@ mod log_document;
 mod log_worker;
 mod native;
 mod native_drop;
+mod native_window;
 mod protocol;
 mod server;
 
@@ -35,6 +36,7 @@ struct Fixture {
     browser_process_ids: Mutex<Vec<u32>>,
     window_visibility: Mutex<WindowVisibilityEvidence>,
     native_drop_checks: std::sync::atomic::AtomicU32,
+    native_window_checks: std::sync::atomic::AtomicU32,
 }
 
 #[derive(Clone, Copy, Default, Serialize)]
@@ -142,6 +144,10 @@ impl Fixture {
                 .native_drop_checks
                 .load(std::sync::atomic::Ordering::Acquire)
                 != 3
+            || self
+                .native_window_checks
+                .load(std::sync::atomic::Ordering::Acquire)
+                != 3
             || !before.server_alive
             || before.error.is_some()
             || before.native_failures != ["renderer_exited", "browser_exited"]
@@ -167,6 +173,7 @@ impl Fixture {
                 "server_exited": true, "output_worker_joined": true,
                 "profile_verified": true,
                 "window_visibility": visibility,
+                "window_modes": {"generations_verified":3,"resize_edges_disabled":true,"maximize_restore":true,"fixed_size_restored":true},
                 "native_drop": {"generations_verified":3,"file_and_directory_paths":true,"plain_text_and_uri":true,"installation_attempted":false},
                 "emitted_log_batches": lock(&self.output).batches,
             }),
@@ -273,6 +280,10 @@ async fn execute(
         }
     }
     if matches!(action, Action::SendCommand) {
+        native_window::verify(app).await?;
+        fixture
+            .native_window_checks
+            .fetch_add(1, std::sync::atomic::Ordering::Release);
         native_drop::verify(app, &fixture.config.root).await?;
         fixture
             .native_drop_checks
@@ -382,6 +393,7 @@ fn run(config_path: &Path) -> Result<(), String> {
         browser_process_ids: Mutex::new(Vec::with_capacity(3)),
         window_visibility: Mutex::new(WindowVisibilityEvidence::default()),
         native_drop_checks: std::sync::atomic::AtomicU32::new(0),
+        native_window_checks: std::sync::atomic::AtomicU32::new(0),
     });
     let mut context = tauri::tauri_build_context!();
     context.config_mut().app.windows.clear();
@@ -395,6 +407,8 @@ fn run(config_path: &Path) -> Result<(), String> {
         data_directory: Some(config.root.join("profile")),
         width: 1560.0,
         height: 900.0,
+        resizable: false,
+        decorations: false,
         focus: false,
         drag_drop_enabled: false,
         ..Default::default()
@@ -424,6 +438,7 @@ fn run(config_path: &Path) -> Result<(), String> {
             let webview = tauri::WebviewWindowBuilder::from_config(app, &window)?
                 .data_directory(setup_fixture.config.root.join("profile"))
                 .build()?;
+            crate::desktop_window::prepare(&webview, &window).map_err(std::io::Error::other)?;
             crate::webview_drop::install(&webview).map_err(std::io::Error::other)?;
             webview_recovery::install(
                 app.handle(),

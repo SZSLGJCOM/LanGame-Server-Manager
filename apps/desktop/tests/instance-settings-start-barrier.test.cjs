@@ -84,7 +84,7 @@ function actions(owner) {
     "../installation-cancellation": {},
     "../steam-installation-account": {},
     "../i18n": { useI18n: () => ({ t: (key) => key }) },
-    "../server-start-error": { readModuleNotReadyError: () => null, serverStartFailureMessage: (error) => ({ error: error.message }),
+    "../server-start-error": { isRuntimeStartCancelled: () => false, readModuleNotReadyError: () => null, serverStartFailureMessage: (error) => ({ error: error.message }),
       serverStartSuccessMessage: (_result, id) => ({ key: "activity.serverStartSent", params: { id } }) },
     "../views/settings/InstanceSettingsSaveContext": { useInstanceSettingsSaveCoordinator: () => owner },
     "../install-state-presentation": {}, "../instance-panel-loader": {}

@@ -261,6 +261,11 @@ fn descriptor_from_manifest(
     validate_port_roles(&manifest_path, &default_ports, &runtime.port_roles)?;
     validate_port_groups(&manifest_path, &default_ports, &runtime.port_groups)?;
     validate_bind_address_policy(&manifest_path, &default_ports, &runtime.bind_address)?;
+    startup_readiness::validate(
+        &manifest_path,
+        &default_ports,
+        runtime.startup_readiness.as_ref(),
+    )?;
     validate_join_profile(&manifest_path, &default_ports, &runtime)?;
 
     let storage = storage_spec_from_toml(storage).map_err(|message| {

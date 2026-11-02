@@ -1,8 +1,12 @@
 import { invoke, isTauri } from "@tauri-apps/api/core";
 import { parseArkMap, validArkMapScope, type ArkMapScope } from "./ark-world-map";
 import type { InstanceRuntimeCommandResult } from "./types";
+import { readPreferredLocale } from "./locale-preference";
+import { parseArkToolsInstallProgress, type ArkToolsInstallProgress } from "./ark-tools-installation";
 
-export interface ArkToolsStatus { installed: boolean; connected: boolean; issue: string | null }
+export interface ArkToolsStatus { installed: boolean; connected: boolean; canUninstall: boolean; issue: string | null }
+export interface ArkToolsPreparationResult extends ArkToolsStatus { progress: ArkToolsInstallProgress }
+export interface ArkToolsRemovalResult extends ArkToolsStatus { frameworkRetained: boolean }
 export interface ArkCreature {
   id1: number; id2: number; className: string; level: number; team: number;
   x: number; y: number; z: number; tamed: boolean;
@@ -23,22 +27,48 @@ function record(value: unknown): Record<string, unknown> {
 }
 function status(value: unknown): ArkToolsStatus {
   const response = record(value);
-  if (typeof response.installed !== "boolean" || typeof response.connected !== "boolean"
+  if (typeof response.installed !== "boolean" || typeof response.connected !== "boolean" || typeof response.canUninstall !== "boolean"
     || response.issue !== null && (typeof response.issue !== "string" || response.issue.length > 8192)
     || response.connected && !response.installed) throw new Error("Invalid ARK extension status.");
   // The native installer reports ordinary absence as a message. Present that
   // prerequisite through localized action help; retain actual repair/connection diagnostics.
   const issue = !response.installed && response.issue === "Prepare the ARK server extension while this instance is stopped"
     ? null : response.issue as string | null;
-  return { installed: response.installed, connected: response.connected, issue };
+  return { installed: response.installed, connected: response.connected, canUninstall: response.canUninstall, issue };
 }
 export async function readArkToolsStatus(instanceId: string, processKey = "main"): Promise<ArkToolsStatus> {
   requireHost();
   return status(await invoke<unknown>("read_ark_tools_status", { input: { instanceId, processKey } }));
 }
-export async function prepareArkTools(instanceId: string): Promise<ArkToolsStatus> {
+export async function prepareArkTools(instanceId: string, operationId: string): Promise<ArkToolsPreparationResult> {
   requireHost();
-  return status(await invoke<unknown>("prepare_ark_tools", { input: { instanceId, allowMatchingSymbolsDownload: true } }));
+  const value = await invoke<unknown>("prepare_ark_tools", { input: {
+    instanceId, operationId, locale: readPreferredLocale(), allowMatchingSymbolsDownload: true
+  } });
+  try {
+    const response = record(value);
+    const progress = parseArkToolsInstallProgress(response.progress, instanceId, operationId);
+    const result = status(response);
+    if (!result.installed || !progress || progress.active || progress.phase !== "ready") throw new Error("Missing final installation progress.");
+    return { ...result, progress };
+  } catch {
+    throw new Error("Invalid ARK installation completion receipt. Check the existing operation before retrying.");
+  }
+}
+export async function readArkToolsInstallProgress(instanceId: string, operationId: string | null = null): Promise<ArkToolsInstallProgress | null> {
+  requireHost();
+  return parseArkToolsInstallProgress(await invoke<unknown>("read_ark_tools_install_progress", {
+    input: { instanceId, operationId }
+  }), instanceId, operationId);
+}
+export async function removeArkTools(instanceId: string): Promise<ArkToolsRemovalResult> {
+  requireHost();
+  const response = record(await invoke<unknown>("remove_ark_tools", { input: { instanceId } }));
+  const result = status(response);
+  if (result.installed || result.connected || result.canUninstall || result.issue !== null || typeof response.frameworkRetained !== "boolean") {
+    throw new Error("Invalid ARK removal completion receipt. Check the extension status before retrying.");
+  }
+  return { ...result, frameworkRetained: response.frameworkRetained };
 }
 export async function spawnArkCreature(input: ArkSpawnInput): Promise<ArkSpawnResult> {
   requireHost();

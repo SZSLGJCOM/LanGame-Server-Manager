@@ -230,7 +230,12 @@ async fn receive_response(
     command: &str,
     pipe: &mut (impl tokio::io::AsyncRead + tokio::io::AsyncWrite + Unpin),
 ) -> Result<Value, String> {
-    receive_response_with_budget(command, pipe, Duration::from_secs(1830)).await
+    let budget = if command == "runtime_service_events" {
+        super::events::LONG_POLL_TIMEOUT + Duration::from_secs(15)
+    } else {
+        Duration::from_secs(1830)
+    };
+    receive_response_with_budget(command, pipe, budget).await
 }
 
 async fn receive_response_with_budget(
@@ -334,6 +339,7 @@ pub(super) fn relay_events(app: tauri::AppHandle) {
             Err(_) => return,
         };
         let mut cursor = super::events::Cursor::default();
+        let mut retry_delay = Duration::from_millis(250);
         loop {
             if super::interface_is_closing(&app) {
                 return;
@@ -341,32 +347,35 @@ pub(super) fn relay_events(app: tauri::AppHandle) {
             match client
                 .request("runtime_service_events", cursor.request_args())
                 .await
+                .and_then(|response| cursor.accept(response))
             {
-                Ok(response) => {
-                    if let Ok((readback, events)) = cursor.accept(response) {
-                        for event in events {
-                            if ![
-                                crate::runtime_log_stream::RUNTIME_LOG_STREAM_EVENT,
-                                "app-shutdown-failed",
-                            ]
-                            .contains(&event.name.as_str())
-                            {
-                                continue;
-                            }
-                            let _ = app.emit(&event.name, event.payload);
+                Ok((readback, events)) => {
+                    retry_delay = Duration::from_millis(250);
+                    for event in events {
+                        if ![
+                            crate::runtime_log_stream::RUNTIME_LOG_STREAM_EVENT,
+                            "app-shutdown-failed",
+                        ]
+                        .contains(&event.name.as_str())
+                        {
+                            continue;
                         }
-                        if readback {
-                            let _ = app.emit(super::events::RESET_EVENT, cursor.request_args());
-                        }
+                        let _ = app.emit(&event.name, event.payload);
                     }
+                    if readback {
+                        let _ = app.emit(super::events::RESET_EVENT, cursor.request_args());
+                    }
+                    // The service waits when idle. Drain bounded backlog batches
+                    // immediately instead of adding a delay after each receipt.
                 }
                 Err(_) => {
                     if super::interface_is_closing(&app) {
                         return;
                     }
+                    tokio::time::sleep(retry_delay).await;
+                    retry_delay = (retry_delay * 2).min(Duration::from_secs(2));
                 }
             }
-            tokio::time::sleep(Duration::from_millis(250)).await;
         }
     });
 }

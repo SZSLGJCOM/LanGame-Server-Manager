@@ -24,6 +24,7 @@ mod ark_world_save;
 
 fn source_rcon_executor(module_id: &str) -> fn(&str, &str, &str) -> Result<String, String> {
     match module_id {
+        "humanitz" => crate::runtime_transport_humanitz::humanitz_rcon_exec,
         "conanexiles" => crate::runtime_transport::conan_rcon_exec,
         "rust" => crate::runtime_transport::rust_rcon_exec,
         "vrising" => crate::runtime_transport::vrising_rcon_exec,
@@ -52,7 +53,7 @@ fn rcon_runtime_action_executor(
     if is_humanitz_native_save_action(module_id, transport, action_id) {
         crate::runtime_transport_humanitz::humanitz_rcon_save
     } else if transport.eq_ignore_ascii_case("humanitz_rcon") {
-        crate::runtime_transport_humanitz::humanitz_rcon_info
+        crate::runtime_transport_humanitz::humanitz_rcon_players
     } else {
         source_rcon_executor(module_id)
     }
@@ -89,7 +90,7 @@ fn humanitz_native_save_selection_and_pending_are_limited_to_the_declared_action
             crate::runtime_transport_humanitz::humanitz_rcon_save
                 as fn(&str, &str, &str) -> Result<String, String>
         } else if transport.eq_ignore_ascii_case("humanitz_rcon") {
-            crate::runtime_transport_humanitz::humanitz_rcon_info
+            crate::runtime_transport_humanitz::humanitz_rcon_players
         } else {
             source_rcon_executor(module)
         };
@@ -103,6 +104,11 @@ fn humanitz_native_save_selection_and_pending_are_limited_to_the_declared_action
 #[cfg(test)]
 #[test]
 fn source_rcon_executor_selects_read_only_completion_for_ark_and_squad() {
+    assert!(std::ptr::fn_addr_eq(
+        source_rcon_executor("humanitz"),
+        crate::runtime_transport_humanitz::humanitz_rcon_exec
+            as fn(&str, &str, &str) -> Result<String, String>
+    ));
     for module_id in ["arksurvivalevolved", "arksurvivalascended", "squad"] {
         assert!(std::ptr::fn_addr_eq(
             source_rcon_executor(module_id),

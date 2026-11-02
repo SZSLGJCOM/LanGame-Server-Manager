@@ -1,3 +1,5 @@
+@import "./gm-tool-controls.css";
+
 .gmt-ark-catalog-assist { display: grid; grid-template-rows: auto minmax(0, 1fr); gap: 6px; min-width: 0; min-height: 0; }
 .gmt-ark-catalog-toolbar { display: grid; grid-template-columns: minmax(0, 1fr); gap: 6px; min-width: 0; }
 .gmt-ark-catalog-search { width: 100%; min-width: 0; box-sizing: border-box; }
@@ -20,12 +22,6 @@
 .ark-spawn-options > summary { cursor: pointer; color: var(--shell-muted); }
 .ark-spawn-options[open] { max-height: 180px; overflow: auto; }
 .ark-spawn-options > .gmt-fields-grid { padding-block: 8px; }
-.ark-spawn-tool-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
-.secondary-button.ark-spawn-tool, .primary-button.ark-spawn-tool, .ark-spawn-setting { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; min-width: 0; min-height: 54px; padding: 6px 3px; border-radius: 8px; font-size: var(--text-meta); }
-.ark-spawn-tool svg { width: 18px; height: 18px; flex: none; }
-.ark-spawn-tool > span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.ark-spawn-tool[aria-pressed="true"] { border-color: var(--shell-focus); background: var(--shell-focus-soft); }
-.ark-spawn-setting { border: 1px solid var(--border); background: var(--theme-card-surface); color: var(--shell-muted); box-sizing: border-box; }
 .ark-spawn-setting input, .ark-spawn-setting select { width: 100%; min-width: 0; padding: 0; border: 0; border-radius: 0; background: transparent; color: var(--shell-text, inherit); font: inherit; text-align: center; font-variant-numeric: tabular-nums; outline-offset: 2px; }
 .ark-spawn-tool-grid .configuration-action-help { display: flex; min-width: 0; }
 .ark-spawn-tool-grid .configuration-action-help > button { width: 100%; }

@@ -1,5 +1,6 @@
 .storage-initialization-page {
-  min-height: min(680px, calc(100vh - 156px));
+  flex: 1;
+  min-height: 0;
   display: grid;
   place-items: center;
   padding: 48px 32px;

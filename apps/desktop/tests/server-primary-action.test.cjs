@@ -73,18 +73,18 @@ test("degraded instances remain stoppable while a managed process survives", () 
 for (const status of ["Starting", "Stopping"]) {
   test(`${status} preserves the runtime busy action before installation decisions`, () => {
     const action = resolve({ status, installation: { installState: "Corrupted", hasManagedInstallSource: true } });
-    assert.equal(action.disabled, true);
+    assert.equal(action.disabled, status === "Stopping");
     assert.equal(action.ariaBusy, true);
     assert.equal(action.deleteBlocked, true);
-    assert.equal(action.labelKey, `status.instance.${status.toLowerCase()}`);
+    assert.equal(action.labelKey, status === "Starting" ? "common.cancel" : "status.instance.stopping");
   });
 }
 
 test("an optimistic runtime action stays busy before the backend status changes", () => {
   const action = resolve({ pendingRuntime: "starting", installation: { installState: "NotInstalled", hasManagedInstallSource: true } });
-  assert.equal(action.action, "start");
-  assert.equal(action.disabled, true);
-  assert.equal(action.labelKey, "status.instance.starting");
+  assert.equal(action.action, "stop");
+  assert.equal(action.disabled, false);
+  assert.equal(action.labelKey, "common.cancel");
 });
 
 test("all stopped instances sharing a module reflect one pending repair", () => {

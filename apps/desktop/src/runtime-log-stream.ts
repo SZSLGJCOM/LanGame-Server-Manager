@@ -1,4 +1,6 @@
 import type { InstanceDetails, InstanceRuntimeOverview, LogTailSnapshot } from "./types";
+import { appendRuntimeConsoleEvent } from "./runtime-console-stream";
+import { appendRuntimeLogDocumentPatch } from "./runtime-log-document-patch";
 
 export const RUNTIME_LOG_STREAM_EVENT = "runtime-log-stream";
 export const RUNTIME_SERVICE_EVENTS_RESET = "runtime-service-events-reset";
@@ -15,10 +17,29 @@ export interface RuntimeLogStreamEvent {
   snapshot?: LogTailSnapshot;
   snapshot_revision?: number;
   stream_error?: string;
+  document_patch?: {
+    previous_revision: number;
+    revision: number;
+    start: number;
+    delete_count: number;
+    lines: string[];
+    total_lines: number;
+    truncated: boolean;
+    read_error: string | null;
+  };
+  console?: {
+    stream_id: string;
+    started_at_unix_ms: number;
+    revision: number;
+    previous_revision: number;
+    reset: boolean;
+    partial_lines: string[];
+  };
 }
 
 export interface RuntimeLogStartupBoundary {
   instanceId: string;
+  startupAttemptId?: string;
   startedAtUnixMs: number;
   previousLogPaths: ReadonlySet<string>;
 }
@@ -34,7 +55,7 @@ export interface RuntimeLogStreamDiagnostic {
 export function runtimeLogEventMatchesStartup(event: RuntimeLogStreamEvent, boundary: RuntimeLogStartupBoundary): boolean {
   return event.instance_id === boundary.instanceId
     && !boundary.previousLogPaths.has(normalizeRuntimeLogPath(event.log_path))
-    && event.emitted_at_unix_ms >= boundary.startedAtUnixMs;
+    && (event.console?.started_at_unix_ms ?? event.emitted_at_unix_ms) >= boundary.startedAtUnixMs;
 }
 
 export function retainRuntimeLogStreamDiagnostic(
@@ -49,7 +70,8 @@ export function retainRuntimeLogStreamDiagnostic(
   if (current && event.instance_id === current.instanceId
     && (event.process_key ?? null) === current.processKey && (event.run_id ?? null) === current.runId
     && normalizeRuntimeLogPath(event.log_path) === current.logPath
-    && (event.lines.length > 0 || event.snapshot) && !event.snapshot?.read_error) return null;
+    && (event.lines.length > 0 || event.snapshot || event.console || event.document_patch)
+    && !event.snapshot?.read_error && !event.document_patch?.read_error) return null;
   return current;
 }
 
@@ -98,7 +120,7 @@ export function appendRuntimeLogStreamEvent(
   event: RuntimeLogStreamEvent,
   options: RuntimeLogStreamAppendOptions
 ): LogTailSnapshot | null {
-  if (event.instance_id !== options.instanceId || (event.lines.length === 0 && !event.snapshot)) {
+  if (event.instance_id !== options.instanceId || (event.lines.length === 0 && !event.snapshot && !event.console && !event.document_patch)) {
     return snapshot;
   }
 
@@ -113,6 +135,9 @@ export function appendRuntimeLogStreamEvent(
   if (pathChanged && !options.followLatestPath) {
     return snapshot;
   }
+
+  if (event.console) return appendRuntimeConsoleEvent(snapshot, event, options);
+  if (event.document_patch) return appendRuntimeLogDocumentPatch(snapshot, event, options.maxLines);
 
   if (event.snapshot) {
     if (normalizeRuntimeLogPath(event.snapshot.source_path) !== eventPath) return snapshot;

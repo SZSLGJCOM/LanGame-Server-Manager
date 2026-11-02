@@ -3,6 +3,7 @@
 use crate::commands::commands_ark_cluster_backups as backups;
 use crate::commands::commands_nexus_mods as nexus;
 use crate::commands::commands_storage_management as storage;
+use crate::commands::commands_storage_migration as migration;
 use crate::state::DesktopState;
 use serde_json::Value;
 use std::future::Future;
@@ -19,6 +20,38 @@ pub(super) fn dispatch<'a>(
     // Box each construction separately, as in the shared dispatcher. Large
     // native command futures must not accumulate on a connection worker's stack.
     match command {
+        "preview_app_storage_migration" => Some(Box::pin(async move {
+            to_json(
+                migration::preview_app_storage_migration(
+                    app.clone(),
+                    app.state::<DesktopState>(),
+                    input(args)?,
+                )
+                .await?,
+            )
+        })),
+        "read_app_storage_migration" => Some(Box::pin(async move {
+            to_json(migration::read_app_storage_migration(app.state::<DesktopState>()).await?)
+        })),
+        "execute_app_storage_migration" => Some(Box::pin(async move {
+            to_json(
+                migration::execute_app_storage_migration(
+                    app.clone(),
+                    app.state::<DesktopState>(),
+                    string_argument(&args, "operationId")?,
+                )
+                .await?,
+            )
+        })),
+        "cancel_app_storage_migration" => Some(Box::pin(async move {
+            to_json(
+                migration::cancel_app_storage_migration(
+                    app.state::<DesktopState>(),
+                    string_argument(&args, "operationId")?,
+                )
+                .await?,
+            )
+        })),
         "nexus_account_status" => Some(Box::pin(async move {
             to_json(nexus::nexus_account_status().await?)
         })),
@@ -190,9 +223,26 @@ pub(super) fn dispatch<'a>(
                 .await?,
             )
         })),
+        "read_ark_tools_install_progress" => Some(Box::pin(async move {
+            to_json(
+                crate::commands::commands_ark_tools::read_ark_tools_install_progress(
+                    app.state::<DesktopState>(),
+                    input(args)?,
+                )?,
+            )
+        })),
         "prepare_ark_tools" => Some(Box::pin(async move {
             to_json(
                 crate::commands::commands_ark_tools::prepare_ark_tools(
+                    app.state::<DesktopState>(),
+                    input(args)?,
+                )
+                .await?,
+            )
+        })),
+        "remove_ark_tools" => Some(Box::pin(async move {
+            to_json(
+                crate::commands::commands_ark_tools::removal::remove_ark_tools(
                     app.state::<DesktopState>(),
                     input(args)?,
                 )

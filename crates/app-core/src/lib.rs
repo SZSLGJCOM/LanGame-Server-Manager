@@ -5,7 +5,9 @@ use serde::{Deserialize, Serialize};
 pub mod abiotic_output;
 mod live_players;
 pub mod maintenance_schedule;
+mod storage_migration;
 pub use live_players::*;
+pub use storage_migration::*;
 mod enshrouded_identity;
 pub use enshrouded_identity::enshrouded_steam_account_hash;
 mod install_progress;
@@ -40,6 +42,8 @@ mod runtime_resources;
 pub use runtime_resources::RuntimeResourceLimits;
 mod program_update;
 pub mod runtime_logs;
+pub mod startup_readiness;
+pub use startup_readiness::ModuleStartupReadinessSpec;
 pub use program_update::InstanceProgramUpdatePolicy;
 mod runtime_start_warnings;
 pub use runtime_start_warnings::{
@@ -517,6 +521,8 @@ pub enum ModuleJoinProfile {
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct ModuleRuntimeSpec {
+    #[serde(default)]
+    pub startup_readiness: Option<ModuleStartupReadinessSpec>,
     #[serde(default)]
     pub program_sharing: InstanceProgramMode,
     #[serde(default)]
@@ -1282,13 +1288,21 @@ pub struct StoppedProcess {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct StopInstanceResult {
     pub summary: InstanceSummary,
-    pub run_id: i64,
+    pub outcome: StopInstanceOutcome,
+    pub run_id: Option<i64>,
     pub session_id: Option<String>,
     pub pid: Option<u32>,
     pub log_path: Option<String>,
     pub exit_code: Option<i32>,
     pub process_count: usize,
     pub processes: Vec<StoppedProcess>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum StopInstanceOutcome {
+    Stopped,
+    StartupCancelled,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

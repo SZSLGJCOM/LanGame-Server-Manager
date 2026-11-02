@@ -1,5 +1,38 @@
 use super::*;
 
+#[tokio::test]
+async fn preparation_raw_output_keeps_all_records_and_per_pipe_offsets() {
+    use tokio::io::AsyncWriteExt;
+    let (mut writer, reader) = tokio::io::duplex(64);
+    let (sender, mut receiver) = mpsc::channel(8);
+    let mut forwarder = forward_output(reader, 1, sender);
+    let expected = "重复\n重复\n\n无换行".as_bytes();
+    writer.write_all(expected).await.unwrap();
+    drop(writer);
+    let mut observed = Vec::new();
+    let mut ended = false;
+    while let Some(chunk) = receiver.recv().await {
+        let chunk = chunk.unwrap();
+        let super::super::InstallConsoleOutput::Raw {
+            source,
+            offset,
+            bytes,
+            finished,
+            ..
+        } = chunk.raw
+        else {
+            panic!("raw pipe event expected")
+        };
+        assert_eq!(source, super::super::InstallOutputSource::Stderr);
+        assert_eq!(offset, observed.len() as u64);
+        observed.extend(bytes);
+        ended = finished;
+    }
+    forwarder.join().await.unwrap();
+    assert!(ended);
+    assert_eq!(observed, expected);
+}
+
 #[test]
 fn carriage_returns_and_partial_chunks_report_before_eof() {
     let mut output = PreparationOutput::default();

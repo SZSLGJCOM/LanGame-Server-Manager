@@ -6,6 +6,10 @@ use std::future::Future;
 use std::path::{Path, PathBuf};
 use std::time::Duration;
 
+// Drain the bounded backlog, then allow one complete connect/write/long-poll.
+const EVENT_DRAIN_BUDGET: Duration =
+    ExistingClient::EVENT_REQUEST_BUDGET.saturating_add(Duration::from_secs(15));
+
 #[derive(Default, Serialize)]
 pub(super) struct EventEvidence {
     pub read_failed: bool,
@@ -96,7 +100,9 @@ impl Observer {
         // The bridge is bounded by both count and encoded bytes; a short batch
         // can still have successors. At most 256 nonempty pulls plus an empty
         // pull drains a quiescent ring even when only one event fits per batch.
-        let deadline = tokio::time::Instant::now() + Duration::from_secs(15);
+        // The empty pull now waits in the service; retain time for both the
+        // bounded backlog and one complete long-poll response.
+        let deadline = tokio::time::Instant::now() + EVENT_DRAIN_BUDGET;
         for _ in 0..257 {
             let count = tokio::time::timeout_at(deadline, self.poll(client))
                 .await
@@ -206,13 +212,19 @@ impl Observer {
         future: impl Future<Output = Result<T, String>>,
     ) -> Result<T, String> {
         tokio::pin!(future);
-        let mut interval = tokio::time::interval(Duration::from_millis(100));
-        interval.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Skip);
         loop {
+            // A long-poll must not suspend the observed operation's own timers
+            // and response reads. Successful batches can continue immediately.
             tokio::select! {
                 result = &mut future => return result,
-                _ = interval.tick() => {
-                    if self.poll(client).await.is_err() { self.evidence.read_failed = true; }
+                result = self.poll(client) => {
+                    if result.is_err() {
+                        self.evidence.read_failed = true;
+                        tokio::select! {
+                            result = &mut future => return result,
+                            _ = tokio::time::sleep(Duration::from_millis(100)) => {}
+                        }
+                    }
                 }
             }
         }
@@ -234,7 +246,7 @@ impl Observer {
         // The producer has stopped before these immutable file signatures were
         // captured. Matching every line proves final partial delivery and also
         // detects lost middle batches, which an EOF byte offset alone cannot.
-        let deadline = tokio::time::Instant::now() + Duration::from_secs(5);
+        let deadline = tokio::time::Instant::now() + EVENT_DRAIN_BUDGET;
         loop {
             match tokio::time::timeout_at(deadline, self.poll(client)).await {
                 Ok(Ok(_)) => {}
@@ -250,10 +262,6 @@ impl Observer {
             if tokio::time::Instant::now() >= deadline {
                 break;
             }
-            tokio::time::sleep_until(
-                (tokio::time::Instant::now() + Duration::from_millis(100)).min(deadline),
-            )
-            .await;
         }
         self.evidence
     }

@@ -11,7 +11,7 @@ import type { InstanceDetails } from "../../types";
 import { DONTSTARVE_SHARDS, DONTSTARVE_SHARD_NAMES, isDontStarveShardActive, type DontStarveShard } from "../settings/modules/dontstarve-shards";
 import { DstWorldMapCanvas } from "./DstWorldMapCanvas";
 import { DstMapArtworkStatus } from "./DstMapArtworkStatus";
-import { DstMapZoomControls } from "./DstMapZoomControls";
+import { MapZoomControls } from "./MapZoomControls";
 import { useDstMapSession } from "./useDstMapSession";
 import { useDstMapFollow } from "./useDstMapFollow";
 import { DstMapCollectionStatus } from "./DstMapCollectionStatus";
@@ -162,7 +162,7 @@ ${text("玩家采集", "Players collected")} · ${timestamp(current.capturedAtUn
         fitRevision={fitRevision} onZoomChange={setZoom} onFit={fitMap}
         onCancelFollow={() => setFollow(null)} onZoomLimitChange={setZoomMaximum}
         onMapClick={mapClick}
-        controls={<DstMapZoomControls zoom={zoom} maximum={zoomMaximum} onChange={value => { setFollow(null); setZoom(value); }} onFit={fitMap} />}
+        controls={<MapZoomControls zoom={zoom} maximum={zoomMaximum} onChange={value => { setFollow(null); setZoom(value); }} onFit={fitMap} />}
         // Only canvas-owned details move with the map. Instance operations must
         // survive stopping, cache loading and selecting a different shard.
         renderDetails={content => canvasDetailsTarget ? createPortal(content, canvasDetailsTarget) : null} /> :

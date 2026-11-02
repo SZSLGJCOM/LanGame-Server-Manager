@@ -6,6 +6,12 @@ test("read-only players support keyboard inspection and explain unavailable mana
   const report = await runBrowserFixture({ fixturePath: "player-details-browser.html", keyboard: true,
     viewport: { width: 1280, height: 900 }, screenshotPath: process.env.LANGAME_PLAYER_DETAILS_SCREENSHOT });
   assert.equal(report.status, "passed");
+  assert.ok(report.checks.includes("HumanitZ management requires a selected player"));
+  assert.ok(report.checks.includes("HumanitZ complete Steam and EOS NetID enables kick, administrator, ban and reserved-slot controls"));
+  assert.ok(report.checks.includes("HumanitZ selected player retains the complete native NetID"));
+  assert.ok(report.checks.includes("HumanitZ names-only keeps all four management controls disabled"));
+  assert.ok(report.checks.includes("HumanitZ incomplete identity keeps all four management controls disabled"));
+  assert.ok(report.checks.includes("HumanitZ button inspection sends no player commands or roster mutations"));
   assert.ok(report.checks.includes("Keyboard selects an Enshrouded name without granting native account authority"));
   assert.ok(report.checks.includes("A game with no player actions still exposes selected details"));
   assert.ok(report.checks.includes("Inspecting expired players never sends live commands"));

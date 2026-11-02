@@ -1,5 +1,8 @@
 use super::*;
 
+#[path = "program_dst_reuse_tests.rs"]
+mod dst;
+
 async fn native_fixture(shipped_config: bool) -> CleanCreationFixture {
     let mut fixture = CleanCreationFixture::new().await;
     fixture.paths.modules_root = fs::canonicalize(repo_root().join("modules")).unwrap();

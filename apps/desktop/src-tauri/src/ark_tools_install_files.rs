@@ -158,21 +158,28 @@ pub(super) fn remove_created_directories(paths: &[PathBuf]) -> Result<(), String
 }
 
 pub(super) fn read(bin: &Path, relative: &str) -> Result<Option<Vec<u8>>, String> {
+    let mut pins = Vec::new();
+    if !pin_parent(bin, relative, &mut pins)? {
+        return Ok(None);
+    }
+    read_regular(&bin.join(relative))
+}
+
+pub(super) fn pin_parent(bin: &Path, relative: &str, pins: &mut Vec<File>) -> Result<bool, String> {
     if !safe_relative(relative) {
         return Err("Invalid ARK extension file path".into());
     }
-    let mut pins = Vec::new();
     let mut current = bin.to_path_buf();
     let parts: Vec<_> = relative.split('/').collect();
     for part in &parts[..parts.len() - 1] {
         current.push(part);
         match fs::symlink_metadata(&current) {
-            Err(e) if e.kind() == std::io::ErrorKind::NotFound => return Ok(None),
+            Err(e) if e.kind() == std::io::ErrorKind::NotFound => return Ok(false),
             Err(e) => return Err(e.to_string()),
             Ok(_) => pins.push(pin(&current)?),
         }
     }
-    read_regular(&bin.join(relative))
+    Ok(true)
 }
 
 pub(super) struct LockedFile {

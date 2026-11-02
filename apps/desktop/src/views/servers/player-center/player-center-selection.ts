@@ -1,4 +1,4 @@
-import { canonicalPlayerAccessIdentity, isValheimPlatformAccountTarget, normalizePlayerAccessMutationEntry, parsePlayerAccessCodec, playerAccessObjectIdentityKeys } from "../../../domain/player-access";
+import { canonicalPlayerAccessIdentity, isHumanitzNetId, isValheimPlatformAccountTarget, normalizePlayerAccessMutationEntry, parsePlayerAccessCodec, playerAccessObjectIdentityKeys } from "../../../domain/player-access";
 import { isAuthoritativeLivePlayerSnapshot } from "../../../domain/live-player-state";
 import type { DragonwildsBanEntry, NativeBanEntry, RuntimeLivePlayerEntry, RuntimeLivePlayerIdentifier, RuntimeLivePlayerSnapshot, RuntimePlayerIdentityKind } from "../../../types";
 import { isRosterRecord, type RosterEntry, type RosterField } from "./player-access-roster-model";
@@ -75,6 +75,7 @@ export function rosterEntryPlayer(selection: SelectedRosterEntry | null): Runtim
     }
   } else if (codec === "steam64" || codec === "pipe_steam64" || codec === "barotrauma_account") add("steam_id", entry.key);
   else if (codec === "dst_klei_id") add("klei_user_id", entry.key);
+  else if (codec === "humanitz_net_id" && typeof entry.rawValue === "string" && isHumanitzNetId(entry.rawValue)) add("humanitz_net_id", entry.rawValue);
   else if (codec === "ark_account_id") add("ark_account_id", entry.key);
   else if (codec === "csv_uuid_name") {
     add("minecraft_uuid", entry.key);

@@ -165,6 +165,10 @@ async function run(executable, output) {
     assert.equal(hostReport.server_exited, true);
     assert.equal(hostReport.output_worker_joined, true);
     assert.equal(hostReport.profile_verified, true);
+    assert.deepEqual(hostReport.window_modes, {
+      generations_verified: 3, resize_edges_disabled: true,
+      maximize_restore: true, fixed_size_restored: true,
+    });
     assert.ok(hostReport.native_drop, "Host did not provide native drop acceptance evidence");
     assert.equal(hostReport.native_drop.generations_verified, 3);
     assert.equal(hostReport.native_drop.file_and_directory_paths, true);

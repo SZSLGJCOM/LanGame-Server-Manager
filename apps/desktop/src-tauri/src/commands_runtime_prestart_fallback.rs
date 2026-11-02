@@ -51,7 +51,7 @@ impl InstalledProgramFallback<'_> {
             self.context,
             "failed",
             &original,
-        );
+        )?;
         let guard = self
             .verify(guard)
             .await

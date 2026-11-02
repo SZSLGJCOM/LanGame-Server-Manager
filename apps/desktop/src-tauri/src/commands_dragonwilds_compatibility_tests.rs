@@ -339,8 +339,8 @@ async fn isolated_dragonwilds_production_stop_backs_up_completed_autosave_and_re
             save_bytes(&saves)?
         };
         let before_stop = native_log(&log_path)?;
-        let stopped = Box::pin(stop_instance_process(state.clone(), id.clone())).await?;
-        assert_eq!(stopped.run_id, started.run_id);
+        let stopped = Box::pin(stop_instance_process(state.clone(), id.clone(), None)).await?;
+        assert_eq!(stopped.run_id, Some(started.run_id));
         assert_eq!(stopped.exit_code, Some(0));
         assert!(!stopped.processes.is_empty());
         assert!(

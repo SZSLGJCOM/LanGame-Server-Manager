@@ -5,6 +5,8 @@ use std::path::Path;
 
 pub(crate) mod file_identity;
 use file_identity::{LogFileIdentity, log_identity};
+pub(crate) mod document;
+pub(crate) mod document_patch;
 mod managed_segments;
 
 pub const RUNTIME_LOG_STREAM_EVENT: &str = "runtime-log-stream";
@@ -18,9 +20,38 @@ pub struct RuntimeLogTailState {
     suppress_leading_line_feed: bool,
     file_identity: Option<LogFileIdentity>,
     managed: bool,
+    source_generation: u64,
 }
 
 impl RuntimeLogTailState {
+    fn reset_source(&mut self) {
+        let source_generation = self.source_generation + 1;
+        *self = Self {
+            source_generation,
+            ..Default::default()
+        };
+    }
+
+    pub(crate) fn source_generation(&self) -> u64 {
+        self.source_generation
+    }
+
+    pub(crate) fn partial_preview(&self) -> Option<String> {
+        if self.discarding_overlong_line || self.pending_bytes.is_empty() {
+            return None;
+        }
+        let bytes = &self.pending_bytes;
+        // Incomplete UTF-8 at a read boundary is not a replacement character.
+        let text = match std::str::from_utf8(bytes) {
+            Ok(text) => text.to_owned(),
+            Err(error) if error.error_len().is_none() => {
+                String::from_utf8_lossy(&bytes[..error.valid_up_to()]).into_owned()
+            }
+            Err(_) => String::from_utf8_lossy(bytes).into_owned(),
+        };
+        (!text.is_empty()).then_some(text)
+    }
+
     pub(crate) fn is_discarding_overlong_line(&self) -> bool {
         self.discarding_overlong_line
     }
@@ -51,6 +82,10 @@ pub struct RuntimeLogStreamPayload {
     pub snapshot_revision: Option<u64>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub stream_error: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub console: Option<document::ConsoleStreamUpdate>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub document_patch: Option<document_patch::RuntimeLogDocumentPatch>,
 }
 
 /// Snapshot the current end before requesting new console output. Managed
@@ -112,12 +147,13 @@ pub fn read_runtime_log_delta_bounded(
     let (bytes, unread_file_bytes, gap) =
         if let Some(segments) = app_storage::managed_console_log::open_log_segments(path)? {
             if !state.managed {
-                *state = RuntimeLogTailState::default();
+                state.reset_source();
                 state.managed = true;
             }
             let delta = managed_segments::read(segments, state.byte_offset, max_bytes)?;
             state.byte_offset = delta.offset;
             if delta.gap {
+                state.source_generation += 1;
                 state.pending_text.clear();
                 state.pending_bytes.clear();
                 state.discarding_overlong_line = false;
@@ -126,7 +162,7 @@ pub fn read_runtime_log_delta_bounded(
             (delta.bytes, delta.more, delta.gap)
         } else {
             if state.managed {
-                *state = RuntimeLogTailState::default();
+                state.reset_source();
             }
             let (bytes, more) = read_unmanaged_bytes(path, state, max_bytes)?;
             (bytes, more, false)
@@ -170,7 +206,7 @@ fn read_unmanaged_bytes(
             .as_ref()
             .is_some_and(|previous| *previous != identity)
     {
-        *state = RuntimeLogTailState::default();
+        state.reset_source();
     }
     state.file_identity = Some(identity);
 

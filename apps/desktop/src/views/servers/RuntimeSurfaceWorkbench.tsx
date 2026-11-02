@@ -1,11 +1,18 @@
-import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type SetStateAction } from "react";
 import { isTauri } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { describeError } from "../../app-state";
 import { moduleRequiresSteamCmd } from "../../module-installation-dependency";
-import { readInstanceLogDocument } from "../../api";
+import { readInstanceLogDocument, recordStartupSessionDiagnostic } from "../../api";
 import { createRuntimeLogRefresh } from "../../runtime-log-refresh";
+import { createRuntimeLogFrameBatch } from "../../runtime-log-frame-batch";
+import { runtimeLogDocumentPatchNeedsRefresh } from "../../runtime-log-document-patch";
+import { markRuntimeConsoleSourceForRefresh, mergeRuntimeConsoleSnapshot, runtimeConsoleDisplayLines,
+  runtimeConsoleEventNeedsRefresh, runtimeConsoleSourceNeedsReadback, selectRuntimeConsoleSource } from "../../runtime-console-stream";
 import { runtimeConsoleHistory, runtimeConsoleStartupHistoryScope } from "../../runtime-console-history";
+import { appendRuntimeStartupEvent, mergeRuntimeStartupSession, restoreRuntimeStartupConsole, runtimeStartupBeforeCursor, runtimeStartupEventNeedsRefresh,
+  runtimeStartupLines, startupDiagnosticId, startupSessionMatchesBoundary, withoutRuntimeStartupSource,
+  type RuntimeStartupConsole } from "../../runtime-console-startup-session";
 import { formatInstancePanelError, type InstancePanelLoadState } from "../../instance-panel-loader";
 import { selectLocaleText, useI18n, type TranslateFn } from "../../i18n";
 import {
@@ -87,6 +94,12 @@ interface RuntimeConsoleTab {
 const PRIMARY_RUNTIME_TARGET = "__primary__";
 
 type RuntimeConsoleCopyState = "idle" | "copied" | "failed";
+type RuntimeConsoleRead = { snapshot: LogTailSnapshot; recoveryGeneration: number;
+  startupGeneration: string | null; startupRetainedStartCursor: string | null; receiptOnly: boolean };
+type RuntimeConsoleDiagnosticScope = { instanceId: string; attemptId: string; kind: "startup-read" | "runtime-read";
+  runId: number | null; source: RuntimeLogSource | "default" };
+type RuntimeConsoleDiagnosticOccurrence = { id: string; scope: string; recovered: boolean; retained: boolean;
+  inFlight: Promise<void> | null };
 
 function pickRuntimeProcessRecords(
   details: InstanceDetails,
@@ -251,7 +264,24 @@ function GameRuntimeSurfaceWorkbench(props: RuntimeSurfaceWorkbenchProps) {
   const [processLogSnapshot, setProcessLogSnapshot] = useState<LogTailSnapshot | null>(null);
   const [processLogReadScope, setProcessLogReadScope] = useState("");
   const [arkLogSelection, setArkLogSelection] = useState<{ scope: string; source: RuntimeLogSource } | null>(null);
-  const [liveLogSnapshot, setLiveLogSnapshot] = useState<LogTailSnapshot | null>(null);
+  const [liveLogSnapshot, setRenderedLogSnapshot] = useState<LogTailSnapshot | null>(null);
+  const liveLogSnapshotRef = useRef<LogTailSnapshot | null>(null);
+  const logFrames = useMemo(() => createRuntimeLogFrameBatch<LogTailSnapshot | null>({
+    schedule: callback => window.requestAnimationFrame(callback),
+    cancel: handle => window.cancelAnimationFrame(handle),
+    publish: setRenderedLogSnapshot
+  }), []);
+  function setLiveLogSnapshot(update: SetStateAction<LogTailSnapshot | null>, nextFrame = false) {
+    const current = liveLogSnapshotRef.current;
+    const next = typeof update === "function" ? update(current) : update;
+    if (next === current) return;
+    liveLogSnapshotRef.current = next;
+    if (nextFrame) logFrames.push(next);
+    else {
+      logFrames.clear();
+      setRenderedLogSnapshot(next);
+    }
+  }
   const [processLogLoading, setProcessLogLoading] = useState(false);
   const [processLogError, setProcessLogError] = useState<{ scope: string; message: string } | null>(null);
   const [processLogRetryGeneration, setProcessLogRetryGeneration] = useState(0);
@@ -259,7 +289,8 @@ function GameRuntimeSurfaceWorkbench(props: RuntimeSurfaceWorkbenchProps) {
   const streamError = streamDiagnostic?.message ?? null;
   const [commandFeedback, setCommandFeedback] = useState<string | null>(null);
   const [commandPending, setCommandPending] = useState(false);
-  const logRefreshRef = useRef<ReturnType<typeof createRuntimeLogRefresh<LogTailSnapshot>> | null>(null);
+  const logRefreshRef = useRef<ReturnType<typeof createRuntimeLogRefresh<RuntimeConsoleRead>> | null>(null);
+  const logRecoveryGenerationRef = useRef(0);
   const commandScope = `${props.details.summary.id}:${props.details.active_run?.run_id ?? ""}:${runtimeTargetValue}`;
   const commandScopeRef = useRef(commandScope);
   commandScopeRef.current = commandScope;
@@ -278,6 +309,71 @@ function GameRuntimeSurfaceWorkbench(props: RuntimeSurfaceWorkbenchProps) {
     scope: null, following: true, feedback: null, scrollTop: 0
   });
   const revealedReadErrorsRef = useRef(new Set<string>());
+  const [startupConsole, renderStartupConsole] = useState<RuntimeStartupConsole | null>(null);
+  const [startupReceiptLoaded, setStartupReceiptLoaded] = useState(false);
+  const startupConsoleRef = useRef<RuntimeStartupConsole | null>(null);
+  const startupOwnerRef = useRef(props.details.summary.id);
+  const startupRunSelectionRef = useRef<{ attemptId: string; mode: "startup" | "history" } | null>(null);
+  const [startupPagePending, setStartupPagePending] = useState(false);
+  const [startupPageError, setStartupPageError] = useState<string | null>(null);
+  const startupPageGenerationRef = useRef(0);
+  const startupPageAnchorRef = useRef<{ height: number; top: number } | null>(null);
+  const startupDiagnosticIdsRef = useRef(new Map<string, RuntimeConsoleDiagnosticOccurrence>());
+  const startupDiagnosticSequenceRef = useRef(0);
+  function setStartupConsole(update: (current: RuntimeStartupConsole | null) => RuntimeStartupConsole | null) {
+    const next = update(startupConsoleRef.current);
+    if (next === startupConsoleRef.current) return;
+    startupConsoleRef.current = next;
+    renderStartupConsole(next);
+  }
+
+  async function retainReadDiagnostic(scope: RuntimeConsoleDiagnosticScope, message: string) {
+    if (startupOwnerRef.current !== scope.instanceId || startupConsoleRef.current?.session.attempt_id !== scope.attemptId
+      || scope.attemptId.startsWith("local:")) return;
+    const scopeKey = JSON.stringify(scope);
+    const key = `${scopeKey}:${startupDiagnosticId("console-read", message)}`;
+    let occurrence = startupDiagnosticIdsRef.current.get(key);
+    if (!occurrence || occurrence.recovered) {
+      occurrence = { id: `${startupDiagnosticId("console-read", message)}:${Date.now()}:${++startupDiagnosticSequenceRef.current}`,
+        scope: scopeKey, recovered: false, retained: false, inFlight: null };
+      startupDiagnosticIdsRef.current.set(key, occurrence);
+    }
+    if (occurrence.inFlight) return occurrence.inFlight;
+    if (occurrence.retained) return;
+    const currentOccurrence = occurrence;
+    const contextualMessage = `[${scope.kind}${scope.runId === null ? "" : ` run=${scope.runId}`} source=${scope.source}] ${message}`;
+    currentOccurrence.inFlight = (async () => {
+      try {
+        await recordStartupSessionDiagnostic(scope.instanceId, scope.attemptId, currentOccurrence.id, contextualMessage);
+        const current = startupConsoleRef.current?.session;
+        if (startupOwnerRef.current !== scope.instanceId || current?.attempt_id !== scope.attemptId) return;
+        // A diagnostic can outlive the reader that failed. Read its owned receipt
+        // directly, never repeat a now-obsolete run/source request to recover it.
+        const readBasis = { readGeneration: current.line_generation, readRetainedStartCursor: current.retained_start_cursor };
+        const snapshot = await readInstanceLogDocument(scope.instanceId, 400, undefined, undefined, scope.attemptId);
+        if (snapshot.startup_session?.attempt_id === scope.attemptId && startupOwnerRef.current === scope.instanceId
+          && startupConsoleRef.current?.session.attempt_id === scope.attemptId) {
+          const session = snapshot.startup_session;
+          setStartupConsole(value => mergeRuntimeStartupSession(value, session, readBasis));
+          setStartupPageError(value => value?.includes(contextualMessage) ? null : value);
+          currentOccurrence.retained = true;
+        }
+      } catch (error: unknown) {
+        // A lost write acknowledgement is not evidence that nothing was saved.
+        // Keep this occurrence's ID for retries and merge concurrent callers.
+        if (startupOwnerRef.current === scope.instanceId && startupConsoleRef.current?.session.attempt_id === scope.attemptId) {
+          setStartupPageError(`[${new Date().toISOString()}] [LanGameCMD/history] ${contextualMessage}\n${describeError(error)}`);
+        }
+        console.warn("Runtime read diagnostic could not be retained or read back.", error);
+      } finally {
+        currentOccurrence.inFlight = null;
+        if (currentOccurrence.recovered && currentOccurrence.retained && startupDiagnosticIdsRef.current.get(key) === currentOccurrence) {
+          startupDiagnosticIdsRef.current.delete(key);
+        }
+      }
+    })();
+    return currentOccurrence.inFlight;
+  }
 
   useEffect(() => {
     if (observedLogPathsRef.current.instanceId !== props.details.summary.id) {
@@ -296,7 +392,25 @@ function GameRuntimeSurfaceWorkbench(props: RuntimeSurfaceWorkbenchProps) {
     setConsoleCopyState("idle");
     setCommandFeedback(null);
     setCommandPending(false);
+    startupOwnerRef.current = props.details.summary.id;
+    setStartupReceiptLoaded(false);
+    startupRunSelectionRef.current = null;
+    setStartupConsole(() => null);
+    startupPageGenerationRef.current++;
+    startupPageAnchorRef.current = null;
+    setStartupPagePending(false);
+    setStartupPageError(null);
+    startupDiagnosticIdsRef.current.clear();
   }, [props.details.summary.id, readOnly]);
+
+  useEffect(() => {
+    if (!startupPending || !props.startupBoundary) return;
+    const boundary = props.startupBoundary;
+    setStartupConsole(current => current && startupSessionMatchesBoundary(current.session, boundary) ? current : null);
+    startupPageGenerationRef.current++;
+    setStartupPagePending(false);
+    setStartupPageError(null);
+  }, [startupPending, props.startupBoundary]);
 
   useEffect(() => {
     setCommandFeedback(null);
@@ -344,37 +458,71 @@ function GameRuntimeSurfaceWorkbench(props: RuntimeSurfaceWorkbenchProps) {
   }, [runtimeConsoleTabKeys, runtimeConsoleTabValue, runtimeConsoleTabs, selectedConsoleTab]);
 
   const selectedConsoleRunId = selectedConsoleTab?.runId ?? null;
+  const selectedStartupConsole = !readOnly && startupOwnerRef.current === props.details.summary.id && startupConsole
+    && (!startupPending || startupSessionMatchesBoundary(startupConsole.session, props.startupBoundary)) ? startupConsole : null;
+  const startupSession = selectedStartupConsole?.session;
+  const startupReceiptKnown = startupReceiptLoaded || Boolean(startupSession);
+  const startupRunSelection = startupSession ? (startupRunSelectionRef.current?.attemptId === startupSession.attempt_id
+    ? startupRunSelectionRef.current : { attemptId: startupSession.attempt_id, mode: "startup" as const }) : null;
+  useEffect(() => {
+    if (startupRunSelectionRef.current?.attemptId !== startupRunSelection?.attemptId) startupDiagnosticIdsRef.current.clear();
+    startupRunSelectionRef.current = startupRunSelection;
+  }, [startupSession?.attempt_id]);
+  // A completed attempt can reach this view before its new run details. The
+  // previous recent_run is history, including after reloading during startup.
+  // An explicit process/history selection below opts out of this handoff guard.
+  const awaitingStartupRun = !startupPending && startupRunSelection?.mode === "startup"
+    && (startupSession?.status === "starting" || startupSession?.status === "succeeded")
+    && (selectedConsoleRunId === null || !startupSession.run_ids.includes(selectedConsoleRunId));
   const arkLogScope = JSON.stringify([props.details.summary.id, selectedConsoleRunId]);
   const arkLogSource: RuntimeLogSource = arkLogSelection?.scope === arkLogScope ? arkLogSelection.source : "game";
   const selectedGameLog = ark && !readOnly && !startupPending && selectedConsoleRunId !== null && arkLogSource === "game";
   const selectedLogReadScope = JSON.stringify([props.details.summary.id, selectedConsoleTab?.processKey, selectedConsoleRunId, ark ? arkLogSource : null]);
+  useEffect(() => () => logFrames.clear(), [logFrames, selectedLogReadScope, selectedConsoleTab?.logPath, startupPending, readOnly]);
   const historyScope = useMemo(() => ({ instanceId: props.details.summary.id, moduleId: props.details.summary.module_id,
     processKey: selectedConsoleTab?.processKey ?? null, runId: selectedConsoleRunId, source: ark ? arkLogSource : "default" }),
   [props.details.summary.id, props.details.summary.module_id, selectedConsoleTab?.processKey, selectedConsoleRunId, ark, arkLogSource]);
   const startupHistoryScope = useMemo(() => startupPending && props.startupBoundary?.instanceId === props.details.summary.id
     ? runtimeConsoleStartupHistoryScope(props.details.summary.module_id, props.startupBoundary) : null,
   [startupPending, props.startupBoundary, props.details.summary.id, props.details.summary.module_id]);
+  const retainedConsolePath = selectedGameLog ? "" : selectedConsoleTab?.isPrimary && !ark
+    ? fallbackLogPath : selectedConsoleTab?.logPath ?? "";
   useEffect(() => {
     if (startupPending) {
       const cached = !readOnly && startupHistoryScope ? runtimeConsoleHistory.read(startupHistoryScope) : null;
       setLiveLogSnapshot(cached);
+      setStartupConsole(current => restoreRuntimeStartupConsole(current, cached, props.startupBoundary));
       setStreamDiagnostic(cached?.startup_stream_diagnostic ?? null);
       return;
     }
     const cached = readOnly ? null : runtimeConsoleHistory.read(historyScope);
     setProcessLogSnapshot(cached);
     setProcessLogReadScope(cached ? selectedLogReadScope : "");
-    setLiveLogSnapshot(cached);
-  }, [selectedLogReadScope, historyScope, readOnly, startupPending, startupHistoryScope]);
+    // Registration changes run/process identity without changing the owned
+    // managed log. Keep that source while the new scope's read is in flight.
+    setLiveLogSnapshot(current => !readOnly && retainedConsolePath
+      ? selectRuntimeConsoleSource(current, retainedConsolePath) ?? cached : cached);
+  }, [selectedLogReadScope, historyScope, readOnly, startupPending, startupHistoryScope, retainedConsolePath]);
   const selectedProcessLog = processLogReadScope === selectedLogReadScope ? processLogSnapshot : null;
   const selectedProcessLogError = processLogError?.scope === selectedLogReadScope ? processLogError.message : null;
   const selectedConsoleIsPrimary = Boolean(selectedConsoleTab?.isPrimary);
   const selectedConsoleUsesDefaultLog = selectedConsoleIsPrimary && !ark;
   const selectedConsoleLogPath = selectedGameLog ? selectedProcessLog?.source_path ?? ""
     : selectedConsoleUsesDefaultLog ? fallbackLogPath : selectedConsoleTab?.logPath ?? "";
+  const selectedRunIsActive = selectedConsoleRunId !== null && (
+    (instanceRunning && props.details.active_run?.run_id === selectedConsoleRunId)
+    || props.details.active_run?.processes?.some(process => process.run_id === selectedConsoleRunId && runtimeProcessIsRunning(process)));
+  const diagnosticScope: RuntimeConsoleDiagnosticScope | null = startupSession
+    && (((startupPending || awaitingStartupRun) && startupRunSelection?.mode !== "history")
+      || (selectedRunIsActive && selectedConsoleRunId !== null && startupSession.run_ids.includes(selectedConsoleRunId)))
+    ? { instanceId: props.details.summary.id, attemptId: startupSession.attempt_id,
+      kind: startupPending || awaitingStartupRun ? "startup-read" : "runtime-read",
+      runId: startupPending || awaitingStartupRun ? null : selectedConsoleRunId,
+      source: startupPending || awaitingStartupRun ? "default" : ark ? arkLogSource : "default" } : null;
+  const diagnosticReadScope = JSON.stringify(diagnosticScope);
 
   useEffect(() => {
-    if (readOnly || startupPending || !selectedConsoleTab) {
+    if (readOnly || !selectedConsoleTab) {
       setProcessLogSnapshot(null);
       setProcessLogLoading(false);
       setProcessLogError(null);
@@ -383,14 +531,57 @@ function GameRuntimeSurfaceWorkbench(props: RuntimeSurfaceWorkbenchProps) {
 
     // Map source selection is resolved by the backend from the owned run;
     // never infer another map's filename or reuse its previous snapshot.
+    let disposed = false;
     const refresh = createRuntimeLogRefresh({
-      read: () => readInstanceLogDocument(props.details.summary.id, 400,
-        selectedConsoleUsesDefaultLog ? undefined : selectedConsoleRunId ?? undefined,
-        ark && selectedConsoleRunId !== null ? arkLogSource : undefined),
-      publish: (snapshot) => {
+      read: async () => {
+        const recoveryGeneration = logRecoveryGenerationRef.current;
+        const startupGeneration = startupConsoleRef.current?.session.line_generation ?? null;
+        const startupRetainedStartCursor = startupConsoleRef.current?.session.retained_start_cursor ?? null;
+        const receiptOnly = !startupPending && (!startupReceiptKnown || awaitingStartupRun);
+        const retainFailure = async (message: string) => {
+          if (!diagnosticScope) return;
+          await retainReadDiagnostic(diagnosticScope, message);
+        };
+        try {
+          const snapshot = await readInstanceLogDocument(props.details.summary.id, 400,
+            startupPending || receiptOnly || selectedConsoleUsesDefaultLog ? undefined : selectedConsoleRunId ?? undefined,
+            !startupPending && !receiptOnly && ark && selectedConsoleRunId !== null ? arkLogSource : undefined);
+          if (snapshot.read_error) await retainFailure(snapshot.read_error);
+          else if (!disposed && diagnosticScope) {
+            // Only this original source's successful read ends its failure
+            // occurrence. Reading the diagnostic receipt never marks recovery.
+            for (const [key, occurrence] of startupDiagnosticIdsRef.current) {
+              if (occurrence.scope === diagnosticReadScope) {
+                occurrence.recovered = true;
+                if (occurrence.retained && !occurrence.inFlight) startupDiagnosticIdsRef.current.delete(key);
+              }
+            }
+          }
+          return { snapshot, recoveryGeneration, startupGeneration, startupRetainedStartCursor, receiptOnly };
+        } catch (error: unknown) {
+          // Disposal suppresses UI publication, not an owned failure that arrived
+          // after startup succeeded or its selected run details changed.
+          await retainFailure(describeError(error));
+          throw error;
+        }
+      },
+      publish: ({ snapshot, recoveryGeneration, startupGeneration, startupRetainedStartCursor, receiptOnly }) => {
+          if (recoveryGeneration !== logRecoveryGenerationRef.current) return;
+          const session = snapshot.startup_session;
+          if (session) setStartupConsole(current => mergeRuntimeStartupSession(current, session,
+            { boundary: startupPending ? props.startupBoundary : null,
+              readGeneration: startupGeneration, readRetainedStartCursor: startupRetainedStartCursor }));
+          setStartupReceiptLoaded(true);
+          if (receiptOnly) { setProcessLogError(null); return; }
           setProcessLogSnapshot(snapshot);
           setProcessLogReadScope(selectedLogReadScope);
-          setLiveLogSnapshot((current) => selectedGameLog && snapshot.snapshot_revision !== undefined
+          setLiveLogSnapshot((current) => snapshot.console_sources
+            ? mergeRuntimeConsoleSnapshot(current, snapshot, { maxLines: 400, mergeProcessLogs: startupPending,
+              startupBoundary: startupPending ? startupBoundaryRef.current?.value : null })
+            : startupPending || (current?.console_sources?.length
+              && normalizeRuntimeLogPath(current.source_path) === normalizeRuntimeLogPath(snapshot.source_path)
+              && !runtimeConsoleSourceNeedsReadback(current, snapshot.source_path)) ? current
+            : selectedGameLog && snapshot.snapshot_revision !== undefined
             ? retainNewestRuntimeGameDocument(current, snapshot, 400)
             : retainRuntimeLogHistory(null, snapshot, 400));
           setProcessLogError(null);
@@ -404,11 +595,13 @@ function GameRuntimeSurfaceWorkbench(props: RuntimeSurfaceWorkbenchProps) {
     logRefreshRef.current = refresh;
     refresh.request();
     return () => {
+      disposed = true;
       refresh.dispose();
       if (logRefreshRef.current === refresh) logRefreshRef.current = null;
     };
-  }, [props.details.summary.id, readOnly, startupPending, selectedConsoleUsesDefaultLog, selectedConsoleRunId,
+  }, [props.details.summary.id, props.startupBoundary, readOnly, startupPending, selectedConsoleUsesDefaultLog, selectedConsoleRunId,
     selectedConsoleTab?.value, selectedConsoleTab?.logPath, processLogRetryGeneration, selectedLogReadScope, ark, arkLogSource, selectedGameLog,
+    awaitingStartupRun, startupReceiptKnown, diagnosticReadScope,
     selectedConsoleUsesDefaultLog ? fallbackLogPath : null]);
 
   useEffect(() => {
@@ -423,14 +616,19 @@ function GameRuntimeSurfaceWorkbench(props: RuntimeSurfaceWorkbenchProps) {
   const commandHint = commandRoute.hint
     ? selectLocaleText(locale, commandRoute.hint.zhCN, commandRoute.hint.en) : null;
   const runtimeCommandEnabled = instanceRunning && !selectedTarget?.disabled && commandRoute.available && Boolean(props.onSendRuntimeCommand);
-  const polledLogSnapshot = selectedConsoleUsesDefaultLog
+  const polledLogSnapshot = startupPending || selectedConsoleUsesDefaultLog
     ? props.runtime?.log_tail ?? null
     : selectedProcessLog;
   const selectedSourcePath = normalizeRuntimeLogPath(selectedConsoleLogPath);
   // A newly selected map can be silent or fail its first read. Never label the
   // previous map's retained output as belonging to that selected command target.
-  const selectedLiveLog = (!selectedGameLog || selectedSourcePath) && (!selectedSourcePath || normalizeRuntimeLogPath(liveLogSnapshot?.source_path) === selectedSourcePath)
-    ? liveLogSnapshot : null;
+  const selectedLiveLog = useMemo(() => {
+    if (!startupPending && !selectedGameLog && selectedSourcePath) {
+      return selectRuntimeConsoleSource(liveLogSnapshot, selectedSourcePath);
+    }
+    return (!selectedGameLog || selectedSourcePath) && (!selectedSourcePath || normalizeRuntimeLogPath(liveLogSnapshot?.source_path) === selectedSourcePath)
+      ? liveLogSnapshot : null;
+  }, [liveLogSnapshot, selectedGameLog, selectedSourcePath, startupPending]);
   const selectedPolledLog = !selectedSourcePath || normalizeRuntimeLogPath(polledLogSnapshot?.source_path) === selectedSourcePath
     ? polledLogSnapshot : null;
   const startupReadbackBoundary = props.startupBoundary?.instanceId === props.details.summary.id
@@ -439,12 +637,35 @@ function GameRuntimeSurfaceWorkbench(props: RuntimeSurfaceWorkbenchProps) {
     && selectedPolledLog?.source_path
     && !startupReadbackBoundary.previousLogPaths.has(normalizeRuntimeLogPath(selectedPolledLog.source_path))
     ? selectedPolledLog : null;
+  // After a UI reload, the backend identifies the pending operation's log even
+  // though this webview no longer owns its original startup boundary/capture.
+  const recoveredStartupReadback = !props.startupBoundary && props.runtime?.health.reason?.code === "startup_pending"
+    ? props.runtime.log_tail : null;
   const selectedLogSnapshot = readOnly ? archivedLogSnapshot : startupPending
     // A late mount may already have the new primary's snapshot. Display it only
     // until shard events arrive; never seed their unpositioned aggregate with it.
-    ? liveLogSnapshot ?? startupReadback
-    : selectedLiveLog ?? selectedPolledLog;
-  const runtimeLogLines = selectedLogSnapshot?.lines ?? [];
+    ? liveLogSnapshot ?? startupReadback ?? recoveredStartupReadback
+    : awaitingStartupRun ? null : selectedLiveLog ?? selectedPolledLog;
+  const startupHistoryLines = runtimeStartupLines(selectedStartupConsole,
+    t("servers.runtimeSurface.startupHistoryGap", undefined, "[LanGameCMD] More startup history is available above."));
+  const gameLogSnapshot = withoutRuntimeStartupSource(selectedLogSnapshot, startupSession?.source_path ?? null, startupPending);
+  const gameLogLines = runtimeConsoleDisplayLines(gameLogSnapshot, startupPending);
+  const managedConsoleSource = Boolean(gameLogSnapshot?.console_sources?.length)
+    || normalizeRuntimeLogPath(gameLogSnapshot?.source_path).includes("/managed-console/");
+  const startupHeading = startupSession ? `[LanGameCMD] ${t("servers.runtimeSurface.startupHistory", undefined, "Startup process (checks / updates / game startup)")} · ${new Date(startupSession.started_at_unix_ms).toLocaleString(locale)} · ${t(`servers.runtimeSurface.startupStatus.${startupSession.status}`, undefined, startupSession.status)}` : "";
+  const startupPartialLines = startupSession?.status === "starting" ? selectedStartupConsole?.live?.console_sources?.[0]?.partial_lines ?? [] : [];
+  const startupCompletedLines = startupPartialLines.length ? startupHistoryLines.slice(0, -startupPartialLines.length) : startupHistoryLines;
+  // The outcome is normally a retained log row. Keep its receipt fallback
+  // readable when that row itself could not be written or read.
+  const startupOutcomeError = startupSession?.error && !startupCompletedLines.some(line => line.includes(startupSession.error ?? ""))
+    ? `[${new Date(startupSession.finished_at_unix_ms ?? startupSession.started_at_unix_ms).toISOString()}] [LanGameCMD/startup] ${startupSession.error}` : null;
+  const runtimeHeading = `[LanGameCMD] ${managedConsoleSource
+    ? t("servers.runtimeSurface.processConsoleOutput", undefined, "Process console output")
+    : t("servers.runtimeSurface.gameRuntimeLogs", undefined, "Game runtime log")}`;
+  const runtimeLogLines = startupSession ? [startupHeading, ...startupHistoryLines,
+    ...(startupOutcomeError ? [startupOutcomeError] : []), ...(startupSession.reader_error ? [startupSession.reader_error] : []),
+    ...(gameLogLines.length ? ["", runtimeHeading, ...gameLogLines] : [])] : gameLogLines;
+  const startupBeforeCursor = runtimeStartupBeforeCursor(selectedStartupConsole);
   useEffect(() => {
     if (!readOnly && !startupPending && processLogReadScope === selectedLogReadScope && selectedLogSnapshot) {
       runtimeConsoleHistory.write(historyScope, selectedLogSnapshot);
@@ -473,6 +694,18 @@ function GameRuntimeSurfaceWorkbench(props: RuntimeSurfaceWorkbenchProps) {
     }
   }
   const runtimeErrorText = runtimeReadMessages.map(message => `[LanGameCMD] ${message}`).join("\n");
+  useEffect(() => {
+    const session = startupConsoleRef.current?.session;
+    if (readOnly || !session || session.attempt_id.startsWith("local:")) return;
+    if (!diagnosticScope) return;
+    const messages = startupPending || awaitingStartupRun ? runtimeReadIdentities
+      : new Set([selectedProcessLogError, selectedLogSnapshot?.read_error].filter((value): value is string => Boolean(value)));
+    for (const message of messages) {
+      // The service already records producer failures in its owned receipt.
+      if (message === streamError) continue;
+      void retainReadDiagnostic(diagnosticScope, message);
+    }
+  }, [runtimeErrorText, startupPending, awaitingStartupRun, startupSession?.attempt_id, props.details.summary.id, readOnly, diagnosticReadScope]);
   const retryReadsPending = (!readOnly && processLogLoading) || runtimeReadParts.some(part => panelLoadState?.pending.includes(part));
   const runtimeLogText = runtimeLogLines.length > 0
     ? runtimeLogLines.join("\n")
@@ -498,8 +731,9 @@ function GameRuntimeSurfaceWorkbench(props: RuntimeSurfaceWorkbenchProps) {
   ).trim();
   const runtimeLogSubscriptionPath = startupPending ? "" : runtimeLogSourcePath;
   const consoleScrollScope = JSON.stringify([props.details.summary.id, readOnly, selectedConsoleTab?.value,
-    selectedConsoleRunId, ark ? arkLogSource : null, normalizeRuntimeLogPath(runtimeLogSourcePath), startupPending,
-    startupPending ? props.startupBoundary?.startedAtUnixMs : null]);
+    startupSession?.attempt_id ?? selectedConsoleRunId, ark ? arkLogSource : null,
+    startupSession ? null : normalizeRuntimeLogPath(runtimeLogSourcePath), startupSession ? null : startupPending,
+    startupSession ? null : startupPending ? props.startupBoundary?.startedAtUnixMs : null]);
   const runtimeWindowCount = readOnly ? 0 : props.runtimeWindows?.windows.length ?? 0;
   const runtimeWindowSuppressionSupported = props.launchHostSurface !== "external_window";
   const canSuppressRuntimeWindows =
@@ -519,13 +753,18 @@ function GameRuntimeSurfaceWorkbench(props: RuntimeSurfaceWorkbenchProps) {
     }
     const source = props.startupBoundary?.instanceId === props.details.summary.id ? props.startupBoundary : undefined;
     if (startupBoundaryRef.current?.source === source && startupBoundaryRef.current?.value.instanceId === props.details.summary.id) return;
+    const previousLogPaths = new Set(source?.previousLogPaths ?? collectRuntimeLogPaths(props.details, props.runtime));
+    if (!source && props.runtime?.health.reason?.code === "startup_pending") {
+      previousLogPaths.delete(normalizeRuntimeLogPath(props.runtime.log_tail.source_path));
+    }
     // Freeze only the previous session's paths. Polls may already contain the
     // new run on mount, and later shards must stay eligible for this startup.
     startupBoundaryRef.current = { source, value: {
       instanceId: props.details.summary.id,
+      startupAttemptId: source?.startupAttemptId,
       startedAtUnixMs: source?.startedAtUnixMs ?? 0,
       previousLogPaths: new Set([
-        ...(source?.previousLogPaths ?? collectRuntimeLogPaths(props.details, props.runtime)),
+        ...previousLogPaths,
         ...observedLogPathsRef.current.paths
       ])
     } };
@@ -545,7 +784,10 @@ function GameRuntimeSurfaceWorkbench(props: RuntimeSurfaceWorkbenchProps) {
     }
     if (polledPath) observedLogPathsRef.current.paths.add(polledPath);
     // Startup combines all shard streams; a primary-only poll must not replace it.
-    setLiveLogSnapshot((current) => startupPending ? current
+    setLiveLogSnapshot((current) => polledLogSnapshot?.console_sources
+      ? mergeRuntimeConsoleSnapshot(current, polledLogSnapshot, { maxLines: 400, mergeProcessLogs: startupPending,
+        startupBoundary: startupPending ? startupBoundaryRef.current?.value : null })
+      : startupPending ? current
       : selectedGameLog && polledLogSnapshot?.snapshot_revision !== undefined
         ? retainNewestRuntimeGameDocument(current, polledLogSnapshot, 400)
       : retainRuntimeLogHistory(current, polledLogSnapshot, 400));
@@ -563,13 +805,27 @@ function GameRuntimeSurfaceWorkbench(props: RuntimeSurfaceWorkbenchProps) {
         return;
       }
       if (event.payload.instance_id !== props.details.summary.id) return;
+      if (event.payload.process_key === "startup") {
+        const current = startupConsoleRef.current;
+        const boundary = startupPending ? props.startupBoundary ?? (current ? null : startupBoundaryRef.current?.value) : null;
+        const samePath = current && normalizeRuntimeLogPath(current.session.source_path) === normalizeRuntimeLogPath(event.payload.log_path);
+        if (!boundary && !samePath) return;
+        if (typeof event.payload.stream_error === "string" || runtimeStartupEventNeedsRefresh(current, event.payload)) {
+          logRefreshRef.current?.request();
+        } else setStartupConsole(value => appendRuntimeStartupEvent(value, event.payload, boundary));
+        return;
+      }
+      if (awaitingStartupRun || (!startupPending && !startupReceiptKnown)) return;
+      // Startup is the operation-owned console transcript. Native game files
+      // only have a positioned baseline after selecting their running source.
+      if (startupPending && (event.payload.snapshot || event.payload.document_patch)) return;
       // Observe unselected shards as well so the next Start can exclude their
       // delayed final deliveries without rendering them in this selected tab.
       observedLogPathsRef.current.paths.add(normalizeRuntimeLogPath(event.payload.log_path));
       // A complete game document can arrive before its read request resolves.
       // Buffer it by the known run/map identity; the response will establish the
       // path without overwriting a newer event. Console deltas cannot enter here.
-      if (selectedGameLog && (!event.payload.snapshot || event.payload.run_id !== selectedConsoleRunId
+      if (selectedGameLog && ((!event.payload.snapshot && !event.payload.document_patch) || event.payload.run_id !== selectedConsoleRunId
         || event.payload.process_key !== selectedConsoleTab?.processKey)) return;
       if (!startupPending && runtimeLogSubscriptionPath &&
         normalizeRuntimeLogPath(event.payload.log_path) !== normalizeRuntimeLogPath(runtimeLogSubscriptionPath)) return;
@@ -578,10 +834,21 @@ function GameRuntimeSurfaceWorkbench(props: RuntimeSurfaceWorkbenchProps) {
       const boundary = startupPending ? startupBoundaryRef.current?.value : null;
       if (boundary?.instanceId === props.details.summary.id && (
         boundary.previousLogPaths.has(normalizeRuntimeLogPath(event.payload.log_path))
-        || event.payload.emitted_at_unix_ms < boundary.startedAtUnixMs
+        || (event.payload.console?.started_at_unix_ms ?? event.payload.emitted_at_unix_ms) < boundary.startedAtUnixMs
       )) return;
       setStreamDiagnostic(current => retainRuntimeLogStreamDiagnostic(current, event.payload));
-      if (!startupPending && !event.payload.snapshot) {
+      if (typeof event.payload.stream_error === "string") {
+        logRecoveryGenerationRef.current++;
+        setLiveLogSnapshot(current => markRuntimeConsoleSourceForRefresh(current, event.payload.log_path));
+        logRefreshRef.current?.request();
+        return;
+      }
+      if (runtimeConsoleEventNeedsRefresh(liveLogSnapshotRef.current, event.payload)
+        || runtimeLogDocumentPatchNeedsRefresh(liveLogSnapshotRef.current, event.payload)) {
+        logRefreshRef.current?.request();
+        return;
+      }
+      if (!startupPending && !event.payload.snapshot && !event.payload.console && !event.payload.document_patch) {
         // The retained file may already contain this delayed batch. There is no
         // snapshot byte range/event identity with which to prove an append safe.
         logRefreshRef.current?.request();
@@ -605,7 +872,7 @@ function GameRuntimeSurfaceWorkbench(props: RuntimeSurfaceWorkbenchProps) {
           startupBoundary: startupPending ? startupBoundaryRef.current?.value : null,
           maxLines: 400
         }
-      ));
+      ), Boolean(event.payload.console || event.payload.document_patch));
     }).catch((error: unknown) => {
       if (!disposed) setStreamDiagnostic({ instanceId: props.details.summary.id,
         processKey: selectedConsoleTab?.processKey ?? null, runId: selectedConsoleRunId,
@@ -621,7 +888,7 @@ function GameRuntimeSurfaceWorkbench(props: RuntimeSurfaceWorkbenchProps) {
       });
     };
   }, [props.details.summary.id, readOnly, startupPending, runtimeLogSubscriptionPath, props.startupBoundary, processLogRetryGeneration,
-    selectedGameLog, selectedConsoleRunId, selectedConsoleTab?.processKey, startupHistoryScope]);
+    selectedGameLog, selectedConsoleRunId, selectedConsoleTab?.processKey, startupHistoryScope, awaitingStartupRun, startupReceiptKnown]);
 
   useEffect(() => {
     if (readOnly || !isTauri()) return;
@@ -630,6 +897,8 @@ function GameRuntimeSurfaceWorkbench(props: RuntimeSurfaceWorkbenchProps) {
       if (disposed) return;
       // A restarted service or an event retention gap requires an authoritative
       // file read. Reuse the panel refresh and selected shard retry paths.
+      logRefreshRef.current?.dispose();
+      logRefreshRef.current = null;
       runtimeConsoleHistory.clearInstance(props.details.summary.id);
       setLiveLogSnapshot(null);
       setProcessLogSnapshot(null);
@@ -652,6 +921,15 @@ function GameRuntimeSurfaceWorkbench(props: RuntimeSurfaceWorkbenchProps) {
     if (props.active === false) return;
     const follow = consoleFollowRef.current;
     const terminal = runtimeConsoleRef.current;
+    const anchor = startupPageAnchorRef.current;
+    if (terminal && anchor) {
+      terminal.scrollTop = anchor.top + terminal.scrollHeight - anchor.height;
+      startupPageAnchorRef.current = null;
+      follow.scope = consoleScrollScope;
+      follow.following = false;
+      follow.scrollTop = terminal.scrollTop;
+      return;
+    }
     if (follow.scope !== consoleScrollScope || (commandFeedback && commandFeedback !== follow.feedback)) {
       follow.following = true;
     } else if (terminal && terminal.scrollTop < follow.scrollTop
@@ -695,6 +973,32 @@ function GameRuntimeSurfaceWorkbench(props: RuntimeSurfaceWorkbenchProps) {
     const timeoutId = window.setTimeout(() => setConsoleCopyState("idle"), 1400);
     return () => window.clearTimeout(timeoutId);
   }, [consoleCopyState]);
+
+  async function loadOlderStartupHistory() {
+    if (!startupSession || !startupBeforeCursor || startupPagePending) return;
+    const generation = ++startupPageGenerationRef.current;
+    const attemptId = startupSession.attempt_id;
+    const readBasis = { readGeneration: startupSession.line_generation, readRetainedStartCursor: startupSession.retained_start_cursor };
+    setStartupPagePending(true);
+    setStartupPageError(null);
+    try {
+      const snapshot = await readInstanceLogDocument(props.details.summary.id, 400, undefined, undefined, attemptId, startupBeforeCursor);
+      if (generation !== startupPageGenerationRef.current || startupConsoleRef.current?.session.attempt_id !== attemptId) return;
+      if (!snapshot.startup_session || snapshot.startup_session.attempt_id !== attemptId) throw new Error(
+        t("servers.runtimeSurface.startupHistoryChanged", undefined, "The startup session changed. Refresh its history."));
+      if (snapshot.startup_session.snapshot.read_error) throw new Error(snapshot.startup_session.snapshot.read_error);
+      const page = snapshot.startup_session;
+      const next = mergeRuntimeStartupSession(startupConsoleRef.current, page, { page: true, ...readBasis });
+      if (next === startupConsoleRef.current) return;
+      const terminal = runtimeConsoleRef.current;
+      if (terminal) startupPageAnchorRef.current = { height: terminal.scrollHeight, top: terminal.scrollTop };
+      setStartupConsole(() => next);
+    } catch (error) {
+      if (generation === startupPageGenerationRef.current) setStartupPageError(describeError(error));
+    } finally {
+      if (generation === startupPageGenerationRef.current) setStartupPagePending(false);
+    }
+  }
 
   async function handleRuntimeCommandSubmit() {
     const command = runtimeCommandDraft.trim();
@@ -745,6 +1049,7 @@ function GameRuntimeSurfaceWorkbench(props: RuntimeSurfaceWorkbenchProps) {
   }
 
   function handleRuntimeTargetChange(value: string) {
+    if (startupSession) startupRunSelectionRef.current = { attemptId: startupSession.attempt_id, mode: "history" };
     setRuntimeTargetValue(value);
 
     const matchingTab = runtimeConsoleTabs.find((tab) =>
@@ -887,7 +1192,8 @@ function GameRuntimeSurfaceWorkbench(props: RuntimeSurfaceWorkbenchProps) {
             </div>
           </div>
           <pre ref={runtimeConsoleRef} className="log-preview server-log-preview server-runtime-console server-runtime-console--primary"
-            data-run-id={selectedConsoleRunId ?? undefined}
+            data-run-id={selectedConsoleRunId !== null && !awaitingStartupRun
+              && (!startupPending || startupSession?.run_ids.includes(selectedConsoleRunId)) ? selectedConsoleRunId : undefined}
             data-process-key={selectedConsoleTab?.processKey ?? undefined}
             data-log-source={ark && !readOnly ? arkLogSource : "default"}
             data-log-path={runtimeLogSourcePath}
@@ -900,7 +1206,25 @@ function GameRuntimeSurfaceWorkbench(props: RuntimeSurfaceWorkbenchProps) {
               consoleFollowRef.current.scrollTop = terminal.scrollTop;
             }}
             title={readOnly && archivedLogSnapshot?.truncated ? t("servers.archives.workspace.logTruncated", undefined, "The log display is truncated.") : undefined}>
-            {runtimeLogText}
+            {startupSession ? <>
+              {startupBeforeCursor ? <><button type="button" className="server-runtime-console-retry"
+                data-startup-history-more="true" disabled={startupPagePending} onClick={() => void loadOlderStartupHistory()}>
+                {startupPagePending ? t("servers.runtimeSurface.loadingStartupHistory", undefined, "Loading startup history...")
+                  : t("servers.runtimeSurface.loadStartupHistory", undefined, "Load earlier startup history")}
+              </button>{"\n"}</> : null}
+              {startupPageError ? <span className="server-runtime-console-errors" role="alert">{`[LanGameCMD] ${startupPageError}\n`}</span> : null}
+              <span data-log-region="startup" data-startup-attempt-id={startupSession.attempt_id}
+                data-source-path={startupSession.source_path} data-startup-status={startupSession.status}
+                data-stream-revision={selectedStartupConsole?.live?.console_sources?.[0]?.revision}>
+                <span className={startupSession.status === "failed" || startupSession.status === "interrupted" ? "server-runtime-console-errors" : undefined}>{startupHeading}</span>
+                {startupCompletedLines.length ? "\n" : ""}<span data-startup-log-content="true">{startupCompletedLines.join("\n")}</span>
+                <span data-startup-progress="true">{startupPartialLines.length ? `\n${startupPartialLines.join("\n")}` : ""}</span>
+                {startupOutcomeError ? <span className="server-runtime-console-errors" role="alert">{`\n${startupOutcomeError}`}</span> : null}
+                {startupSession.reader_error ? <span className="server-runtime-console-errors" role="alert">{`\n${startupSession.reader_error}`}</span> : null}
+              </span>
+              {gameLogLines.length ? `\n\n${runtimeHeading}\n` : ""}
+              <span data-log-region="runtime" data-source-path={runtimeLogSourcePath}>{gameLogLines.join("\n")}</span>
+            </> : <span data-log-region="runtime" data-source-path={runtimeLogSourcePath}>{runtimeLogText}</span>}
             {commandFeedback ? <span className="server-runtime-command-feedback" role="status">{`\n\n[LanGameCMD] ${commandFeedback}`}</span> : null}
             {runtimeErrorText ? <span className="server-runtime-console-errors" role="alert">
               {`\n\n${runtimeErrorText}`}

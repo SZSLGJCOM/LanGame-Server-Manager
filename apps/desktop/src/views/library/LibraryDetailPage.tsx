@@ -452,10 +452,8 @@ export function LibraryDetailPage(props: LibraryDetailPageProps) {
 
   if (!props.selected) {
     return (
-      <div className="page-grid workspace-page library-detail-page library-detail-page--immersive">
-        <section className="panel-card panel-card--centered">
-          <div className="empty-state">{t("library.detail.empty")}</div>
-        </section>
+      <div className="library-detail-empty" role="status">
+        <div className="empty-state">{t("library.detail.empty")}</div>
       </div>
     );
   }

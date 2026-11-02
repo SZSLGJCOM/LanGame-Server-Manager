@@ -29,7 +29,7 @@ fn normalized_app_settings(settings: AppSettings, defaults: &StoragePaths) -> Ap
     }
 }
 
-fn load_persisted_app_settings(
+pub(crate) fn load_persisted_app_settings(
     defaults: &StoragePaths,
 ) -> Result<Option<AppSettings>, StorageError> {
     let Some(raw) = read_optional_file_to_string(&defaults.settings_path).map_err(|source| {
@@ -96,6 +96,9 @@ pub fn bootstrap_storage_at_user_root(user_root: &Path) -> Result<StorageBootstr
 pub fn bootstrap_storage_with_paths(
     default_paths: StoragePaths,
 ) -> Result<StorageBootstrap, StorageError> {
+    // A committed migration must replay before reconciliation can consume a
+    // mixture of old and new references. Ready previews never execute here.
+    crate::storage_migration::recover_pending(&default_paths)?;
     let settings =
         load_persisted_app_settings(&default_paths)?.unwrap_or_else(|| default_paths.settings());
     let paths = default_paths.with_app_settings(&settings);

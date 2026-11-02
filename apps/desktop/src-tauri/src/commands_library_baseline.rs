@@ -239,48 +239,43 @@ where
     }
     let signal = CancelBaselineOnDrop(Arc::new(AtomicBool::new(false)));
     let worker_signal = Arc::clone(&signal.0);
-    // One latest snapshot bounds memory when the worker outpaces UI persistence.
-    // User progress callbacks run here, never on the filesystem worker.
-    let (progress_sender, mut progress_receiver) = tokio::sync::watch::channel(None);
+    // Progress is a bounded ordered stream: phase starts and final measurements
+    // must survive a fast transition into recording the manifest. Only this
+    // blocking filesystem worker waits for channel capacity.
+    let (progress_sender, mut progress_receiver) = tokio::sync::mpsc::channel(16);
     let mut worker = spawn_blocking_storage_context_task(operation, move || {
         work(&worker_signal, &mut |progress| {
-            progress_sender.send_replace(Some(progress));
+            // A closed receiver means cancellation; the worker observes its
+            // cancellation flag at the next filesystem boundary.
+            let _ = progress_sender.blocking_send(progress);
         })
     });
     let mut progress_open = true;
-    let mut last_progress = None;
     let completed = loop {
         tokio::select! {
             biased;
             _ = installation.cancelled() => break None,
             _ = operation.cancelled() => break None,
             result = &mut worker => break Some(result),
-            changed = progress_receiver.changed(), if progress_open => {
-                if changed.is_err() {
-                    progress_open = false;
-                    continue;
-                }
-                let current = progress_receiver.borrow_and_update().clone();
-                if let Some(progress) = current {
-                    last_progress = Some(progress.clone());
-                    on_progress(progress);
+            progress = progress_receiver.recv(), if progress_open => {
+                match progress {
+                    Some(progress) => on_progress(progress),
+                    None => progress_open = false,
                 }
             }
         }
     };
     let result = match completed {
         Some(result) => {
-            // The worker can complete before the final channel change is polled.
-            let current = progress_receiver.borrow_and_update().clone();
-            if let Some(progress) = current
-                && last_progress.as_ref() != Some(&progress)
-            {
+            // Drain every queued boundary, not merely the last stage snapshot.
+            while let Ok(progress) = progress_receiver.try_recv() {
                 on_progress(progress);
             }
             result
         }
         None => {
             signal.0.store(true, Ordering::Release);
+            progress_receiver.close();
             // The installer may recover/remove staging only after all baseline
             // reads and atomic writes have stopped and worker leases are released.
             drop(

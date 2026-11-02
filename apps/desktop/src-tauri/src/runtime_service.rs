@@ -22,6 +22,8 @@ pub(crate) use client::stop_service;
 pub(crate) use existing_acceptance_client::{
     ExistingClient, STOP_ERROR_CATEGORIES, STOP_ERROR_PREFIX, redact_backend_stop_error,
 };
+#[cfg(test)]
+pub(crate) use wire::PROTOCOL;
 
 pub(crate) fn log_service_event<R: tauri::Runtime>(
     app: &tauri::AppHandle<R>,

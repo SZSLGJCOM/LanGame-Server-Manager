@@ -1,4 +1,4 @@
-/** Mirrors --dst-map-rail-min in dst-world-map.css. */
+/** The shared map geometry preserves DST's 220px minimum control rail. */
 const DST_MAP_RAIL_MIN = 220;
 
 /** Geometry and chrome assertions shared by synthetic and byte-bound native replays. */

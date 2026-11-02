@@ -243,7 +243,8 @@ impl NativeCleanup<'_> {
         let mut errors = Vec::new();
         evidence["cleanup"] = json!({"status": "finalizing"});
         match read_active_instance_run(&storage.paths, &self.instance_id).await {
-            Ok(Some(_)) => match stop_instance_process(state, self.instance_id.clone()).await {
+            Ok(Some(_)) => match stop_instance_process(state, self.instance_id.clone(), None).await
+            {
                 Ok(stopped) => {
                     if require_clean_stop
                         && (stopped.process_count != 1

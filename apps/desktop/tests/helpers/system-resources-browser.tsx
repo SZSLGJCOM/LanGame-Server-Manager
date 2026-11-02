@@ -1,3 +1,4 @@
+import { unavailableStorageMigration } from "./storage-migration-fixture";
 import { prepareBrowserLocaleCatalogs } from "./browser-locale-catalogs";
 import React, { act, StrictMode, type ComponentProps } from "react";
 import { createRoot } from "react-dom/client";
@@ -254,7 +255,7 @@ async function mount() {
     snapshot: bootstrap.state.snapshot, instances: bootstrap.state.instances.slice(0, 2),
     bindAddressCandidates: [], appSettings: bootstrap.state.settings,
     steamCmdStatus: null, steamCmdBusy: false, steamCmdProgress: null, steamCmdMessage: "",
-    onOpenInstance: noOperation, onPickDirectory: async () => null, onSaveAppSettings: noOperation,
+    onOpenInstance: noOperation, onPickDirectory: async () => null, storageMigration: unavailableStorageMigration,
     onEnsureSteamCmd: noOperation, onUninstallSteamCmd: noOperation
   };
   const aiSettings = createDefaultAiSettings();

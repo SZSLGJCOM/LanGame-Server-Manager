@@ -59,10 +59,12 @@ impl<R: tauri::Runtime> NativeRuntime<'_, '_, R> {
                     crate::commands::commands_ark_tools::PrepareInput {
                         instance_id: id.into(),
                         allow_matching_symbols_download: true,
+                        operation_id: None,
+                        locale: None,
                     },
                 )
                 .await?;
-                if !result.installed {
+                if !result.status.installed {
                     return Err("Native ARK extension preparation did not complete".into());
                 }
                 println!(
@@ -291,7 +293,7 @@ impl<R: tauri::Runtime> NativeRuntime<'_, '_, R> {
             .await?;
         }
         let stop_started = Instant::now();
-        let stopped = match stop_instance_process(state.clone(), id.to_owned()).await {
+        let stopped = match stop_instance_process(state.clone(), id.to_owned(), None).await {
             Ok(stopped) => stopped,
             Err(error) => {
                 theforest_probe::report_stop_failure(state, &running);

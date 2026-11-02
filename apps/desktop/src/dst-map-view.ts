@@ -1,7 +1,6 @@
 // Relative to fitting the whole world into the square viewport, not native GetZoom.
 export const DST_MAP_MIN_ZOOM = 1;
 export const DST_MAP_MAX_ZOOM = 10;
-export const DST_MAP_ZOOM_PRESETS = [1, 2, 4, 8, 10] as const;
 export const DST_MAP_MAX_VIEW_ZOOM = 512;
 const CLOSE_TILE_PIXELS = 24;
 

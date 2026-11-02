@@ -55,6 +55,14 @@ pub(crate) struct ExistingClient {
 }
 
 impl ExistingClient {
+    const CONNECT_BUDGET: Duration = Duration::from_secs(2);
+    const WRITE_BUDGET: Duration = Duration::from_secs(15);
+    const EVENT_RESPONSE_BUDGET: Duration =
+        super::events::LONG_POLL_TIMEOUT.saturating_add(Duration::from_secs(15));
+    pub(crate) const EVENT_REQUEST_BUDGET: Duration = Self::CONNECT_BUDGET
+        .saturating_add(Self::WRITE_BUDGET)
+        .saturating_add(Self::EVENT_RESPONSE_BUDGET);
+
     pub(crate) fn new(executable: &Path, pid: u32, creation_time: u64) -> Result<Self, String> {
         if pid == 0 || creation_time == 0 || !executable.is_absolute() {
             return Err(
@@ -81,7 +89,7 @@ impl ExistingClient {
         } else {
             self.pipe_name.clone()
         };
-        let deadline = tokio::time::Instant::now() + Duration::from_secs(2);
+        let deadline = tokio::time::Instant::now() + Self::CONNECT_BUDGET;
         let mut pipe = loop {
             match ClientOptions::new()
                 .security_qos_flags(0x0001_0000)
@@ -103,26 +111,22 @@ impl ExistingClient {
             command: command.into(),
             args,
         };
-        tokio::time::timeout(
-            Duration::from_secs(15),
-            wire::write_frame(&mut pipe, &request),
-        )
-        .await
-        .map_err(|_| "request transmission uncertain; inspect before retrying")?
-        .map_err(|_| "request transmission failed; operation state is uncertain")?;
-        let response_seconds =
-            if matches!(command, "start_instance_process" | "stop_instance_process") {
-                1830
-            } else {
-                15
-            };
-        let response: wire::Response = tokio::time::timeout(
-            Duration::from_secs(response_seconds),
-            wire::read_frame(&mut pipe),
-        )
-        .await
-        .map_err(|_| "backend response timed out; operation may still be running")?
-        .map_err(|_| "backend response unavailable; operation state is uncertain")?;
+        tokio::time::timeout(Self::WRITE_BUDGET, wire::write_frame(&mut pipe, &request))
+            .await
+            .map_err(|_| "request transmission uncertain; inspect before retrying")?
+            .map_err(|_| "request transmission failed; operation state is uncertain")?;
+        let response_budget = if command == "runtime_service_events" {
+            Self::EVENT_RESPONSE_BUDGET
+        } else if matches!(command, "start_instance_process" | "stop_instance_process") {
+            Duration::from_secs(1830)
+        } else {
+            Duration::from_secs(15)
+        };
+        let response: wire::Response =
+            tokio::time::timeout(response_budget, wire::read_frame(&mut pipe))
+                .await
+                .map_err(|_| "backend response timed out; operation may still be running")?
+                .map_err(|_| "backend response unavailable; operation state is uncertain")?;
         // The server closes each ordinary connection after its response. Its
         // original process generation must still match, but querying the now
         // disconnected pipe owner would introduce a response/close race.

@@ -1,6 +1,9 @@
 use super::*;
 use crate::commands::commands_ark_tools::{self as ark, protocol};
 
+#[path = "commands_ark_tools_remove_tests.rs"]
+mod removal;
+
 struct ArkFixture {
     root: PathBuf,
     _environment: ProgramDataEnvGuard,
@@ -152,6 +155,8 @@ async fn ark_tools_prepare_waits_for_instance_lock_and_rejects_pending_start()
             ark::PrepareInput {
                 instance_id: id,
                 allow_matching_symbols_download: true,
+                operation_id: Some("held-install".into()),
+                locale: None,
             },
         )
         .await
@@ -163,6 +168,16 @@ async fn ark_tools_prepare_waits_for_instance_lock_and_rejects_pending_start()
         "preparation must not pass a held instance mutation lock"
     );
     fixture.untouched();
+    let progress = ark::read_ark_tools_install_progress(
+        app.state::<DesktopState>(),
+        ark::InstallProgressInput {
+            instance_id: fixture.id.clone(),
+            operation_id: Some("held-install".into()),
+        },
+    )?
+    .ok_or("queued installation progress missing")?;
+    assert!(progress.active);
+    assert_eq!(progress.update.phase, ark::progress::InstallPhase::Queued);
     drop(held);
     let result = tokio::time::timeout(Duration::from_secs(15), operation).await??;
     assert!(
@@ -172,10 +187,31 @@ async fn ark_tools_prepare_waits_for_instance_lock_and_rejects_pending_start()
             .contains("停止")
     );
     fixture.untouched();
+    let progress = ark::read_ark_tools_install_progress(
+        app.state::<DesktopState>(),
+        ark::InstallProgressInput {
+            instance_id: fixture.id.clone(),
+            operation_id: Some("held-install".into()),
+        },
+    )?
+    .ok_or("failed installation progress missing")?;
+    assert!(!progress.active);
+    assert_eq!(progress.update.phase, ark::progress::InstallPhase::Failed);
+    assert!(progress.error.is_some_and(|error| error.contains("停止")));
     drop(reservation);
     drop(app);
     fixture.finish()?;
     Ok(())
+}
+
+#[test]
+fn ark_install_progress_keeps_runtime_ownership_and_local_access() {
+    use crate::command_registry::{Completion, Execution, LanAccess};
+    let command = crate::command_registry::find("read_ark_tools_install_progress")
+        .expect("progress command is registered");
+    assert_eq!(command.execution, Execution::Runtime);
+    assert_eq!(command.lan, LanAccess::Denied);
+    assert_eq!(command.completion, Completion::Bounded);
 }
 
 #[tokio::test(flavor = "current_thread")]
@@ -191,6 +227,8 @@ async fn ark_tools_prepare_requires_asa_symbol_download_consent_and_spawn_requir
         ark::PrepareInput {
             instance_id: fixture.id.clone(),
             allow_matching_symbols_download: false,
+            operation_id: None,
+            locale: None,
         },
     )
     .await;
@@ -244,6 +282,8 @@ async fn ark_tools_prepare_rejects_program_binding_to_another_runtime()
         ark::PrepareInput {
             instance_id: fixture.id.clone(),
             allow_matching_symbols_download: true,
+            operation_id: None,
+            locale: None,
         },
     )
     .await;
@@ -272,6 +312,8 @@ async fn ark_tools_prepare_accepts_first_exclusive_program_ownership_before_load
         ark::PrepareInput {
             instance_id: fixture.id.clone(),
             allow_matching_symbols_download: true,
+            operation_id: None,
+            locale: None,
         },
     )
     .await;

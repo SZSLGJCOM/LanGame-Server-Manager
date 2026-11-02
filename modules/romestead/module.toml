@@ -81,3 +81,10 @@ retained_paths = ["config.json"]
 [[runtime.port_roles]]
 role = "player"
 port_names = ["game"]
+
+[runtime.startup_readiness]
+timeout_ms = 600000
+
+[runtime.startup_readiness.probe]
+kind = "runtime_log"
+source = { kind = "managed" }

@@ -40,18 +40,36 @@ test("a backend stopping status keeps runtime actions busy without a local reque
   }
 });
 
-test("resolveServerRuntimeAction exposes a busy start state while the start request is pending", () => {
+test("pending startup retains Starting with a red Cancel action", () => {
   const { resolveServerRuntimeAction } = loadRuntimeActionState();
 
   const model = resolveServerRuntimeAction("Stopped", "starting");
 
-  assert.equal(model.action, "start");
+  assert.equal(model.action, "stop");
   assert.equal(model.displayedStatus, "Starting");
-  assert.equal(model.disabled, true);
+  assert.equal(model.disabled, false);
   assert.equal(model.ariaBusy, true);
-  assert.equal(model.iconName, "refresh");
-  assert.equal(model.labelKey, "status.instance.starting");
-  assert.match(model.className, /is-busy/);
+  assert.equal(model.iconName, "x");
+  assert.equal(model.labelKey, "common.cancel");
+  assert.match(model.className, /danger/);
+});
+
+test("stopping takes precedence over a pending backend startup", () => {
+  const { resolveServerRuntimeAction } = loadRuntimeActionState();
+  const model = resolveServerRuntimeAction("Starting", "stopping");
+  assert.equal(model.displayedStatus, "Stopping");
+  assert.equal(model.disabled, true);
+  assert.equal(model.labelKey, "status.instance.stopping");
+  const recovered = resolveServerRuntimeAction("Starting", null);
+  assert.equal(recovered.action, "stop");
+  assert.equal(recovered.disabled, false);
+  assert.equal(recovered.labelKey, "common.cancel");
+
+  const cancelling = resolveServerRuntimeAction("Starting", "cancelling");
+  assert.equal(cancelling.displayedStatus, "Starting");
+  assert.equal(cancelling.disabled, true);
+  assert.equal(cancelling.labelKey, "servers.actions.cancellingStartup");
+  assert.match(cancelling.className, /danger/);
 });
 
 test("resolveServerRuntimeAction keeps running instances stoppable until stop is pending", () => {

@@ -149,7 +149,7 @@ pub(super) fn verify_stopped(
         .find(|p| p.process_key == "main")
         .ok_or("The Forest stop omitted its main process")?;
     if stopped.summary.id != running.summary.id
-        || stopped.run_id != run.run_id
+        || stopped.run_id != Some(run.run_id)
         || stopped.session_id != run.session_id
         || result.run_id != original.run_id
         || result.pid != original.pid

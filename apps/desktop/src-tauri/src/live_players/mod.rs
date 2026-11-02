@@ -1,3 +1,4 @@
+pub(crate) mod ark_profile;
 pub(crate) mod astroneer;
 mod barotrauma;
 pub(crate) mod cache;

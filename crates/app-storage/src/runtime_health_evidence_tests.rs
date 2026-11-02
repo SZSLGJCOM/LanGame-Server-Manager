@@ -1,12 +1,7 @@
 use super::*;
 use app_core::{InstanceProcessState, ProcessIdentity};
 
-const SHARED_LOGS: [(&str, &str, &str); 3] = [
-    (
-        "conanexiles",
-        "logs/conan-server.log",
-        "LogNet: GameNetDriver IpNetDriver listening on port 7777",
-    ),
+const SHARED_LOGS: [(&str, &str, &str); 2] = [
     (
         "scum",
         "runtime/SCUM/Saved/Logs/SCUM.log",
@@ -182,6 +177,38 @@ fn current_run_transcripts_keep_undated_readiness_and_live_failures() {
             "{module}: an earlier process failure must not override current readiness"
         );
     }
+}
+
+#[test]
+fn conan_listener_waits_for_protocol_readiness_and_retains_current_failures() {
+    let run = current_run();
+    let source = "logs/conan-server.log";
+    let listener =
+        "[2026.09.30-01.02.03:001][ 1]LogNet: GameNetDriver IpNetDriver listening on port 7777";
+    // Conan's completion contract is A2S, not an engine listener log. Keep its
+    // shared-file diagnostic generation checks without accepting an early gate.
+    for lines in [
+        vec![listener],
+        vec![
+            listener,
+            "[2026.09.30-01.02.02:999][ 1]Fatal error: previous failure",
+        ],
+    ] {
+        assert_eq!(
+            health("conanexiles", Some(&run), source, &lines).status,
+            "starting"
+        );
+    }
+    assert_eq!(
+        health(
+            "conanexiles",
+            Some(&run),
+            source,
+            &[listener, "Fatal error: current failure"]
+        )
+        .status,
+        "error"
+    );
 }
 
 #[tokio::test]

@@ -432,6 +432,9 @@ pub(super) async fn update_instance_program_inner(
             account_name: account_name.as_deref(),
         },
         |update| {
+            if update.is_raw_output() {
+                return;
+            }
             let _ =
                 update_background_job(&state, &job_id, |job| apply_install_progress(job, &update));
         },

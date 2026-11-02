@@ -513,9 +513,21 @@ async function run() {
   viewProps.selectedDetails = null;
   await act(async () => { render(); });
   reveal(element(".server-workspace-empty h3"), "Empty state title");
+  check(!fixture.querySelector(".server-list-panel"), "A confirmed empty workspace must not reserve an instance sidebar");
+  const emptyBounds = element(".server-workspace-empty").getBoundingClientRect();
+  const workspaceBounds = element(".server-layout-grid").getBoundingClientRect();
+  check(Math.abs(emptyBounds.left + emptyBounds.width / 2 - workspaceBounds.left - workspaceBounds.width / 2) <= 1
+    && Math.abs(emptyBounds.top + emptyBounds.height / 2 - workspaceBounds.top - workspaceBounds.height / 2) <= 1,
+    "First-server guidance must be centered in the whole server workspace");
   const title = typography(".server-workspace-empty h3");
   check(title.size === "16px" && title.weight === "600", "Section headings must use the compact 16px semibold role");
   const createButton = element(".server-workspace-empty .primary-button");
+  const restoreButton = element<HTMLButtonElement>(".server-workspace-empty-actions .secondary-button");
+  check(restoreButton.disabled && restoreButton.textContent === "还原归档", "A workspace without archives must show a disabled restore entry");
+  const createBounds = createButton.getBoundingClientRect();
+  const restoreBounds = restoreButton.getBoundingClientRect();
+  check(restoreBounds.left > createBounds.right && Math.abs(restoreBounds.top - createBounds.top) <= 1,
+    "Restore archives must sit to the right of Create instance");
   const createHeight = createButton.getBoundingClientRect().height;
   check(createHeight >= 28 && createHeight <= 30.5, `Create action must retain a compact, usable target: ${createHeight}`);
   check(createButton.scrollWidth <= createButton.clientWidth + 1 && createButton.scrollHeight <= createButton.clientHeight + 1,
@@ -529,6 +541,7 @@ async function run() {
   viewProps.selectedInstanceId = instance.id;
   viewProps.selectedDetails = configured;
   await act(async () => { render(); });
+  check(Boolean(fixture.querySelector(".server-list-panel")), "Adding an instance must restore the instance sidebar");
   await settleUntil(() => Boolean(fixture.querySelector(".configuration-workspace")), "Configuration workspace did not remount");
   element(".shell-content-scroll").scrollTop = 0;
   await act(async () => { element<HTMLInputElement>(".server-list-filter input").focus(); });

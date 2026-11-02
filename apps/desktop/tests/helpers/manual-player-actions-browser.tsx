@@ -163,7 +163,7 @@ async function run() {
     await click("button.danger");
     check(requests.length === 3, "Invalid HumanitZ target reached IPC");
   }
-  for (const value of [full, "|FEDCBA9876543210fedcba9876543210"]) {
+  for (const value of [full, "|FEDCBA9876543210fedcba9876543210", "76561198000000001_+_|FEDCBA9876543210fedcba9876543210"]) {
     await input(value);
     check(!select<HTMLButtonElement>("button.danger").disabled, "Complete HumanitZ NetID is not usable");
     await click("button.danger");
@@ -172,7 +172,7 @@ async function run() {
     check(request.input.target === value, "HumanitZ target changed at dispatch");
     await act(async () => { request.result.resolve({ action_id: humanitz.id, status: "sent", executed_at_unix_ms: 4, summary: "sent" }); });
   }
-  check(requests.length === 5, "Complete HumanitZ targets were not dispatched exactly once each");
+  check(requests.length === 6, "Complete HumanitZ targets were not dispatched exactly once each");
   checks++;
 
   await act(async () => { root.unmount(); });

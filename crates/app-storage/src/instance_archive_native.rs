@@ -5,6 +5,10 @@ use std::path::Path;
 #[cfg(not(windows))]
 use std::path::PathBuf;
 
+#[path = "instance_archive_tree_native.rs"]
+mod tree;
+pub(crate) use tree::TreeNode;
+
 pub(crate) struct OwnedNode {
     file: File,
     #[cfg(not(windows))]

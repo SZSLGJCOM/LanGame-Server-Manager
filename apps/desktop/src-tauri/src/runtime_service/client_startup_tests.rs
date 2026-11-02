@@ -12,7 +12,7 @@ use tokio::net::windows::named_pipe::NamedPipeServer;
 
 const FIXTURE: &str = "runtime_service::client::startup_tests::startup_process_fixture";
 const MARKER: &str = "langame-startup-fixture";
-const ROLES: [&str; 9] = [
+const ROLES: [&str; 11] = [
     "exiting",
     "exit-window",
     "recovering",
@@ -20,6 +20,8 @@ const ROLES: [&str; 9] = [
     "handoff",
     "silent",
     "malformed",
+    "old-protocol",
+    "wrong-status-protocol",
     "crash",
     "new",
 ];
@@ -373,6 +375,34 @@ fn startup_rejects_unresponsive_or_incomplete_status_without_replacing_its_owner
 }
 
 #[test]
+fn an_incompatible_service_is_rejected_once_without_event_polling_or_replacement() {
+    for role in ["old-protocol", "wrong-status-protocol"] {
+        let fixture = Fixture::new(role);
+        let identity = app_runtime::inspect_process_identity(fixture.old_pid())
+            .unwrap()
+            .unwrap();
+        let failure = startup::connect_owned(
+            fixture.endpoint(),
+            &fixture.new_arguments(),
+            &AtomicBool::new(false),
+            short_budgets(Duration::from_secs(1)),
+        )
+        .err()
+        .expect("The pre-long-poll protocol must not admit a new event relay");
+        assert!(failure.message.contains("protocol"), "{}", failure.message);
+        assert!(failure.cleanup_client.is_none());
+        assert!(app_runtime::process_matches_identity(fixture.old_pid(), &identity).unwrap());
+        assert!(!fixture.root.join("new.ready").exists());
+        assert!(!fixture.root.join(format!("{role}.storage")).exists());
+        assert_eq!(
+            fs::read_to_string(fixture.root.join(format!("{role}.requests"))).unwrap(),
+            "runtime_service_status\n",
+            "A rejected service must not be polled again or receive event/work/shutdown requests"
+        );
+    }
+}
+
+#[test]
 fn failed_new_service_retains_shutdown_ownership_when_the_desktop_is_cancelled() {
     let fixture = Fixture::empty();
     let cancelled = AtomicBool::new(false);
@@ -662,6 +692,15 @@ async fn serve_pipe(
                 return;
             };
             assert_eq!(request.protocol, wire::PROTOCOL);
+            if matches!(role.as_str(), "old-protocol" | "wrong-status-protocol") {
+                use std::io::Write;
+                let mut requests = fs::OpenOptions::new()
+                    .create(true)
+                    .append(true)
+                    .open(root.join(format!("{role}.requests")))
+                    .unwrap();
+                writeln!(requests, "{}", request.command).unwrap();
+            }
             if request.command == "runtime_service_status" && role == "crash" {
                 std::process::exit(23);
             }
@@ -674,6 +713,17 @@ async fn serve_pipe(
             let shutdown =
                 role == "exiting" || (role == "recovering" && !root.join("release").exists());
             let result = match request.command.as_str() {
+                "runtime_service_status" if role == "old-protocol" && request.protocol != 1 => {
+                    Err("Runtime service protocol mismatch; restart the service using this installation".into())
+                }
+                "runtime_service_status"
+                    if matches!(role.as_str(), "old-protocol" | "wrong-status-protocol") =>
+                {
+                    Ok(serde_json::json!({
+                        "pid": std::process::id(), "protocol": 1,
+                        "shutdown_in_progress": false, "final_exit_requested": false,
+                    }))
+                }
                 "runtime_service_status" if role == "malformed" => Ok(serde_json::json!({
                     "pid": std::process::id(), "protocol": wire::PROTOCOL,
                     "shutdown_in_progress": false,

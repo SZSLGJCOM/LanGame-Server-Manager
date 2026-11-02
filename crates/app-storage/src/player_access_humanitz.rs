@@ -36,7 +36,7 @@ pub(crate) fn parse_humanitz_roster(
         }
         if !is_stored_humanitz_identity(line) {
             return Err(format!(
-                "roster line {} must contain a complete HumanitZ NetID (EpicAccountId|ProductUserId or |ProductUserId); existing 17-digit Steam IDs may only be retained or removed",
+                "roster line {} must contain a complete HumanitZ NetID (Steam64_+_|ProductUserId, EpicAccountId|ProductUserId or |ProductUserId); existing standalone 17-digit Steam IDs may only be retained or removed",
                 index + 1
             ));
         }
@@ -84,7 +84,7 @@ pub(crate) fn validate_humanitz_roster_update(
             .any(|entry| !is_humanitz_net_id(entry) && !existing.contains(entry))
         {
             return Err(invalid(
-                "new roster entries require a complete HumanitZ NetID (EpicAccountId|ProductUserId or |ProductUserId); 17-digit Steam IDs may only be retained in their existing roster or removed".to_owned(),
+                "new roster entries require a complete HumanitZ NetID (Steam64_+_|ProductUserId, EpicAccountId|ProductUserId or |ProductUserId); standalone 17-digit Steam IDs may only be retained in their existing roster or removed".to_owned(),
             ));
         }
     }
@@ -98,10 +98,11 @@ mod tests {
 
     const FULL: &str = "0123456789abcdef0123456789ABCDEF|FEDCBA9876543210fedcba9876543210";
     const PRODUCT_ONLY: &str = "|FEDCBA9876543210fedcba9876543210";
+    const STEAM_EOS: &str = "76561198000000001_+_|FEDCBA9876543210fedcba9876543210";
 
     #[test]
     fn native_net_ids_require_complete_parts_and_preserve_case() {
-        for value in [FULL, PRODUCT_ONLY] {
+        for value in [FULL, PRODUCT_ONLY, STEAM_EOS] {
             assert!(is_humanitz_net_id(value));
         }
         for value in [
@@ -113,11 +114,12 @@ mod tests {
         ] {
             assert!(!is_humanitz_net_id(value), "{value}");
         }
-        let settings =
-            json!({"admin_steam_ids": format!("76561198000000001\n{FULL}\n{PRODUCT_ONLY}")});
+        let settings = json!({
+            "admin_steam_ids": format!("76561198000000001\n{FULL}\n{PRODUCT_ONLY}\n{STEAM_EOS}")
+        });
         assert_eq!(
             parse_humanitz_roster(settings.as_object().unwrap(), "admin_steam_ids").unwrap(),
-            ["76561198000000001", FULL, PRODUCT_ONLY]
+            ["76561198000000001", FULL, PRODUCT_ONLY, STEAM_EOS]
         );
     }
 
@@ -152,7 +154,10 @@ mod tests {
                 moved.insert(other.to_owned(), json!(old));
                 assert!(validate_humanitz_roster_update(&incoming, &moved).is_err());
             }
-            incoming.insert(key.to_owned(), json!(format!("{FULL}\n{PRODUCT_ONLY}")));
+            incoming.insert(
+                key.to_owned(),
+                json!(format!("{FULL}\n{PRODUCT_ONLY}\n{STEAM_EOS}")),
+            );
             assert!(validate_humanitz_roster_update(&empty, &incoming).is_ok());
         }
     }

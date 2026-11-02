@@ -208,7 +208,9 @@ impl<'a> VerificationReporter<'a> {
     }
 
     fn report_if_due(&mut self) {
-        if self.last_report.elapsed() >= Duration::from_millis(250) {
+        // These are replaceable measurements, not durable log entries. Keep
+        // progress responsive without a callback for every hashing chunk.
+        if self.last_report.elapsed() >= Duration::from_millis(100) {
             (self.on_progress)(self.progress.clone());
             self.last_report = Instant::now();
         }

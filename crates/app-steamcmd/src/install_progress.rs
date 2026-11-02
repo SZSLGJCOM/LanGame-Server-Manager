@@ -2,12 +2,70 @@ use app_core::{InstallPhase, InstallProgress};
 
 use super::{SteamCmdPreparePhase, SteamCmdPrepareProgress};
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum InstallOutputSource {
+    Stdout,
+    Stderr,
+}
+
+/// Raw output is ordered by byte position within one owned process pipe. It is
+/// independent of the replaceable progress projection and never text-deduped.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum InstallConsoleOutput {
+    Raw {
+        stream_id: u64,
+        source: InstallOutputSource,
+        offset: u64,
+        bytes: Vec<u8>,
+        finished: bool,
+    },
+    Progress {
+        retain_boundaries: bool,
+        preview: bool,
+    },
+}
+
+pub(super) fn next_output_stream_id() -> u64 {
+    use std::sync::atomic::{AtomicU64, Ordering};
+    static NEXT: AtomicU64 = AtomicU64::new(1);
+    NEXT.fetch_add(1, Ordering::Relaxed)
+}
+
+pub(super) struct OutputCursor {
+    stream_id: u64,
+    source: InstallOutputSource,
+    offset: u64,
+}
+
+impl OutputCursor {
+    pub(super) fn new(source: InstallOutputSource) -> Self {
+        Self {
+            stream_id: next_output_stream_id(),
+            source,
+            offset: 0,
+        }
+    }
+
+    pub(super) fn chunk(&mut self, bytes: &[u8], finished: bool) -> InstallConsoleOutput {
+        let output = InstallConsoleOutput::Raw {
+            stream_id: self.stream_id,
+            source: self.source,
+            offset: self.offset,
+            bytes: bytes.to_vec(),
+            finished,
+        };
+        self.offset += bytes.len() as u64;
+        output
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct InstallProgressUpdate {
     pub progress_percent: f32,
     pub detail: String,
     pub output_excerpt: String,
     pub install_progress: Option<InstallProgress>,
+    pub console_output: Option<InstallConsoleOutput>,
 }
 
 impl InstallProgressUpdate {
@@ -17,6 +75,7 @@ impl InstallProgressUpdate {
             progress_percent: percent.unwrap_or(0.0),
             detail: detail.into(),
             output_excerpt: String::new(),
+            console_output: None,
             install_progress: Some(InstallProgress {
                 phase,
                 downloaded_bytes: None,
@@ -38,7 +97,25 @@ impl InstallProgressUpdate {
             progress.percent = percent;
         }
         update.progress_percent = percent.unwrap_or(0.0);
+        update.console_output = Some(InstallConsoleOutput::Progress {
+            retain_boundaries: true,
+            preview: true,
+        });
         update
+    }
+
+    pub(super) fn raw(output: InstallConsoleOutput) -> Self {
+        Self {
+            progress_percent: 0.0,
+            detail: String::new(),
+            output_excerpt: String::new(),
+            install_progress: None,
+            console_output: Some(output),
+        }
+    }
+
+    pub fn is_raw_output(&self) -> bool {
+        matches!(self.console_output, Some(InstallConsoleOutput::Raw { .. }))
     }
 
     pub fn with_output(mut self, output: impl Into<String>) -> Self {
@@ -46,7 +123,11 @@ impl InstallProgressUpdate {
         self
     }
 
-    pub(super) fn preparing_steamcmd(update: SteamCmdPrepareProgress) -> Self {
+    pub(super) fn preparing_steamcmd(mut update: SteamCmdPrepareProgress) -> Self {
+        match update.console_output.take() {
+            Some(raw @ InstallConsoleOutput::Raw { .. }) => return Self::raw(raw),
+            output => update.console_output = output,
+        }
         let phase = match update.phase {
             SteamCmdPreparePhase::Queued => InstallPhase::Queued,
             SteamCmdPreparePhase::Inspecting | SteamCmdPreparePhase::Ready => {
@@ -68,7 +149,9 @@ impl InstallProgressUpdate {
         } else {
             Self::stage(phase, detail)
         };
-        result.with_output(update.output_excerpt)
+        let mut result = result.with_output(update.output_excerpt);
+        result.console_output = update.console_output;
+        result
     }
 }
 
@@ -111,7 +194,13 @@ impl SteamInstallOutput {
         if self.console_selected {
             return None;
         }
-        self.line(line, excerpt)
+        self.line(line, excerpt).map(|mut update| {
+            update.console_output = Some(InstallConsoleOutput::Progress {
+                retain_boundaries: false,
+                preview: false,
+            });
+            update
+        })
     }
 
     pub(super) fn console_line(
@@ -161,6 +250,10 @@ impl SteamInstallOutput {
             detail: line.to_owned(),
             output_excerpt: excerpt,
             install_progress: Some(self.progress.clone()),
+            console_output: Some(InstallConsoleOutput::Progress {
+                retain_boundaries: false,
+                preview: true,
+            }),
         })
     }
 

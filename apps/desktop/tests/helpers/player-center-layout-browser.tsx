@@ -325,6 +325,17 @@ async function run() {
   check(staleReasonId && document.getElementById(staleReasonId)?.textContent?.includes("快照尚未确认完整且有效"),
     "A stale roster match is incorrectly described as a missing account identity");
   await listTab("online"); await size(720, 550); verifyIdle(); verifyColumns(); verifyScrollOwnership(); checks++;
+  const awaitingName = snapshot(1);
+  awaitingName.entries[0].display_name = "LanGame??";
+  awaitingName.issue = { code: "names_unavailable", setting_keys: [], summary: "Native profile not saved yet." };
+  await scenario(awaitingName); await selectPlayer();
+  check(!document.querySelector(".player-center-state") && !select<HTMLButtonElement>(".player-center-member-action").disabled,
+    "Pending name enrichment added an installation warning or disabled a verified live account"); checks++;
+  const named = snapshot(1); named.entries[0].display_name = "LanGame中文";
+  await scenario(named);
+  check(selectedRow().textContent?.includes("LanGame中文") && !document.querySelector(".player-center-state")
+    && !select<HTMLButtonElement>(".player-center-member-action").disabled,
+    "A native profile name refresh lost the selected live account or added a warning"); checks++;
   check(errors.length === 0, `Browser errors: ${errors.join("; ")}`);
   return { status: "passed", checks, browser_errors: errors };
 }let watchdog: ReturnType<typeof setTimeout>;

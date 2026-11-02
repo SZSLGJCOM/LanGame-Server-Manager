@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "mirrorRepository": "SZSLGJCOM/LanGame-Server-Manager-Releases",
+  "mirrorTag": "ark-tools-dependencies-ase-3.56-asa-2.03",
+  "packages": [
+    {
+      "id": "ase",
+      "moduleId": "arksurvivalevolved",
+      "version": "ArkApi 3.56",
+      "fileName": "ArkApi_3.56.zip",
+      "upstreamUrl": "https://github.com/ArkServerApi/AseApi/releases/download/3.56/ArkApi_3.56.zip",
+      "mirrorUrl": "https://api.gitcode.com/api/v5/repos/SZSLGJCOM/LanGame-Server-Manager-Releases/releases/ark-tools-dependencies-ase-3.56-asa-2.03/attach_files/ArkApi_3.56.zip/download",
+      "size": 11003472,
+      "sha256": "169533afd6529dcdb6c58e5b0bfd13f5d90f593f0e1188e4c156104db53e84f6",
+      "licenseUrl": "https://raw.githubusercontent.com/ArkServerApi/AseApi/9459cb3941c2e62d4144cbb8294fe6c4c772d564/LICENSE"
+    },
+    {
+      "id": "asa",
+      "moduleId": "arksurvivalascended",
+      "version": "AsaApi 2.03",
+      "fileName": "AsaApi_2.03.zip",
+      "upstreamUrl": "https://github.com/ArkServerApi/AsaApi/releases/download/2.03/AsaApi_2.03.zip",
+      "mirrorUrl": "https://api.gitcode.com/api/v5/repos/SZSLGJCOM/LanGame-Server-Manager-Releases/releases/ark-tools-dependencies-ase-3.56-asa-2.03/attach_files/AsaApi_2.03.zip/download",
+      "size": 28800286,
+      "sha256": "ac72fb29436198ac062cd273e1c496b1ef4e6ffddeec08243d11d9b35e8b8ae3",
+      "licenseUrl": "https://raw.githubusercontent.com/ArkServerApi/AsaApi/86bd3b21d1e940fe837af6511f945944977bb9ca/LICENSE"
+    }
+  ]
+}

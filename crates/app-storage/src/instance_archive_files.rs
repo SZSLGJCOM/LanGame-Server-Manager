@@ -10,8 +10,9 @@ use crate::{StorageError, StoragePaths};
 #[path = "instance_archive_native.rs"]
 pub(crate) mod native;
 
-const MAX_TREE_ENTRIES: usize = 200_000;
-const MAX_TREE_DEPTH: usize = 128;
+#[path = "instance_archive_tree.rs"]
+mod tree;
+pub(crate) use tree::{preflight_tree, purge_tree};
 
 pub(crate) struct InventoryEntry {
     pub leaf: String,
@@ -262,117 +263,4 @@ pub(crate) fn move_directory(from: &Path, to: &Path, expected: &str) -> Result<(
         to: to.to_owned(),
         source,
     })
-}
-
-struct TreeEntry {
-    path: PathBuf,
-    identity: FileIdentity,
-    directory: bool,
-}
-
-fn tree_entries(root: &Path, expected: &str) -> Result<Vec<TreeEntry>, StorageError> {
-    if !verify_identity(root, Some(expected))? {
-        return Err(invalid(
-            root,
-            "Owned directory is missing before tree preflight.",
-        ));
-    }
-    // Finish the complete bounded link/identity preflight before removing any data.
-    let mut pending = vec![(root.to_owned(), 0usize)];
-    let mut entries = Vec::new();
-    while let Some((path, depth)) = pending.pop() {
-        if entries.len() >= MAX_TREE_ENTRIES || depth > MAX_TREE_DEPTH {
-            return Err(invalid(
-                root,
-                "Archive exceeds the safe cleanup traversal limit; no files were removed.",
-            ));
-        }
-        normalize_resource_path(&path)?;
-        let metadata = fs::symlink_metadata(&path).map_err(|source| StorageError::ReadPath {
-            path: path.clone(),
-            source,
-        })?;
-        if metadata.file_type().is_symlink()
-            || crate::private_runtime::metadata_is_reparse_point(&metadata)
-            || (!metadata.is_dir() && !metadata.is_file())
-        {
-            return Err(invalid(
-                &path,
-                "Archive contains an external link or unsupported node; cleanup was refused.",
-            ));
-        }
-        let directory = metadata.is_dir();
-        let handle =
-            native::open(&path, directory, false).map_err(|source| StorageError::ReadPath {
-                path: path.clone(),
-                source,
-            })?;
-        let identity = handle.identity().map_err(|source| StorageError::ReadPath {
-            path: path.clone(),
-            source,
-        })?;
-        if directory {
-            for child in fs::read_dir(&path).map_err(|source| StorageError::ReadDirectory {
-                path: path.clone(),
-                source,
-            })? {
-                let child = child.map_err(|source| StorageError::ReadDirectory {
-                    path: path.clone(),
-                    source,
-                })?;
-                if pending.len() + entries.len() >= MAX_TREE_ENTRIES {
-                    return Err(invalid(
-                        root,
-                        "Archive exceeds the safe cleanup entry limit; no files were removed.",
-                    ));
-                }
-                pending.push((child.path(), depth + 1));
-            }
-        }
-        entries.push(TreeEntry {
-            path,
-            identity,
-            directory,
-        });
-    }
-    if !verify_identity(root, Some(expected))? {
-        return Err(invalid(root, "Archive vanished after cleanup preflight."));
-    }
-    Ok(entries)
-}
-
-pub(crate) fn preflight_tree(root: &Path, expected: &str) -> Result<(), StorageError> {
-    let _root = guard_identity(root, expected)?;
-    tree_entries(root, expected).map(|_| ())
-}
-
-pub(crate) fn purge_tree(root: &Path, expected: &str) -> Result<(), StorageError> {
-    let mut root_guard = Some(guard_identity(root, expected)?);
-    let entries = tree_entries(root, expected)?;
-    for entry in entries.into_iter().rev() {
-        if entry.path == root {
-            drop(root_guard.take());
-        }
-        let handle = native::open(&entry.path, entry.directory, true).map_err(|source| {
-            StorageError::DeletePath {
-                path: entry.path.clone(),
-                source,
-            }
-        })?;
-        if handle.identity().map_err(|source| StorageError::ReadPath {
-            path: entry.path.clone(),
-            source,
-        })? != entry.identity
-        {
-            return Err(invalid(
-                &entry.path,
-                "Archive node changed after preflight; cleanup remains incomplete.",
-            ));
-        }
-        handle.remove().map_err(|source| StorageError::DeletePath {
-            path: entry.path,
-            source,
-        })?;
-    }
-    Ok(())
 }

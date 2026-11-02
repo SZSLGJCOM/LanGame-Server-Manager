@@ -1,7 +1,7 @@
 import { message, type UiMessage } from "../app-ui";
 import { previewDontStarveWorldStart } from "../api";
 import { describeError, type RuntimeRefreshIssue } from "../app-state";
-import { Fragment, useEffect, useId, useMemo, useRef, useState } from "react";
+import { Fragment, useEffect, useId, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import type { AiSettings } from "../ai-settings";
 import { ServerCardFrame } from "./servers/ServerCardFrame";
 import { ServerCardWorldSave } from "./servers/ServerCardWorldSave";
@@ -39,7 +39,6 @@ import type {
 import { formatInstanceStatus } from "../view-models";
 import {
   instanceHasRunningProcess,
-  pendingRuntimeActionForIntent,
   type RuntimeActionPending
 } from "../runtime-action-state";
 import {
@@ -53,7 +52,8 @@ import { useSteamWorkshopAccount } from "./servers/useSteamWorkshopAccount";
 import type { SteamInstallationAccountContext } from "../steam-installation-account";
 import { moduleRequiresSteamCmd } from "../module-installation-dependency";
 import { collectRuntimeLogPaths, type RuntimeLogStartupBoundary } from "../runtime-log-stream";
-import { beginRuntimeConsoleStartupCapture } from "../runtime-console-startup-history";
+import { runtimeActionStore, type RuntimeActionOperation } from "../runtime-action-store";
+import { normalizeInstanceStatus } from "../instance-status";
 import {
   ConfigurationWorkspace, GMToolsWorkbench, ModWorkbench, PlayerCenterWorkbench, ServerMaintenanceWorkspace
 } from "./servers/DeferredServerWorkspaces";
@@ -103,8 +103,8 @@ interface ServersViewProps {
   onActivity: (value: UiMessage) => void;
   onResumeAutoRefresh: () => void;
   onSelectInstance: (instanceId: string) => void;
-  onStart: (instanceId: string, expectedWorldStart?: DstWorldStartPreview) => void | Promise<void>;
-  onStop: (instanceId: string) => void | Promise<void>;
+  onStart: (instanceId: string, expectedWorldStart?: DstWorldStartPreview, operation?: RuntimeActionOperation) => void | Promise<void>;
+  onStop: (instanceId: string, operation?: RuntimeActionOperation) => void | Promise<void>;
   onInstallModule: (moduleId: string, validate: boolean, account?: SteamInstallationAccountContext) => Promise<void>;
   onOpenModuleLibrary: (moduleId: string) => void;
   onCreateInstance: () => void;
@@ -305,18 +305,11 @@ export function ServersView(props: ServersViewProps) {
   const readableInstances = useMemo(() => props.instances.filter((instance) => !props.instanceRetirements?.has(instance.id)),
     [props.instances, props.instanceRetirements]);
   const listConnections = useInstanceConnections(readableInstances, selectedRetirement ? null : props.selectedDetails);
-  const runtimeActionGate = useRef(new Set<string>());
-  const runtimeStartupBoundaries = useRef(new Map<string, RuntimeLogStartupBoundary>());
-  const runtimeStartupCaptures = useRef(new Map<string, ReturnType<typeof beginRuntimeConsoleStartupCapture>>());
-  useEffect(() => () => {
-    for (const capture of runtimeStartupCaptures.current.values()) capture.dispose();
-    runtimeStartupCaptures.current.clear();
-  }, []);
+  const runtimeActionsByInstanceId = useSyncExternalStore(runtimeActionStore.subscribe, runtimeActionStore.getSnapshot);
   const detailPanelId = useId();
   const [requestedDetailTab, setActiveDetailTab] = useState<ServerDetailTab>("runtime");
   const [requestedArchiveDetailTab, setArchiveDetailTab] = useState<ServerDetailTab>("runtime");
   const [retainedGmInstanceId, setRetainedGmInstanceId] = useState<string | null>(null);
-  const [runtimeActionsByInstanceId, setRuntimeActionsByInstanceId] = useState<Partial<Record<string, RuntimeActionPending>>>({});
   const [installationsByModuleId, setInstallationsByModuleId] = useState<Partial<Record<string, ServerInstallationIntent>>>({});
   const installationGateRef = useRef<ServerInstallationRequestGate | null>(null);
   if (!installationGateRef.current) installationGateRef.current = new ServerInstallationRequestGate();
@@ -343,6 +336,8 @@ export function ServersView(props: ServersViewProps) {
   const autostartCount = props.instances.filter((instance) => instance.autostart).length;
   const selectedPorts = props.selectedDetails?.ports.length ?? 0;
   const selectedInstance = props.instances.find((instance) => instance.id === props.selectedInstanceId);
+  const selectedStartupPending = runtimeActionsByInstanceId[props.selectedInstanceId ?? ""] === "starting"
+    || normalizeInstanceStatus(selectedInstance?.status ?? props.selectedDetails?.summary.status) === "starting";
   const selectedDetailsError = props.panelLoadState ? props.panelLoadState.errors.details : props.refreshIssue?.message;
   const selectedDetailsLoading = props.panelLoadState?.pending.includes("details") ?? !selectedDetailsError;
   const selectedRemovalBlocked = !selectedInstance || resolveServerPrimaryAction({
@@ -384,8 +379,7 @@ export function ServersView(props: ServersViewProps) {
   }, [props.section]);
 
   async function runRuntimeAction(instanceId: string, intent: "start" | "stop") {
-    if (runtimeActionGate.current.has(instanceId)) return;
-    runtimeActionGate.current.add(instanceId);
+    let startup: { moduleId: string; boundary: RuntimeLogStartupBoundary } | undefined;
     if (intent === "start") {
       const selected = props.selectedDetails?.summary.id === instanceId;
       // Capture before settings/preflight awaits: native output may arrive before
@@ -394,19 +388,22 @@ export function ServersView(props: ServersViewProps) {
         instanceId, startedAtUnixMs: Date.now(),
         previousLogPaths: collectRuntimeLogPaths(selected ? props.selectedDetails : null, selected ? props.runtime : null)
       };
-      runtimeStartupBoundaries.current.set(instanceId, boundary);
       const moduleId = props.instances.find(instance => instance.id === instanceId)?.module_id;
-      if (moduleId) runtimeStartupCaptures.current.set(instanceId, beginRuntimeConsoleStartupCapture(
-        moduleId, boundary
-      ));
+      if (moduleId) startup = { moduleId, boundary };
     }
-    props.onActivity(message(intent === "start" ? "activity.startingServer" : "activity.stoppingServer", { id: instanceId }));
-    const pendingAction = pendingRuntimeActionForIntent(intent);
-    setRuntimeActionsByInstanceId((current) => ({ ...current, [instanceId]: pendingAction }));
+    const operation = runtimeActionStore.begin(instanceId, intent, { startup,
+      startupPending: normalizeInstanceStatus(props.instances.find(instance => instance.id === instanceId)?.status) === "starting" });
+    if (!operation) return;
+    props.onActivity(message(intent === "start" ? "activity.startingServer"
+      : operation.cancelsStartup ? "activity.cancellingServerStartup" : "activity.stoppingServer", { id: instanceId }));
 
     try {
       if (intent === "start") {
-        await runtimeStartupCaptures.current.get(instanceId)?.ready;
+        props.onSelectInstance(instanceId);
+        setActiveDetailTab("runtime");
+        props.onWorkspaceSectionChange("overview");
+        await operation.ready;
+        if (!operation.isCurrent()) return;
         let expectedWorldStart: DstWorldStartPreview | undefined;
         const instance = props.instances.find((item) => item.id === instanceId);
         if (instance?.module_id === "dontstarve") {
@@ -417,39 +414,28 @@ export function ServersView(props: ServersViewProps) {
         } else {
           await settingsSaveCoordinator.flush(instanceId);
         }
-        props.onSelectInstance(instanceId);
-        setActiveDetailTab("runtime");
-        props.onWorkspaceSectionChange("overview");
-        await props.onStart(instanceId, expectedWorldStart);
+        if (!operation.isCurrent()) return;
+        await props.onStart(instanceId, expectedWorldStart, operation);
       } else {
         let saveFailure: string | null = null;
         try {
-          await settingsSaveCoordinator.flushBeforeStop(instanceId);
+          if (!operation.cancelsStartup) await settingsSaveCoordinator.flushBeforeStop(instanceId);
         } catch (error) {
           // A failed live API must be reported, but must not prevent stopping a broken server.
           saveFailure = describeError(error);
         }
-        await props.onStop(instanceId);
+        await props.onStop(instanceId, operation);
         if (saveFailure) props.onActivity(message("settings.configuration.save.failed", { message: saveFailure }, { tone: "error" }));
       }
     } catch (error) {
+      if (!operation.isCurrent()) return;
       props.onActivity(error instanceof DstWorldStartError
         ? message(`dst.start.error.${error.code}`, undefined, { fallback: error.message, tone: "error" })
         : error instanceof InstanceSettingsDraftInvalidError
           ? message("dst.start.error.invalid", undefined, { tone: "error" })
         : message("dst.start.error.prepare", { message: describeError(error) }, { tone: "error" }));
     } finally {
-      runtimeActionGate.current.delete(instanceId);
-      runtimeStartupCaptures.current.get(instanceId)?.dispose();
-      runtimeStartupCaptures.current.delete(instanceId);
-      runtimeStartupBoundaries.current.delete(instanceId);
-      setRuntimeActionsByInstanceId((current) => {
-        if (current[instanceId] !== pendingAction) {
-          return current;
-        }
-        const { [instanceId]: _completed, ...rest } = current;
-        return rest;
-      });
+      operation.finish();
     }
   }
 
@@ -542,20 +528,25 @@ export function ServersView(props: ServersViewProps) {
 
   const hasInstances = props.instances.length > 0;
   const hasArchives = Boolean(archives.list?.archives.length);
-  // An empty normal list alone does not mean this is a new workspace.
-  const showFirstServer = !hasInstances && !props.selectedInstanceId && !archives.operation && pendingRemovals === 0
+  // Keep unresolved recovery work visible even when there are no active instances.
+  const canShowServerSetup = !hasInstances && !props.selectedInstanceId && !archives.operation && pendingRemovals === 0
     && !archives.error && !archives.notices.some((notice) => notice.tone === "error")
-    && (!archives.available || (archives.list !== null && !hasArchives
-      && pendingDeletions.length === 0 && archives.list.issues.length === 0));
-  const showMetrics = hasInstances || hasArchives || pendingDeletions.length > 0
-    || Boolean(props.selectedInstanceId) || pendingRemovals > 0 || archives.operation !== null;
+    && pendingDeletions.length === 0 && !archives.list?.issues.length;
+  const showFirstServer = canShowServerSetup && !hasArchives
+    && (!archives.available || (archives.list !== null && !archives.loading));
+  const showEmptyWorkspace = canShowServerSetup && (listMode === "normal" || showFirstServer);
+  const showMetrics = !showEmptyWorkspace && (hasInstances || hasArchives || pendingDeletions.length > 0
+    || Boolean(props.selectedInstanceId) || pendingRemovals > 0 || archives.operation !== null);
+  useEffect(() => {
+    if (showEmptyWorkspace) setListMode("normal");
+  }, [showEmptyWorkspace]);
   const detailScrollClassName = [
     "server-detail-scroll",
     `server-detail-scroll--${activeDetailTab}`
   ].join(" ");
 
   return (
-    <SaveImportOperationsProvider><div className={`page-grid workspace-page servers-page${!showMetrics ? " servers-page--no-metrics" : ""}`}>
+    <SaveImportOperationsProvider><div className={`page-grid workspace-page servers-page${!showMetrics ? " servers-page--no-metrics" : ""}${showEmptyWorkspace ? " servers-page--empty" : ""}`}>
       {archives.error && <ActivityNotice tone="error" action={
         <button type="button" className="secondary-button" onClick={() => void archives.refresh()} disabled={archives.loading}>{t("common.refresh")}</button>
       }>{archives.error}</ActivityNotice>}
@@ -583,7 +574,7 @@ export function ServersView(props: ServersViewProps) {
       </section> : null}
 
       <section className="workspace-section-grid server-layout-grid">
-        <section className="server-list-panel" aria-label={t("servers.list.title")}>
+        {!showEmptyWorkspace && <section className="server-list-panel" aria-label={t("servers.list.title")}>
           <div className="panel-head server-list-controls">
             <div className="server-list-search-row">
             <div className="server-list-search-field">
@@ -600,6 +591,7 @@ export function ServersView(props: ServersViewProps) {
             <div className="server-list-mode-toggle" role="group" aria-label={t("servers.list.mode")}>
               {(["normal", "archived"] as const).map((mode) => <button key={mode} type="button" data-server-list-mode={mode}
                 aria-pressed={listMode === mode} disabled={mode === "archived" && !archives.available}
+                autoFocus={mode === "archived" && listMode === "archived" && !hasInstances}
                 title={!archives.available && mode === "archived" ? t("storage.hostOnly") : undefined}
                 onClick={() => { setListMode(mode); setSelectedDeletionId(null); if (archives.available) void archives.refresh(); }}>
                 {t(`servers.list.${mode}`)}
@@ -671,10 +663,10 @@ export function ServersView(props: ServersViewProps) {
             {!hasInstances && pendingDeletions.length === 0 && <p className="server-list-notice">{t("servers.list.emptyNormal")}</p>}
             </>}
           </div>
-        </section>
+        </section>}
 
         <section className="server-detail-panel">
-          {listMode === "archived" ? selectedArchive ? (
+          {listMode === "archived" && !showEmptyWorkspace ? selectedArchive ? (
             <ArchivedInstanceWorkspace key={selectedArchive.archive_id} archive={selectedArchive}
               requestedTab={requestedArchiveDetailTab} onTabChange={setArchiveDetailTab} />
           ) : (
@@ -763,7 +755,7 @@ export function ServersView(props: ServersViewProps) {
                 </div>
               ) : null}
 
-              {activeDetailTab === "runtime" || runtimeActionsByInstanceId[props.selectedDetails.summary.id] === "starting" ? (
+              {activeDetailTab === "runtime" || selectedStartupPending ? (
                 <RuntimeSurfaceWorkbench
                   active={activeDetailTab === "runtime"}
                   steamAccount={steamAccount}
@@ -775,8 +767,8 @@ export function ServersView(props: ServersViewProps) {
                   runtimeWindows={props.runtimeWindows}
                   panelLoadState={props.panelLoadState}
                   onRetryReads={props.onResumeAutoRefresh}
-                  startupPending={runtimeActionsByInstanceId[props.selectedDetails.summary.id] === "starting"}
-                  startupBoundary={runtimeStartupBoundaries.current.get(props.selectedDetails.summary.id)}
+                  startupPending={selectedStartupPending}
+                  startupBoundary={runtimeActionStore.startupBoundary(props.selectedDetails.summary.id)}
                   launchHostSurface={launchHostSurface}
                   onSendRuntimeCommand={props.onSendRuntimeCommand}
                   onSuppressRuntimeWindows={props.onSuppressRuntimeWindows}
@@ -824,11 +816,16 @@ export function ServersView(props: ServersViewProps) {
                 ? t("servers.details.empty")
                 : t(showFirstServer ? "servers.list.noInstancesBody"
                   : hasArchives ? "servers.details.archivedBody" : "servers.details.noActiveBody")}</p>
-              {showFirstServer ? (
+              {showEmptyWorkspace ? <div className="server-workspace-empty-actions">
                 <button type="button" className="primary-button" onClick={props.onCreateInstance}>
                   {t("library.detail.createServer")}
                 </button>
-              ) : null}
+                <button type="button" className="secondary-button" disabled={!hasArchives || storageBusy || !archives.available}
+                  title={!archives.available ? t("storage.hostOnly") : undefined}
+                  onClick={() => { setSearchText(""); setListMode("archived"); void archives.refresh(); }}>
+                  {t("servers.archives.openRestore")}
+                </button>
+              </div> : null}
             </div>
             </div>
           )}

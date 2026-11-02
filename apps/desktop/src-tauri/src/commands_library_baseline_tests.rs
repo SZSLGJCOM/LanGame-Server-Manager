@@ -25,6 +25,89 @@ fn verification_snapshot(stage: InstallVerificationStage) -> InstallVerification
 }
 
 #[tokio::test]
+async fn library_baseline_keeps_fast_stage_boundaries_and_all_queued_measurements() {
+    let state = DesktopState::default();
+    let operation = state
+        .begin_storage_context_operation("ordered progress test")
+        .unwrap();
+    let installation = app_steamcmd::InstallCancellation::new();
+    let mut reports = Vec::new();
+    run_baseline_worker(
+        &operation,
+        &installation,
+        "fixture",
+        |progress| reports.push(progress),
+        |_, report| {
+            for index in 0..=32 {
+                report(InstallVerificationProgress {
+                    stage: InstallVerificationStage::PackageFiles,
+                    completed_bytes: index,
+                    total_bytes: 32,
+                    completed_files: index,
+                    total_files: 32,
+                });
+            }
+            for index in 0..=1 {
+                report(InstallVerificationProgress {
+                    stage: InstallVerificationStage::RecordingBaseline,
+                    completed_bytes: 0,
+                    total_bytes: 0,
+                    completed_files: index,
+                    total_files: 1,
+                });
+            }
+            Ok(())
+        },
+    )
+    .await
+    .unwrap();
+    assert_eq!(reports.len(), 35);
+    for (index, report) in reports[..33].iter().enumerate() {
+        assert_eq!(report.stage, InstallVerificationStage::PackageFiles);
+        assert_eq!(report.completed_bytes, index as u64);
+    }
+    assert_eq!(reports[33].completed_files, 0);
+    assert_eq!(reports[34].completed_files, 1);
+    assert_eq!(
+        reports[34].stage,
+        InstallVerificationStage::RecordingBaseline
+    );
+}
+
+#[tokio::test]
+async fn library_baseline_cancel_closes_a_backpressured_progress_sender() {
+    let state = DesktopState::default();
+    let operation = state
+        .begin_storage_context_operation("bounded cancellation test")
+        .unwrap();
+    let installation = app_steamcmd::InstallCancellation::new();
+    let stopped = Arc::new(AtomicBool::new(false));
+    let worker_stopped = Arc::clone(&stopped);
+    let result = tokio::time::timeout(
+        Duration::from_secs(5),
+        run_baseline_worker(
+            &operation,
+            &installation,
+            "fixture",
+            |_| installation.cancel(),
+            move |cancel, report| {
+                while !cancel.load(Ordering::Acquire) {
+                    report(verification_snapshot(
+                        InstallVerificationStage::PackageFiles,
+                    ));
+                }
+                worker_stopped.store(true, Ordering::Release);
+                Ok(())
+            },
+        ),
+    )
+    .await
+    .unwrap();
+    assert!(result.is_err());
+    assert!(stopped.load(Ordering::Acquire));
+}
+
+#[tokio::test]
 async fn library_baseline_progress_runs_on_caller_and_keeps_final_worker_snapshot() {
     let state = DesktopState::default();
     let operation = state

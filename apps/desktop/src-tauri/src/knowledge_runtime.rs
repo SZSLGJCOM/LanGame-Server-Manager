@@ -73,6 +73,8 @@ pub(crate) struct KnowledgeCoordinator {
 
 impl KnowledgeCoordinator {
     pub(crate) fn with_storage_paths(paths: Result<app_storage::StoragePaths, String>) -> Self {
+        // Knowledge never resolves the configurable instance/program roots. The
+        // migration coordinator protects both of these captured locations.
         Self::with_paths(
             paths
                 .map(|paths| (paths.app_data_root.join("knowledge"), paths.modules_root))
@@ -155,6 +157,27 @@ impl KnowledgeCoordinator {
         Ok(())
     }
 
+    async fn check_schedule(
+        self: &Arc<Self>,
+        state: &DesktopState,
+        now: u64,
+    ) -> Result<(), String> {
+        let _operation =
+            state.begin_fixed_application_data_operation("knowledge update schedule check")?;
+        self.reap_worker().await?;
+        let status = self.status().await?;
+        let active = status.job.as_ref().is_some_and(|job| job.state.active());
+        let last = status
+            .job
+            .as_ref()
+            .and_then(|job| job.finished_at)
+            .or_else(|| status.library.last_run.as_ref().map(|run| run.finished_at));
+        if !active && due(&status.library.settings, last, now) {
+            self.start(state, None, false).await?;
+        }
+        Ok(())
+    }
+
     pub(crate) async fn start(
         self: &Arc<Self>,
         state: &DesktopState,
@@ -182,7 +205,8 @@ impl KnowledgeCoordinator {
                 .await
                 .map_err(|error| format!("Knowledge worker cleanup failed: {error}"))?;
         }
-        let operation = state.begin_storage_context_operation("official game knowledge sync")?;
+        let operation =
+            state.begin_fixed_application_data_operation("official game knowledge sync")?;
         let library = self.library().await?;
         if let Some(module) = module_id.as_ref() {
             let status = library.status().await.map_err(|e| e.to_string())?;
@@ -443,23 +467,7 @@ pub(crate) fn spawn_knowledge_scheduler<R: tauri::Runtime>(app: tauri::AppHandle
                 && state.is_storage_ready()
                 && now >= retry_after
             {
-                let result = async {
-                    let _operation =
-                        state.begin_storage_context_operation("knowledge update schedule check")?;
-                    coordinator.reap_worker().await?;
-                    let status = coordinator.status().await?;
-                    let active = status.job.as_ref().is_some_and(|job| job.state.active());
-                    let last = status
-                        .job
-                        .as_ref()
-                        .and_then(|job| job.finished_at)
-                        .or_else(|| status.library.last_run.as_ref().map(|run| run.finished_at));
-                    if !active && due(&status.library.settings, last, now) {
-                        coordinator.start(&state, None, false).await?;
-                    }
-                    Ok::<_, String>(())
-                }
-                .await;
+                let result = coordinator.check_schedule(&state, now).await;
                 if let Err(error) = result {
                     if let Ok(mut state) = coordinator.lock() {
                         state.scheduler_error = Some(error);
@@ -478,3 +486,7 @@ pub(crate) fn spawn_knowledge_scheduler<R: tauri::Runtime>(app: tauri::AppHandle
 #[cfg(test)]
 #[path = "knowledge_runtime_tests.rs"]
 mod tests;
+
+#[cfg(test)]
+#[path = "knowledge_storage_scope_tests.rs"]
+mod storage_scope_tests;

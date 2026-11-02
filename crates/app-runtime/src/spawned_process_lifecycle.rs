@@ -102,6 +102,63 @@ pub fn stop_spawned_process(
     )
 }
 
+/// Cancel an uncommitted launch without sending a gameplay shutdown command or
+/// waiting for console cooperation. Only the original owner can terminate and
+/// confirm the entire tree; failure retains every resource for recovery.
+pub fn force_stop_spawned_process(
+    spawned: &mut SpawnedProcess,
+) -> Result<Option<i32>, RuntimeProcessError> {
+    let wait_error = |source| RuntimeProcessError::WaitTrackedProcess {
+        pid: spawned.pid,
+        source,
+    };
+    let child = spawned.child.as_mut().ok_or_else(|| {
+        wait_error(std::io::Error::new(
+            std::io::ErrorKind::NotFound,
+            "startup cancellation requires the original launch owner; ownership is unavailable",
+        ))
+    })?;
+    if !child.has_owned_process_tree() {
+        // Standard children (including non-Windows launches) cannot establish
+        // complete-tree exit. Check any live root identity, but never fall back
+        // to killing a reopened PID and reporting an unverified tree stopped.
+        if child.try_wait_code().map_err(wait_error)?.is_none()
+            && !process_matches_identity(child.id(), &spawned.root_process_identity)?
+        {
+            return Err(RuntimeProcessError::ProcessIdentityMismatch { pid: child.id() });
+        }
+        return Err(wait_error(std::io::Error::new(
+            std::io::ErrorKind::Unsupported,
+            "startup cancellation requires ownership of the complete process tree; ownership retained",
+        )));
+    }
+    child.finish_process_tree().map_err(wait_error)?;
+    let exit_code = child.try_wait_code().map_err(wait_error)?.ok_or_else(|| {
+        wait_error(std::io::Error::new(
+            std::io::ErrorKind::TimedOut,
+            "startup cancellation did not confirm the original process handle exited; ownership retained",
+        ))
+    })?;
+    match child.owned_process_tree_is_running().map_err(wait_error)? {
+        Some(false) => {}
+        state => {
+            return Err(wait_error(std::io::Error::new(
+                if state.is_some() {
+                    std::io::ErrorKind::TimedOut
+                } else {
+                    std::io::ErrorKind::Unsupported
+                },
+                "startup cancellation did not confirm complete owned-tree exit; ownership retained",
+            )));
+        }
+    }
+    // Tree and original handle are both finished. Closing the output owner now
+    // joins/drains readers, and only then can the private desktop be released.
+    drop(spawned.child.take());
+    drop(spawned.hidden_desktop.take());
+    Ok(exit_code)
+}
+
 /// Request one native console interrupt and release the launch only after its
 /// original process handle and complete owned tree have both exited. Errors
 /// retain the child, Job, desktop and output reader for observation or recovery.

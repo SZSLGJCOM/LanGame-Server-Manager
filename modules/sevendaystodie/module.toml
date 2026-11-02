@@ -196,3 +196,10 @@ port_names = ["game_udp", "game_tcp"]
 [[runtime.port_roles]]
 role = "service"
 port_names = ["web_dashboard", "telnet"]
+
+[runtime.startup_readiness]
+timeout_ms = 1800000
+
+[runtime.startup_readiness.probe]
+kind = "runtime_log"
+source = { kind = "managed" }

@@ -98,6 +98,10 @@ pub(super) fn verification_install_progress(
         None
     };
     let mut update = InstallProgressUpdate::stage(InstallPhase::Verifying, detail);
+    update.console_output = Some(app_steamcmd::InstallConsoleOutput::Progress {
+        retain_boundaries: true,
+        preview: true,
+    });
     update.progress_percent = percent.unwrap_or(0.0);
     if let Some(progress) = update.install_progress.as_mut() {
         progress.percent = percent;
@@ -107,6 +111,9 @@ pub(super) fn verification_install_progress(
 }
 
 pub(super) fn apply_install_progress(job: &mut BackgroundJob, update: &InstallProgressUpdate) {
+    if update.is_raw_output() {
+        return;
+    }
     job.status = JobStatus::Running;
     job.progress_percent = update.progress_percent.clamp(1.0, 100.0);
     job.install_progress = update.install_progress.clone();
@@ -295,6 +302,7 @@ mod tests {
         apply_install_progress(
             &mut job,
             &InstallProgressUpdate {
+                console_output: None,
                 progress_percent: 90.0,
                 install_progress: Some(progress.clone()),
                 detail: String::from("Verifying files"),
@@ -314,6 +322,7 @@ mod tests {
         apply_install_progress(
             &mut job,
             &InstallProgressUpdate {
+                console_output: None,
                 progress_percent: 40.0,
                 install_progress: None,
                 detail: String::from("Preparing Workshop content"),

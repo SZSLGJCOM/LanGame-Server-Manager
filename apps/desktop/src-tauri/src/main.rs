@@ -194,20 +194,20 @@ fn main() {
             let main_window = app
                 .get_webview_window("main")
                 .ok_or_else(|| std::io::Error::other("main window is missing"))?;
-            desktop_window::prepare(&main_window).map_err(std::io::Error::other)?;
+            let window = app
+                .config()
+                .app
+                .windows
+                .iter()
+                .find(|window| window.label == "main")
+                .cloned()
+                .ok_or_else(|| std::io::Error::other("main window configuration missing"))?;
+            desktop_window::prepare(&main_window, &window).map_err(std::io::Error::other)?;
             #[cfg(windows)]
             webview_drop::install(&main_window).map_err(std::io::Error::other)?;
             main_window.show()?;
             #[cfg(windows)]
             {
-                let window = app
-                    .config()
-                    .app
-                    .windows
-                    .iter()
-                    .find(|window| window.label == "main")
-                    .cloned()
-                    .ok_or_else(|| std::io::Error::other("main window configuration missing"))?;
                 webview_recovery::install(
                     app.handle(),
                     webview_recovery::RecoveryConfig {

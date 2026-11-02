@@ -1,0 +1,16 @@
+.map-zoom-controls {
+  --settings-control-bg: transparent;
+  --settings-control-bg-hover: transparent;
+  position: absolute; top: 8px; left: 8px; z-index: 2; display: flex; align-items: center; gap: 2px; padding: 2px;
+  border-radius: 6px; background: transparent; color: #eef6fa; text-shadow: 0 1px 3px #10202b; cursor: default;
+}
+.map-zoom-controls .secondary-button, .map-zoom-controls .secondary-button:hover {
+  display: inline-grid; place-items: center; width: 26px; height: 26px; min-height: 0; padding: 0; flex: none;
+  background: transparent; color: inherit; box-shadow: none; text-shadow: inherit;
+}
+.map-zoom-controls svg { width: 15px; height: 15px; }
+.map-zoom-controls .map-zoom-select {
+  width: 84px; height: 26px; min-height: 0; padding: 0 18px 0 6px; flex: none;
+  font-size: var(--text-meta); font-variant-numeric: tabular-nums; color: inherit; text-shadow: inherit;
+}
+.map-zoom-select option { background: var(--panel); color: var(--shell-text); text-shadow: none; }

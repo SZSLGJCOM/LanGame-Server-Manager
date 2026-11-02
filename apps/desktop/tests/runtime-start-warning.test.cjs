@@ -20,6 +20,7 @@ test("save and game-update limitations survive startup without exposing diagnost
     ["manual_save_unavailable", "activity.serverStartManualSaveUnavailable", /手动保存暂不可用/, /manual saving is unavailable/i],
     ["graceful_stop_unavailable", "activity.serverStartGracefulStopUnavailable", /正常停服暂不可用/, /normal shutdown is unavailable/i],
     ["program_update_using_installed", "activity.serverStartUsingInstalledProgram", /游戏更新检查未完成/, /game update check did not complete/i],
+    ["startup_log_persistence_failed", "activity.serverStartLogPersistenceFailed", /正在运行.*启动历史未能完整保存/, /running.*startup history could not be fully saved/i],
   ]) {
     const entry = { code, provider: null, reason: null, item_ids: [], message: "PRIVATE_DOWNLOAD_URL",
       log_path: "C:/fixture/logs/start.log", map_key: null, http_status: null };

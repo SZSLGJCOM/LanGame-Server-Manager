@@ -21,13 +21,16 @@ fn explicit_travel_and_load_choices_are_preserved_without_label_restrictions() {
         json!({"load_auto_save":true,"disable_server_travel":true}),
         json!({"load_auto_save":false,"disable_server_travel":true}),
     ] {
-        assert!(!enabled(&settings).unwrap());
+        assert!(!automatic_world_loading(&settings).unwrap());
         let mut details = instance();
         details.settings_json = settings.to_string();
         assert!(prepare(&details).unwrap().is_none());
     }
-    assert!(enabled(&json!({"load_auto_save":true,"disable_server_travel":false})).unwrap());
-    assert!(enabled(&json!({})).is_err());
+    assert!(
+        automatic_world_loading(&json!({"load_auto_save":true,"disable_server_travel":false}))
+            .unwrap()
+    );
+    assert!(automatic_world_loading(&json!({})).is_err());
     let mut details = instance();
     details.summary.module_id = "another-game".into();
     assert!(prepare(&details).unwrap().is_none());
@@ -115,32 +118,46 @@ fn selected_world_is_a_result_of_two_queries_not_fifo_or_players() {
 }
 
 #[test]
-fn registered_run_must_have_one_current_primary_generation() {
-    assert_eq!(run(&instance()).unwrap().pid, 123);
-    let mut variants = Vec::new();
-    let mut value = instance();
-    value.active_run = None;
-    variants.push(value);
-    let mut value = instance();
-    value.summary.status = InstanceStatus::Stopped;
-    variants.push(value);
-    let mut value = instance();
-    value.active_run.as_mut().unwrap().processes[0].session_id = Some("old".into());
-    variants.push(value);
-    let mut value = instance();
-    value.active_run.as_mut().unwrap().processes[0].pid = Some(124);
-    variants.push(value);
-    let mut value = instance();
-    value.active_run.as_mut().unwrap().processes[0].process_identity = None;
-    variants.push(value);
-    let mut value = instance();
-    value.active_run.as_mut().unwrap().processes[0].exit_code = Some(0);
-    variants.push(value);
-    let mut value = instance();
-    value.active_run.as_mut().unwrap().process_count = 2;
-    variants.push(value);
-    for value in variants {
-        assert!(run(&value).is_err());
+fn initialization_requires_the_original_unregistered_instance_without_fabricating_a_run() {
+    let mut original = instance();
+    original.active_run = None;
+    original.summary.active_process_count = 0;
+    original.summary.status = InstanceStatus::Stopped;
+    let plan = Plan {
+        instance_id: original.summary.id.clone(),
+        config_path: original.config_file_path.clone(),
+        declared_saves: original.saves_path.clone(),
+        settings: original.settings_json.clone(),
+        root: PathBuf::from("fixture-runtime"),
+        saves: PathBuf::from("fixture-saves"),
+        label: "SAVE_1".into(),
+        password: "fixture-password".into(),
+        port: 1234,
+        _pins: Vec::new(),
+    };
+    assert!(validate_unregistered(&original, &plan).is_ok());
+    for status in [InstanceStatus::Error, InstanceStatus::Starting] {
+        let mut value = original.clone();
+        value.summary.status = status;
+        assert!(validate_unregistered(&value, &plan).is_ok());
+    }
+    for variant in 0..9 {
+        let mut value = original.clone();
+        match variant {
+            0 => value.active_run = instance().active_run,
+            1 => value.summary.active_process_count = 1,
+            2 => value.summary.status = InstanceStatus::Running,
+            3 => value.summary.id = "replacement".into(),
+            4 => value.summary.module_id = "replacement".into(),
+            5 => value.settings_json = "{\"active_save_file_name\":\"OTHER\"}".into(),
+            6 => value.config_file_path = "replacement".into(),
+            7 => value.saves_path = "replacement".into(),
+            _ => value.ports[0].port += 1,
+        }
+        assert!(
+            validate_unregistered(&value, &plan).is_err(),
+            "variant {variant}"
+        );
     }
 }
 

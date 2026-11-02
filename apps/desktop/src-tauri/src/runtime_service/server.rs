@@ -110,9 +110,9 @@ async fn accept(
         let connected = std::mem::replace(&mut pipe, next);
         let app = app.clone();
         let work_slots = Arc::clone(&work_slots);
-        tauri::async_runtime::spawn_blocking(move || {
+        tauri::async_runtime::spawn(async move {
             let _slot = slot;
-            tauri::async_runtime::block_on(handle(app, connected, work_slots, control_only));
+            handle_connection(app, connected, work_slots, control_only).await;
         });
     }
 }
@@ -121,7 +121,7 @@ fn command_allowed_on_channel(control_only: bool, command: &str) -> bool {
     !control_only || security::is_control_command(command)
 }
 
-async fn handle(
+async fn handle_connection(
     app: tauri::AppHandle,
     mut pipe: NamedPipeServer,
     work_slots: Arc<Semaphore>,
@@ -131,22 +131,67 @@ async fn handle(
         Duration::from_secs(15),
         wire::read_frame::<wire::Request>(&mut pipe),
     )
+    .await
+    .map_err(|_| String::from("Runtime service request timed out"))
+    .and_then(|request| request);
+    if let Ok(request) = &request
+        && request.protocol == wire::PROTOCOL
+        && command_allowed_on_channel(control_only, &request.command)
+        && request.command == "runtime_service_events"
+    {
+        // An idle subscriber retains only its bounded connection slot. Waiting
+        // must not occupy a blocking worker or an ordinary command's work slot.
+        let result = app
+            .state::<events::Events>()
+            .wait_after(
+                request.args["after"].as_u64().unwrap_or(0),
+                request.args["generation"].as_str(),
+                events::LONG_POLL_TIMEOUT,
+            )
+            .await;
+        let _ = tokio::time::timeout(
+            Duration::from_secs(15),
+            wire::write_response(&mut pipe, &wire::Response { result }),
+        )
+        .await;
+        return;
+    }
+    // Ordinary accepted operations retain their existing owned execution path;
+    // disconnecting the UI still cannot abandon a mutation midway through.
+    let _ = tauri::async_runtime::spawn_blocking(move || {
+        tauri::async_runtime::block_on(handle_request(
+            app,
+            pipe,
+            work_slots,
+            control_only,
+            request,
+        ));
+    })
     .await;
+}
+
+async fn handle_request(
+    app: tauri::AppHandle,
+    mut pipe: NamedPipeServer,
+    work_slots: Arc<Semaphore>,
+    control_only: bool,
+    request: Result<wire::Request, String>,
+) {
     let mut exit_after_response = false;
     let result = match request {
-        Ok(Ok(request))
+        Ok(request)
             if request.protocol == wire::PROTOCOL
                 && !command_allowed_on_channel(control_only, &request.command) =>
         {
             Err("The runtime control channel accepts only status and shutdown requests".into())
         }
-        Ok(Ok(request))
+        Ok(request)
             if request.protocol == wire::PROTOCOL
                 && request.command == "runtime_service_tray_exit" =>
         {
             accept_final_exit(&app, &request.args)
         }
-        Ok(Ok(request))
+        Ok(request)
             if request.protocol == wire::PROTOCOL
                 && request.command == "runtime_service_shutdown" =>
         {
@@ -157,7 +202,7 @@ async fn handle(
             exit_after_response = result.is_ok();
             result.map(|()| json!({ "shutdown_completed": true, "pid": std::process::id() }))
         }
-        Ok(Ok(request)) if request.protocol == wire::PROTOCOL => {
+        Ok(request) if request.protocol == wire::PROTOCOL => {
             // Once received, an operation belongs to the service. Closing the UI
             // does not cancel a save, install, or stop half way through.
             match acquire_request_slot(&work_slots, &request.command) {
@@ -169,11 +214,10 @@ async fn handle(
                 Err(error) => Err(error),
             }
         }
-        Ok(Ok(_)) => Err(
+        Ok(_) => Err(
             "Runtime service protocol mismatch; restart the service using this installation".into(),
         ),
-        Ok(Err(error)) => Err(error),
-        Err(_) => Err("Runtime service request timed out".into()),
+        Err(error) => Err(error),
     };
     let _ = tokio::time::timeout(
         Duration::from_secs(15),
@@ -250,10 +294,6 @@ async fn dispatch(app: &tauri::AppHandle, request: wire::Request) -> Result<Valu
             let state = app.state::<crate::state::DesktopState>();
             serde_json::to_value(runtime_status(&state)).map_err(|error| error.to_string())
         }
-        "runtime_service_events" => app.state::<events::Events>().after(
-            request.args["after"].as_u64().unwrap_or(0),
-            request.args["generation"].as_str(),
-        ),
         _ => {
             let registered = command_registry::find(&request.command)
                 .ok_or_else(|| format!("unknown LanGame command: {}", request.command))?;

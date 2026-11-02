@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::{Arc, Mutex, RwLock, Weak};
 use std::time::{Duration, Instant, SystemTime};
@@ -13,8 +13,12 @@ use crate::live_players::cache::LivePlayerRegistry;
 mod app_shutdown;
 mod install_operations;
 mod storage_management;
+mod storage_operation_scope;
 mod storage_shutdown;
 pub(crate) use storage_management::StorageManagement;
+use storage_operation_scope::{
+    ActiveStorageOperation, StorageOperationScope, path_operation_blockers,
+};
 mod system_snapshot_refresh;
 mod timed_cache;
 pub(crate) use install_operations::{InstallOperationLease, InstallOperationRegistry};
@@ -27,7 +31,10 @@ pub(crate) use daily_maintenance::{DailyMaintenanceCoordinator, DailyMaintenance
 mod runtime_reconciliation;
 pub(crate) use runtime_reconciliation::RuntimeExitReconciliation;
 mod runtime_log_streams;
+mod runtime_start_control;
+mod runtime_start_session;
 pub use runtime_log_streams::{RuntimeLogStreamLease, RuntimeLogStreamStatus, RuntimeLogStreams};
+pub(crate) use runtime_start_control::RuntimeStartControl;
 mod runtime_restart_scheduler;
 pub use runtime_restart_scheduler::{
     RuntimeRestartScheduleEntry, RuntimeRestartScheduleRequest, RuntimeRestartScheduler,
@@ -89,11 +96,15 @@ pub struct DesktopState {
     app_shutdown: Mutex<()>,
     pub shutdown_completed: AtomicBool,
     pub(crate) steamcmd_preparation: Arc<crate::steamcmd_preparation::SteamCmdPreparationTracker>,
+    pub(crate) ark_tools_progress:
+        Arc<crate::commands::commands_ark_tools::progress::InstallTracker>,
     pub(crate) steam_workshop_account_sessions:
         Arc<crate::steam_workshop_account_sessions::SteamWorkshopAccountSessions>,
     pub(crate) install_operations: Arc<InstallOperationRegistry>,
     pub(crate) install_locks: app_steamcmd::InstallLockContext,
     pub(crate) storage_management: Arc<StorageManagement>,
+    pub(crate) storage_migration:
+        Arc<crate::commands::commands_storage_migration::MigrationTracker>,
 }
 
 #[derive(Clone)]
@@ -106,7 +117,6 @@ pub(crate) enum StorageSource {
 impl StorageSource {
     /// Inspect the anchored location for path-local services without initializing storage.
     /// Configurable runtime roots still require `bootstrap_storage` to load settings.
-    #[cfg(windows)]
     pub(crate) fn resolve_paths(&self) -> Result<StoragePaths, String> {
         match self {
             Self::UserDataRoot(root) => {
@@ -171,6 +181,9 @@ impl Default for DesktopState {
                 default_paths.app_data_root.clone(),
             ),
             storage_management: Arc::new(StorageManagement::default()),
+            storage_migration: Arc::new(
+                crate::commands::commands_storage_migration::MigrationTracker::default(),
+            ),
             app_state: Arc::new(RwLock::new(app_state)),
             host_monitor: Arc::new(Mutex::new(WindowsHostMonitor::default())),
             system_snapshot_cache: Arc::new(Mutex::new(TimedCache::default())),
@@ -202,6 +215,9 @@ impl Default for DesktopState {
             shutdown_completed: AtomicBool::new(false),
             steamcmd_preparation: Arc::new(
                 crate::steamcmd_preparation::SteamCmdPreparationTracker::default(),
+            ),
+            ark_tools_progress: Arc::new(
+                crate::commands::commands_ark_tools::progress::InstallTracker::default(),
             ),
         }
     }
@@ -280,6 +296,9 @@ impl DesktopState {
             .storage_context_coordinator
             .lock()
             .map_err(|_| String::from("storage context coordinator lock poisoned"))?;
+        if let Some(message) = &coordinator.recovery_required {
+            return Err(message.clone());
+        }
         if coordinator.transition_in_progress {
             return Err(String::from(
                 "application paths are already being updated; retry after the current update finishes",
@@ -293,10 +312,8 @@ impl DesktopState {
                 "application paths cannot be updated while application shutdown is in progress",
             ));
         }
-        if !coordinator.active_operations.is_empty() {
-            return Err(String::from(
-                "a storage operation is in progress; retry the path update after it finishes",
-            ));
+        if let Some(blockers) = path_operation_blockers(&coordinator.active_operations) {
+            return Err(blockers);
         }
         coordinator.transition_in_progress = true;
         drop(coordinator);
@@ -310,11 +327,22 @@ impl DesktopState {
         &self,
         operation: &str,
     ) -> Result<StorageContextOperationGuard, String> {
+        self.begin_scoped_storage_operation(operation, StorageOperationScope::MigratablePaths)
+    }
+
+    fn begin_scoped_storage_operation(
+        &self,
+        operation: &str,
+        scope: StorageOperationScope,
+    ) -> Result<StorageContextOperationGuard, String> {
         let mut coordinator = self
             .storage_context_coordinator
             .lock()
             .map_err(|_| String::from("storage context coordinator lock poisoned"))?;
-        if coordinator.transition_in_progress {
+        if let Some(message) = &coordinator.recovery_required {
+            return Err(message.clone());
+        }
+        if coordinator.transition_in_progress && scope == StorageOperationScope::MigratablePaths {
             return Err(format!(
                 "{operation} cannot begin while application paths are being updated; retry after the update finishes"
             ));
@@ -335,7 +363,11 @@ impl DesktopState {
         let cancellation = Arc::new(AtomicBool::new(false));
         coordinator.active_operations.insert(
             operation_id,
-            (operation.to_owned(), Arc::clone(&cancellation)),
+            ActiveStorageOperation {
+                name: operation.to_owned(),
+                scope,
+                cancellation: Arc::clone(&cancellation),
+            },
         );
         drop(coordinator);
 
@@ -449,11 +481,24 @@ impl DesktopState {
         self.instance_mutation_locks.lock().await.locks.len()
     }
 
+    #[cfg(test)]
     pub fn try_reserve_runtime_start(
         &self,
         instance_id: &str,
         source: &str,
     ) -> Result<RuntimeStartReservationAttempt, String> {
+        self.try_reserve_runtime_start_for_attempt(instance_id, source, None)
+    }
+
+    pub(crate) fn try_reserve_runtime_start_for_attempt(
+        &self,
+        instance_id: &str,
+        source: &str,
+        attempt_id: Option<&str>,
+    ) -> Result<RuntimeStartReservationAttempt, String> {
+        if let Some(attempt_id) = attempt_id {
+            runtime_start_control::validate_attempt_id(attempt_id)?;
+        }
         if self.shutdown_in_progress.load(Ordering::SeqCst) {
             return Ok(RuntimeStartReservationAttempt::ShutdownInProgress);
         }
@@ -472,12 +517,24 @@ impl DesktopState {
         if self.shutdown_in_progress.load(Ordering::SeqCst) {
             return Ok(RuntimeStartReservationAttempt::ShutdownInProgress);
         }
+        if let Some(attempt_id) = attempt_id {
+            reservations.ensure_attempt_not_cancelled(instance_id, attempt_id)?;
+        }
 
-        let attempt = match reservations.reserve(instance_id, source) {
-            Ok(_) => RuntimeStartReservationAttempt::Reserved(RuntimeStartReservationLease {
+        let attempt = match reservations.reserve_with_cancellation(
+            instance_id,
+            source,
+            storage_context_operation.cancellation_token(),
+            attempt_id,
+        ) {
+            Ok(entry) => RuntimeStartReservationAttempt::Reserved(RuntimeStartReservationLease {
                 lease: Arc::new(RuntimeStartReservationInner {
                     reservations: Arc::clone(&self.runtime_start_reservations),
                     instance_id: instance_id.to_string(),
+                    control: entry.control,
+                    attempt_id: entry.attempt_id,
+                    reserved_at_unix_ms: entry.reserved_at_unix_ms,
+                    startup_session: Mutex::new(None),
                     _storage_context_operation: storage_context_operation,
                 }),
             }),
@@ -498,13 +555,27 @@ impl DesktopState {
 #[derive(Debug, Default)]
 struct StorageContextCoordinator {
     transition_in_progress: bool,
+    recovery_required: Option<String>,
     shutdown_exclusive_in_progress: bool,
     next_operation_id: u64,
-    active_operations: HashMap<u64, (String, Arc<AtomicBool>)>,
+    active_operations: HashMap<u64, ActiveStorageOperation>,
 }
 
 pub struct StorageContextTransitionGuard {
     coordinator: Arc<Mutex<StorageContextCoordinator>>,
+}
+
+impl StorageContextTransitionGuard {
+    /// Keep writers blocked after a failed durable commit, while allowing exit
+    /// so startup can recover before loading application storage again.
+    pub(crate) fn require_recovery(&self, message: String) -> Result<(), String> {
+        let mut coordinator = self
+            .coordinator
+            .lock()
+            .map_err(|_| String::from("storage context coordinator lock poisoned"))?;
+        coordinator.recovery_required = Some(message);
+        Ok(())
+    }
 }
 
 impl Drop for StorageContextTransitionGuard {
@@ -639,10 +710,13 @@ fn storage_status_ready(status: &StorageStatus) -> bool {
 
 #[derive(Debug, Clone)]
 pub struct RuntimeStartReservationEntry {
+    pub attempt_id: String,
     pub instance_id: String,
     pub source: String,
     pub reserved_at: Instant,
+    pub reserved_at_unix_ms: u128,
     pub console_log_path: Option<String>,
+    control: Arc<RuntimeStartControl>,
 }
 
 #[derive(Debug, Clone)]
@@ -667,6 +741,10 @@ pub struct RuntimeStartReservationLease {
 struct RuntimeStartReservationInner {
     reservations: Arc<Mutex<RuntimeStartReservations>>,
     instance_id: String,
+    control: Arc<RuntimeStartControl>,
+    attempt_id: String,
+    reserved_at_unix_ms: u128,
+    startup_session: Mutex<Option<runtime_start_session::OwnedStartupSession>>,
     _storage_context_operation: StorageContextOperationGuard,
 }
 
@@ -701,22 +779,47 @@ impl StorageContextTaskLease for RuntimeStartReservationLease {}
 
 impl Drop for RuntimeStartReservationInner {
     fn drop(&mut self) {
-        if let Ok(mut reservations) = self.reservations.lock() {
+        if let Ok(mut reservations) = self.reservations.lock()
+            && reservations
+                .pending
+                .get(&self.instance_id)
+                .is_some_and(|entry| Arc::ptr_eq(&entry.control, &self.control))
+        {
             reservations.release(&self.instance_id);
         }
+        self.control.mark_settled();
     }
 }
 
 #[derive(Debug, Default)]
 pub struct RuntimeStartReservations {
     pending: HashMap<String, RuntimeStartReservationEntry>,
+    last_accepted: HashMap<String, RuntimeStartAcceptedAttempt>,
+    cancelled_before_acceptance: HashSet<(String, String)>,
+}
+
+#[derive(Debug)]
+struct RuntimeStartAcceptedAttempt {
+    attempt_id: Option<String>,
+    control: Arc<RuntimeStartControl>,
 }
 
 impl RuntimeStartReservations {
+    #[cfg(test)]
     pub fn reserve(
         &mut self,
         instance_id: &str,
         source: &str,
+    ) -> Result<RuntimeStartReservationEntry, RuntimeStartReservationConflict> {
+        self.reserve_with_cancellation(instance_id, source, Arc::new(AtomicBool::new(false)), None)
+    }
+
+    fn reserve_with_cancellation(
+        &mut self,
+        instance_id: &str,
+        source: &str,
+        cancellation: Arc<AtomicBool>,
+        attempt_id: Option<&str>,
     ) -> Result<RuntimeStartReservationEntry, RuntimeStartReservationConflict> {
         if let Some(existing) = self.pending.get(instance_id) {
             return Err(RuntimeStartReservationConflict {
@@ -727,12 +830,26 @@ impl RuntimeStartReservations {
         }
 
         let entry = RuntimeStartReservationEntry {
+            attempt_id: attempt_id
+                .map(str::to_owned)
+                .unwrap_or_else(|| uuid::Uuid::new_v4().to_string()),
             instance_id: instance_id.to_string(),
             source: source.to_string(),
             reserved_at: Instant::now(),
+            reserved_at_unix_ms: std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .map_or(0, |time| time.as_millis()),
             console_log_path: None,
+            control: Arc::new(RuntimeStartControl::new(cancellation)),
         };
         self.pending.insert(instance_id.to_string(), entry.clone());
+        self.last_accepted.insert(
+            instance_id.to_owned(),
+            RuntimeStartAcceptedAttempt {
+                attempt_id: attempt_id.map(str::to_owned),
+                control: Arc::clone(&entry.control),
+            },
+        );
         Ok(entry)
     }
 
@@ -748,6 +865,17 @@ impl RuntimeStartReservations {
         self.pending
             .get(instance_id)
             .and_then(|entry| entry.console_log_path.clone())
+    }
+
+    pub(crate) fn pending_attempt_id(&self, instance_id: &str) -> Option<String> {
+        self.pending
+            .get(instance_id)
+            .map(|entry| entry.attempt_id.clone())
+    }
+
+    pub(crate) fn pending_console_scope(&self, instance_id: &str) -> Option<(String, u128)> {
+        let entry = self.pending.get(instance_id)?;
+        Some((entry.console_log_path.clone()?, entry.reserved_at_unix_ms))
     }
 
     pub fn pending_instance_ids(&self) -> Vec<String> {
@@ -1360,5 +1488,23 @@ mod tests {
         assert_eq!(next.exit_code, Some(1));
         assert_eq!(selected.instance_id, "late");
         assert_eq!(selected.recent_crash_count, 2);
+    }
+
+    #[test]
+    fn storage_migration_recovery_blocks_writers_but_allows_application_shutdown() {
+        let state = DesktopState::default();
+        let transition = state.begin_storage_context_transition().unwrap();
+        transition
+            .require_recovery("Restart to finish the interrupted storage migration".into())
+            .unwrap();
+        drop(transition);
+        assert!(
+            state
+                .begin_storage_context_operation("instance start")
+                .is_err()
+        );
+        assert!(state.begin_storage_context_transition().is_err());
+        state.shutdown_in_progress.store(true, Ordering::SeqCst);
+        assert!(state.begin_storage_shutdown_exclusive().is_ok());
     }
 }

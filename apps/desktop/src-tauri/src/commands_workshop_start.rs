@@ -316,19 +316,31 @@ pub(in crate::commands) async fn update_before_start(
                 });
             }
         };
+        let mut console = match request.context.console_log_path
+            .map(|path| crate::commands::commands_runtime_prestart_update::PrestartConsole::open_for_startup(path, storage))
+            .transpose() {
+            Ok(console) => console,
+            Err(error) => {
+                cache::rollback(operation, mutation.clone(), transaction).await?;
+                return Err(format!("启动日志无法打开：{error}"));
+            }
+        };
         let mut progress_error = None;
         let mut progress = |update: InstallProgressUpdate| {
-            if let Err(error) = lease.update(|job| apply_install_progress(job, &update)) {
-                progress_error.get_or_insert(error);
-                cancellation.cancel();
+            if progress_error.is_some() {
+                return;
             }
-            if let Some(path) = request.context.console_log_path
-                && let Err(error) = append_prestart_update_console_line(
-                    path,
-                    &update.detail,
-                    &update.output_excerpt,
-                )
+            if let Some(console) = &mut console
+                && let Err(error) = console.update(&update)
             {
+                progress_error.get_or_insert_with(|| format!("启动日志写入失败：{error}"));
+                cancellation.cancel();
+                return;
+            }
+            if update.is_raw_output() {
+                return;
+            }
+            if let Err(error) = lease.update(|job| apply_install_progress(job, &update)) {
                 progress_error.get_or_insert(error);
                 cancellation.cancel();
             }
@@ -380,12 +392,20 @@ pub(in crate::commands) async fn update_before_start(
             }
         };
         drop(progress);
+        if let Some(console) = console
+            && let Err(error) = console.finish()
+        {
+            progress_error.get_or_insert_with(|| format!("启动日志收尾失败：{error}"));
+        }
         if let Err(failure) = &downloaded
             && !failure.recovery_safe
         {
             // An unconfirmed native-process exit cannot race a rollback. The
             // complete recovery copies remain for explicit, safe recovery.
-            return Err(failure.message.clone());
+            return Err(progress_error.map_or_else(
+                || failure.message.clone(),
+                |error| format!("{}\n{error}", failure.message),
+            ));
         }
         if let Some(error) = progress_error {
             cache::rollback(operation, mutation.clone(), transaction).await?;

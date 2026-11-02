@@ -69,7 +69,7 @@ export const ZH_CN_HUMANITZ_MESSAGES: MessageCatalog = {
   "settings.schema.humanitz.welcome_message.title": "欢迎信息",
   "settings.schema.humanitz.welcome_message.description": "玩家加入时显示的消息，保存为 WelcomeMessage.txt。",
     "settings.schema.humanitz.reserved_player_steam_ids.title": "保留位 NetID",
-    "settings.schema.humanitz.reserved_player_steam_ids.description": "每行一个完整 NetID，从 PlayerIDMapped.txt 或 Players 命令复制，保留 | 分隔符及原始大小写。写入 HumanitZServer/F_ReservedSlots.txt。 将 ReserveSlots 设为 MaxPlayers 可仅允许名单中的玩家加入。",
+    "settings.schema.humanitz.reserved_player_steam_ids.description": "每行一个完整 NetID，从 PlayerIDMapped.txt 或 Players 命令复制：Steam64_+_|ProductUserId、EpicAccountId|ProductUserId 或 |ProductUserId。保留完整 ID、分隔符及原始大小写，写入 HumanitZServer/F_ReservedSlots.txt。将 ReserveSlots 设为 MaxPlayers 可仅允许名单中的玩家加入。",
     "settings.schema.humanitz.on_death_penalty.option.0": "不丢失物品",
     "settings.schema.humanitz.on_death_penalty.option.1": "丢失背包和手持武器",
     "settings.schema.humanitz.on_death_penalty.option.2": "同时丢失口袋和背包物品",
@@ -264,7 +264,7 @@ export const ZH_CN_HUMANITZ_MESSAGES: MessageCatalog = {
   "settings.schema.humanitz.settings_extra.title": "额外 GameServerSettings.ini 条目",
   "settings.schema.humanitz.settings_extra.description": "填写未纳入表单的原生配置行；避免重复表单已有的键。",
   "settings.schema.humanitz.admin_steam_ids.title": "管理员 NetID",
-  "settings.schema.humanitz.admin_steam_ids.description": "每行一个完整 NetID，从 PlayerIDMapped.txt 或 Players 命令复制，保留 | 分隔符及原始大小写。写入 HumanitZServer/AdminList.txt。",
+  "settings.schema.humanitz.admin_steam_ids.description": "每行一个完整 NetID，从 PlayerIDMapped.txt 或 Players 命令复制：Steam64_+_|ProductUserId、EpicAccountId|ProductUserId 或 |ProductUserId。保留完整 ID、分隔符及原始大小写，写入 HumanitZServer/AdminList.txt。",
   "settings.schema.humanitz.banned_player_steam_ids.title": "封禁玩家 NetID",
-  "settings.schema.humanitz.banned_player_steam_ids.description": "每行一个完整 NetID，从 PlayerIDMapped.txt 或 Players 命令复制，保留 | 分隔符及原始大小写。写入 HumanitZServer/F_BannedPlayers.txt。",
+  "settings.schema.humanitz.banned_player_steam_ids.description": "每行一个完整 NetID，从 PlayerIDMapped.txt 或 Players 命令复制：Steam64_+_|ProductUserId、EpicAccountId|ProductUserId 或 |ProductUserId。保留完整 ID、分隔符及原始大小写，写入 HumanitZServer/F_BannedPlayers.txt。",
 };

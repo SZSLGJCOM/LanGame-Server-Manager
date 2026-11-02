@@ -1,0 +1,33 @@
+.system-migration-activity { min-width: 0; padding-block: 4px; }
+.system-migration-activity .shell-task-activity.has-local-progress {
+  grid-template-columns: minmax(0, 1fr) minmax(65px, 110px) 38px minmax(0, 150px) 28px;
+}
+.system-migration-activity .shell-task-elapsed { display: none; }
+.system-migration-activity .shell-task-stop { grid-column: 5; }
+.system-migration-activity .shell-task-activity:not(.is-active) .shell-task-summary { grid-column: 1 / -1; }
+.system-migration-activity .shell-task-activity.has-dismiss:not(.is-active) .shell-task-summary { grid-column: 1 / -2; }
+.system-migration-activity .shell-task-activity.has-dismiss .shell-activity-notice-close { grid-column: -2; grid-row: 1; }
+.system-migration-problems { color: var(--shell-muted); font-size: var(--text-secondary); line-height: var(--leading-body); }
+.system-migration-problems p { margin: 8px 0; }
+.system-migration-targets { margin: 8px 0; padding: 0; list-style: none; }
+.system-migration-targets dt { margin-top: 6px; }
+.system-migration-targets dd { margin: 0; }
+.system-migration-targets code { overflow-wrap: anywhere; white-space: normal; font-size: var(--text-code); }
+.system-migration-conflicts { color: var(--theme-danger-text); }
+.system-migration-conflicts ul { max-height: 180px; overflow: auto; margin: 6px 0; padding-left: 20px; }
+.system-migration-conflicts li + li { margin-top: 6px; }
+.system-migration-conflicts code { overflow-wrap: anywhere; white-space: normal; font-size: var(--text-code); }
+.system-migration-conflicts li span { display: block; }
+.system-migration-warnings { color: var(--theme-warning-text); overflow-wrap: anywhere; }
+.system-migration-preserved ul { list-style: none; margin: 6px 0; padding: 0; }
+.system-migration-preserved li { display: flex; align-items: center; gap: 10px; padding-block: 4px; }
+.system-migration-preserved code { min-width: 0; flex: 1; overflow-wrap: anywhere; white-space: normal; font-size: var(--text-code); }
+.system-migration-backup-open { flex: none; }
+.system-migration-backup-error { color: var(--theme-danger-text); overflow-wrap: anywhere; }
+.system-migration-recovery-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+.system-migration-recovery-actions:empty { display: none; }
+@media (max-width: 1020px) {
+  .system-migration-activity .shell-task-activity.has-local-progress { grid-template-columns: minmax(0, 1fr) 60px 36px 28px; }
+  .system-migration-activity .shell-task-transfer { display: none; }
+  .system-migration-activity .shell-task-stop { grid-column: 4; }
+}

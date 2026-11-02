@@ -6,8 +6,8 @@ import { I18nProvider, useI18n, type LocaleCode } from "../../src/i18n";
 import type { BootstrapResponse, InstanceDetails, InstanceRuntimeCommandResult } from "../../src/types";
 import type { ArkMapScope, ArkMapSnapshot } from "../../src/ark-world-map";
 import type { ArkSpawnInput } from "../../src/api-ark-tools";
-import { importArkArtwork, readArkImportedArtwork } from "../../src/ark-map-artwork";
 import { GMToolsWorkbench } from "../../src/views/servers/GMToolsWorkbench";
+import { ArkToolsInstallationProvider } from "../../src/components/ArkToolsInstallationContext";
 import "../../src/app.css";
 import "../../src/views/servers/workbench.css";
 import "../../src/views/servers/instance-themes.css";
@@ -46,7 +46,8 @@ function receipt(input: ArkMapScope & { command: string }): InstanceRuntimeComma
 }
 Object.assign(window, { isTauri: true, __TAURI_INTERNALS__: { invoke: async (command: string, args: { input: ArkMapScope & ArkSpawnInput & { command: string } }) => {
   const input = args.input;
-  if (command === "read_ark_tools_status") { statusCalls++; return { installed, connected: installed,
+  if (command === "read_ark_tools_install_progress") return null;
+  if (command === "read_ark_tools_status") { statusCalls++; return { installed, connected: installed, canUninstall: installed,
     issue: installed ? null : "Prepare the ARK server extension while this instance is stopped" }; }
   if (command === "read_ark_map") {
     mapCalls.push(input); activeMaps++; maximumMaps = Math.max(maximumMaps, activeMaps);
@@ -67,15 +68,40 @@ function element<T extends Element = HTMLElement>(selector: string): T { const v
 async function settle(predicate: () => boolean, message: string) { const until = performance.now() + 6000;
   while (!predicate()) { if (performance.now() > until) throw new Error(`${message}: ${fixture.textContent?.slice(0, 500)}`); await act(async () => { await new Promise(resolve => setTimeout(resolve, 15)); }); } }
 async function click(node: Element) { await act(async () => { (node as HTMLElement).click(); }); }
+async function pointerClick(node: Element) {
+  const bounds = node.getBoundingClientRect();
+  let trustedClick = false;
+  const clicked = (event: Event) => { trustedClick = event.isTrusted; };
+  node.addEventListener('click', clicked);
+  try {
+    await act(async () => {
+      const response = await fetch(`/__reliability_pointer/${nonce}`, { method: 'POST', body: JSON.stringify({
+        type: 'click', x: bounds.left + bounds.width / 2, y: bounds.top + bounds.height / 2,
+      }) });
+      if (!response.ok) throw new Error('Native click injection failed');
+    });
+  } finally { node.removeEventListener('click', clicked); }
+  check(trustedClick, 'Player selection uses trusted browser pointer input');
+}
+async function nativeKey(key: 'Tab' | 'Enter') {
+  await act(async () => {
+    const response = await fetch(`/__reliability_key/${nonce}/${key}`, { method: 'POST' });
+    if (!response.ok) throw new Error('Native keyboard injection failed');
+  });
+}
 function button(text: string) { const node = [...fixture.querySelectorAll<HTMLButtonElement>("button")].find(value => value.textContent?.trim() === text); if (!node) throw new Error(`Missing button ${text}`); return node; }
 async function input(node: HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement, value: string) {
   const proto = node instanceof HTMLSelectElement ? HTMLSelectElement.prototype : node instanceof HTMLTextAreaElement ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype;
   await act(async () => { Object.getOwnPropertyDescriptor(proto, "value")!.set!.call(node, value); node.dispatchEvent(new Event(node instanceof HTMLSelectElement ? "change" : "input", { bubbles: true })); });
 }
-async function render() { await act(async () => root.render(<StrictMode><I18nProvider><LocaleControl /><main style={{ padding: 16, height: "100vh", boxSizing: "border-box" }}>
-  <GMToolsWorkbench details={details} /></main></I18nProvider></StrictMode>)); }
+async function render() { await act(async () => root.render(<StrictMode><I18nProvider><ArkToolsInstallationProvider><LocaleControl /><main style={{ padding: 16, height: "100vh", boxSizing: "border-box" }}>
+  <GMToolsWorkbench details={details} /></main></ArkToolsInstallationProvider></I18nProvider></StrictMode>)); }
 async function switchMap(value: string) { await input(element<HTMLSelectElement>('.ark-map-toolbar select'), value); }
-async function tool(value: string) { await input(element<HTMLSelectElement>('.ark-map-tool-picker select'), value); }
+async function tool(value: string) {
+  const target = element<HTMLButtonElement>(`[data-configuration-section-id="${value}"] button`);
+  if (!target.getClientRects().length) await click(element('.configuration-workspace__navigation-toggle'));
+  await click(target);
+}
 async function restartMain(runId: number) { details = { ...details, active_run: { ...details.active_run!, processes: details.active_run!.processes!.map(p => p.process_key === "main" ? { ...p, run_id: runId } : p) } }; await render(); }
 const live = () => fixture.querySelector('.ark-map-canvas')?.getAttribute('data-live') === 'true';
 async function refresh() { await click(button("刷新")); }
@@ -108,14 +134,6 @@ function checkMapBounds(message: string) {
 }
 async function run() {
   await act(prepareBrowserLocaleCatalogs);
-  const oversized = new Uint8Array(33);
-  oversized.set([137, 80, 78, 71, 13, 10, 26, 10, 0, 0, 0, 13, 73, 72, 68, 82]);
-  const header = new DataView(oversized.buffer); header.setUint32(16, 50000); header.setUint32(20, 50000);
-  const nativeDecode = HTMLImageElement.prototype.decode; let decodeCalls = 0, rejectedLarge = false;
-  HTMLImageElement.prototype.decode = async () => { decodeCalls++; };
-  try { await importArkArtwork('arksurvivalascended', 'TheIsland', new File([oversized], 'huge.png', { type: 'image/png' })); }
-  catch { rejectedLarge = true; } finally { HTMLImageElement.prototype.decode = nativeDecode; }
-  check(rejectedLarge && decodeCalls === 0, 'Oversized PNG IHDR is rejected before any browser image allocation');
   const bootstrap = await invokeMock<BootstrapResponse>("bootstrap", { includeSystemSnapshot: false });
   const instance = bootstrap.state.instances.find(value => value.module_id === "minecraft")!;
   const base = await invokeMock<InstanceDetails>("read_instance_details_from_storage", { instanceId: instance.id, instance_id: instance.id });
@@ -124,9 +142,16 @@ async function run() {
       additional_maps: [{ id: "desert", map_name: "ScorchedEarth_P", name: "焦土", enabled: true }] }), ports: [{ name: "rcon", protocol: "tcp", port: 27020 }],
     active_run: { run_id: 7, processes: [{ process_key: "main", run_id: 7, status: "Running" }, { process_key: "map-desert", run_id: 8, status: "Running" }] } };
   await render(); await settle(live, "Initial map must become live");
+  check(!fixture.querySelector('.ark-map-rail input[type="file"]') && !fixture.textContent?.includes('导入 PNG')
+    && !fixture.textContent?.includes('常用地图会按游戏版本'), 'The map workbench has no manual artwork import or redundant source instructions');
   check(mapCalls[0].runId === 7 && mapCalls[0].processKey === "main", "Initial query binds primary process and run");
   check(fixture.querySelectorAll('[data-player-id]').length === 2 && fixture.querySelectorAll('.ark-map-roster-list button').length === 3, "Unspawned players remain listed without fake origin markers");
-  check(fixture.textContent?.includes("坐标网格 · 底图不可用") && !fixture.querySelector('svg image'), "No artwork means an explicitly labelled coordinate grid");
+  check(fixture.querySelectorAll('.ark-map-grid line').length === 22 && !fixture.querySelector('svg image'), "No artwork retains the coordinate grid");
+  check(fixture.querySelectorAll('.gmt-tools-sidebar [data-configuration-section-id]').length === 2
+    && !fixture.querySelector('.ark-map-tool-picker'), 'Only the two spawn panels appear in the shared left navigation');
+  if (innerWidth > 1100) check(element('.gmt-tools-sidebar').getBoundingClientRect().right <= element('.ark-map-canvas').getBoundingClientRect().left,
+    'The spawn navigation is on the far left, before the map');
+  const originalCanvas = element('.ark-map-surface');
   const beforeView = element('svg.ark-map-surface').getAttribute('viewBox');
   await dragMap(80, 60);
   check(element('svg.ark-map-surface').getAttribute('viewBox') === beforeView, 'Dragging at the minimum zoom cannot displace the full map');
@@ -146,7 +171,13 @@ async function run() {
   await click(element('[aria-label="缩小"]'));
   check(element('svg.ark-map-surface').getAttribute('viewBox') === beforeView, 'Zooming out to 100% recenters an edge-panned map');
   await click(element('[aria-label="放大"]'));
-  await click(button("适配")); check(element('svg.ark-map-surface').getAttribute('viewBox') === beforeView, "Fit restores the map extent");
+  await click(element('[aria-label="适应窗口"]')); check(element('svg.ark-map-surface').getAttribute('viewBox') === beforeView, "Fit restores the map extent");
+  await input(element<HTMLSelectElement>('.map-zoom-select'), '12');
+  check(element<HTMLButtonElement>('[aria-label="放大"]').disabled && element<HTMLSelectElement>('.map-zoom-select').value === '12',
+    'The shared zoom selector honors ARK\'s existing maximum');
+  await input(element<HTMLSelectElement>('.map-zoom-select'), '1');
+  check(element<HTMLButtonElement>('[aria-label="缩小"]').disabled && element('svg.ark-map-surface').getAttribute('viewBox') === beforeView,
+    'Selecting 100% restores the fitted ARK map and disables further zooming out');
   const wheelSurface = element<SVGSVGElement>('svg.ark-map-surface'), wheelRect = wheelSurface.getBoundingClientRect();
   let trustedWheel = false;
   wheelSurface.addEventListener('wheel', event => { trustedWheel = event.isTrusted; }, { once: true });
@@ -155,56 +186,155 @@ async function run() {
     if (!response.ok) throw new Error('Native wheel injection failed'); });
   await settle(() => wheelSurface.getAttribute('viewBox') !== beforeView, 'Real wheel input must zoom the map');
   check(trustedWheel && document.scrollingElement!.scrollTop === scrollBefore, 'Trusted native wheel zooms without scrolling the surrounding page');
-  await click(button('适配'));
-  await click(element('.ark-map-roster-list button')); await tool('ark_give_item_to_player');
+  await click(element('[aria-label="适应窗口"]'));
+  await pointerClick(element('.ark-map-roster-list button')); await tool('ark_give_item_to_player');
+  const rosterSelectedFill = getComputedStyle(element('[data-player-id="123"] circle')).fill;
+  check(rosterSelectedFill === 'rgb(251, 191, 36)', 'Roster selection makes the player marker yellow');
+  check(!fixture.querySelector('.ark-map-selected') && !/取消选择|停止跟随|跟随玩家/.test(element('.ark-map-roster').textContent ?? ''),
+    'Selecting a player only highlights the roster and marker, without a detail row or extra selection controls');
   check(element('svg.ark-map-surface').getAttribute('viewBox') === beforeView, 'Following a player at 100% does not move the map outside its fitted bounds');
   await click(element('[aria-label="放大"]')); checkMapBounds('Following a player near the zoomed edge');
-  await click(button('适配'));
-  await click(element('.gmt-form .ark-map-use-player'));
-  check(element<HTMLInputElement>('#gm-ark_give_item_to_player-playerId-input').value === '123', "Player selection uses PlayerID rather than Steam/EOS ID");
-  await tool('ark_set_time'); await click(button('取消选择'));
-  check(!element<HTMLButtonElement>('.gmt-form button[type="submit"]').disabled,
+  await click(element('[aria-label="适应窗口"]'));
+  check(!fixture.querySelector('.gmt-form .ark-map-use-player, #gm-ark_give_item_to_player-playerId-input')
+    && !element<HTMLButtonElement>('.gmt-form button[type="submit"]').disabled,
+    'Selecting a player enables item delivery without another button or a manual ID field');
+  await tool('ark_spawn_creature'); await tool('ark_give_item_to_player');
+  check(element('.ark-map-surface') === originalCanvas && !element<HTMLButtonElement>('.gmt-form button[type="submit"]').disabled,
+    'Left navigation preserves the mounted map, selected player and reward target');
+  await click(element('.ark-map-roster-list button'));
+  check(!fixture.querySelector('.ark-map-roster-list [aria-pressed="true"], .ark-map-player[aria-pressed="true"]')
+    && element<HTMLButtonElement>('.gmt-form button[type="submit"]').disabled,
+    'Clicking the selected roster entry again clears both selection highlights and the tool target');
+  const firstMarker = element('[data-player-id="123"]');
+  const firstCircle = element('[data-player-id="123"] circle');
+  const markerRadius = firstCircle.getAttribute('r'), markerStroke = getComputedStyle(firstCircle).stroke;
+  check(getComputedStyle(firstCircle).fill === 'rgb(125, 211, 252)', 'Unselected player markers are blue');
+  await pointerClick(element('[data-player-id="123"] circle'));
+  check(firstMarker.getAttribute('aria-pressed') === 'true' && element('.ark-map-roster-list button').getAttribute('aria-pressed') === 'true',
+    'Clicking a map marker selects the same player in the roster');
+  check(document.activeElement === firstMarker && getComputedStyle(firstMarker).outlineStyle === 'none'
+    && getComputedStyle(firstCircle).fill === rosterSelectedFill
+    && firstCircle.getAttribute('r') === markerRadius && getComputedStyle(firstCircle).stroke === markerStroke,
+    `Pointer-selected markers use the same yellow fill without a label-enclosing focus outline: ${getComputedStyle(firstMarker).outline}`);
+  await pointerClick(element('[data-player-id="123"] circle'));
+  check(firstMarker.getAttribute('aria-pressed') === 'false' && element<HTMLButtonElement>('.gmt-form button[type="submit"]').disabled
+    && element<HTMLButtonElement>('[aria-label="生成生物"]').disabled
+    && getComputedStyle(firstCircle).fill === 'rgb(125, 211, 252)' && getComputedStyle(firstMarker).outlineStyle === 'none',
+    'Clicking the selected map marker again clears the item and creature targets');
+  await act(async () => element<SVGSVGElement>('.ark-map-surface').focus());
+  await nativeKey('Tab');
+  check(document.activeElement === firstMarker && firstMarker.matches(':focus-visible')
+    && getComputedStyle(firstMarker).outlineStyle === 'none'
+    && getComputedStyle(firstCircle).fill === 'rgb(125, 211, 252)' && getComputedStyle(firstCircle).stroke === markerStroke,
+    'Focusing a player does not add a frame or change its unselected blue dot');
+  await nativeKey('Enter');
+  check(firstMarker.getAttribute('aria-pressed') === 'true'
+    && getComputedStyle(element('[data-player-id="123"] circle')).fill === rosterSelectedFill,
+    'Keyboard activation uses the same yellow selection as the roster and pointer');
+  await nativeKey('Enter');
+  for (const key of ['Enter', ' ']) {
+    await act(async () => firstMarker.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true })));
+    check(firstMarker.getAttribute('aria-pressed') === String(key === 'Enter'), 'Keyboard activation also toggles player selection');
+  }
+  check(!element<HTMLButtonElement>('.ark-world-tools button[type="submit"]').disabled,
     'Clearing the selected reward player does not disable world time controls');
-  await click(element('.gmt-form button[type="submit"]'));
+  await click(element('.ark-world-tools button[type="submit"]'));
   check(commands.length === 1 && commands[0].command === 'SetTimeOfDay 12:00' && commands[0].runId === 7,
     'World time still dispatches to the current map after player selection is cleared');
-  await tool('ark_destroy_wild_dinos');
-  check(!element<HTMLButtonElement>('.gmt-form .inline-confirm-action > button').disabled,
+  check(!element<HTMLButtonElement>('.ark-world-tools .inline-confirm-action > button').disabled,
     'Clearing the selected reward player does not disable world cleanup controls');
-  await click(element('.gmt-form .inline-confirm-action > button'));
-  check(Boolean(fixture.querySelector('.gmt-form .inline-confirm-review')), 'World cleanup retains its destructive-action confirmation');
-  await click(element('.gmt-form .inline-confirm-buttons button'));
-  await tool('ark_give_item_to_player');
+  await click(element('.ark-world-tools .inline-confirm-action > button'));
+  check(Boolean(fixture.querySelector('.ark-world-tools .inline-confirm-review')) && Boolean(fixture.querySelector('.ark-item-spawn')),
+    'World cleanup retains its destructive-action confirmation alongside the active spawn panel');
+  const cleanupReview = element('.ark-world-tools .inline-confirm-review').getBoundingClientRect();
+  check(element('.ark-world-tools').getBoundingClientRect().top >= element('.gmt-form button[type="submit"]').getBoundingClientRect().bottom
+    && cleanupReview.bottom <= element('.ark-map-rail').getBoundingClientRect().bottom,
+    `Cleanup confirmation remains visible without covering the item action: ${JSON.stringify({ review: cleanupReview.toJSON(),
+      world: element('.ark-world-tools').getBoundingClientRect().toJSON(), item: element('.gmt-form button[type="submit"]').getBoundingClientRect().toJSON(),
+      rail: element('.ark-map-rail').getBoundingClientRect().toJSON() })}`);
+  await click(element('.ark-world-tools .inline-confirm-buttons button'));
   check(element<HTMLButtonElement>('.gmt-form button[type="submit"]').disabled
-    && element<HTMLInputElement>('#gm-ark_give_item_to_player-playerId-input').value === '123',
+    && !fixture.querySelector('#gm-ark_give_item_to_player-playerId-input'),
     'Returning to rewards still rejects the cleared map player instead of silently trusting the saved ID');
-  await click(element('.ark-map-roster-list button')); await click(element('.gmt-form .ark-map-use-player'));
+  await click(element('.ark-map-roster-list button'));
+  await click(element('.gmt-form button[type="submit"]'));
+  check(commands.at(-1)?.command.startsWith('GiveItemToPlayer 123 "'),
+    'Selecting the first player directly sends their in-game PlayerID rather than their account ID');
+  await click(element('.ark-map-roster-list button:nth-child(2)'));
+  await click(element('.gmt-form button[type="submit"]'));
+  check(commands.at(-1)?.command.startsWith('GiveItemToPlayer 124 "'),
+    'Changing selection immediately changes the item recipient');
+  await click(element('.ark-map-roster-list button:nth-child(3)'));
+  await click(element('.gmt-form button[type="submit"]'));
+  check(commands.at(-1)?.command.startsWith('GiveItemToPlayer 125 "'),
+    'Item delivery needs the current PlayerID, not character coordinates');
+  await click(element('.gmt-form .ark-spawn-options summary'));
+  await input(element<HTMLSelectElement>('[aria-label="发放目标来源"]'), 'manual');
+  check(element<HTMLButtonElement>('.gmt-form button[type="submit"]').disabled,
+    'Manual targeting requires its own valid ID rather than copying an earlier selection');
+  await input(element<HTMLInputElement>('#gm-ark_give_item_to_player-playerId-input'), '777');
+  await click(element('.ark-map-roster-list button'));
+  await refresh();
+  await click(element('.gmt-form .ark-spawn-options summary'));
+  check(element('.gmt-form .ark-spawn-options summary').textContent?.includes('手动目标已启用'),
+    'A collapsed manual override remains visible');
+  await click(element('.gmt-form button[type="submit"]'));
+  check(commands.at(-1)?.command.startsWith('GiveItemToPlayer 777 "'),
+    'Explicit manual targeting survives player selection and polling');
+  await click(element('.gmt-form .ark-spawn-options summary'));
+  await input(element<HTMLSelectElement>('[aria-label="发放目标来源"]'), 'player');
+  await click(element('.gmt-form .ark-spawn-options summary'));
+  await click(element('.gmt-form button[type="submit"]'));
+  check(commands.at(-1)?.command.startsWith('GiveItemToPlayer 123 "'),
+    'Returning to selected-player targeting immediately uses the current selection');
+  mode = 'empty'; await refresh();
+  const commandsAfterDeparture = commands.length;
+  await click(element('.gmt-form button[type="submit"]'));
+  check(element<HTMLButtonElement>('.gmt-form button[type="submit"]').disabled && commands.length === commandsAfterDeparture,
+    'A departed selected player cannot receive another item command through a cached ID');
+  mode = 'live'; await refresh();
   await input(element<HTMLSelectElement>('#gm-ark_give_item_to_player-itemMode-input'), 'batch');
   await input(element<HTMLTextAreaElement>('#gm-ark_give_item_to_player-lines-input'), '9,2,1,0\n76,1,1,0');
   const commandsBeforeBatch = commands.length;
   holdCommand = true; await click(element('.gmt-form button[type="submit"]'));
   check(commands.length === commandsBeforeBatch + 1 && commands.at(-1)?.runId === 7, "First batch mutation carries exact runtime identity");
   await switchMap('map-desert'); await settle(() => live() && mapCalls.at(-1)?.runId === 8, "Sub-map must use its independent run ID");
+  check(element<HTMLSelectElement>('[aria-label="发放目标来源"]').value === 'player'
+    && element<HTMLButtonElement>('.gmt-form button[type="submit"]').disabled,
+    'A map switch clears the earlier recipient and returns to selected-player targeting');
   holdCommand = false; await act(async () => heldCommand!.resolve(receipt(heldCommand!.input)));
   check(commands.length === commandsBeforeBatch + 1, "Changing map stops unsent batch mutations");
   check(!fixture.textContent?.includes('Fixture native command receipt'), "Old-map receipts never appear on the new map");
+  await click(element('.ark-world-tools .inline-confirm-action > button'));
+  check(Boolean(fixture.querySelector('.ark-world-tools .inline-confirm-review')), 'Cleanup review opens for the selected sub-map');
   mode = 'deferred'; await refresh(); await settle(() => Boolean(heldMap), 'One map query must be held');
   const held = heldMap!; const countBeforeSwitch = mapCalls.length;
   await switchMap('main'); check(mapCalls.length === countBeforeSwitch, "A map switch cannot overlap an in-flight query");
+  check(!fixture.querySelector('.ark-world-tools .inline-confirm-review') && commands.length === commandsBeforeBatch + 1,
+    'Changing maps cancels the old destructive confirmation without dispatching a command');
   mode = 'live'; await act(async () => held.resolve(packet(held.input))); heldMap = null;
   await settle(() => live() && mapCalls.at(-1)?.processKey === 'main', 'Latest map query must resume after the old one settles');
   check(!fixture.textContent?.includes('林间旅人 · 8'), 'Late foreign-map snapshots cannot populate the new roster');
   mode = 'stale'; await restartMain(9); await settle(() => Boolean(fixture.querySelector('.ark-map-roster-list button')), 'Stale roster remains inspectable');
   check(!live() && [...fixture.querySelectorAll<HTMLButtonElement>('.ark-map-roster-list button')].every(b => b.disabled), 'Stale player snapshots cannot be selected');
   mode = 'raw'; await restartMain(10); await settle(live, 'Raw coordinates must render');
-  check(fixture.textContent?.includes('原生 X / Y') && button('导入 PNG').disabled, 'Unknown projection preserves native XY and disables image calibration');
+  check([...fixture.querySelectorAll('.ark-map-grid-label text')].some(node => Math.abs(Number(node.textContent)) > 100)
+    && !fixture.querySelector('svg image'), 'Unknown projection preserves native XY without an image overlay');
   mode = 'empty'; await restartMain(11); await settle(live, 'Empty response still confirms a live map');
-  check(fixture.textContent?.includes('当前地图没有在线玩家'), 'An empty roster has a useful state');
-  installed = false; await restartMain(12); await settle(() => fixture.textContent?.includes('服务端扩展未安装') ?? false, 'Missing extension state');
+  check(element('.ark-map-roster-heading strong').textContent?.endsWith('· 0') && element('.ark-map-roster-list').textContent === '',
+    'An empty roster shows its count without explanatory placeholder text');
+  const checksBeforeMissingExtension = statusCalls;
+  installed = false; await restartMain(12);
+  await settle(() => statusCalls > checksBeforeMissingExtension && element('.ark-map-roster').getAttribute('aria-busy') === 'false', 'Missing extension state');
   check(!live(), 'Missing extension never implies live player data');
+  check(element('.ark-map-roster-list').textContent === '', 'An unavailable map does not add player-reading instructions');
   check(!fixture.textContent?.includes('Prepare the ARK server extension'), 'The map rail does not repeat the native setup message above the creature tool');
   installed = true; mode = 'error'; await restartMain(13); await settle(() => fixture.textContent?.includes('Fixture native map query failed') ?? false, 'Native map failures remain visible');
   check(!live(), 'Failed map reads disable live selection');
+  const errorWorldTools = element('.ark-world-tools').getBoundingClientRect();
+  check(errorWorldTools.top >= element('.gmt-form button[type="submit"]').getBoundingClientRect().bottom
+    && errorWorldTools.bottom <= element('.ark-map-rail').getBoundingClientRect().bottom,
+    'Map failures preserve separate, reachable item and world actions');
   mode = 'live'; await refresh(); await settle(live, 'Retry recovers the map');
   const correctName = element('.ark-map-roster-list button strong').textContent;
   const connectedStatusCalls = statusCalls;
@@ -221,49 +351,6 @@ async function run() {
   await act(async () => { await new Promise(resolve => setTimeout(resolve, 3100)); });
   check(mapCalls.length === hiddenPanelCalls, 'A retained but hidden Tools tab pauses map polling');
   await act(async () => { element<HTMLElement>('main').hidden = false; }); await settle(live, 'Showing Tools refreshes the retained map');
-  // Synthetic PNG tests storage and browser decoding only; it is never presented as real game artwork.
-  const canvas = document.createElement('canvas'); canvas.width = canvas.height = 128;
-  const blob = await new Promise<Blob>(resolve => canvas.toBlob(value => resolve(value!), 'image/png'));
-  const file = new File([blob], 'fixture-map.png', { type: 'image/png' });
-  const transfer = new DataTransfer(); transfer.items.add(file);
-  await act(async () => { const node = element<HTMLInputElement>('.ark-map-artwork-control input[type="file"]'); node.files = transfer.files; node.dispatchEvent(new Event('change', { bubbles: true })); });
-  await settle(() => Boolean(fixture.querySelector('svg image')), 'Imported PNG should render with projection');
-  check(fixture.textContent?.includes('Local PNG: fixture-map.png'), 'Imported images display their real file source');
-  let finishDecode: (() => void) | undefined;
-  HTMLImageElement.prototype.decode = function () { return nativeDecode.call(this).then(() => new Promise<void>(resolve => { finishDecode = resolve; })); };
-  const pendingFile = new DataTransfer(); pendingFile.items.add(new File([blob], 'pending-main.png', { type: 'image/png' }));
-  await act(async () => { const node = element<HTMLInputElement>('.ark-map-artwork-control input[type="file"]'); node.files = pendingFile.files; node.dispatchEvent(new Event('change', { bubbles: true })); });
-  await settle(() => Boolean(finishDecode), 'The image decoder boundary must be held');
-  HTMLImageElement.prototype.decode = nativeDecode;
-  await switchMap('map-desert'); await settle(() => live() && mapCalls.at(-1)?.processKey === 'map-desert', 'Switch to a different map');
-  check(!button('导入 PNG').disabled, 'An import pending on the old map cannot lock the newly selected map');
-  await act(async () => {
-    finishDecode!(); const until = performance.now() + 5000;
-    while (!(await readArkImportedArtwork('arksurvivalascended', 'TheIsland'))?.source.includes('pending-main.png')) {
-      if (performance.now() > until) throw new Error('Old-map import never completed');
-      await new Promise(resolve => setTimeout(resolve, 10));
-    }
-  });
-  check(!fixture.querySelector('svg image'), 'Imported map artwork does not leak to another map');
-  await switchMap('main'); await settle(() => Boolean(fixture.querySelector('svg image')), 'Same-map import survives a map switch');
-  check(fixture.textContent?.includes('Local PNG: pending-main.png'), 'A completed old-map import restores only on its original map');
-  mode = 'raw'; await restartMain(14); await settle(live, 'Map without projection can still remove artwork');
-  await settle(() => [...fixture.querySelectorAll('button')].some(node => node.textContent?.trim() === '移除底图'), 'The saved artwork control must finish loading');
-  if (!element<HTMLDetailsElement>('.ark-map-artwork-control').open) await click(element('.ark-map-artwork-control summary'));
-  await click(button('移除底图')); await settle(() => !fixture.textContent?.includes('本地导入'), 'Removing artwork works without projection');
-  await act(async () => check(await readArkImportedArtwork('arksurvivalascended', 'TheIsland') === null, 'Removal affects the selected local map only'));
-  await act(async () => new Promise<void>((resolve, reject) => { const open = indexedDB.open('lsgm.ark-map-artwork', 1);
-    open.onerror = () => reject(open.error); open.onsuccess = () => { const db = open.result, tx = db.transaction('maps', 'readwrite');
-      tx.objectStore('maps').put({ dataUrl: 'corrupt', source: 'fixture corruption' }, JSON.stringify(['arksurvivalascended', 'scorchedearth_p']));
-      tx.oncomplete = () => { db.close(); resolve(); }; tx.onerror = () => { db.close(); reject(tx.error); }; }; }));
-  await switchMap('map-desert');
-  await settle(() => fixture.textContent?.includes('The saved map image is invalid') ?? false, 'Invalid cached artwork must report its error');
-  if (!element<HTMLDetailsElement>('.ark-map-artwork-control').open) await click(element('.ark-map-artwork-control summary'));
-  check(!button('移除底图').disabled, 'A known corrupt cache remains removable without a decoded artwork object');
-  await click(button('移除底图'));
-  await settle(() => !fixture.textContent?.includes('The saved map image is invalid'), 'Removing a corrupt cache clears its error');
-  await act(async () => check(await readArkImportedArtwork('arksurvivalascended', 'ScorchedEarth_P') === null, 'Only the corrupt map cache is removed'));
-  await switchMap('main');
   mode = 'live'; await restartMain(15); await settle(live, 'Final live map');
   await click(element('.ark-map-roster-list button')); await tool('ark_spawn_creature');
   check(!fixture.querySelector('.ark-creature-spawner .ark-map-use-player, .ark-creature-spawner__coordinates'),
@@ -272,12 +359,15 @@ async function run() {
   const creatureAction = element('.ark-creature-spawner button[type="submit"]').getBoundingClientRect();
   check(creatureList.height >= 52 && creatureList.bottom < creatureAction.top && creatureAction.bottom <= innerHeight - 16,
     `The creature catalog and fixed actions also fit inside the map rail: ${JSON.stringify({ catalog: creatureList.toJSON(), action: creatureAction.toJSON(), details: element<HTMLDetailsElement>('.ark-creature-spawner .ark-spawn-options').open })}`);
+  const worldTools = element('.ark-world-tools').getBoundingClientRect();
+  check(worldTools.top >= creatureAction.bottom && worldTools.bottom <= innerHeight - 16,
+    'Time and wild-creature cleanup remain pinned below the creature actions');
   await input(element<HTMLSelectElement>('.ark-creature-spawner__parameters select'), 'true');
   await click(element('.ark-creature-spawner button[type="submit"]'));
   check(spawns.length === 1 && spawns[0].processKey === 'main' && spawns[0].runId === 15 && spawns[0].playerId === 123
     && spawns[0].x === -90000 && spawns[0].y === 60000 && spawns[0].z === 900, 'Selected native player supplies confirmed spawn position and independent PlayerID');
   check(fixture.textContent?.includes('ID 1234:5678'), 'Typed native spawn verification remains visible');
-  await tool('ark_give_item_to_player'); await click(element('.gmt-form .ark-map-use-player'));
+  await tool('ark_give_item_to_player');
   await input(element<HTMLSelectElement>('#gm-ark_give_item_to_player-itemMode-input'), 'batch');
   await input(element<HTMLTextAreaElement>('#gm-ark_give_item_to_player-lines-input'), '9,1,1,0\n76,1,1,0');
   holdCommand = true; await click(element('.gmt-form button[type="submit"]'));
@@ -287,7 +377,8 @@ async function run() {
   check(commands.length === commandsAtStop && !live(), 'Stopping the selected process stops unsent commands even while another map runs');
   details = { ...details, active_run: { ...details.active_run!, processes: details.active_run!.processes!.map(p => p.process_key === 'main' ? { ...p, status: 'Running' } : p) } };
   await render(); await settle(live, 'Restarted selected map must refresh before selection');
-  await click(element('.ark-map-roster-list button')); await click(element('.gmt-form .ark-map-use-player'));
+  const rewardTarget = element('.ark-map-roster-list button');
+  if (rewardTarget.getAttribute('aria-pressed') !== 'true') await click(rewardTarget);
   const firstItem = element('.gmt-form .gmt-ark-catalog-option').getAttribute('title');
   await click(element('.gmt-form .gmt-ark-catalog-page-btn:last-child'));
   check(element('.gmt-form .gmt-ark-catalog-option').getAttribute('title') !== firstItem,
@@ -310,6 +401,8 @@ async function run() {
   check(commands.at(-1)?.command === 'GiveItemNumToPlayer 123 8 2 3 0', 'The pinned action uses the selected item, quantity, quality and player');
   await act(async () => changeLocale!('en-US'));
   await settle(() => element('.gmt-form .gmt-ark-catalog-option-name').textContent === 'Stone', 'English catalog labels');
+  check(!fixture.querySelector('.ark-map-rail input[type="file"]') && !fixture.textContent?.includes('Import PNG')
+    && !fixture.textContent?.includes('Common maps automatically'), 'English maps also omit the manual artwork controls and instructions');
   const englishSend = element('.gmt-form button[type="submit"]').getBoundingClientRect();
   check(englishSend.bottom <= innerHeight - 16 && document.documentElement.scrollWidth <= innerWidth + 1,
     'English controls retain the fixed action position without horizontal overflow');
@@ -332,7 +425,8 @@ async function run() {
   const itemName = element<HTMLElement>('.gmt-form .gmt-ark-catalog-option-name');
   check(itemName.textContent === '石头' && itemName.getBoundingClientRect().width >= 70,
     'The narrow tool rail retains readable localized item names rather than squeezing them behind blueprint codes');
-  check(mapBox.width > 300 && mapBox.height > 400 && railBox.width >= 280 && mapBox.right <= railBox.left, 'Map and tool rail occupy distinct usable regions');
+  check(mapBox.width > 300 && Math.abs(mapBox.width - mapBox.height) < 1 && railBox.width >= 220 && mapBox.right <= railBox.left,
+    'The map stays square and the tool rail retains the same minimum width as DST');
   await tool('ark_spawn_creature');
   await settle(() => Number(fixture.querySelector('.ark-creature-spawner .gmt-ark-catalog-results')?.getAttribute('data-page-size')) >= 4,
     'Default player targeting leaves room for at least four complete creature rows');
@@ -353,6 +447,12 @@ async function run() {
   await input(element<HTMLSelectElement>('[aria-label="生成位置来源"]'), 'player');
   await click(element('.ark-creature-spawner .ark-spawn-options summary'));
   check(document.documentElement.scrollWidth <= innerWidth + 1, 'Map workbench has no horizontal overflow');
+  await pointerClick(element('[data-player-id="123"] text'));
+  check(element('[data-player-id="123"]').getAttribute('aria-pressed') === 'false', 'Clicking the selected player name also clears selection');
+  await pointerClick(element('[data-player-id="123"] circle'));
+  check(getComputedStyle(element('[data-player-id="123"]')).outlineStyle === 'none'
+    && getComputedStyle(element('[data-player-id="123"] circle')).fill === rosterSelectedFill,
+    'The final pointer-selected marker stays yellow without any focus frame');
   check(errors.length === 0, `Browser errors: ${errors.join('; ')}`);
   return { status: 'passed', checks, browser_errors: errors, maximum_map_requests: maximumMaps, map_calls: mapCalls.length,
     commands: commands.length, spawns: spawns.length, viewport: { width: innerWidth, height: innerHeight } };

@@ -1,4 +1,5 @@
 import type { RuntimeRefreshIssue } from "../app-state";
+import type { RuntimeActionOperation } from "../runtime-action-store";
 import type { UiMessage } from "../app-ui";
 import type { InstancePanelLoadState } from "../instance-panel-loader";
 import type { InstanceRetirementKind } from "../hooks/useInstanceRetirement";
@@ -79,8 +80,8 @@ interface ServerWorkspaceViewProps {
   ) => Promise<InstanceRuntimeCommandResult | null>;
   onSuppressRuntimeWindows: (instanceId: string) => Promise<void>;
   onSelectInstance: (instanceId: string) => void;
-  onStartServer: (instanceId: string, expectedWorldStart?: DstWorldStartPreview) => void | Promise<void>;
-  onStopServer: (instanceId: string) => void | Promise<void>;
+  onStartServer: (instanceId: string, expectedWorldStart?: DstWorldStartPreview, operation?: RuntimeActionOperation) => void | Promise<void>;
+  onStopServer: (instanceId: string, operation?: RuntimeActionOperation) => void | Promise<void>;
   onInstallModule: (moduleId: string, validate: boolean, account?: SteamInstallationAccountContext) => Promise<void>;
   onOpenModuleLibrary: (moduleId: string) => void;
 }

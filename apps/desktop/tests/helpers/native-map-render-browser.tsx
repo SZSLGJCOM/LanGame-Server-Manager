@@ -6,7 +6,7 @@ import { indexDstLandmarks, visibleDstLandmarks } from "../../src/dst-map-landma
 import { DONTSTARVE_SHARDS, type DontStarveShard } from "../../src/views/settings/modules/dontstarve-shards";
 import { DstWorldMapCanvas } from "../../src/views/servers/DstWorldMapCanvas";
 import { DstMapArtworkStatus } from "../../src/views/servers/DstMapArtworkStatus";
-import { DstMapZoomControls } from "../../src/views/servers/DstMapZoomControls";
+import { MapZoomControls } from "../../src/views/servers/MapZoomControls";
 import { prepareBrowserLocaleCatalogs } from "./browser-locale-catalogs";
 import "../../src/app.css";
 import "../../src/views/servers/workbench.css";
@@ -44,18 +44,17 @@ function View({ snapshot }: { snapshot: DstWorldMap }): React.JSX.Element {
     </div></header>
     <div className="dst-map-toolbar"><p className="dst-map-note">
       {snapshot.shard} · {snapshot.width} × {snapshot.height} · 第 {snapshot.day} 天 · 采集于 {new Date(snapshot.capturedAtUnixMs).toLocaleString("zh-CN")}
-    </p><div className="dst-map-controls">
-      <DstMapZoomControls zoom={zoom} disabled={false} onChange={setZoom} onFit={fit} />
-    </div></div>
+    </p></div>
     <DstWorldMapCanvas snapshot={snapshot} selectedPlayer={selectedPlayer} zoom={zoom} live={false}
-      fitRevision={fitRevision} onZoomChange={setZoom} onCancelFollow={() => setSelectedPlayer(null)} onFit={fit} />
+      fitRevision={fitRevision} onZoomChange={setZoom} onCancelFollow={() => setSelectedPlayer(null)} onFit={fit}
+      controls={<MapZoomControls zoom={zoom} onChange={setZoom} onFit={fit} />} />
     <p className="dst-map-note">地标 {snapshot.landmarks?.length ?? 0} · 纹理 {Object.keys(snapshot.art?.textures ?? {}).length} · 游戏图标 {Object.keys(snapshot.art?.icons ?? {}).length}
       {snapshot.landmarksTruncated ? " · 地标采集达到上限，部分对象未显示" : ""}</p>
     <DstMapArtworkStatus art={snapshot.art} />
   </main>;
 }
 async function selectZoom(zoom: number) {
-  const field = fixture.querySelector<HTMLSelectElement>("select.dst-map-zoom");
+  const field = fixture.querySelector<HTMLSelectElement>("select.map-zoom-select");
   check(field, "The production zoom control must exist");
   await act(async () => {
     Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, "value")!.set!.call(field, String(zoom));

@@ -4,7 +4,7 @@ const test = require('node:test');
 const { runBrowserFixture } = require('./helpers/runtime-browser-process.cjs');
 for (const viewport of [{ width: 1280, height: 800 }, { width: 960, height: 600 }]) {
   test(`ARK map scopes, live selection and tools at ${viewport.width}x${viewport.height}`, { timeout: 90000 }, async () => {
-    const report = await runBrowserFixture({ fixturePath: 'ark-world-map-browser.html', viewport, pointer: true,
+    const report = await runBrowserFixture({ fixturePath: 'ark-world-map-browser.html', viewport, pointer: true, keyboard: true,
       screenshotPath: process.env.LANGAME_TOOLS_SCREENSHOT_DIR
         ? path.join(process.env.LANGAME_TOOLS_SCREENSHOT_DIR, `ark-map-${viewport.width}x${viewport.height}.png`) : undefined });
     assert.equal(report.status, 'passed', report.error);

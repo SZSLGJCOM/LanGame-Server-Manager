@@ -205,6 +205,7 @@ pub(super) async fn prepare_workshop_items(
     let reused_count = plan.requested_ids.len() - plan.download_ids.len();
     let reuse_note = format!("Reusing {reused_count} cached Workshop item(s).");
     on_progress(InstallProgressUpdate {
+        console_output: None,
         progress_percent: 10.0,
         install_progress: None,
         detail: format!(

@@ -192,10 +192,8 @@ fn archive(entries: &[(&str, &[u8])]) -> Vec<u8> {
     zip.finish().unwrap().into_inner()
 }
 
-fn test_profile(bytes: &[u8]) -> Profile {
+fn test_profile() -> Profile {
     Profile {
-        archive_size: bytes.len(),
-        archive_hash: Box::leak(digest(bytes).into_boxed_str()),
         payload: Box::leak(
             vec![(
                 "version.dll",
@@ -204,6 +202,129 @@ fn test_profile(bytes: &[u8]) -> Profile {
             .into_boxed_slice(),
         ),
         ..ASE
+    }
+}
+
+fn test_package(bytes: &[u8]) -> download::Package {
+    let mut package = download::package(ASE.module_id).unwrap().clone();
+    package.size = bytes.len();
+    package.sha256 = digest(bytes);
+    package
+}
+
+fn inspection_embedded(previous: bool) -> EmbeddedArkTools {
+    const CURRENT: [u8; 71] = {
+        let mut image = [0; 71];
+        image[0] = b'M';
+        image[1] = b'Z';
+        image[60] = 64;
+        image[64] = b'P';
+        image[65] = b'E';
+        image[68] = 0x64;
+        image[69] = 0x86;
+        image
+    };
+    const PREVIOUS: [u8; 71] = {
+        let mut image = CURRENT;
+        image[70] = 1;
+        image
+    };
+    let image = if previous { &PREVIOUS } else { &CURRENT };
+    EmbeddedArkTools {
+        plugin: image,
+        proxy: Some(image),
+    }
+}
+
+fn inspection_fixture(base: &Profile, previous: bool) -> (Fixture, Profile) {
+    let fixture = Fixture::new();
+    fs::write(fixture.bin().join(base.executable), b"server executable").unwrap();
+    if base.module_id == ASA.module_id {
+        fs::write(fixture.bin().join("msvcp140.dll"), b"native dependency").unwrap();
+    }
+    let profile = Profile {
+        payload: Box::leak(
+            vec![(
+                base.payload[0].0,
+                Box::leak(digest(b"framework").into_boxed_str()) as &str,
+            )]
+            .into_boxed_slice(),
+        ),
+        ..*base
+    };
+    let mut content = embedded_files(&profile, inspection_embedded(previous)).unwrap();
+    content.insert(profile.payload[0].0.into(), b"framework".to_vec());
+    if previous {
+        content.insert(INFO.into(), b"previous build metadata".to_vec());
+        content.insert(NOTICES.into(), b"previous build notices".to_vec());
+    }
+    publish(&fixture.0, &profile, content.clone(), &hashes(&content)).unwrap();
+    (fixture, profile)
+}
+
+#[test]
+fn ark_tools_inspection_preserves_complete_previous_build_on_reentry() {
+    for base in [&ASE, &ASA] {
+        let (fixture, profile) = inspection_fixture(base, true);
+        let owner_before = fs::read(fixture.bin().join(OWNER)).unwrap();
+        let plugin_before = fs::read(fixture.bin().join(PLUGIN)).unwrap();
+        for _ in 0..3 {
+            let status = inspect_profile(&fixture.0, &profile, inspection_embedded(false)).unwrap();
+            assert!(status.ready, "{}: {:?}", profile.module_id, status.issue);
+            assert!(status.can_uninstall);
+            assert!(status.issue.is_none());
+        }
+        assert_eq!(fs::read(fixture.bin().join(OWNER)).unwrap(), owner_before);
+        assert_eq!(fs::read(fixture.bin().join(PLUGIN)).unwrap(), plugin_before);
+        fixture.finish();
+    }
+}
+
+#[test]
+fn ark_tools_inspection_still_rejects_missing_or_modified_files() {
+    for base in [&ASE, &ASA] {
+        let (fixture, profile) = inspection_fixture(base, false);
+        assert!(
+            inspect_profile(&fixture.0, &profile, inspection_embedded(false))
+                .unwrap()
+                .ready
+        );
+        for path in [PLUGIN, INFO, NOTICES, "config.json", profile.payload[0].0] {
+            let file = fixture.bin().join(path);
+            let original = fs::read(&file).unwrap();
+            for missing in [false, true] {
+                if missing {
+                    fs::remove_file(&file).unwrap();
+                } else {
+                    fs::write(&file, b"changed after installation").unwrap();
+                }
+                let status = inspect_profile(&fixture.0, &profile, inspection_embedded(false))
+                    .unwrap();
+                assert!(!status.ready, "{}: {path}", profile.module_id);
+                assert!(status.can_uninstall);
+                assert!(status.issue.as_deref().unwrap().contains(path));
+                fs::write(&file, &original).unwrap();
+            }
+        }
+        fixture.finish();
+    }
+}
+
+#[test]
+fn ark_tools_inspection_still_requires_pinned_dependencies_and_configuration() {
+    for base in [&ASE, &ASA] {
+        let (fixture, profile) = inspection_fixture(base, true);
+        let owner_path = fixture.bin().join(OWNER);
+        let original = fs::read(&owner_path).unwrap();
+        for path in ["config.json", profile.payload[0].0] {
+            let mut owned: Ownership = serde_json::from_slice(&original).unwrap();
+            owned.files.insert(path.into(), digest(b"unrecognized profile"));
+            fs::write(&owner_path, serde_json::to_vec(&owned).unwrap()).unwrap();
+            let error = inspect_profile(&fixture.0, &profile, inspection_embedded(false))
+                .unwrap_err();
+            assert!(error.contains("unknown ownership") && error.contains(path));
+        }
+        fixture.finish();
     }
 }
 
@@ -216,14 +337,19 @@ fn ark_tools_install_archive_is_checksum_bound_and_excludes_other_plugins() {
             b"unrequested plugin",
         ),
     ]);
-    let profile = test_profile(&bytes);
+    let profile = test_profile();
+    let package = test_package(&bytes);
     assert_eq!(
-        unpack(&profile, &bytes).unwrap(),
+        unpack(&profile, &package, &bytes).unwrap(),
         BTreeMap::from([("version.dll".into(), b"framework".to_vec())])
     );
     let mut changed = bytes.clone();
     changed[0] ^= 1;
-    assert!(unpack(&profile, &changed).unwrap_err().contains("checksum"));
+    assert!(
+        unpack(&profile, &package, &changed)
+            .unwrap_err()
+            .contains("checksum")
+    );
 }
 
 #[test]
@@ -237,7 +363,7 @@ fn ark_tools_install_rejects_unsafe_even_ignored_archive_entries() {
     ] {
         let bytes = archive(&[("version.dll", b"framework"), (name, b"ignored")]);
         assert!(
-            unpack(&test_profile(&bytes), &bytes)
+            unpack(&test_profile(), &test_package(&bytes), &bytes)
                 .unwrap_err()
                 .contains("unsafe"),
             "{name}"
@@ -245,7 +371,7 @@ fn ark_tools_install_rejects_unsafe_even_ignored_archive_entries() {
     }
     let bytes = archive(&[("version.dll", b"framework"), ("VERSION.DLL", b"duplicate")]);
     assert!(
-        unpack(&test_profile(&bytes), &bytes)
+        unpack(&test_profile(), &test_package(&bytes), &bytes)
             .unwrap_err()
             .contains("duplicate")
     );

@@ -1,12 +1,8 @@
-import { ActivityNotice } from "../components/ActivityNotice";
 import { CSSProperties, ReactNode, useCallback, useEffect, useMemo, useState } from "react";
-import { openLocalPath } from "../api";
-import { ShellIcon } from "../components/ShellIcon";
 import { isChineseLocale, selectLocaleText, useI18n } from "../i18n";
 import { useInstanceConnections } from "../hooks/useInstanceConnections";
 import { readPreferredJoinAddress, resolveInstanceConnection } from "../instance-connections";
 import type {
-  AppPathSettingsInput,
   AppSettings,
   BindAddressCandidate,
   InstanceSummary,
@@ -26,6 +22,8 @@ import { useSystemTelemetry } from "./system/useSystemTelemetry";
 import { TopMetricCard } from "./system/SystemTopMetricCard";
 import { SystemResourceSummary } from "./system/SystemResourceSummary";
 import { resourceSampleLabel, resourceStateLabel, resourceUpdatingLabel } from "./system/system-resource-copy";
+import type { StorageMigrationModel } from "../hooks/useStorageMigration";
+import { StoragePathsPanel } from "./system/StoragePathsPanel";
 import "./SystemView.css";
 
 interface SystemViewProps {
@@ -40,7 +38,7 @@ interface SystemViewProps {
   steamCmdMessage: string;
   onOpenInstance: (instanceId: string) => void;
   onPickDirectory: (currentPath?: string | null) => Promise<string | null>;
-  onSaveAppSettings: (settings: AppPathSettingsInput) => void | Promise<void>;
+  storageMigration: StorageMigrationModel;
   onEnsureSteamCmd: () => void;
   onUninstallSteamCmd: () => void;
 }
@@ -105,239 +103,6 @@ function PanelHeader({
       </div>
       {aside ? <div className="system-panel-aside">{aside}</div> : null}
     </div>
-  );
-}
-
-interface DefaultPathsPanelProps {
-  appSettings: AppSettings;
-  steamCmdStatus: SteamCmdStatus | null;
-  steamCmdBusy: boolean;
-  steamCmdProgress: SteamCmdPrepareSnapshot | null;
-  steamCmdMessage: string;
-  onPickDirectory: (currentPath?: string | null) => Promise<string | null>;
-  onSaveAppSettings: (settings: AppPathSettingsInput) => void | Promise<void>;
-  onEnsureSteamCmd: () => void;
-  onUninstallSteamCmd: () => void;
-}
-
-function DefaultPathsPanel(props: DefaultPathsPanelProps) {
-  const { locale, t } = useI18n();
-  const [pathBusyKey, setPathBusyKey] = useState<keyof AppPathSettingsInput | null>(null);
-  const [pathAction, setPathAction] = useState<"choose" | "open" | "copy" | null>(null);
-  const [pathFeedback, setPathFeedback] = useState<{ message: string; error: boolean } | null>(null);
-  const executablePath = props.steamCmdStatus?.executable_path || t("system.runtimeUnknownPath");
-  const instancesRoot = props.appSettings.servers_root.trim();
-  // Match storage's default when no separate archive directory has been set.
-  const archivesRoot = props.appSettings.archives_root?.trim()
-    || `${instancesRoot.replace(/[\\/]+$/, "")}${instancesRoot.includes("\\") ? "\\" : "/"}.trash`;
-  const copy = isChineseLocale(locale)
-    ? {
-        title: "存储与运行环境",
-        eyebrow: "服务器文件、实例与 SteamCMD",
-        gamesRoot: "服务器文件",
-        serversRoot: "实例工作区",
-        archivesRoot: "实例归档区",
-        steamCmdRoot: "SteamCMD",
-        browse: "选择",
-        browsing: "选择中",
-        copied: "路径已复制",
-        opened: "文件夹已打开",
-        saved: "默认路径已更新",
-        failed: "路径操作失败"
-      }
-    : {
-        title: "Storage & runtime",
-        eyebrow: "Server files, instances and SteamCMD",
-        gamesRoot: "Server files",
-        serversRoot: "Instance workspace",
-        archivesRoot: "Instance archives",
-        steamCmdRoot: "SteamCMD",
-        browse: "Choose",
-        browsing: "Choosing",
-        copied: "Path copied",
-        opened: "Folder opened",
-        saved: "Default path updated",
-        failed: "Path action failed"
-      };
-  const pathEntries = [
-    {
-      key: "games_root" as const,
-      icon: "package" as const,
-      label: copy.gamesRoot,
-      value: props.appSettings.games_root
-    },
-    {
-      key: "servers_root" as const,
-      icon: "database" as const,
-      label: copy.serversRoot,
-      value: props.appSettings.servers_root
-    },
-    {
-      key: "archives_root" as const,
-      icon: "inbox" as const,
-      label: copy.archivesRoot,
-      value: archivesRoot
-    },
-    {
-      key: "steamcmd_root" as const,
-      icon: "terminal" as const,
-      label: copy.steamCmdRoot,
-      value: props.appSettings.steamcmd_root
-    }
-  ];
-
-  const showPathError = (error: unknown) => {
-    const detail = error instanceof Error ? error.message : String(error);
-    setPathFeedback({ message: `${copy.failed}: ${detail}`, error: true });
-  };
-
-  async function handlePathAction(entry: typeof pathEntries[number], action: "open" | "copy") {
-    setPathBusyKey(entry.key);
-    setPathAction(action);
-    setPathFeedback(null);
-    try {
-      if (action === "open") {
-        await openLocalPath(entry.value);
-      } else {
-        await navigator.clipboard.writeText(entry.value);
-      }
-      setPathFeedback({ message: `${action === "open" ? copy.opened : copy.copied}: ${entry.label}`, error: false });
-    } catch (error) {
-      showPathError(error);
-    } finally {
-      setPathBusyKey(null);
-      setPathAction(null);
-    }
-  }
-
-  async function handlePickPath(key: keyof AppPathSettingsInput) {
-    setPathBusyKey(key);
-    setPathAction("choose");
-    setPathFeedback(null);
-    try {
-      const currentSettings: AppPathSettingsInput = {
-        games_root: props.appSettings.games_root,
-        servers_root: props.appSettings.servers_root,
-        archives_root: archivesRoot,
-        steamcmd_root: props.appSettings.steamcmd_root
-      };
-      const selected = await props.onPickDirectory(currentSettings[key]);
-      const nextValue = selected?.trim();
-      if (!nextValue || nextValue === currentSettings[key].trim()) {
-        return;
-      }
-
-      await props.onSaveAppSettings({
-        ...currentSettings,
-        [key]: nextValue
-      });
-      setPathFeedback({ message: copy.saved, error: false });
-    } catch (error) {
-      showPathError(error);
-    } finally {
-      setPathBusyKey(null);
-      setPathAction(null);
-    }
-  }
-
-  const btnStatusTone = props.steamCmdBusy
-    ? "status-busy"
-    : props.steamCmdProgress?.error
-      ? "status-danger"
-      : props.steamCmdStatus?.ready
-        ? "status-success"
-        : props.steamCmdStatus?.ownership === "invalid"
-          ? "status-danger"
-          : "status-warning";
-
-  return (
-    <SystemPanel className="system-runtime-panel">
-      <PanelHeader
-        title={copy.title}
-        eyebrow={copy.eyebrow}
-        aside={(
-          <div className="system-runtime-header-actions">
-            {props.steamCmdStatus?.can_uninstall && (
-              <button
-                type="button"
-                className="danger"
-                onClick={props.onUninstallSteamCmd}
-                disabled={props.steamCmdBusy || pathBusyKey !== null}
-              >
-                <span className="status-dot" aria-hidden="true" />
-                <span>{t("system.runtimeUninstallSteamCmd", undefined, "Uninstall")}</span>
-              </button>
-            )}
-            <button
-              type="button"
-              className={`system-runtime-check-button ${btnStatusTone}`.trim()}
-              title={[props.steamCmdMessage, executablePath].filter(Boolean).join("\n") || undefined}
-              aria-live="polite"
-              onClick={props.onEnsureSteamCmd}
-              disabled={props.steamCmdBusy || pathBusyKey !== null}
-            >
-              <span className="status-dot" aria-hidden="true" />
-              <span>{props.steamCmdBusy
-                ? props.steamCmdProgress ? t(`steamcmd.prepare.${props.steamCmdProgress.phase}`) : t("system.runtimeChecking")
-                : props.steamCmdProgress?.error ? t("steamcmd.retry") : t("system.runtimeCheckSteamCmd")}</span>
-            </button>
-          </div>
-        )}
-      />
-      <div className="system-paths-content">
-        <div className="system-path-list">
-          {pathEntries.map((entry) => (
-            <div key={entry.key} className="system-path-row" data-path-key={entry.key}>
-              <span className="system-path-row-icon" aria-hidden="true">
-                <ShellIcon name={entry.icon} />
-              </span>
-              <div className="system-path-row-copy">
-                <span className="system-runtime-label">{entry.label}</span>
-                <div className="system-runtime-path" title={entry.value}>{entry.value}</div>
-              </div>
-              <div className="system-runtime-path-actions">
-                <button
-                  type="button"
-                  className="system-runtime-path-action-btn"
-                  title={t("system.runtimeCopyPath", undefined, "Copy path")}
-                  aria-label={`${t("system.runtimeCopyPath", undefined, "Copy path")}: ${entry.label}`}
-                  disabled={pathBusyKey !== null || props.steamCmdBusy}
-                  onClick={() => void handlePathAction(entry, "copy")}
-                >
-                  <ShellIcon name="copy" />
-                </button>
-                <button
-                  type="button"
-                  className="system-runtime-path-action-btn"
-                  title={t("system.runtimeOpenFolder", undefined, "Open folder")}
-                  aria-label={`${t("system.runtimeOpenFolder", undefined, "Open folder")}: ${entry.label}`}
-                  disabled={pathBusyKey !== null || props.steamCmdBusy}
-                  onClick={() => void handlePathAction(entry, "open")}
-                >
-                  <ShellIcon name="folder" />
-                </button>
-                <button
-                  type="button"
-                  className="system-runtime-path-action-btn system-path-picker-button"
-                  title={`${copy.browse}: ${entry.label}`}
-                  aria-label={`${copy.browse}: ${entry.label}`}
-                  disabled={pathBusyKey !== null || props.steamCmdBusy}
-                  onClick={() => void handlePickPath(entry.key)}
-                >
-                  <ShellIcon name="folder" />
-                  <span>{pathBusyKey === entry.key && pathAction === "choose" ? copy.browsing : copy.browse}</span>
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
-        {pathFeedback ? (
-          <ActivityNotice tone={pathFeedback.error ? "error" : "success"} onDismiss={() => setPathFeedback(null)}>
-            {pathFeedback.message}
-          </ActivityNotice>
-        ) : null}
-      </div>
-    </SystemPanel>
   );
 }
 
@@ -536,14 +301,14 @@ function SystemDashboard(props: SystemViewProps) {
           </div>
         </SystemPanel>
 
-        <DefaultPathsPanel
+        <StoragePathsPanel
           appSettings={props.appSettings}
           steamCmdStatus={props.steamCmdStatus}
           steamCmdBusy={props.steamCmdBusy}
           steamCmdProgress={props.steamCmdProgress}
           steamCmdMessage={props.steamCmdMessage}
           onPickDirectory={props.onPickDirectory}
-          onSaveAppSettings={props.onSaveAppSettings}
+          storageMigration={props.storageMigration}
           onEnsureSteamCmd={props.onEnsureSteamCmd}
           onUninstallSteamCmd={props.onUninstallSteamCmd}
         />

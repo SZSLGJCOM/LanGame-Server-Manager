@@ -235,3 +235,10 @@ source = "server_query"
 response_codec = "a2s_players"
 identity_kind = "player_name"
 refresh_interval_ms = 30000
+
+[runtime.startup_readiness]
+timeout_ms = 600000
+
+[runtime.startup_readiness.probe]
+kind = "runtime_log"
+source = { kind = "managed" }

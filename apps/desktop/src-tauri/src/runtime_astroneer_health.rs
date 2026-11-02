@@ -430,7 +430,7 @@ async fn query_world(port: u16, password: &str) -> Observation {
     .unwrap_or(Observation::Unavailable)
 }
 
-fn selected_world_matches(games: &Value, statistics: &Value) -> bool {
+pub(crate) fn selected_world_matches(games: &Value, statistics: &Value) -> bool {
     let Some(active) = games.get("activeSaveName").and_then(Value::as_str) else {
         return false;
     };

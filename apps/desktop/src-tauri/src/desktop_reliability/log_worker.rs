@@ -77,6 +77,8 @@ impl LogWorker {
                                     snapshot: None,
                                     snapshot_revision: None,
                                     stream_error: delta.stream_error,
+                                    console: None,
+                                    document_patch: None,
                                     log_path: path.to_string_lossy().into_owned(),
                                     lines: delta.lines,
                                     byte_offset: delta.byte_offset,

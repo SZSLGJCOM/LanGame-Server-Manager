@@ -7,7 +7,7 @@ use std::sync::{Arc, Mutex, OnceLock, Weak};
 #[path = "managed_console_log_fs.rs"]
 pub(crate) mod owned_fs;
 #[path = "managed_console_log_store.rs"]
-mod store;
+pub(crate) mod store;
 use owned_fs::reject_links;
 use store::{Part, Store};
 

@@ -153,7 +153,7 @@ async function key(value: string) {
   });
 }
 async function fit() {
-  const button = [...fixture.querySelectorAll<HTMLButtonElement>(".dst-map-controls button")].find(value => value.getAttribute("aria-label") === "适应窗口");
+  const button = [...fixture.querySelectorAll<HTMLButtonElement>(".map-zoom-controls button")].find(value => value.getAttribute("aria-label") === "适应窗口");
   check(button && !button.disabled, "Fit must be available even after panning at the base zoom");
   await act(async () => button.click());
 }
@@ -188,7 +188,7 @@ async function checkMapInteraction() {
   const after = mapPoint(pointer.x, pointer.y);
   close(after.x, before.x, "Wheel zoom must preserve the pointed map X");
   close(after.y, before.y, "Wheel zoom must preserve the pointed map Y");
-  check(element(".dst-map-plane").getBoundingClientRect().width > fitted.width && element(".dst-map-zoom").textContent !== "100%", "Wheel must change both rendered scale and its visible readout");
+  check(element(".dst-map-plane").getBoundingClientRect().width > fitted.width && element(".map-zoom-select").textContent !== "100%", "Wheel must change both rendered scale and its visible readout");
   const zoomedWidth = element(".dst-map-plane").getBoundingClientRect().width;
   await key("+");
   close(element(".dst-map-plane").getBoundingClientRect().width, zoomedWidth * 1.25, "Keyboard plus must increase scale");
@@ -319,7 +319,7 @@ async function checkDenseLandmarkView() {
 
 async function chooseZoom(value: number) {
   await act(async () => {
-    const field = element<HTMLSelectElement>("select.dst-map-zoom");
+    const field = element<HTMLSelectElement>("select.map-zoom-select");
     Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, "value")!.set!.call(field, String(value));
     field.dispatchEvent(new Event("change", { bubbles: true }));
   });
@@ -358,7 +358,7 @@ function anchoredTarget(screen: { x: number; y: number }, world: { x: number; y:
 async function checkZoomInputs() {
   await fit();
   const fittedWidth = element(".dst-map-plane").getBoundingClientRect().width;
-  check(!element<HTMLSelectElement>("select.dst-map-zoom").querySelector('option[value="0.5"]'), "Zoom must not go below the whole-world scale");
+  check(!element<HTMLSelectElement>("select.map-zoom-select").querySelector('option[value="0.5"]'), "Zoom must not go below the whole-world scale");
   check(element<HTMLButtonElement>('[aria-label="缩小"]').disabled, "The minimum zoom must disable only zooming out");
   await chooseZoom(10);
   close(element(".dst-map-plane").getBoundingClientRect().width, fittedWidth * 10, "Zoom must allow a detailed local view beyond the old fourfold cap");

@@ -487,10 +487,20 @@ async function run() {
     "Completed deletion removes the failed card while explicitly preserving external saves");
   notice("External saves remain at E:/Worlds/Kept external world", "warning");
   await nativeKey("Escape");
-  check(Boolean(fixture.querySelector(mode("archived"))), "Empty normal list still retains navigation to archives");
+  const restoreEntry = ".server-workspace-empty-actions .secondary-button";
+  check(!fixture.querySelector(".server-list-panel") && !element<HTMLButtonElement>(restoreEntry).disabled,
+    "An archive-only workspace hides its sidebar until Restore archive is chosen");
   check(!fixture.textContent?.includes("Create your first server")
-    && element(".server-workspace-empty").textContent?.includes("Restore an instance from the Archives list"),
-    "An archive-only workspace offers recovery without first-server onboarding in either panel");
+    && element(".server-workspace-empty").textContent?.includes("Create an instance or restore an archive"),
+    "An archive-only workspace offers creation and recovery without claiming this is a first server");
+  check(!fixture.querySelector(".workspace-metrics"), "The archive-only introduction does not reserve space for zero-value metrics");
+  centeredIn(".server-workspace-empty", ".server-layout-grid");
+  const beforeOpenArchives = calls.filter(call => call.command === "restore_instance_archive").length;
+  await act(async () => { element(restoreEntry).focus(); }); await nativeKey("Enter"); await listed();
+  check(element(mode("archived")).getAttribute("aria-pressed") === "true"
+    && calls.filter(call => call.command === "restore_instance_archive").length === beforeOpenArchives,
+    "The keyboard restore entry opens the archive list without restoring a server by itself");
+  check(document.activeElement === element(mode("archived")), "Opening archives moves keyboard focus into the revealed list navigation");
   check(Boolean(fixture.querySelector(".workspace-metrics")), "An archive-only workspace retains the top metrics bar");
   const archiveOnlyMetrics = [...fixture.querySelectorAll(".workspace-metric-value")].map((node) => node.textContent);
   check(archiveOnlyMetrics.join("|") === "0|0|Not selected|0",
@@ -498,10 +508,19 @@ async function run() {
   contained(".workspace-metrics", ".servers-page");
   check(element(".workspace-metrics").getBoundingClientRect().bottom <= element(".server-list-panel").getBoundingClientRect().top,
     "The archive-only metrics remain visible above the instance list");
-  const archiveOnlyWorkspace = layoutSnapshot();
+  const firstArchiveWorkspace = layoutSnapshot();
   centeredIn(".server-workspace-empty", ".server-detail-panel");
-  await changeMode("archived");
-  assertStableLayout(archiveOnlyWorkspace, "archive only switch");
+  await changeMode("normal");
+  check(!fixture.querySelector(".server-list-panel") && !element<HTMLButtonElement>(restoreEntry).disabled,
+    "Returning to the empty instance view collapses archives back to the two-action introduction");
+  await click(restoreEntry); await listed();
+  const archiveOnlyWorkspace = layoutSnapshot();
+  check(firstArchiveWorkspace.every((before, index) => {
+    const beforeBounds = before.rect;
+    const currentBounds = archiveOnlyWorkspace[index].rect;
+    return beforeBounds && currentBounds && (["x", "y", "width", "height"] as const)
+      .every(key => Math.abs(currentBounds[key] - beforeBounds[key]) <= 0.5);
+  }), "Reopening archives restores the list-and-details layout after the centered introduction");
   check(fixture.querySelectorAll('.server-list-card[data-card-kind="archive"]').length === 3, "Remaining archives stay available with no normal instances");
   await search("no matching archive");
   check(!fixture.querySelector('.server-list-card[data-card-kind="archive"]') && !fixture.textContent?.includes("Create your first server"),
@@ -522,7 +541,10 @@ async function run() {
   const abandonedList = last("list_instance_archives"), beforeRemountCalls = calls.length; await act(async () => { hide(); });
   mount++; archives = [alpha, beta]; await act(async () => { draw(); await frame(); });
   check(last("list_instance_archives") === abandonedList && calls.length === beforeRemountCalls, "Remount and StrictMode reuse the unfinished native read without reviving the unmounted view");
-  await listed(); await changeMode("archived");
+  await listed();
+  check(!fixture.querySelector(".server-list-panel") && !element<HTMLButtonElement>(restoreEntry).disabled,
+    "Reopening an archive-only workspace starts with the centered restore entry");
+  await click(restoreEntry); await listed();
   check(last("list_instance_archives") !== abandonedList && Boolean(fixture.querySelector(card("a"))) && !fixture.querySelector(card("d")), "The remounted view receives shared data and its next refresh sends a new native read");
   concurrencyPhases.push("remount shared read");
   await click(primary("a")); const beforeUnmountedRestore = changed; await act(async () => { hide(); });
@@ -532,6 +554,8 @@ async function run() {
   mount++; archives = []; pendingDeletions = [];
   await act(async () => { draw(); await frame(); });
   check(!fixture.textContent?.includes("Create your first server"), "Archive inventory must resolve before first-server onboarding appears");
+  check(!fixture.querySelector(".server-list-panel") && element<HTMLButtonElement>(restoreEntry).disabled,
+    "Initial archive loading keeps the sidebar hidden and restore disabled until inventory is known");
   await reject(last("list_instance_archives"), "Archive inventory unavailable");
   check(!fixture.textContent?.includes("Create your first server"), "An inventory failure is not treated as an empty workspace");
   await click(refreshNotice);
@@ -546,13 +570,23 @@ async function run() {
   check(Boolean(fixture.querySelector(".workspace-metrics")), "Deletion-only workspaces retain the top metrics bar");
   pendingDeletions = []; await changeMode("normal");
   check(element(".server-workspace-empty h3").textContent === "Create your first server"
-    && !element(".server-list-panel").textContent?.includes("Create your first server"),
-    "A confirmed empty workspace keeps one first-server introduction instead of duplicating it in the list");
+    && !fixture.querySelector(".server-list-panel"),
+    "A confirmed empty workspace shows first-server guidance without an instance sidebar");
   check(!fixture.querySelector(".workspace-metrics"), "A confirmed empty workspace keeps its existing introduction layout");
-  centeredIn(".server-workspace-empty", ".server-detail-panel");
-  centeredIn(".server-list-notice", ".server-list-panel > .table-list");
+  check(element<HTMLButtonElement>(restoreEntry).disabled, "Restore archive is disabled when the confirmed archive inventory is empty");
+  const callsBeforeDisabledRestore = calls.length;
+  await click(restoreEntry);
+  check(calls.length === callsBeforeDisabledRestore && !fixture.querySelector(".server-list-panel"),
+    "The disabled restore entry neither sends a command nor reveals an empty list");
+  centeredIn(".server-workspace-empty", ".server-layout-grid");
   await click(".server-workspace-empty .primary-button");
   check(created === 1, "The truly empty workspace still opens server creation");
+  props = { ...props, instances: [instance] }; await act(async () => { draw(); await frame(); });
+  check(Boolean(fixture.querySelector(".server-list-panel")), "Adding an instance restores the instance and archive navigation");
+  await search("no matching instance");
+  check(Boolean(fixture.querySelector(".server-list-panel")) && !fixture.querySelector('.server-list-card[data-card-kind="instance"]'),
+    "An empty instance search result keeps the sidebar available to clear its filter");
+  await search("");
   await click(mode("archived"));
   check(!fixture.querySelector(".server-detail-tabs") && !fixture.querySelector(".server-workspace-empty .primary-button"),
     "An empty Archives list shows archive selection guidance while inventory refreshes");
@@ -561,6 +595,7 @@ async function run() {
   await click(".server-archives-refresh"); await reject(last("list_instance_archives"), "Empty inventory refresh failed");
   check(!fixture.textContent?.includes("Create your first server"), "A failed refresh does not present stale empty inventory as first-server onboarding");
   archives = [alpha]; await click(refreshNotice); await listed();
+  props = { ...props, instances: [] }; await act(async () => { draw(); await frame(); });
   globalRefreshError = "INSTANCE_REFRESH_FAILURE_END";
   await click(primary("a")); archives = [];
   await resolve(last("restore_instance_archive"), { archive_id: "a", instance_id: "instance-a", instance_name: "Alpha world",
@@ -585,21 +620,24 @@ async function run() {
   check(fixture.querySelector(".workspace-metrics") === beforeLastArchiveMetrics,
     "The metrics bar stays mounted while the last normal instance moves to archives");
   archives = [alpha]; await listed();
-  check(element(".server-workspace-empty").textContent?.includes("Restore an instance from the Archives list"),
-    "The completed last-instance archive offers recovery rather than first-server onboarding");
+  check(!fixture.querySelector(".server-list-panel") && !element<HTMLButtonElement>(restoreEntry).disabled,
+    "Archiving the last normal instance returns to centered creation and restore actions");
   props = { ...props, onArchiveInstance: originalArchiveAction };
-  await changeMode("archived"); await click(purge("a")); await click(".inline-confirm-submit");
+  await click(restoreEntry); await listed(); await click(purge("a")); await click(".inline-confirm-submit");
   archives = []; await resolve(last("purge_instance_archive"), { archive_id: "a", purged: true });
   check(!fixture.textContent?.includes("Create your first server"), "Purging the last archive waits for refreshed inventory");
   await listed();
   check(!fixture.querySelector(".archived-instance-workspace[data-archive-id]") && !fixture.querySelector(".server-detail-tabs"),
     "Purging the last archive clears the archived configuration workspace");
   check(!fixture.querySelector(".workspace-metrics"), "The metrics bar hides after the last archive is purged and both inventories confirm empty");
-  await changeMode("normal");
-  check(element(".server-workspace-empty h3").textContent === "Create your first server",
-    "The confirmed empty normal list restores first-server onboarding after the last archive is purged");
+  check(element(".server-workspace-empty h3").textContent === "Create your first server"
+    && !fixture.querySelector(".server-list-panel") && element<HTMLButtonElement>(restoreEntry).disabled,
+    "Purging the last archive automatically returns to centered creation with restore disabled");
   Object.assign(window, { isTauri: false }); sessionStorage.setItem("langameLanToken", "isolated-fixture-token"); mount++;
   const beforeLan = calls.length; await act(async () => { draw(); await frame(); });
+  check(!fixture.querySelector(".server-list-panel") && Boolean(fixture.querySelector(".server-workspace-empty .primary-button")),
+    "An empty LAN workspace also shows first-server guidance without an instance sidebar");
+  props = { ...props, instances: [instance] }; await act(async () => { draw(); await frame(); });
   check(element<HTMLButtonElement>(mode("archived")).disabled && element(mode("archived")).title.includes("server host")
     && !fixture.querySelector('.server-list-card[data-card-kind="archive"]'), "LAN disables archive access with its host-only explanation");
   try { await listInstanceArchives(); throw new Error("LAN unexpectedly allowed"); }

@@ -191,16 +191,47 @@ pub(crate) async fn query(
     pid: u32,
     identity: &ProcessIdentity,
 ) -> Result<Value, String> {
+    query_checked(port, password, command, pid, identity)
+        .await
+        .map_err(|error| match error {
+            QueryError::Unavailable(message) | QueryError::Ownership(message) => message,
+        })
+}
+
+#[derive(Debug)]
+pub(crate) enum QueryError {
+    Unavailable(String),
+    Ownership(String),
+}
+
+/// Read-only startup probes must distinguish a not-yet-responsive console from
+/// a different process accepting the connection. Neither case sends mutations.
+pub(crate) async fn query_checked(
+    port: u16,
+    password: &str,
+    command: super::Query,
+    pid: u32,
+    identity: &ProcessIdentity,
+) -> Result<Value, QueryError> {
     tokio::time::timeout(Duration::from_secs(3), async {
-        let mut stream = connect(port, pid, identity).await?;
+        let mut stream = TcpStream::connect(SocketAddr::from((Ipv4Addr::LOCALHOST, port)))
+            .await
+            .map_err(|_| {
+                QueryError::Unavailable("ASTRONEER native console is not ready.".into())
+            })?;
+        verify_peer(&stream, pid, identity).map_err(QueryError::Ownership)?;
         stream
             .write_all(format!("{password}\n{}\n", command.command()).as_bytes())
             .await
-            .map_err(|_| "ASTRONEER native query could not be delivered.")?;
-        response(&mut stream, false).await
+            .map_err(|_| {
+                QueryError::Unavailable("ASTRONEER native query could not be delivered.".into())
+            })?;
+        response(&mut stream, false)
+            .await
+            .map_err(QueryError::Unavailable)
     })
     .await
-    .map_err(|_| "ASTRONEER native query timed out.")?
+    .map_err(|_| QueryError::Unavailable("ASTRONEER native query timed out.".into()))?
 }
 
 pub(crate) async fn create_once(

@@ -86,7 +86,7 @@ use install_process::{
     AbortOnDropTask, run_command_capture, run_powershell, spawn_managed_command,
     terminate_and_reap_child,
 };
-pub use install_progress::InstallProgressUpdate;
+pub use install_progress::{InstallConsoleOutput, InstallOutputSource, InstallProgressUpdate};
 use install_resources::ResourceLocks;
 #[cfg(test)]
 use install_transaction::direct_download_publish_script;
@@ -112,7 +112,9 @@ pub use module_install::{
 pub use ownership::SteamCmdOwnership;
 use ownership::{prepare_configured_steamcmd_root, validate_steamcmd_ownership};
 use package_revision::{begin_game_install_revision, complete_game_install_revision};
-pub use package_revision::{read_game_install_revision, read_program_install_revision};
+pub use package_revision::{
+    program_install_revision_move_paths, read_game_install_revision, read_program_install_revision,
+};
 /// Prepare versioned startup runtimes without replacing installed game files.
 pub use portable_runtime::{PortableRuntime, prepare_portable_runtime};
 pub use program_update_check::current_program_version;
@@ -1265,6 +1267,7 @@ where
         })
         .await?;
     on_progress(InstallProgressUpdate {
+        console_output: None,
         install_progress: None,
         progress_percent: 1.0,
         detail: String::from("Preparing Steam Workshop download..."),
@@ -1276,12 +1279,14 @@ where
     })?;
 
     on_progress(InstallProgressUpdate {
+        console_output: None,
         install_progress: None,
         progress_percent: 4.0,
         detail: String::from("Checking SteamCMD runtime..."),
         output_excerpt: String::new(),
     });
     on_progress(InstallProgressUpdate {
+        console_output: None,
         install_progress: None,
         progress_percent: 14.0,
         detail: format!("SteamCMD ready: {}", steamcmd.executable_path),
@@ -1320,6 +1325,7 @@ where
     })?;
 
     on_progress(InstallProgressUpdate {
+        console_output: None,
         install_progress: None,
         progress_percent: 18.0,
         detail: format!(
@@ -1336,6 +1342,10 @@ where
         &steamcmd.root,
         deadline,
         |update| {
+            if update.is_raw_output() {
+                on_progress(update);
+                return;
+            }
             if update.progress_percent > 0.0 {
                 let mapped = 22.0 + (update.progress_percent * 0.72);
                 stream_progress = stream_progress.max(mapped.min(96.0));
@@ -1344,6 +1354,7 @@ where
             }
 
             on_progress(InstallProgressUpdate {
+                console_output: update.console_output,
                 install_progress: None,
                 progress_percent: stream_progress,
                 detail: update.detail,
@@ -1387,6 +1398,7 @@ where
     let excerpt = output.excerpt;
 
     on_progress(InstallProgressUpdate {
+        console_output: None,
         install_progress: None,
         progress_percent: 100.0,
         detail: format!(

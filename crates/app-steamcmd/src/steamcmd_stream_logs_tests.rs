@@ -154,12 +154,20 @@ async fn console_file_updates_reach_progress_while_the_process_is_still_running(
         "@echo off\r\npowershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File \"{}\"\r\n", script.display(),
     )).unwrap();
     let mut received = Vec::new();
+    let mut completed_pipes = 0;
     let result = run_steamcmd_script_with_source(
         launcher.to_str().unwrap(),
         &fixture.0.join("ignored.txt"),
         fixture.0.to_str().unwrap(),
         InstallDeadline::new("console log progress fixture", Duration::from_secs(20)),
         |update| {
+            if let Some(crate::InstallConsoleOutput::Raw { finished, .. }) = &update.console_output
+            {
+                assert!(update.install_progress.is_none());
+                assert!(update.detail.is_empty());
+                completed_pipes += usize::from(*finished);
+                return;
+            }
             let progress = update.install_progress.unwrap();
             if progress.phase == InstallPhase::Downloading {
                 assert_eq!(progress.downloaded_bytes, Some(25));
@@ -175,6 +183,7 @@ async fn console_file_updates_reach_progress_while_the_process_is_still_running(
     .await
     .unwrap();
     assert!(result.success);
+    assert_eq!(completed_pipes, 2, "both owned output pipes must reach EOF");
     assert_eq!(
         received,
         [InstallPhase::Downloading, InstallPhase::Verifying]

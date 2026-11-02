@@ -90,10 +90,12 @@ async fn large_event_batches_fit_the_wire_and_deliver_the_remaining_events() {
     for _ in 0..2 {
         let request = cursor.request_args();
         let batch = source
-            .after(
+            .wait_after(
                 request["after"].as_u64().unwrap(),
                 request["generation"].as_str(),
+                LONG_POLL_TIMEOUT,
             )
+            .await
             .unwrap();
         assert!(serde_json::to_vec(&batch).unwrap().len() <= MAX_BATCH_BYTES);
         assert_eq!(batch["events"].as_array().unwrap().len(), 2);

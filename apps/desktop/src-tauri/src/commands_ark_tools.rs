@@ -3,8 +3,12 @@ use super::*;
 
 #[path = "ark_tools_install.rs"]
 mod install;
+#[path = "ark_tools_progress.rs"]
+pub(crate) mod progress;
 #[path = "ark_tools_protocol.rs"]
 pub(crate) mod protocol;
+#[path = "commands_ark_tools_remove.rs"]
+pub(crate) mod removal;
 pub use protocol::SpawnInput;
 
 #[derive(Deserialize)]
@@ -19,6 +23,17 @@ pub struct InstanceInput {
 pub struct PrepareInput {
     pub instance_id: String,
     pub allow_matching_symbols_download: bool,
+    #[serde(default)]
+    pub operation_id: Option<String>,
+    #[serde(default)]
+    pub locale: Option<String>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct InstallProgressInput {
+    pub instance_id: String,
+    pub operation_id: Option<String>,
 }
 
 #[derive(Serialize)]
@@ -26,7 +41,16 @@ pub struct PrepareInput {
 pub struct ToolsStatus {
     pub installed: bool,
     pub connected: bool,
+    pub can_uninstall: bool,
     pub issue: Option<String>,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PreparedToolsStatus {
+    #[serde(flatten)]
+    pub status: ToolsStatus,
+    pub progress: progress::InstallSnapshot,
 }
 
 #[derive(Serialize)]
@@ -231,6 +255,7 @@ pub async fn read_ark_tools_status(
         return Ok(ToolsStatus {
             installed: status.ready,
             connected: false,
+            can_uninstall: status.can_uninstall,
             issue: status.issue,
         });
     }
@@ -254,63 +279,132 @@ pub async fn read_ark_tools_status(
     Ok(ToolsStatus {
         installed: true,
         connected: connected.is_ok(),
+        can_uninstall: status.can_uninstall,
         issue: connected.err(),
     })
+}
+
+#[tauri::command]
+pub fn read_ark_tools_install_progress(
+    state: tauri::State<'_, DesktopState>,
+    input: InstallProgressInput,
+) -> Result<Option<progress::InstallSnapshot>, String> {
+    // Installation owns the instance mutation lock. Observers only read this
+    // bounded in-memory snapshot, so progress remains available while it runs.
+    state
+        .ark_tools_progress
+        .snapshot(&input.instance_id, input.operation_id.as_deref())
+}
+
+fn finish_installation(
+    preparation: &mut progress::InstallLease,
+    storage: &StorageBootstrap,
+    instance_id: &str,
+    operation_id: &str,
+    error: Option<&str>,
+) -> Option<progress::InstallSnapshot> {
+    let snapshot = preparation.snapshot();
+    let terminal = preparation.finish(error.map(str::to_owned));
+    append_desktop_app_log(
+        storage,
+        if error.is_some() { "error" } else { "info" },
+        if error.is_some() {
+            "instance.ark_tools.install.failed"
+        } else {
+            "instance.ark_tools.install.ready"
+        },
+        error.unwrap_or("ARK server extension installed and verified"),
+        json!({"instance_id": instance_id, "operation_id": operation_id,
+            "phase": if error.is_some() { progress::InstallPhase::Failed } else { progress::InstallPhase::Ready },
+            "last_phase": snapshot.as_ref().map(|value| value.update.phase),
+            "source": snapshot.as_ref().and_then(|value| value.update.source.as_deref()), "error": error}),
+    );
+    terminal
 }
 
 #[tauri::command]
 pub async fn prepare_ark_tools(
     state: tauri::State<'_, DesktopState>,
     input: PrepareInput,
-) -> Result<ToolsStatus, String> {
+) -> Result<PreparedToolsStatus, String> {
     let operation = state.begin_storage_context_operation("ARK creature extension installation")?;
-    let storage = state.bootstrap_storage()?;
-    initialize_database(&storage.paths)
-        .await
-        .map_err(|e| e.to_string())?;
-    reconcile_runtime_state(&state).await?;
-    let guard = state.acquire_instance_mutation(&input.instance_id).await;
-    let details = instance(&storage, &input.instance_id).await?;
-    if details.active_run.is_some()
-        || state
-            .runtime_supervisor
-            .lock()
-            .map_err(|_| "Runtime supervisor lock poisoned.")?
-            .is_tracked(&input.instance_id)
-        || state
-            .pending_runtime_start_instance_ids()?
-            .contains(&input.instance_id)
-    {
-        return Err("请先停止实例并取消待启动操作，再安装方舟生物工具扩展。".into());
-    }
-    if details.summary.module_id == "arksurvivalascended" && !input.allow_matching_symbols_download
-    {
-        return Err("ASA requires permission to download server-version symbol offsets from the extension maintainer's CDN.".into());
-    }
-    let root = owned_root(&storage, &details).await?;
-    let install_guard = app_steamcmd::acquire_game_install_lifecycle(
-        &state.install_locks,
-        &details.summary.module_id,
-        std::slice::from_ref(&root),
-    )
-    .await
-    .map_err(|e| steamcmd_error_message(&e))?;
-    app_storage::ensure_program_archive_dependencies(&storage.paths, &root)
-        .await
-        .map_err(|e| e.to_string())?;
-    let payload = embedded(&details.summary.module_id)?;
+    let storage = std::sync::Arc::new(state.bootstrap_storage()?);
+    let operation_id = input
+        .operation_id
+        .unwrap_or_else(|| uuid::Uuid::new_v4().simple().to_string());
+    let mut preparation = state
+        .ark_tools_progress
+        .begin(input.instance_id.clone(), operation_id.clone())?;
+    let reporter = preparation.reporter();
+    append_desktop_app_log(
+        &storage,
+        "info",
+        "instance.ark_tools.install.started",
+        "ARK server extension installation started",
+        json!({"instance_id": input.instance_id, "operation_id": operation_id, "phase": progress::InstallPhase::Queued}),
+    );
+    let prepared: Result<_, String> = async {
+        initialize_database(&storage.paths).await.map_err(|e| e.to_string())?;
+        reconcile_runtime_state(&state).await?;
+        let guard = state.acquire_instance_mutation(&input.instance_id).await;
+        reporter(progress::InstallUpdate { phase: progress::InstallPhase::Checking, source: None, downloaded_bytes: None, total_bytes: None });
+        let details = instance(&storage, &input.instance_id).await?;
+        if details.active_run.is_some()
+            || state.runtime_supervisor.lock().map_err(|_| "Runtime supervisor lock poisoned.")?.is_tracked(&input.instance_id)
+            || state.pending_runtime_start_instance_ids()?.contains(&input.instance_id)
+        {
+            return Err("请先停止实例并取消待启动操作，再安装方舟生物工具扩展。".into());
+        }
+        if details.summary.module_id == "arksurvivalascended" && !input.allow_matching_symbols_download {
+            return Err("ASA requires permission to download server-version symbol offsets from the extension maintainer's CDN.".into());
+        }
+        let root = owned_root(&storage, &details).await?;
+        let install_guard = app_steamcmd::acquire_game_install_lifecycle(&state.install_locks,
+            &details.summary.module_id, std::slice::from_ref(&root)).await.map_err(|e| steamcmd_error_message(&e))?;
+        app_storage::ensure_program_archive_dependencies(&storage.paths, &root).await.map_err(|e| e.to_string())?;
+        let payload = embedded(&details.summary.module_id)?;
+        Ok((guard, install_guard, root, details.summary.module_id, payload))
+    }.await;
+    let (guard, install_guard, root, module_id, payload) = match prepared {
+        Ok(prepared) => prepared,
+        Err(error) => {
+            let _ = finish_installation(
+                &mut preparation,
+                &storage,
+                &input.instance_id,
+                &operation_id,
+                Some(&error),
+            );
+            return Err(error);
+        }
+    };
+    let source_preference = app_network::SourcePreference::from_locale(input.locale.as_deref());
+    let task_storage = std::sync::Arc::clone(&storage);
+    let instance_id = input.instance_id;
+    let task_instance_id = instance_id.clone();
+    let task_operation_id = operation_id.clone();
     // A closed tab must not release the instance lock halfway through publication.
     spawn_storage_context_task(&operation, async move {
         let (_instance, _install) = (guard, install_guard);
-        let status = install::install(root, details.summary.module_id, payload).await?;
-        Ok(ToolsStatus {
-            installed: status.ready,
-            connected: false,
-            issue: status.issue,
+        let result = install::install(root, module_id, payload, source_preference, reporter).await.and_then(|status| {
+            if !status.ready {
+                return Err(status.issue.unwrap_or_else(|| "ARK extension installation did not pass verification.".into()));
+            }
+            Ok(ToolsStatus { installed: true, connected: false, can_uninstall: status.can_uninstall, issue: status.issue })
+        });
+        let terminal = finish_installation(&mut preparation, &task_storage, &task_instance_id, &task_operation_id, result.as_ref().err().map(String::as_str));
+        result.and_then(|status| {
+            let progress = terminal.ok_or("ARK installation completed without its final progress receipt")?;
+            Ok(PreparedToolsStatus { status, progress })
         })
     })
     .await
-    .map_err(|e| format!("ARK extension installation task failed: {e}"))?
+    .map_err(|e| {
+        let error = format!("ARK extension installation task failed: {e}");
+        append_desktop_app_log(&storage, "error", "instance.ark_tools.install.failed", &error,
+            json!({"instance_id": instance_id, "operation_id": operation_id, "phase": progress::InstallPhase::Failed}));
+        error
+    })?
 }
 
 #[tauri::command]

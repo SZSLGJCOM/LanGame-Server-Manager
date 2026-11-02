@@ -125,6 +125,22 @@ impl TerminalTranscript {
         }
     }
 
+    /// Snapshot decoded edits without completing them in the durable transcript.
+    /// A later newline or EOF must still emit each pending row exactly once.
+    pub(super) fn pending_rows(&self) -> Vec<String> {
+        self.screen
+            .iter()
+            .zip(&self.dirty)
+            .filter_map(|(row, dirty)| {
+                if !dirty {
+                    return None;
+                }
+                let length = row.iter().rposition(|character| *character != ' ')? + 1;
+                Some(row[..length].iter().collect())
+            })
+            .collect()
+    }
+
     fn width(&self) -> usize {
         self.screen[0].len()
     }

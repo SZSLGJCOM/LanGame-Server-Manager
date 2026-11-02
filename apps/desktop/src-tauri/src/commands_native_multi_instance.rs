@@ -168,7 +168,7 @@ pub(super) async fn stop_owned<R: tauri::Runtime>(
         .active_run
         .as_ref()
         .ok_or("owned native stop has no run identity")?;
-    stop_instance_process((*runtime.state).clone(), peer.summary.id.clone()).await?;
+    stop_instance_process((*runtime.state).clone(), peer.summary.id.clone(), None).await?;
     let stopped = read_instance_details(&runtime.storage.paths, &peer.summary.id).await?;
     if stopped.active_run.is_some()
         || runtime

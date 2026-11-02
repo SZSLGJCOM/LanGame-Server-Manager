@@ -5,8 +5,13 @@ use super::commands_install_progress::{
 use super::commands_program_storage::{ProgramUpdateRequest, install_program_with_baseline};
 use super::*;
 
+#[path = "commands_runtime_prestart_console.rs"]
+mod console;
 #[path = "commands_runtime_prestart_fallback.rs"]
 mod fallback;
+#[path = "commands_runtime_prestart_progress.rs"]
+mod progress;
+pub(super) use console::PrestartConsole;
 
 #[cfg(test)]
 #[path = "commands_runtime_prestart_account_tests.rs"]
@@ -81,9 +86,9 @@ fn report(
     context: &PrestartUpdateLogContext<'_>,
     outcome: &str,
     message: &str,
-) {
+) -> Result<(), String> {
     if let Some(path) = context.console_log_path {
-        let _ = append_prestart_update_console_line(path, message, "");
+        append_prestart_update_console_line(path, message, "")?;
     }
     append_desktop_app_log(
         storage,
@@ -97,6 +102,7 @@ fn report(
         json!({"source": context.source, "instance_id": instance.summary.id,
             "module_id": instance.summary.module_id, "outcome": outcome}),
     );
+    Ok(())
 }
 
 /// Caller retains the instance mutation lock. The program lease is returned only
@@ -123,7 +129,7 @@ pub(super) async fn run_prestart_update_if_needed(
             &context,
             "pinned",
             "当前版本已固定，使用现有服务器程序启动。",
-        );
+        )?;
         return Ok(PrestartUpdateOutcome {
             install_guard,
             warnings: Vec::new(),
@@ -162,7 +168,7 @@ pub(super) async fn run_prestart_update_if_needed(
         } else {
             "此安装源不支持启动前自动更新，使用现有程序；需要更新时请手动维护。"
         };
-        report(storage, instance, &context, "unavailable", message);
+        report(storage, instance, &context, "unavailable", message)?;
         return Ok(PrestartUpdateOutcome {
             install_guard,
             warnings: Vec::new(),
@@ -194,14 +200,21 @@ pub(super) async fn run_prestart_update_if_needed(
             output_excerpt: None,
         },
     )?;
-    report(
+    if let Err(error) = report(
         storage,
         instance,
         &context,
         "started",
         "正在检查启动前更新…",
-    );
+    ) {
+        update_background_job(state, &job_id, |job| {
+            fail_install_progress(job, 1.0);
+            job.detail = Some(error.clone());
+        })?;
+        return Err(error);
+    }
     let cancellation = lease.cancellation();
+    let output_failed = std::sync::atomic::AtomicBool::new(false);
     let fallback = fallback::InstalledProgramFallback {
         storage,
         descriptor,
@@ -304,6 +317,12 @@ pub(super) async fn run_prestart_update_if_needed(
                 .await
                 .map_err(|error| format!("启动前更新受归档版本保护：{error}"))?;
 
+            let mut console = context
+                .console_log_path
+                .map(|path| PrestartConsole::open_for_startup(path, storage))
+                .transpose()
+                .map_err(|error| format!("启动日志无法打开：{error}"))?;
+            let mut output_error = None;
             let attempt = install_program_with_baseline(
                 ProgramUpdateRequest {
                     storage,
@@ -317,15 +336,42 @@ pub(super) async fn run_prestart_update_if_needed(
                     account_name: account_name.as_deref(),
                 },
                 |update: InstallProgressUpdate| {
-                    if let Some(path) = context.console_log_path {
-                        let _ = append_prestart_update_console_line(path, &update.detail, "");
+                    if output_error.is_some() {
+                        return;
                     }
-                    let _ = update_background_job(state, &job_id, |job| {
+                    if let Some(console) = &mut console
+                        && let Err(error) = console.update(&update)
+                    {
+                        output_error = Some(format!("启动日志写入失败：{error}"));
+                        output_failed.store(true, std::sync::atomic::Ordering::Relaxed);
+                        cancellation.cancel();
+                        return;
+                    }
+                    if matches!(
+                        update.console_output,
+                        Some(app_steamcmd::InstallConsoleOutput::Raw { .. })
+                    ) {
+                        return;
+                    }
+                    if let Err(error) = update_background_job(state, &job_id, |job| {
                         apply_install_progress(job, &update)
-                    });
+                    }) {
+                        output_error = Some(error);
+                        output_failed.store(true, std::sync::atomic::Ordering::Relaxed);
+                        cancellation.cancel();
+                    }
                 },
             )
             .await;
+            if let Some(console) = console
+                && let Err(error) = console.finish()
+            {
+                output_error.get_or_insert_with(|| format!("启动日志收尾失败：{error}"));
+                output_failed.store(true, std::sync::atomic::Ordering::Relaxed);
+            }
+            if let Some(error) = output_error {
+                return Err(error);
+            }
             match attempt {
                 Ok(result) => break result,
                 Err(error)
@@ -465,19 +511,23 @@ pub(super) async fn run_prestart_update_if_needed(
                     "using_installed"
                 },
                 &message,
-            );
+            )?;
             Ok(outcome)
         }
         Err(error) => {
             update_background_job(state, &job_id, |job| {
                 fail_install_progress(job, 1.0);
-                if cancellation.is_cancelled() {
+                if cancellation.is_cancelled()
+                    && !output_failed.load(std::sync::atomic::Ordering::Relaxed)
+                {
                     job.status = JobStatus::Cancelled;
                 }
                 job.detail = Some(error.clone());
             })?;
-            report(storage, instance, &context, "failed", &error);
-            Err(error)
+            match report(storage, instance, &context, "failed", &error) {
+                Ok(()) => Err(error),
+                Err(log_error) => Err(format!("{error}\n启动日志写入失败：{log_error}")),
+            }
         }
     }
 }

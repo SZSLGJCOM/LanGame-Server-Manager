@@ -1,14 +1,15 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { arkPlayerPoint, type ArkMapPlayer, type ArkMapSnapshot } from "../../ark-world-map";
-import { clampArkMapView } from "../../ark-map-view";
+import { ARK_MAP_MAX_ZOOM, ARK_MAP_MIN_ZOOM, clampArkMapView } from "../../ark-map-view";
 import { selectLocaleText, useI18n } from "../../i18n";
 import { arkArtworkRect, type ArkMapArtwork } from "../../ark-map-artwork-catalog";
 import { openExternalUrl } from "../../api";
+import { MapZoomControls } from "./MapZoomControls";
 
 interface Props { snapshot: ArkMapSnapshot | null; live: boolean; selectedId: number | null; follow: boolean;
-  mapName: string; artwork: ArkMapArtwork | null; artworkLoading: boolean;
-  onSelect: (player: ArkMapPlayer) => void; onStopFollow: () => void; status: string }
-export function ArkWorldMapCanvas({ snapshot, live, selectedId, follow, onSelect, onStopFollow, status, mapName, artwork, artworkLoading }: Props) {
+  artwork: ArkMapArtwork | null; artworkLoading: boolean;
+  onSelect: (player: ArkMapPlayer) => void; onStopFollow: () => void }
+export function ArkWorldMapCanvas({ snapshot, live, selectedId, follow, onSelect, onStopFollow, artwork, artworkLoading }: Props) {
   const { locale } = useI18n();
   const text = (zh: string, en: string) => selectLocaleText(locale, zh, en);
   const surface = useRef<SVGSVGElement>(null);
@@ -67,7 +68,7 @@ export function ArkWorldMapCanvas({ snapshot, live, selectedId, follow, onSelect
   }, []);
   function fit() { onStopFollow(); setFitRevision(value => value + 1); setView({ zoom: 1, x: 500, y: 500 }); }
   const tick = (index: number) => index * 100;
-  return <div className="ark-map-canvas" data-live={live}>
+  return <div className="ark-map-canvas" data-live={live} aria-busy={artworkLoading}>
     <svg ref={surface} className="ark-map-surface" viewBox={`${left} ${top} ${size} ${size}`} tabIndex={0}
       role="group" aria-label={text("方舟地图，方向键平移，加减号缩放，0 适配", "ARK map. Arrow keys pan, plus/minus zoom, 0 fits")}
       onKeyDown={event => {
@@ -98,17 +99,12 @@ export function ArkWorldMapCanvas({ snapshot, live, selectedId, follow, onSelect
           aria-label={`${point.player.name || point.player.playerId} · PlayerID ${point.player.playerId}`} aria-disabled={!live}
           aria-pressed={selected} className="ark-map-player" transform={`translate(${p.x} ${p.y})`}
           onClick={() => { if (live) onSelect(point.player); }} onKeyDown={event => { if (live && (event.key === "Enter" || event.key === " ")) { event.preventDefault(); event.stopPropagation(); onSelect(point.player); } }}>
-          <circle r={(selected ? 8 : 6) * unit} strokeWidth={2 * unit} />
+          <circle r={6 * unit} strokeWidth={2 * unit} />
           <text x={12 * unit} y={4 * unit} fontSize={13 * unit} strokeWidth={2 * unit}>{point.player.name || point.player.playerId}</text>
         </g>; })}
     </svg>
-    <div className="ark-map-controls"><button type="button" className="secondary-button" onClick={() => zoom(1.25)} aria-label={text("放大", "Zoom in")}>+</button>
-      <span>{Math.round(view.zoom * 100)}%</span><button type="button" className="secondary-button" onClick={() => zoom(.8)} aria-label={text("缩小", "Zoom out")}>−</button>
-      <button type="button" className="secondary-button" onClick={fit}>{text("适配", "Fit")}</button></div>
-    <div className="ark-map-caption"><strong>{mapName || "ARK"}</strong><span>{art ? text("地图底图", "Map artwork")
-      : artworkLoading ? text("正在加载地图底图…", "Loading map artwork…") : text("坐标网格 · 底图不可用", "Coordinate grid · artwork unavailable")}</span>
-      <span>{gps ? "GPS · Lat / Lon" : text("原生 X / Y · 厘米", "Native X / Y · cm")}</span></div>
-    <div className="ark-map-state" role="status">{status}</div>
+    <MapZoomControls zoom={view.zoom} minimum={ARK_MAP_MIN_ZOOM} maximum={ARK_MAP_MAX_ZOOM}
+      onChange={value => setView(clampArkMapView({ x: center.x, y: center.y, zoom: value }, viewport))} onFit={fit} />
     {art ? <div className="ark-map-source" title={art.source}>{sourceUrl ? <a href={sourceUrl} target="_blank" rel="noopener noreferrer"
       onClick={event => { event.preventDefault(); void openExternalUrl(sourceUrl).catch(() => setFailedLink(sourceUrl)); }}>{art.source}</a> : art.source}
       {sourceUrl && failedLink === sourceUrl ? <span role="status">{text("无法打开来源链接，请复制链接到浏览器。", "Could not open the source. Copy the link into your browser.")}</span> : null}</div> : null}

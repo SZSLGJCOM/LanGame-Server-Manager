@@ -1326,10 +1326,9 @@ pub(super) async fn collect_system_snapshot(
             "system snapshot",
             async move {
                 let state = app.state::<DesktopState>();
-                let _operation =
-                    state.begin_storage_context_operation("system snapshot refresh")?;
+                let operation = state.begin_storage_context_operation("system snapshot refresh")?;
                 let storage = state.bootstrap_storage()?;
-                collect_system_snapshot_uncached(&app, host_monitor, &storage, instances)
+                collect_system_snapshot_uncached(&app, host_monitor, &storage, instances, operation)
                     .await
                     .inspect_err(|error| {
                         append_desktop_app_log(
@@ -1372,6 +1371,7 @@ async fn collect_system_snapshot_uncached(
     host_monitor: Arc<StdMutex<WindowsHostMonitor>>,
     storage: &StorageBootstrap,
     instances: Vec<InstanceSummary>,
+    operation: crate::state::StorageContextOperationGuard,
 ) -> Result<SystemSnapshot, String> {
     let monitored_path = preferred_snapshot_path(&storage.settings).to_string();
     let storage_paths = system_storage_paths::monitored_storage_paths(storage).await?;
@@ -1384,12 +1384,14 @@ async fn collect_system_snapshot_uncached(
     let instance_process_memory_task = collect_instance_process_memory(&storage.paths);
     let player_counts_task = collect_global_player_counts(app, &instances);
 
-    let (host_snapshot, instance_process_memory, player_counts) = tokio::join!(
-        host_snapshot_task,
-        instance_process_memory_task,
-        player_counts_task
-    );
-    let host_snapshot = host_snapshot.map_err(|error| error.to_string())??;
+    let (instance_process_memory, player_counts) =
+        tokio::join!(instance_process_memory_task, player_counts_task);
+    // Database and instance reads are complete. Slow Windows sampling only owns
+    // path strings and must not keep unrelated directory migrations blocked.
+    drop(operation);
+    let host_snapshot = host_snapshot_task
+        .await
+        .map_err(|error| error.to_string())??;
     let player_counts = player_counts?;
     let instance_process_memory =
         with_instance_memory_percent(instance_process_memory, host_snapshot.memory_total_bytes);

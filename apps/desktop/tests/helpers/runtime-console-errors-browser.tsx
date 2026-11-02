@@ -273,6 +273,7 @@ async function run() {
   props.runtime = { ...runtime, recent_runs: [{ run_id: 1, status: "stopped", log_path: runtime.log_tail.source_path,
     processes: [{ log_path: "fixture/old-registered-caves.log" }] }] };
   let starts = 0;
+  let completedStarts = 0;
   let stops = 0;
   let finishStart: (() => void) | undefined;
   props.onStop = async () => {
@@ -282,9 +283,12 @@ async function run() {
     props.selectedDetails = { ...details, summary: stopped };
     render();
   };
-  props.onStart = async () => {
+  props.onStart = async (id, _preview, operation) => {
+    check(id === instance.id && operation?.markStartDispatched(),
+      "The pending start must own its dispatch before reaching the native launch boundary");
     starts++;
     await new Promise<void>((resolve) => { finishStart = resolve; });
+    completedStarts++;
   };
   const actionButton = () => fixture.querySelector<HTMLButtonElement>(".server-list-card-primary-action")!;
   const emit = (log_path: string, line: string, process_key = "main", emitted_at_unix_ms = Date.now()) =>
@@ -295,7 +299,10 @@ async function run() {
   check(stops === 1 && !actionButton().disabled, "Stop must complete before the next startup");
   await act(async () => { actionButton().click(); });
   await settleUntil(() => starts === 1, "Start did not reach the native lifecycle boundary");
-  check(actionButton().disabled, "Start must remain pending during native launch");
+  check(completedStarts === 0 && actionButton().getAttribute("aria-busy") === "true",
+    "Start must remain pending during native launch");
+  check(!actionButton().disabled && actionButton().textContent?.includes("取消") && actionButton().title === "取消",
+    "A pending startup must expose its enabled Cancel action");
   check(!consoleNode().textContent?.includes("existing output retained"), "Start retained the previous session's snapshot");
   await act(async () => {
     emit(runtime.log_tail.source_path, "LATE_OLD_MAIN");
@@ -313,7 +320,11 @@ async function run() {
   await act(async () => { emit("fixture/run-2-extra.log", "NEW_EXTRA", "extra"); });
   check(consoleNode().textContent?.includes("[extra] NEW_EXTRA") && consoleNode().textContent?.includes("[caves] NEW_CAVES"),
     "A new primary poll must preserve the aggregate and allow later shards");
+  check(starts === 1 && completedStarts === 0 && actionButton().getAttribute("aria-busy") === "true",
+    "Log events and polling must neither complete nor redispatch the in-flight startup");
   await act(async () => { finishStart!(); });
+  check(completedStarts === 1 && starts === 1 && actionButton().getAttribute("aria-busy") !== "true",
+    "Only the resolved native launch may release the pending startup");
   scenarios++;
   // Restore the error scenario for the optional screenshot/report bounds.
   props.instances = [instance];

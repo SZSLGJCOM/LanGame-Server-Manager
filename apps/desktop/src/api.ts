@@ -25,6 +25,7 @@ import type {
   AssistantSecretStatus,
   BackgroundJob,
   StartInstanceResult,
+  StopInstanceResult,
   BootstrapResponse,
   CreateInstanceInput,
   InstanceBackupRestoreResult,
@@ -186,7 +187,22 @@ export const suppressInstanceRuntimeWindows = (instanceId: string) =>
   invokeOrMock<RuntimeWindowSuppressionResult>("suppress_instance_runtime_windows", {
     instanceId
   });
-export const readInstanceLogDocument = (instanceId: string, maxLines = 200, runId?: number, source?: RuntimeLogSource) => invokeOrMock<LogTailSnapshot>("read_instance_log_document_from_storage", { instanceId, maxLines, runId, source });
+export const readInstanceLogDocument = (instanceId: string, maxLines = 200, runId?: number, source?: RuntimeLogSource,
+  startupAttemptId?: string, startupBeforeCursor?: string) => invokeOrMock<LogTailSnapshot>("read_instance_log_document_from_storage",
+  { instanceId, maxLines, runId, source, startupAttemptId, startupBeforeCursor });
+function retainedStartupDiagnostic(message: string): string {
+  const suffix = "\n[truncated]";
+  let bytes = 0, retained = "";
+  for (const character of message) {
+    const code = character.charCodeAt(0);
+    bytes += character.length === 2 ? 4 : code <= 0x7f ? 1 : code <= 0x7ff ? 2 : 3;
+    if (bytes > 4096 - suffix.length) return retained + suffix;
+    retained += character;
+  }
+  return retained;
+}
+export const recordStartupSessionDiagnostic = (instanceId: string, attemptId: string, diagnosticId: string, message: string) =>
+  invokeOrMock<void>("record_startup_session_diagnostic", { instanceId, attemptId, diagnosticId, message: retainedStartupDiagnostic(message) });
 export const previewInstanceLaunch = (instanceId: string) => invokeOrMock<LaunchPlan>("preview_instance_launch", { instanceId });
 export const installModule = (moduleId: string, validate = false) => invokeOrMock<ModuleInstallResult>(validate ? "validate_module_game" : "install_module_game", { moduleId });
 export const uninstallModule = (moduleId: string) => invokeOrMock<ModuleUninstallResult>("uninstall_module_game", { moduleId });
@@ -360,10 +376,14 @@ export const openExternalUrl = async (url: string) => {
   await invokeOrMock<void>("open_external_url", { url: target.href });
 };
 export const openLocalPath = (path: string) => invokeOrMock<void>("open_local_path", { path });
-export const startInstance = async (instanceId: string, expectedWorldStart: DstWorldStartPreview | null = null) => {
-  return await invokeOrMock<StartInstanceResult>("start_instance_process", { instanceId, expectedWorldStart });
+export const startInstance = async (instanceId: string, expectedWorldStart: DstWorldStartPreview | null = null, startupAttemptId?: string) => {
+  return await invokeOrMock<StartInstanceResult>("start_instance_process", {
+    instanceId, expectedWorldStart, ...(startupAttemptId === undefined ? {} : { startupAttemptId })
+  });
 };
-export const stopInstance = async (instanceId: string) => { await invokeOrMock("stop_instance_process", { instanceId }); };
+export const stopInstance = (instanceId: string, startupAttemptId?: string) => invokeOrMock<StopInstanceResult>("stop_instance_process", {
+  instanceId, ...(startupAttemptId === undefined ? {} : { startupAttemptId })
+});
 export const readInstanceLivePlayers = (instanceId: string) =>
   invokeOrMock<RuntimeLivePlayerSnapshot>("read_instance_live_players", {
     instanceId

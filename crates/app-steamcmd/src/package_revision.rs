@@ -77,6 +77,28 @@ pub fn read_program_install_revision(
     )
 }
 
+/// Locate the revision directories that must accompany one program relocation.
+/// Missing directories are valid and are never created here. The caller owns
+/// lifecycle locking and destination conflict checks throughout the migration.
+pub fn program_install_revision_move_paths(
+    current_servers_root: &Path,
+    module_id: &str,
+    old_install_root: &Path,
+    new_servers_root: &Path,
+    new_install_root: &Path,
+) -> Result<(PathBuf, PathBuf), SteamCmdError> {
+    let old_key = program_revision_key(module_id, old_install_root)?;
+    let new_key = program_revision_key(module_id, new_install_root)?;
+    // A higher ready generation may supersede an older pending marker. Use the
+    // reader's contract rather than rejecting every historical pending file.
+    read_game_install_revision(current_servers_root, &old_key)?;
+    read_game_install_revision(new_servers_root, &new_key)?;
+    Ok((
+        revision_directory(current_servers_root, &old_key),
+        revision_directory(new_servers_root, &new_key),
+    ))
+}
+
 fn revision_directory(servers_root: &Path, module_id: &str) -> PathBuf {
     let module_key = Sha256::digest(module_id.as_bytes())
         .iter()
@@ -250,6 +272,100 @@ fn ensure_plain_directory(path: &Path) -> Result<(), SteamCmdError> {
 mod tests {
     use super::*;
     use std::time::{SystemTime, UNIX_EPOCH};
+
+    #[test]
+    fn revision_move_paths_are_stable_before_and_after_target_creation() {
+        let root = crate::tests::unique_test_root();
+        let current = root.join("current");
+        let next = root.join("next");
+        let old = current.join("one/runtime");
+        let new = next.join("one/runtime");
+        let key = program_revision_key("minecraft", &old).unwrap();
+        let revision = begin_game_install_revision(&current, &key).unwrap();
+        complete_game_install_revision(&current, &key, revision).unwrap();
+        let before =
+            program_install_revision_move_paths(&current, "minecraft", &old, &next, &new).unwrap();
+        assert_eq!(before.0, revision_directory(&current, &key));
+        assert!(!next.exists(), "planning must not create the destination");
+        fs::create_dir_all(&new).unwrap();
+        fs::create_dir_all(&before.1).unwrap();
+        let marker = format!("rev-{revision:020}.ready");
+        fs::copy(before.0.join(&marker), before.1.join(&marker)).unwrap();
+        let after =
+            program_install_revision_move_paths(&current, "minecraft", &old, &next, &new).unwrap();
+        assert_eq!(before, after);
+        assert_eq!(
+            read_program_install_revision(&next, "minecraft", &new).unwrap(),
+            revision
+        );
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn revision_move_paths_keep_same_module_programs_and_library_distinct() {
+        let root = crate::tests::unique_test_root();
+        let next = root.join("next");
+        let first = program_install_revision_move_paths(
+            &root,
+            "minecraft",
+            &root.join("one/runtime"),
+            &next,
+            &next.join("one/runtime"),
+        )
+        .unwrap();
+        let second = program_install_revision_move_paths(
+            &root,
+            "minecraft",
+            &root.join("two/runtime"),
+            &next,
+            &next.join("two/runtime"),
+        )
+        .unwrap();
+        assert_ne!(first.0, second.0);
+        assert_ne!(first.1, second.1);
+        assert_ne!(first.0, revision_directory(&root, "minecraft"));
+        assert_ne!(first.1, revision_directory(&next, "minecraft"));
+        assert!(
+            !root.exists(),
+            "missing source and destination remain absent"
+        );
+    }
+
+    #[test]
+    fn revision_move_paths_refuse_latest_pending_at_either_endpoint() {
+        let root = crate::tests::unique_test_root();
+        let current = root.join("current");
+        let next = root.join("next");
+        let old = current.join("one/runtime");
+        let new = next.join("one/runtime");
+        let key = program_revision_key("minecraft", &old).unwrap();
+        let pending = begin_game_install_revision(&current, &key).unwrap();
+        let paths =
+            || program_install_revision_move_paths(&current, "minecraft", &old, &next, &new);
+        assert!(
+            matches!(paths(), Err(SteamCmdError::PackageRevisionPending { path })
+            if path == revision_directory(&current, &key))
+        );
+        assert!(!next.exists());
+        let recovered = begin_game_install_revision(&current, &key).unwrap();
+        complete_game_install_revision(&current, &key, recovered).unwrap();
+        assert!(
+            paths().is_ok(),
+            "a newer ready revision supersedes old pending"
+        );
+        assert!(
+            revision_directory(&current, &key)
+                .join(format!("rev-{pending:020}.pending"))
+                .exists()
+        );
+        let new_key = program_revision_key("minecraft", &new).unwrap();
+        begin_game_install_revision(&next, &new_key).unwrap();
+        assert!(
+            matches!(paths(), Err(SteamCmdError::PackageRevisionPending { path })
+            if path == revision_directory(&next, &new_key))
+        );
+        fs::remove_dir_all(root).unwrap();
+    }
 
     #[test]
     fn failed_program_revision_does_not_invalidate_library_or_another_instance() {
