@@ -65,6 +65,7 @@ async fn cancel_startup(
     Ok(StopInstanceResult {
         summary,
         outcome: app_core::StopInstanceOutcome::StartupCancelled,
+        auto_backup_error: None,
         run_id: None,
         session_id: None,
         pid: None,
@@ -149,34 +150,41 @@ pub(super) async fn backup_after_stop(
     storage: &StorageBootstrap,
     details: &InstanceDetails,
     source: InstanceShutdownSource,
-) {
+) -> Option<String> {
     if !details.auto_backup_on_stop {
-        return;
+        return None;
     }
     match create_instance_auto_stop_backup_snapshot(&storage.paths, &details.summary.id).await {
-        Ok(backup) => append_desktop_app_log(
-            storage,
-            "info",
-            "instance.stop.auto_backup_created",
-            "Automatic save backup created after stop.",
-            json!({
-                "instance_id": details.summary.id,
-                "instance_name": details.summary.name,
-                "source": source.as_str(),
-                "backup_id": backup.backup_id,
-                "backup_path": backup.backup_path,
-                "file_count": backup.file_count,
-                "total_bytes": backup.total_bytes,
-                "retention_count": details.backup_retention_count,
-            }),
-        ),
-        Err(error) => append_desktop_app_log(
-            storage,
-            "error",
-            "instance.stop.auto_backup_failed",
-            &error.to_string(),
-            json!({"instance_id": details.summary.id, "source": source.as_str()}),
-        ),
+        Ok(backup) => {
+            append_desktop_app_log(
+                storage,
+                "info",
+                "instance.stop.auto_backup_created",
+                "Automatic save backup created after stop.",
+                json!({
+                    "instance_id": details.summary.id,
+                    "instance_name": details.summary.name,
+                    "source": source.as_str(),
+                    "backup_id": backup.backup_id,
+                    "backup_path": backup.backup_path,
+                    "file_count": backup.file_count,
+                    "total_bytes": backup.total_bytes,
+                    "retention_count": details.backup_retention_count,
+                }),
+            );
+            None
+        }
+        Err(error) => {
+            let message = error.to_string();
+            append_desktop_app_log(
+                storage,
+                "error",
+                "instance.stop.auto_backup_failed",
+                &message,
+                json!({"instance_id": details.summary.id, "source": source.as_str()}),
+            );
+            Some(message)
+        }
     }
 }
 
@@ -298,7 +306,7 @@ pub(super) async fn stop_instance(
 
     update_state_instances(&state, instances)?;
 
-    super::commands_instance_stop::backup_after_stop(
+    let auto_backup_error = super::commands_instance_stop::backup_after_stop(
         &storage,
         &details,
         InstanceShutdownSource::Manual,
@@ -314,6 +322,7 @@ pub(super) async fn stop_instance(
     let result = StopInstanceResult {
         summary,
         outcome: app_core::StopInstanceOutcome::Stopped,
+        auto_backup_error,
         run_id: Some(active_run.run_id),
         session_id: active_run.session_id.clone(),
         pid: primary_process.as_ref().and_then(|process| process.pid),

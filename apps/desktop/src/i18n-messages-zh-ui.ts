@@ -402,6 +402,7 @@ export const ZH_CN_UI_MESSAGES: MessageCatalog = {
   "activity.serverCreated": "实例已创建：{name}",
   "activity.serverStartSent": "启动命令已发送：{id}",
   "activity.serverStopSent": "停止命令已发送：{id}",
+  "activity.serverStoppedBackupFailed": "服务器已停止：{id}，但自动备份失败：{message}",
   "activity.serverStartupCancelled": "已取消启动：{id}",
   "activity.serversRefreshed": "已刷新 {count} 个服务器实例。",
   "activity.settingsSaved": "设置已保存：{name}",

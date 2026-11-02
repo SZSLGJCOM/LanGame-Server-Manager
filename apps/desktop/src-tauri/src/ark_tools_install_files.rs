@@ -323,7 +323,13 @@ pub(super) fn decode_ownership(
     for (path, hash) in &owned.files {
         let embedded = matches!(path.as_str(), PLUGIN | INFO | NOTICES)
             || (profile.module_id == ASA.module_id && path == "version.dll");
-        if !embedded && wanted.get(path) != Some(hash) {
+        // Recognize only the exact previous manager-generated ASA settings.
+        // This lets explicit preparation disable background downloading through
+        // the existing transaction, without adopting operator-edited settings.
+        let previous_asa_configuration = profile.module_id == ASA.module_id
+            && path == "config.json"
+            && *hash == digest(&managed_configuration(&ASA, true)?);
+        if !embedded && wanted.get(path) != Some(hash) && !previous_asa_configuration {
             return Err(format!(
                 "ARK extension dependency or configuration has unknown ownership: {path}"
             ));

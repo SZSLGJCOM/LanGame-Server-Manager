@@ -1,4 +1,4 @@
-param([Parameter(Mandatory = $true)][string]$OutDir)
+param([Parameter(Mandatory = $true)][string]$OutDir, [switch]$ProxyOnly)
 
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
@@ -107,8 +107,6 @@ $asaCommit = '86bd3b21d1e940fe837af6511f945944977bb9ca'
 $aseCommit = '9459cb3941c2e62d4144cbb8294fe6c4c772d564'
 $loaderCommit = '4e04dc8982e1473920278f199638b29dc511d539'
 $asa = Get-VerifiedArchive 'AsaApi-sdk.zip' "https://codeload.github.com/ArkServerApi/AsaApi/zip/$asaCommit" '01b21af8a98265b273bc1fb3b264f2bfdff0e603a1f6bb7cc1616fbf0d27ee30'
-$ase = Get-VerifiedArchive 'AseApi-sdk.zip' "https://codeload.github.com/ArkServerApi/AseApi/zip/$aseCommit" '500cc0e0d46e75e3c67374a81914fe318ee1f88db8bca0c291f2e8a72ede3def'
-$asaRelease = Get-VerifiedArchive 'asa-runtime.zip' 'https://github.com/ArkServerApi/AsaApi/releases/download/2.03/AsaApi_2.03.zip' 'ac72fb29436198ac062cd273e1c496b1ef4e6ffddeec08243d11d9b35e8b8ae3'
 $loader = Get-VerifiedArchive 'AsaApiLoader-sdk.zip' "https://codeload.github.com/ArkServerApi/AsaApiLoader/zip/$loaderCommit" 'dd3c6ac17d2bdc9d072ca01c8e86f9451e6de909c2bf901bb5b2c63cb939e833'
 # MSVC still applies MAX_PATH to relative includes containing ../, even when
 # the normalized file exists. Keep the SDK's Public/Private relationship while
@@ -116,15 +114,23 @@ $loader = Get-VerifiedArchive 'AsaApiLoader-sdk.zip' "https://codeload.github.co
 $asaRoot = Join-Path $outputRoot 'asa'
 $aseRoot = Join-Path $outputRoot 'ase'
 $loaderRoot = Join-Path $outputRoot 'AsaApiLoader'
-Expand-Selected $asa "AsaApi-$asaCommit/" $asaRoot @('AsaApi/Core/Public/', 'AsaApi/Core/Private/Ark/Globals.h', 'LICENSE') 'AsaApi/Core/'
-Expand-Selected $ase "AseApi-$aseCommit/" $aseRoot @('version/Core/Public/', 'version/Core/Private/Ark/Globals.h', 'out_lib/ArkApi.lib', 'LICENSE') 'version/Core/'
-Expand-Selected $asaRelease '' $asaRoot @('Lib/AsaApi.lib')
 Expand-Selected $loader "AsaApiLoader-$loaderCommit/" $loaderRoot @('Version/version.def', 'Version/version_asm.asm', 'LICENSE')
-# UnrealString includes fmt/format.h while Logger already includes this exact
-# bundled fmt version. Expose that same dependency under its public include path.
-$fmtRoot = Join-Path $outputRoot 'fmt-include'
-[IO.Directory]::CreateDirectory((Join-Path $fmtRoot 'fmt')) | Out-Null
-Copy-Item -Path (Join-Path $asaRoot 'Public/Logger/spdlog/fmt/bundled/*') -Destination (Join-Path $fmtRoot 'fmt') -Force
+if ($ProxyOnly) {
+    # Native regression tests compile the actual proxy and assembly using the
+    # same hash-verified SDK JSON header, without building either game plugin.
+    Expand-Selected $asa "AsaApi-$asaCommit/" $asaRoot @('AsaApi/Core/Public/json.hpp', 'LICENSE') 'AsaApi/Core/'
+} else {
+    $ase = Get-VerifiedArchive 'AseApi-sdk.zip' "https://codeload.github.com/ArkServerApi/AseApi/zip/$aseCommit" '500cc0e0d46e75e3c67374a81914fe318ee1f88db8bca0c291f2e8a72ede3def'
+    $asaRelease = Get-VerifiedArchive 'asa-runtime.zip' 'https://github.com/ArkServerApi/AsaApi/releases/download/2.03/AsaApi_2.03.zip' 'ac72fb29436198ac062cd273e1c496b1ef4e6ffddeec08243d11d9b35e8b8ae3'
+    Expand-Selected $asa "AsaApi-$asaCommit/" $asaRoot @('AsaApi/Core/Public/', 'AsaApi/Core/Private/Ark/Globals.h', 'LICENSE') 'AsaApi/Core/'
+    Expand-Selected $ase "AseApi-$aseCommit/" $aseRoot @('version/Core/Public/', 'version/Core/Private/Ark/Globals.h', 'out_lib/ArkApi.lib', 'LICENSE') 'version/Core/'
+    Expand-Selected $asaRelease '' $asaRoot @('Lib/AsaApi.lib')
+    # UnrealString includes fmt/format.h while Logger already includes this exact
+    # bundled fmt version. Expose that same dependency under its public include path.
+    $fmtRoot = Join-Path $outputRoot 'fmt-include'
+    [IO.Directory]::CreateDirectory((Join-Path $fmtRoot 'fmt')) | Out-Null
+    Copy-Item -Path (Join-Path $asaRoot 'Public/Logger/spdlog/fmt/bundled/*') -Destination (Join-Path $fmtRoot 'fmt') -Force
+}
 
 $vswhere = Join-Path ${env:ProgramFiles(x86)} 'Microsoft Visual Studio/Installer/vswhere.exe'
 if (-not (Test-Path -LiteralPath $vswhere)) { throw 'Visual Studio C++ Build Tools are required to build ARK tools.' }
@@ -143,7 +149,8 @@ try {
     $env:INCLUDE = $includePaths -join ';'
     $env:LIB = $libPaths -join ';'
     $env:PATH = "$toolBin;$previousPath"
-    foreach ($edition in @('ase', 'asa')) {
+    $editions = if ($ProxyOnly) { @() } else { @('ase', 'asa') }
+    foreach ($edition in $editions) {
         $headers = if ($edition -eq 'asa') { Join-Path $asaRoot 'Public' } else { Join-Path $aseRoot 'Public' }
         $importLib = if ($edition -eq 'asa') { Join-Path $asaRoot 'Lib/AsaApi.lib' } else { Join-Path $aseRoot 'out_lib/ArkApi.lib' }
         $object = Join-Path $outputRoot "LgsmArkTools-$edition.obj"
@@ -155,11 +162,12 @@ try {
     }
     & (Join-Path $toolBin 'ml64.exe') /nologo /c "/Fo$outputRoot/asa-version-asm.obj" (Join-Path $loaderRoot 'Version/version_asm.asm')
     if ($LASTEXITCODE -ne 0) { throw 'ASA version proxy assembly failed.' }
-    & (Join-Path $toolBin 'cl.exe') /nologo /std:c++20 /EHsc /MT /O2 /LD "/Fo$outputRoot/asa-version.obj" (Join-Path $sourceRoot 'asa_version.cpp') '/link' "$outputRoot/asa-version-asm.obj" "/DEF:$loaderRoot/Version/version.def" "/OUT:$outputRoot/asa-version.dll" "/IMPLIB:$outputRoot/asa-version.lib" /INCREMENTAL:NO
+    & (Join-Path $toolBin 'cl.exe') /nologo /std:c++20 /EHsc /MT /O2 /utf-8 /LD "/I$asaRoot/Public" "/Fo$outputRoot/asa-version.obj" (Join-Path $sourceRoot 'asa_version.cpp') '/link' "$outputRoot/asa-version-asm.obj" "/DEF:$loaderRoot/Version/version.def" "/OUT:$outputRoot/asa-version.dll" "/IMPLIB:$outputRoot/asa-version.lib" /INCREMENTAL:NO
     if ($LASTEXITCODE -ne 0) { throw 'ASA version proxy compilation failed.' }
 } finally {
     $env:INCLUDE = $previousInclude
     $env:LIB = $previousLib
     $env:PATH = $previousPath
 }
-Write-Output 'Built LgsmArkTools-ase.dll, LgsmArkTools-asa.dll and asa-version.dll.'
+if ($ProxyOnly) { Write-Output 'Built asa-version.dll using the pinned SDK and loader assembly.' }
+else { Write-Output 'Built LgsmArkTools-ase.dll, LgsmArkTools-asa.dll and asa-version.dll.' }

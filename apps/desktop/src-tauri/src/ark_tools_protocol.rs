@@ -254,6 +254,24 @@ mod tests {
         assert!(status(&valid, "arksurvivalascended", &id).is_ok());
         assert!(status(&valid, "arksurvivalevolved", &id).is_err());
         assert!(status(&valid, "arksurvivalascended", "wrong").is_err());
+        for version in [0, 2] {
+            assert!(
+                status(
+                    &valid.replace("\"version\":1", &format!("\"version\":{version}")),
+                    "arksurvivalascended",
+                    &id
+                )
+                .is_err()
+            );
+        }
+        assert!(
+            status(
+                &valid.replace("\"action\":\"status\"", "\"action\":\"spawn\""),
+                "arksurvivalascended",
+                &id
+            )
+            .is_err()
+        );
         assert!(status(&format!("{valid}\n{valid}"), "arksurvivalascended", &id).is_err());
     }
     #[test]

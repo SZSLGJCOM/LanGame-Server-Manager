@@ -280,6 +280,7 @@ const baseEnUs: MessageCatalog = {
   "activity.cancelServerStartupFailed": "Failed to cancel startup: {message}",
   "activity.stoppingServer": "Stopping {id}...",
   "activity.serverStopSent": "Stop command sent: {id}",
+  "activity.serverStoppedBackupFailed": "Server stopped: {id}. Automatic backup failed: {message}",
   "activity.serverStartupCancelled": "Startup cancelled: {id}",
   "activity.stopServerFailed": "Failed to stop server: {message}",
   "activity.dstAccessEntryMissing": "Enter a Klei user ID first.",

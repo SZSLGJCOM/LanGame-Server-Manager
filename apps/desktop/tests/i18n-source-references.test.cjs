@@ -29,6 +29,43 @@ test("translation coverage follows labeled option and plan keys consumed by the 
   ]);
 });
 
+test("translation consumers resolve aliases and assignments without treating storage keys as messages", () => {
+  const references = collectTranslationReferences(`
+    import { message as uiMessage } from "./app-ui";
+    const dismissalKey = "langame.storage-migration.dismissed.v1";
+    localStorage.getItem(dismissalKey);
+    localStorage.setItem(dismissalKey, "[]");
+    let selection = ready ? "status.ready" : "status.waiting";
+    if (failed) selection = "status.failed";
+    const alias = selection;
+    t(alias);
+    const activity = "activity.completed";
+    uiMessage(activity);
+    const label = "common.apply";
+    const option = { labelKey: label };
+    function storageScope() {
+      const selection = "langame.other-storage.v1";
+      localStorage.getItem(selection);
+    }
+  `, "src/example.ts");
+  assert.deepEqual([...references.keys()].sort(), [
+    "activity.completed", "common.apply", "status.failed", "status.ready", "status.waiting"
+  ]);
+});
+
+test("translation resolution handles shadowed bindings and cyclic aliases", () => {
+  const references = collectTranslationReferences(`
+    const selected = "storage.outer.v1";
+    function translated() { const selected = "common.start"; t(selected); }
+    function unboundParameter(selected: string) { t(selected); }
+    let first = second;
+    let second = first;
+    first = "common.retry";
+    t(second);
+  `, "src/example.ts");
+  assert.deepEqual([...references.keys()].sort(), ["common.retry", "common.start"]);
+});
+
 test("translation references ignore comments, log events and configuration keys", () => {
   const references = collectTranslationReferences([
     '// t("comment.missing")',

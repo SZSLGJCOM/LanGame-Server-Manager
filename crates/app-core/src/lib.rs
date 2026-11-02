@@ -43,8 +43,8 @@ pub use runtime_resources::RuntimeResourceLimits;
 mod program_update;
 pub mod runtime_logs;
 pub mod startup_readiness;
-pub use startup_readiness::ModuleStartupReadinessSpec;
 pub use program_update::InstanceProgramUpdatePolicy;
+pub use startup_readiness::ModuleStartupReadinessSpec;
 mod runtime_start_warnings;
 pub use runtime_start_warnings::{
     RuntimeModProvider, RuntimeModUpdateReason, RuntimeStartWarning, RuntimeStartWarningCode,
@@ -1289,6 +1289,7 @@ pub struct StoppedProcess {
 pub struct StopInstanceResult {
     pub summary: InstanceSummary,
     pub outcome: StopInstanceOutcome,
+    pub auto_backup_error: Option<String>,
     pub run_id: Option<i64>,
     pub session_id: Option<String>,
     pub pid: Option<u32>,

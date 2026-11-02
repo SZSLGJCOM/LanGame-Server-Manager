@@ -167,7 +167,8 @@ async fn execute_assistant_lifecycle_operation(
         }
         let stopped_evidence = json!({"instanceId":target,"stoppedRunId":stopped.run_id,
             "stoppedSessionId":stopped.session_id,"stoppedProcessCount":stopped.process_count,
-            "observedActiveProcesses":current.summary.active_process_count});
+            "observedActiveProcesses":current.summary.active_process_count,
+            "autoBackupError":stopped.auto_backup_error.as_deref().map(redact_assistant_provider_text)});
         output.message = pending.lifecycle_locale.stopped(&expected.summary.name);
         output.verification = Some(AssistantOperationVerification {
             status: AssistantVerificationStatus::Verified,
@@ -355,6 +356,7 @@ async fn complete_assistant_lifecycle_operation(
             &detail,
         )
     };
+    output.message = locale.with_stop_backup_warning(output.message.clone(), &verification.evidence);
     verification.summary = output.message.clone();
     output.task = Some(receipt);
     output.verification = Some(verification);

@@ -6,9 +6,9 @@ pub fn is_humanitz_net_id(value: &str) -> bool {
         return false;
     };
     let hex_id = |part: &str| part.len() == 32 && part.bytes().all(|byte| byte.is_ascii_hexdigit());
-    let steam_prefix = account.strip_suffix("_+_").is_some_and(|steam| {
-        steam.len() == 17 && steam.bytes().all(|byte| byte.is_ascii_digit())
-    });
+    let steam_prefix = account
+        .strip_suffix("_+_")
+        .is_some_and(|steam| steam.len() == 17 && steam.bytes().all(|byte| byte.is_ascii_digit()));
     (account.is_empty() || hex_id(account) || steam_prefix) && hex_id(product)
 }
 

@@ -86,6 +86,22 @@ fn validate(
         .transpose()?;
     let mut after = new.files;
     after.insert(OWNER.into(), digest(&journal.new_owner));
+    // A removed LanGame plugin can leave an owned ASA framework in use by
+    // other plugins. Its loader policy may change without reinstalling it.
+    if profile.module_id == ASA.module_id
+        && [PLUGIN, INFO, NOTICES]
+            .iter()
+            .all(|path| !journal.before.contains_key(*path))
+    {
+        for path in [PLUGIN, INFO, NOTICES] {
+            if old.as_ref().and_then(|owner| owner.files.get(path)) != after.get(path)
+                || !after.contains_key(path)
+            {
+                return Err("ARK framework update changed removed-plugin provenance".into());
+            }
+            after.remove(path);
+        }
+    }
     if journal.before.keys().ne(after.keys()) {
         return Err("ARK preparation journal has an unexpected file set".into());
     }
@@ -336,7 +352,22 @@ pub(super) fn publish(
     recover(&bin, profile, wanted)?;
     let owned = files::ownership(&bin, profile, wanted)?;
     files::preflight(&bin, profile, wanted, owned.as_ref())?;
-    if payload.keys().ne(wanted.keys())
+    let retained_framework = profile.module_id == ASA.module_id
+        && [PLUGIN, INFO, NOTICES]
+            .iter()
+            .all(|path| !payload.contains_key(*path));
+    if retained_framework {
+        for path in [PLUGIN, INFO, NOTICES] {
+            if files::read(&bin, path)?.is_some()
+                || owned.as_ref().and_then(|owner| owner.files.get(path)) != wanted.get(path)
+            {
+                return Err("ARK framework update requires an unchanged, removed plugin".into());
+            }
+        }
+    }
+    if payload.keys().ne(wanted
+        .keys()
+        .filter(|path| !retained_framework || !matches!(path.as_str(), PLUGIN | INFO | NOTICES)))
         || payload
             .iter()
             .any(|(p, b)| b.len() > MAX_FILE || digest(b) != wanted[p])

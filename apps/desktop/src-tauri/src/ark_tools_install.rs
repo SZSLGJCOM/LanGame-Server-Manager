@@ -16,6 +16,10 @@ mod download;
 mod files;
 #[path = "ark_tools_uninstall.rs"]
 mod removal;
+#[path = "ark_tools_startup.rs"]
+mod startup;
+#[path = "ark_tools_symbols.rs"]
+mod symbols;
 #[path = "ark_tools_install_transaction.rs"]
 mod transaction;
 
@@ -34,7 +38,9 @@ pub(super) struct EmbeddedArkTools {
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub(super) struct InstallStatus {
+    // Installed files are intact; runtime protocol compatibility is checked by RCON.
     pub(super) ready: bool,
+    matches_bundle: bool,
     pub(super) can_uninstall: bool,
     pub(super) issue: Option<String>,
     pub(super) framework_version: &'static str,
@@ -139,32 +145,32 @@ fn embedded_files(
             include_bytes!("../../../../modules/ark-tools/THIRD_PARTY_NOTICES.txt").to_vec(),
         ),
     ]);
-    // The tool page discloses and obtains consent for ASA's executable-hash
-    // request to these pinned upstream cache providers before preparation.
-    let mut settings = serde_json::json!({
-        "AutomaticPluginReloading": false,
-        "AutomaticPluginReloadSeconds": 5,
-        "SaveWorldBeforePluginReload": true
-    });
     if profile.module_id == ASA.module_id {
         let proxy = embedded
             .proxy
             .ok_or("The embedded ASA loader is unavailable")?;
         dll(proxy)?;
         result.insert("version.dll".into(), proxy.to_vec());
+    }
+    result.insert("config.json".into(), managed_configuration(profile, false)?);
+    Ok(result)
+}
+
+fn managed_configuration(profile: &Profile, automatic_download: bool) -> Result<Vec<u8>, String> {
+    let mut settings = serde_json::json!({
+        "AutomaticPluginReloading": false,
+        "AutomaticPluginReloadSeconds": 5,
+        "SaveWorldBeforePluginReload": true
+    });
+    if profile.module_id == ASA.module_id {
         settings["AttachToParent"] = false.into();
         settings["AutomaticCacheDownload"] = serde_json::json!({
-            "Enable": true,
+            "Enable": automatic_download,
             "DownloadCacheURL": "https://cdn.pelayori.com/cache/",
             "DownloadCacheURLs": ["https://cdn.pelayori.com/cache/", "https://cdn.shadowhunter.co.za/cache/", "https://cdn.shadowhunter-systems.co.za/cache/"]
         });
     }
-    result.insert(
-        "config.json".into(),
-        serde_json::to_vec_pretty(&serde_json::json!({"settings":settings}))
-            .map_err(|e| e.to_string())?,
-    );
-    Ok(result)
+    serde_json::to_vec_pretty(&serde_json::json!({"settings":settings})).map_err(|e| e.to_string())
 }
 
 fn expected(
@@ -187,6 +193,7 @@ fn expected(
 fn status(profile: &Profile, issue: Option<String>, can_uninstall: bool) -> InstallStatus {
     InstallStatus {
         ready: issue.is_none(),
+        matches_bundle: false,
         can_uninstall,
         issue,
         framework_version: profile.version,
@@ -228,7 +235,10 @@ fn inspect_profile(
             false,
         ));
     }
-    for (path, hash) in &wanted {
+    // A different manager build must not erase a valid installation. Ownership
+    // still pins dependencies/configuration; verify installed plugin bytes against
+    // their recorded hashes and leave compatibility to the runtime handshake.
+    for (path, hash) in &owned.files {
         let actual = files::read(&bin, path)?;
         if actual.as_ref().map(|b| digest(b)).as_ref() != Some(hash) {
             return Ok(status(
@@ -238,14 +248,10 @@ fn inspect_profile(
             ));
         }
     }
-    if owned.files != wanted {
-        return Ok(status(
-            profile,
-            Some("Update the ARK server extension while this instance is stopped".into()),
-            can_uninstall,
-        ));
-    }
-    Ok(status(profile, None, can_uninstall))
+    Ok(InstallStatus {
+        matches_bundle: owned.files == wanted,
+        ..status(profile, None, can_uninstall)
+    })
 }
 
 pub(super) fn uninstall(
@@ -278,17 +284,31 @@ pub(super) async fn install(
     let wanted = expected(profile, embedded)?;
     let check_root = root.clone();
     let check_wanted = wanted.clone();
-    let already_ready = tokio::task::spawn_blocking(move || {
+    let inspected = tokio::task::spawn_blocking(move || {
         let (bin, _pins) = files::runtime(&check_root, profile.executable)?;
         removal::recover_all(&bin, profile, &check_wanted)?;
         let owned = files::ownership(&bin, profile, &check_wanted)?;
         files::preflight(&bin, profile, &check_wanted, owned.as_ref())?;
-        inspect(&check_root, profile.module_id, embedded).map(|s| s.ready)
+        inspect(&check_root, profile.module_id, embedded)
     })
     .await
     .map_err(|e| format!("ARK extension inspection task failed: {e}"))??;
-    if already_ready {
-        return Ok(status(profile, None, true));
+    // Symbol acquisition is an explicit stopped-instance operation, including
+    // re-entry after the game executable changes with an intact plugin bundle.
+    let symbols = if profile.module_id == ASA.module_id {
+        Some(symbols::prepare(root.clone(), report.clone()).await?)
+    } else {
+        None
+    };
+    // Explicit preparation can still replace an intact previous build. Only an
+    // intact installation of this exact bundle can skip publication.
+    if inspected.matches_bundle {
+        if let Some(symbols) = symbols {
+            tokio::task::spawn_blocking(move || symbols.publish())
+                .await
+                .map_err(|error| format!("ASA symbol publication task failed: {error}"))??;
+        }
+        return Ok(inspected);
     }
     let bytes = download::fetch(package, preference, &report).await?;
     tokio::task::spawn_blocking(move || {
@@ -301,6 +321,9 @@ pub(super) async fn install(
             total_bytes: None,
         });
         publish(&root, profile, payload, &wanted)?;
+        if let Some(symbols) = symbols {
+            symbols.publish()?;
+        }
         inspect(&root, &module_id, embedded)
     })
     .await
@@ -392,30 +415,11 @@ pub(super) fn ensure_can_start(root: &Path) -> Result<(), String> {
     Ok(())
 }
 
-/// Startup may use an intact previously installed proxy/plugin. Their build
-/// hashes can differ from this manager while the pinned framework is unchanged.
-pub(super) fn has_owned_asa_framework(
+pub(super) fn refresh_owned_asa_proxy(
     root: &Path,
     embedded: EmbeddedArkTools,
-) -> Result<bool, String> {
-    let wanted = expected(&ASA, embedded)?;
-    let (bin, _pins) = files::runtime(root, ASA.executable)?;
-    if transaction::pending(&bin)? || removal::pending(&bin)? {
-        return Ok(false);
-    }
-    let Some(owned) = files::ownership(&bin, &ASA, &wanted)? else {
-        return Ok(false);
-    };
-    for (path, hash) in owned.files {
-        if files::read(&bin, &path)?
-            .as_ref()
-            .map(|bytes| digest(bytes))
-            != Some(hash)
-        {
-            return Ok(false);
-        }
-    }
-    Ok(true)
+) -> Result<(), String> {
+    startup::refresh(root, embedded)
 }
 
 #[cfg(test)]

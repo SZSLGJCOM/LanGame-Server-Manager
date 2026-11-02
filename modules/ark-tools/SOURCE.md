@@ -32,8 +32,13 @@ The build emits `LgsmArkTools-ase.dll`, `LgsmArkTools-asa.dll`, and
 `asa-version.dll`. The installer selects an edition and deploys the plugin as
 `ArkApi/Plugins/LgsmArkTools/LgsmArkTools.dll` with its metadata and notices.
 
-The tool page keeps connection checking separate from uninstalling. Removal
-requires the entire instance to be stopped, and validates the recorded ownership
+The tool page keeps installation detection separate from runtime connection checks.
+Installation detection verifies the recorded ownership and file hashes, so an
+intact plugin from a previous manager build remains installed after reentry.
+An explicit check/update prepares the current bundle and, for ASA, symbols for
+the selected server executable. Tool protocol availability is checked separately
+by the RCON handshake after the server starts.
+Removal requires the entire instance to be stopped, and validates the recorded ownership
 and file hashes before changing files. It removes the LanGame plugin; when other
 plugins are present, their shared API framework remains. Otherwise the unchanged
 framework files installed by LanGame are removed too. Saved worlds, creatures,
@@ -141,8 +146,18 @@ Wiki downloads surviving a native cache reopen. Browser artwork checks use
 controlled player snapshots, with downloaded Wiki JPEGs for visual evidence.
 These checks do not replace a real connected-player test on each game build.
 
-ASA framework startup obtains an executable-hash-matched offset cache from its
-maintainer CDN. That network dependency is separate from compilation and must
-be disclosed by the install flow. The proxy forwards the system Version.dll
-exports and initializes the adjacent framework without replacing the original
-game executable. It checks long-path buffer bounds before loading either DLL.
+Explicit ASA extension preparation obtains an executable-hash-matched offset
+cache from the maintainer CDNs declared in `ark_tools_symbols.rs`. It validates
+the bounded archive and both cache maps before atomically selecting a complete
+generation; existing caches remain available if preparation fails. The request
+contains the server executable's SHA-256, not its contents or local path.
+
+Ordinary startup does not download symbols. After program updates, the manager
+refreshes its owned ASA proxy and configuration through the existing installation
+transaction, including a framework retained after plugin removal. It preserves
+plugin bytes, removed-plugin state, saves and caches. Modified or unowned files
+are not replaced. The proxy keeps system Version.dll forwarding available and
+initializes the optional framework only with a locally verified, executable-bound
+cache and automatic downloads disabled. It holds the selected files while the
+framework reads them. Missing or incompatible cache data disables the extension;
+it does not turn startup into a symbol download wait.

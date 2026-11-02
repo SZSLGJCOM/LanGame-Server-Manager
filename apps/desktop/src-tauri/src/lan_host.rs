@@ -1449,13 +1449,16 @@ pub(crate) fn dispatch_command<'a>(
             )
         }),
         "record_startup_session_diagnostic" => boxed_command(|| async move {
-            to_json(commands::record_startup_session_diagnostic(
-                app_handle.state::<DesktopState>(),
-                arg(&args, "instanceId", "instance_id")?,
-                arg(&args, "attemptId", "attempt_id")?,
-                arg(&args, "diagnosticId", "diagnostic_id")?,
-                arg(&args, "message", "message")?,
-            ).await?)
+            to_json(
+                commands::record_startup_session_diagnostic(
+                    app_handle.state::<DesktopState>(),
+                    arg(&args, "instanceId", "instance_id")?,
+                    arg(&args, "attemptId", "attempt_id")?,
+                    arg(&args, "diagnosticId", "diagnostic_id")?,
+                    arg(&args, "message", "message")?,
+                )
+                .await?,
+            )
         }),
         "create_instance_record" => boxed_command(|| async move {
             to_json(

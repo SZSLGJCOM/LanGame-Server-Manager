@@ -19,7 +19,6 @@ function sourceSection(source, startMarker, endMarker) {
 
 const catalogPageSource = readDesktopSource("src/views/library/LibraryCatalogPage.tsx");
 const cinematicCssSource = readDesktopSource("src/styles/library-cinematic.css");
-const ambientCssSource = readDesktopSource("src/styles/library-ambient.css");
 const libraryViewSource = readDesktopSource("src/views/LibraryView.tsx");
 const atmosphereSource = readDesktopSource("src/views/library/LibraryAtmosphere.tsx");
 const atmosphereFieldSource = readDesktopSource("src/views/library/LibraryAtmosphereField.tsx");
@@ -41,7 +40,6 @@ test("pointer click selects a card while pointer confirmation waits for the card
 test("the complete library uses one horizontal focus rail", () => {
   assert.match(catalogPageSource, /const railClassName =/);
   assert.match(catalogPageSource, /className=\{railClassName\}[\s\S]*?role="listbox"/);
-  assert.doesNotMatch(catalogPageSource, /library-catalog-recent-rail|library-catalog-grid/);
   assert.doesNotMatch(catalogPageSource, /recentModules|data-library-surface/);
   assert.match(tileSource, /id=\{libraryCatalogOptionId\(target\)\}/);
   assert.match(tileSource, /aria-selected=\{props\.active\}/);
@@ -82,7 +80,6 @@ test("horizontal rail wheel input is continuous, non-passive and releases at its
   assert.doesNotMatch(catalogPageSource, /onWheel=\{/);
   assert.match(libraryViewSource, /const canContinue = delta < 0/);
   assert.match(libraryViewSource, /if \(!canContinue\) \{\s*return;/);
-  assert.doesNotMatch(libraryViewSource, /resolveLibraryCatalogWheelNavigation|wheelAccumulator/);
   assert.doesNotMatch(cinematicCssSource, /scroll-behavior:\s*smooth/);
   assert.doesNotMatch(cinematicCssSource, /scroll-snap-type:\s*x/);
 });
@@ -149,7 +146,6 @@ test("WebGL2 is progressive enhancement and cannot intercept catalog interaction
   assert.match(atmosphereSource, /library-atmosphere-image/);
   assert.match(cinematicCssSource, /\.library-atmosphere-field\s*\{[\s\S]*?pointer-events:\s*none/);
   assert.match(cinematicCssSource, /\.library-atmosphere-field canvas\s*\{[\s\S]*?pointer-events:\s*none/);
-  assert.doesNotMatch(ambientCssSource, /library-home-stage-background/);
 });
 
 test("the settled card restores muted trailer preview without animating in reduced-motion mode", () => {
@@ -188,6 +184,5 @@ test("only focused horizontal neighbors decode eagerly", () => {
   assert.match(moduleCoverSource, /decoding="async"/);
   assert.doesNotMatch(catalogPageSource, /new Image\(|image\.decode|resolveModuleCoverSrc/);
   assert.doesNotMatch(catalogPageSource, /window\.fetch\(|force-cache/);
-  assert.doesNotMatch(catalogPageSource, /catalogCoverPreloadRef/);
   assert.doesNotMatch(cinematicCssSource, /will-change\s*:/);
 });

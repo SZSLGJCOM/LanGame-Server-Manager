@@ -45,9 +45,12 @@ test("startup boundaries belong only to their captured instance", (t) => {
 });
 
 for (const subscription of ["log", "event recovery"]) {
+  // These cases isolate registration completion from the receipt-driven
+  // listener handoff, which the real-browser lifecycle fixture covers.
+  const readLogDocument = () => new Promise(() => {});
   const mount = (registration) => subscription === "log"
-    ? mountWorkbench(registration)
-    : mountWorkbench({ promise: Promise.resolve(() => {}) }, { recoveryRegistration: registration });
+    ? mountWorkbench(registration, { readLogDocument })
+    : mountWorkbench({ promise: Promise.resolve(() => {}) }, { recoveryRegistration: registration, readLogDocument });
 
   test(`failed native ${subscription} subscription is handled while the workbench remains mounted`, async (t) => {
     const warnings = [];

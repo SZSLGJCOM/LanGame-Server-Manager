@@ -172,6 +172,10 @@ export function ArkClusterPanel({ instanceId, readReport, operate, onChanged }: 
         <strong>{member.instance_name}</strong>：{member.outcome === "failed" ? member.message
           : member.outcome === "skipped" ? text("已处于目标状态，跳过", "Already in the requested state; skipped")
             : result.action === "start" ? text("已启动", "Started") : text("已停止", "Stopped")}
+        {member.auto_backup_error ? <span className="ark-cluster-error">{text(
+          `；自动备份失败：${member.auto_backup_error}`,
+          `; Automatic backup failed: ${member.auto_backup_error}`
+        )}</span> : null}
       </li>)}</ul>
     </div> : null}
   </section>;

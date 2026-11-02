@@ -254,8 +254,7 @@ async fn active_steam_retention_blocks_every_storage_role_without_moving_files()
             Arc::new(|_| {}),
         )
         .await
-        .err()
-        .expect("active recovery must block migration");
+        .expect_err("active recovery must block migration");
         assert!(
             error
                 .to_string()

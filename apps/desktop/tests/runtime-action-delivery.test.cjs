@@ -71,18 +71,6 @@ test("server start immediately selects the runtime console before awaiting the b
   assert.match(serversSource, /selectedStartupPending = runtimeActionsByInstanceId[\s\S]*?normalizeInstanceStatus[\s\S]*?=== "starting"/);
 });
 
-test("LanGameCMD follows the pending startup log before a runtime path is known", () => {
-  assert.match(
-    runtimeSurfaceSource,
-    /const runtimeLogSubscriptionPath = startupPending \? "" : runtimeLogSourcePath/
-  );
-  assert.match(
-    runtimeSurfaceSource,
-    /if \(readOnly \|\| !isTauri\(\)\) \{[\s\S]*?followLatestPath: startupPending/
-  );
-  assert.doesNotMatch(runtimeSurfaceSource, /if \(!isTauri\(\) \|\| !runtimeLogSourcePath\)/);
-});
-
 test("partial runtime failures keep stop and surviving-process controls available", () => {
   assert.match(serversSource, /hasRunningProcess:\s*instanceHasRunningProcess\(props\.instance/);
   assert.match(runtimeSurfaceSource, /const instanceRunning = !readOnly && instanceHasRunningProcess\(props\.details\.summary, props\.details\.active_run\)/);

@@ -44,11 +44,11 @@ export function ArkToolsExtensionActions({ instanceId, instanceName, status, set
 
   const disabled = !host || !stopped || working || checking || installation.recovering;
   const commonHelp = !host ? text("请在本机桌面客户端管理服务端扩展。", "Manage the server extension in the local desktop client.")
-    : !stopped ? text("请先停止实例再安装或卸载服务端扩展。", "Stop the instance before installing or uninstalling the server extension.")
+    : !stopped ? text("请先停止实例再安装、更新或卸载服务端扩展。", "Stop the instance before installing, updating, or uninstalling the server extension.")
     : working ? text("正在处理当前操作，请稍候。", "The current operation is in progress. Please wait.")
     : checking || installation.recovering ? text("正在检查服务端扩展，请稍候。", "Checking the server extension. Please wait.") : null;
   const installHelp = commonHelp ?? (extension?.installed
-    ? text("服务端扩展已安装。", "The server extension is already installed.")
+    ? text("检查并更新本实例的服务端扩展；已是当前版本时无需重新安装。", "Check and update this instance's server extension. The current version does not need to be reinstalled.")
     : text("安装本实例的玩家地图与生物工具扩展。", "Install the player-map and creature-tools extension for this instance."));
   const removalHelp = commonHelp ?? (extension?.canUninstall
     ? text("卸载本实例的玩家地图与生物工具扩展。", "Uninstall the player-map and creature-tools extension for this instance.")
@@ -57,9 +57,9 @@ export function ArkToolsExtensionActions({ instanceId, instanceName, status, set
   return <>
     <ConfigurationActionHelp reason={installHelp}>
       <button type="button" className="secondary-button ark-spawn-tool" data-ark-tools-action="install"
-        aria-label={text("安装服务端扩展", "Install server extension")} disabled={disabled || Boolean(extension?.installed)}
-        onClick={() => { if (!disabled && !extension?.installed) { setError(null); installation.install(); } }}>
-        <ShellIcon name={installation.active ? "loader" : "download"} /><span>{text("安装", "Install")}</span>
+        aria-label={extension?.installed ? text("检查并更新服务端扩展", "Check and update server extension") : text("安装服务端扩展", "Install server extension")} disabled={disabled}
+        onClick={() => { if (!disabled) { setError(null); installation.install(); } }}>
+        <ShellIcon name={installation.active ? "loader" : "download"} /><span>{extension?.installed ? text("检查并更新", "Update") : text("安装", "Install")}</span>
       </button>
     </ConfigurationActionHelp>
     <ConfigurationActionHelp reason={removalHelp}>
@@ -78,7 +78,7 @@ export function ArkToolsExtensionActions({ instanceId, instanceName, status, set
     </ConfigurationActionHelp>
     <div className="ark-extension-feedback">
       {!installation.progress && installation.issue ? <ActivityNotice tone="warning">{text("安装进度暂时不可用：", "Installation progress is unavailable: ") + installation.issue.message}</ActivityNotice> : null}
-      <ActivityNotice tone="error">{error ?? installation.removalError ?? ""}</ActivityNotice>
+      <ActivityNotice tone="error">{error ?? installation.removalError ?? extension?.issue ?? ""}</ActivityNotice>
       <ActivityNotice tone="success">{installation.removalResult ? installation.removalResult.frameworkRetained
         ? text("服务端扩展已卸载，存档与已生成生物已保留。其他 ArkApi 插件仍在使用共享框架，框架已保留。", "Server extension uninstalled. Saves and spawned creatures are preserved. The shared framework was retained for other ArkApi plugins.")
         : text("服务端扩展已卸载，存档与已生成生物已保留。", "Server extension uninstalled. Saves and spawned creatures are preserved.") : ""}</ActivityNotice>

@@ -26,6 +26,7 @@ pub struct ArkClusterMemberOperation {
     pub instance_name: String,
     pub outcome: String,
     pub message: String,
+    pub auto_backup_error: Option<String>,
 }
 
 #[derive(Debug, Serialize)]
@@ -68,6 +69,7 @@ pub async fn operate_ark_cluster(
     validate_membership(&report, &input.expected_identity, input.action)?;
     let mut outcomes = Vec::with_capacity(report.members.len());
     for member in report.members {
+        let mut auto_backup_error = None;
         // The visible member list is a precondition, not authority to operate a
         // newly regrouped server. Recheck before each normal lifecycle command.
         let result: Result<(&str, String), String> = async {
@@ -131,12 +133,13 @@ pub async fn operate_ark_cluster(
                     ))
                 }
                 ArkClusterAction::Stop => {
-                    commands_runtime_lifecycle::stop_instance_process(
+                    let stopped = commands_runtime_lifecycle::stop_instance_process(
                         state.clone(),
                         member.summary.id.clone(),
                         None,
                     )
                     .await?;
+                    auto_backup_error = stopped.auto_backup_error;
                     Ok((
                         "succeeded",
                         "Stopped through the managed instance lifecycle".to_owned(),
@@ -154,6 +157,7 @@ pub async fn operate_ark_cluster(
             instance_name: member.summary.name,
             outcome: outcome.to_owned(),
             message,
+            auto_backup_error,
         });
     }
     Ok(ArkClusterOperationResult {

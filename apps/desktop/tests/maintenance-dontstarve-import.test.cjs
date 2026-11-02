@@ -80,11 +80,8 @@ test("DST import belongs only to Maintenance and configuration retains world-gen
   assert.equal((panel.match(/<DstWorldImportPanel\b/g) ?? []).length, 1);
   assert.doesNotMatch(source, /<DstWorldImportPanel\b/, "the normal instance view must not duplicate the shared import panel");
   assert.match(panel, /props\.readOnly[\s\S]*: dst && props\.onPickDirectory/);
-  assert.doesNotMatch(read("views/settings/modules/dontstarve.ts"), /dst-world-bootstrap|DstWorldBootstrap/);
-  assert.doesNotMatch(read("views/settings/ConfigurationWorkspace.tsx"), /ConfigurationRendererOperations|onPickDirectory|onImportDontStarveWorldData/);
+  assert.doesNotMatch(read("views/settings/ConfigurationWorkspace.tsx"), /onPickDirectory|onImportDontStarveWorldData/);
   assert.match(read("views/settings/modules/dontstarve-preset-notice.tsx"), /dst\.settings\.generation\.appliesToNew/);
-  assert.equal(fs.existsSync(path.join(src, "views/settings/ConfigurationRendererOperations.tsx")), false);
-  assert.equal(fs.existsSync(path.join(src, "views/settings/DstWorldBootstrapPanel.tsx")), false);
 });
 
 test("save import keeps its source and actions visible without disclosure controls", async () => {

@@ -253,8 +253,8 @@ impl Drop for Fixture {
 
 #[test]
 fn runtime_health_nightingale_listener_and_map_load_precede_realm_readiness() {
-    // Run 69 bound the socket and loaded the map before reporting that it
-    // was still waiting for the RRP levels. Neither event proves join readiness.
+    // The server can bind its socket and load the map while still waiting
+    // for RRP levels. Neither event proves join readiness.
     for line in [
         "LogNet: IpNetDriver listening on port 7784",
         "LogGlobalStatus: UEngine::LoadMap Load map complete /Game/NWX/Maps/Temporal/Forest/TestRealm",

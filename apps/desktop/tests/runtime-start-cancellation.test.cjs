@@ -189,6 +189,34 @@ test("ordinary running stop does not send a startup cancellation identity", asyn
   stop.finish();
 });
 
+test("successful stop reports automatic backup failure without treating the stop as failed", async () => {
+  let stopCalls = 0;
+  const actions = harness({ stopInstance: async () => {
+    stopCalls++;
+    return { outcome: "stopped", auto_backup_error: "Backup destination is not writable" };
+  } });
+  await actions.stop("asa");
+  assert.equal(stopCalls, 1);
+  assert.deepEqual(actions.calls, ["refresh"]);
+  assert.equal(actions.activities.at(-1).key, "activity.serverStoppedBackupFailed");
+  assert.equal(actions.activities.at(-1).params.message, "Backup destination is not writable");
+  assert.equal(actions.activities.at(-1).tone, "warning");
+  assert.deepEqual(actions.logs, []);
+});
+
+test("a refresh failure retains the completed stop's backup warning", async () => {
+  let completed;
+  const actions = harness({
+    stopInstance: async () => ({ outcome: "stopped", auto_backup_error: "Disk is full" }),
+    options: { setActivity() {}, reloadBootstrap: async () => { throw new Error("Refresh unavailable"); }, markRuntimeRefreshed() {} },
+    reportOperationRefreshFailure: value => { completed = value; }
+  });
+  await actions.stop("asa");
+  assert.equal(completed.key, "activity.serverStoppedBackupFailed");
+  assert.equal(completed.params.message, "Disk is full");
+  assert.equal(completed.tone, "warning");
+});
+
 test("startup cancellation cleanup failure remains visible after a late start failure", async () => {
   const entered = deferred(), startReply = deferred();
   const actions = harness({

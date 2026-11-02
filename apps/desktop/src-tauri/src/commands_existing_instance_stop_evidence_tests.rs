@@ -18,6 +18,7 @@ fn scope() -> StartedScope {
 fn stopped() -> StopInstanceResult {
     StopInstanceResult {
         outcome: app_core::StopInstanceOutcome::Stopped,
+        auto_backup_error: None,
         summary: InstanceSummary {
             id: "test-instance".into(),
             module_id: "fixture".into(),

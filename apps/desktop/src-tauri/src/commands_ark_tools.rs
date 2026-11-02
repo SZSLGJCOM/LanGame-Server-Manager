@@ -150,8 +150,18 @@ pub(super) async fn ensure_can_start_instance(details: &InstanceDetails) -> Resu
         .map_err(|error| format!("ARK extension recovery inspection failed: {error}"))?
 }
 
-pub(super) fn has_owned_asa_framework_for_start(root: &Path) -> Result<bool, String> {
-    install::has_owned_asa_framework(root, embedded("arksurvivalascended")?)
+pub(super) async fn refresh_owned_asa_proxy_for_start(
+    details: &InstanceDetails,
+) -> Result<(), String> {
+    if details.summary.module_id != "arksurvivalascended" {
+        return Ok(());
+    }
+    let root = app_storage::resolve_instance_runtime_root(instance_root(details)?)
+        .map_err(|error| error.to_string())?;
+    let payload = embedded("arksurvivalascended")?;
+    tokio::task::spawn_blocking(move || install::refresh_owned_asa_proxy(&root, payload))
+        .await
+        .map_err(|error| format!("ASA loader safety preparation task failed: {error}"))?
 }
 
 pub(super) async fn ensure_endpoint(details: &InstanceDetails) -> Result<(), String> {

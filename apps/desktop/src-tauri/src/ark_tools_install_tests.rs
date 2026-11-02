@@ -1,5 +1,8 @@
 use super::*;
 
+#[path = "ark_tools_startup_tests.rs"]
+mod startup;
+
 pub(super) struct Fixture(pub(super) PathBuf, bool);
 
 impl Fixture {
@@ -236,6 +239,47 @@ fn inspection_embedded(previous: bool) -> EmbeddedArkTools {
     }
 }
 
+#[test]
+fn asa_managed_configuration_disables_implicit_symbol_download() {
+    let files = embedded_files(&ASA, inspection_embedded(false)).unwrap();
+    let configuration: serde_json::Value = serde_json::from_slice(&files["config.json"]).unwrap();
+    assert_eq!(
+        configuration["settings"]["AutomaticCacheDownload"]["Enable"], false,
+        "only explicit extension preparation may download executable-matched symbols"
+    );
+}
+
+#[test]
+fn asa_explicit_update_recognizes_only_exact_previous_managed_configuration() {
+    let (fixture, profile) = inspection_fixture(&ASA, true);
+    let previous_config = managed_configuration(&ASA, true).unwrap();
+    let owner_path = fixture.bin().join(OWNER);
+    let mut owned: Ownership = serde_json::from_slice(&fs::read(&owner_path).unwrap()).unwrap();
+    owned
+        .files
+        .insert("config.json".into(), digest(&previous_config));
+    fs::write(fixture.bin().join("config.json"), previous_config).unwrap();
+    fs::write(&owner_path, serde_json::to_vec(&owned).unwrap()).unwrap();
+    let status = inspect_profile(&fixture.0, &profile, inspection_embedded(false)).unwrap();
+    assert!(status.ready && status.can_uninstall && !status.matches_bundle);
+    let mut payload = embedded_files(&profile, inspection_embedded(false)).unwrap();
+    payload.insert(profile.payload[0].0.into(), b"framework".to_vec());
+    let wanted = hashes(&payload);
+    publish(&fixture.0, &profile, payload, &wanted).unwrap();
+    let updated: serde_json::Value =
+        serde_json::from_slice(&fs::read(fixture.bin().join("config.json")).unwrap()).unwrap();
+    assert_eq!(
+        updated["settings"]["AutomaticCacheDownload"]["Enable"],
+        false
+    );
+    assert!(
+        inspect_profile(&fixture.0, &profile, inspection_embedded(false))
+            .unwrap()
+            .matches_bundle
+    );
+    fixture.finish();
+}
+
 fn inspection_fixture(base: &Profile, previous: bool) -> (Fixture, Profile) {
     let fixture = Fixture::new();
     fs::write(fixture.bin().join(base.executable), b"server executable").unwrap();
@@ -271,6 +315,7 @@ fn ark_tools_inspection_preserves_complete_previous_build_on_reentry() {
         for _ in 0..3 {
             let status = inspect_profile(&fixture.0, &profile, inspection_embedded(false)).unwrap();
             assert!(status.ready, "{}: {:?}", profile.module_id, status.issue);
+            assert!(!status.matches_bundle);
             assert!(status.can_uninstall);
             assert!(status.issue.is_none());
         }
@@ -284,11 +329,8 @@ fn ark_tools_inspection_preserves_complete_previous_build_on_reentry() {
 fn ark_tools_inspection_still_rejects_missing_or_modified_files() {
     for base in [&ASE, &ASA] {
         let (fixture, profile) = inspection_fixture(base, false);
-        assert!(
-            inspect_profile(&fixture.0, &profile, inspection_embedded(false))
-                .unwrap()
-                .ready
-        );
+        let status = inspect_profile(&fixture.0, &profile, inspection_embedded(false)).unwrap();
+        assert!(status.ready && status.matches_bundle);
         for path in [PLUGIN, INFO, NOTICES, "config.json", profile.payload[0].0] {
             let file = fixture.bin().join(path);
             let original = fs::read(&file).unwrap();
@@ -298,9 +340,10 @@ fn ark_tools_inspection_still_rejects_missing_or_modified_files() {
                 } else {
                     fs::write(&file, b"changed after installation").unwrap();
                 }
-                let status = inspect_profile(&fixture.0, &profile, inspection_embedded(false))
-                    .unwrap();
+                let status =
+                    inspect_profile(&fixture.0, &profile, inspection_embedded(false)).unwrap();
                 assert!(!status.ready, "{}: {path}", profile.module_id);
+                assert!(!status.matches_bundle);
                 assert!(status.can_uninstall);
                 assert!(status.issue.as_deref().unwrap().contains(path));
                 fs::write(&file, &original).unwrap();
@@ -311,6 +354,22 @@ fn ark_tools_inspection_still_rejects_missing_or_modified_files() {
 }
 
 #[test]
+fn ark_tools_inspection_does_not_accept_an_interrupted_installation_or_removal() {
+    let (fixture, profile) = inspection_fixture(&ASE, false);
+    for path in [
+        ".langame-ark-tools-pending",
+        ".langame-ark-tools-uninstall-pending",
+    ] {
+        fs::create_dir(fixture.bin().join(path)).unwrap();
+        let status = inspect_profile(&fixture.0, &profile, inspection_embedded(false)).unwrap();
+        assert!(!status.ready && !status.matches_bundle);
+        assert!(status.issue.as_deref().unwrap().contains("interrupted"));
+        fs::remove_dir(fixture.bin().join(path)).unwrap();
+    }
+    fixture.finish();
+}
+
+#[test]
 fn ark_tools_inspection_still_requires_pinned_dependencies_and_configuration() {
     for base in [&ASE, &ASA] {
         let (fixture, profile) = inspection_fixture(base, true);
@@ -318,10 +377,12 @@ fn ark_tools_inspection_still_requires_pinned_dependencies_and_configuration() {
         let original = fs::read(&owner_path).unwrap();
         for path in ["config.json", profile.payload[0].0] {
             let mut owned: Ownership = serde_json::from_slice(&original).unwrap();
-            owned.files.insert(path.into(), digest(b"unrecognized profile"));
+            owned
+                .files
+                .insert(path.into(), digest(b"unrecognized profile"));
             fs::write(&owner_path, serde_json::to_vec(&owned).unwrap()).unwrap();
-            let error = inspect_profile(&fixture.0, &profile, inspection_embedded(false))
-                .unwrap_err();
+            let error =
+                inspect_profile(&fixture.0, &profile, inspection_embedded(false)).unwrap_err();
             assert!(error.contains("unknown ownership") && error.contains(path));
         }
         fixture.finish();

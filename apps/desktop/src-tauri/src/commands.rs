@@ -362,11 +362,10 @@ pub use commands_storage::{
     create_instance_backup, create_instance_record, delete_instance_backup, ensure_storage_ready,
     import_dontstarve_world_data, list_instance_backups, list_instances_from_storage,
     read_instance_details_from_storage, read_instance_log_document_from_storage,
-    record_startup_session_diagnostic,
     read_instance_runtime_overview_from_storage, read_instance_runtime_window_snapshot,
-    read_palworld_operator_snapshot, read_sevendaystodie_operator_snapshot, rename_instance_backup,
-    restore_instance_backup, suppress_instance_runtime_windows, sync_modules_to_storage,
-    update_instance_record_if_current,
+    read_palworld_operator_snapshot, read_sevendaystodie_operator_snapshot,
+    record_startup_session_diagnostic, rename_instance_backup, restore_instance_backup,
+    suppress_instance_runtime_windows, sync_modules_to_storage, update_instance_record_if_current,
 };
 #[cfg(windows)]
 const CREATE_NO_WINDOW: u32 = 0x08000000;

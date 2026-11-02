@@ -229,7 +229,7 @@ async fn restart_scheduled_instance(
         InstanceShutdownSource::Manual,
     )
     .await?;
-    super::commands_instance_stop::backup_after_stop(
+    let auto_backup_error = super::commands_instance_stop::backup_after_stop(
         storage,
         &details,
         InstanceShutdownSource::Manual,
@@ -263,7 +263,10 @@ async fn restart_scheduled_instance(
         None,
     )
     .await?;
-    Ok("Scheduled restart completed.".into())
+    Ok(match auto_backup_error {
+        Some(error) => format!("Scheduled restart completed. Automatic backup failed: {error}"),
+        None => "Scheduled restart completed.".into(),
+    })
 }
 
 #[cfg(windows)]

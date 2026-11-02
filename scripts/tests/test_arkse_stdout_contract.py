@@ -35,7 +35,7 @@ class ArkseStdoutContractTests(unittest.TestCase):
 
     def test_native_game_log_launch_requests_the_installed_flush_switch(self) -> None:
         process = tomllib.loads((MODULE / "module.toml").read_text(encoding="utf-8"))["process"]
-        # Run 101's native document remained empty until shutdown flushed it.
+        # Native logs must remain readable while the server is running.
         # The installed file writer parses this flag and flushes after each line.
         self.assertEqual(process["args_template"].count("-FORCELOGFLUSH"), 1)
         for path in (MODULE / "config-fixtures").glob("*.json"):

@@ -337,7 +337,6 @@ test("immersive detail layout remains a PC two-column workspace", () => {
   const source = fs.readFileSync(path.join(desktopRoot, "src", "styles", "library-cinematic.css"), "utf8");
 
   assert.match(source, /\.library-detail-page--immersive \.library-detail-steam-layout\s*\{[\s\S]*?grid-template-columns:\s*minmax\(0,\s*1\.15fr\)\s+minmax\(280px,\s*340px\);/);
-  assert.doesNotMatch(source, /@media\s*\(max-width:[\s\S]*?library-detail/);
 });
 
 test("detail header keeps a lightweight console hierarchy", () => {

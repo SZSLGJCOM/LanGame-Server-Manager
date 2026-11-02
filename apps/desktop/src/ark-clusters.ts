@@ -51,6 +51,7 @@ export interface ArkClusterOperationResult {
     instance_name: string;
     outcome: "succeeded" | "skipped" | "failed";
     message: string;
+    auto_backup_error: string | null;
   }>;
 }
 

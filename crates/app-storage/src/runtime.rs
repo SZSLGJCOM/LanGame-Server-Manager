@@ -15,6 +15,8 @@ pub use game_log::{
     GameLogDocument, GameLogSnapshot, read_game_log_snapshot, read_game_log_snapshot_after_startup,
     read_instance_game_log_document,
 };
+#[path = "runtime_a2s_health.rs"]
+mod a2s_health;
 #[path = "runtime_console_health_evidence.rs"]
 mod console_health_evidence;
 #[path = "runtime_dragonwilds_health.rs"]
@@ -25,8 +27,6 @@ mod enshrouded_health;
 mod health_evidence;
 #[path = "runtime_health_snapshot.rs"]
 mod health_snapshot;
-#[path = "runtime_a2s_health.rs"]
-mod a2s_health;
 #[path = "runtime_nightingale_health.rs"]
 mod nightingale_health;
 #[path = "runtime_sonsoftheforest_health.rs"]
@@ -39,10 +39,10 @@ mod squad_health;
 mod theforest_health;
 #[path = "runtime_unturned_health.rs"]
 mod unturned_health;
-#[path = "runtime_windrose_health.rs"]
-mod windrose_health;
 #[path = "runtime_valheim_health.rs"]
 mod valheim_health;
+#[path = "runtime_windrose_health.rs"]
+mod windrose_health;
 pub use valheim_health::{ValheimLogHandoff, record_valheim_native_log};
 pub use windrose_health::{WindroseNativeStage, windrose_native_stage};
 #[path = "runtime_startup_readiness.rs"]
@@ -606,9 +606,7 @@ fn analyze_runtime_health_with_startup_evidence(
         // The console remains the run's public log. A bound native source is
         // private health evidence and never replaces stdout or save/stop logs.
         let Some(run) = active_run.filter(|run| {
-            run.run_id > 0
-                && run.log_path.is_some()
-                && run.log_path == recent_log.source_path
+            run.run_id > 0 && run.log_path.is_some() && run.log_path == recent_log.source_path
         }) else {
             return valheim_health::health(false, false);
         };
@@ -923,12 +921,7 @@ fn analyze_runtime_health(
 
     if matches!(
         module_id.as_str(),
-        "unturned"
-            | "squad"
-            | "soulmask"
-            | "theforest"
-            | "sonsoftheforest"
-            | "windrose"
+        "unturned" | "squad" | "soulmask" | "theforest" | "sonsoftheforest" | "windrose"
     ) {
         let same_run = active_run.is_some_and(|run| {
             run.run_id > 0 && run.log_path.is_some() && run.log_path == log_snapshot.source_path

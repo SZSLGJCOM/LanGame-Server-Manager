@@ -112,6 +112,17 @@ impl AssistantLifecycleLocale {
             }
         }
     }
+
+    fn with_stop_backup_warning(self, message: String, evidence: &Value) -> String {
+        let error = evidence["autoBackupError"]
+            .as_str()
+            .or_else(|| evidence["stopReceipt"]["autoBackupError"].as_str());
+        match (self, error) {
+            (Self::ZhCn, Some(error)) => format!("{message} 自动备份失败：{error}"),
+            (Self::En, Some(error)) => format!("{message} Automatic backup failed: {error}"),
+            (_, None) => message,
+        }
+    }
 }
 
 fn assistant_lifecycle_preview_copy(

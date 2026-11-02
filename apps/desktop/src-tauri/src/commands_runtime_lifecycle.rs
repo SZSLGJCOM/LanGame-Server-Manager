@@ -579,6 +579,7 @@ pub(super) async fn start_instance_process_after_reconcile_reserved(
                     instance,
                 )
                 .await?;
+                super::commands_ark_tools::refresh_owned_asa_proxy_for_start(&instance).await?;
                 Box::pin(super::commands_dragonwilds_player_query::prepare(
                     &instance,
                     &query_reservation,

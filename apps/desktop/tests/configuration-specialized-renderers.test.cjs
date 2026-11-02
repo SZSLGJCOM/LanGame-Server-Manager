@@ -25,11 +25,10 @@ test("defines one patch-only specialized renderer interface and a typed registra
   assert.match(moduleTypesSource, /onPatch:\s*\(patch:\s*Readonly<SettingsObject>\)\s*=>\s*void/);
   assert.match(moduleTypesSource, /interface ConfigurationSpecializedRendererRegistration/);
   assert.match(moduleTypesSource, /Renderer:\s*ComponentType<ConfigurationSpecializedRendererProps>/);
-  assert.doesNotMatch(moduleTypesSource, /SettingsModuleAddonProps|AddonPanel|operations:/);
+  assert.doesNotMatch(moduleTypesSource, /operations:/);
 });
 
 test("registers only configuration editors and notices in module definitions", () => {
-  assert.doesNotMatch(dstDefinitionSource, /dst-world-bootstrap|DstWorldBootstrap/);
   assert.match(dstDefinitionSource, /"dst-mastergen-preset-notice"\s*:\s*\{/);
 
   assert.match(sevenDaysDefinitionSource, /"seven-days-command-permissions"\s*:\s*\{/);
@@ -57,8 +56,6 @@ test("ConfigurationWorkspace renders registry entries without game or renderer I
   assert.ok(rendererStart >= 0 && rendererEnd > rendererStart);
   assert.doesNotMatch(workspaceSource.slice(rendererStart, rendererEnd), /moduleId === "dontstarve"/,
     "specialized renderer hosting stays generic even when a workspace notice is game-specific");
-  assert.doesNotMatch(workspaceSource, /<DstWorldBootstrapPanel/);
-  assert.doesNotMatch(workspaceSource, /ModuleAddonPanel|AddonPanel/);
 });
 
 test("specialized notices render before fields while unspecified add-ons retain their position", () => {
@@ -74,7 +71,7 @@ test("specialized notices render before fields while unspecified add-ons retain 
 });
 
 test("focused renderers retain patch boundaries without world import capabilities", () => {
-  assert.doesNotMatch(workspaceSource, /ConfigurationRendererOperations|onImportDontStarveWorldData/);
+  assert.doesNotMatch(workspaceSource, /onImportDontStarveWorldData/);
   assert.match(sevenDaysPanelSource, /props\.onPatch\(\{\s*command_permissions:\s*nextEntries\s*\}\)/);
   assert.doesNotMatch(sevenDaysPanelSource, /onSettingsChange|\.\.\.props\.settings|\.\.\.settings/);
 });

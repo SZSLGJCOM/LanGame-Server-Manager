@@ -199,6 +199,8 @@ class Runner:
         else:
             self.cargo("build", "-p", "langame-desktop", "--features", "desktop-reliability", "--locked")
             executable = ROOT / "target/debug/langame-desktop.exe"
+        self.run([shutil.which("pwsh") or "powershell", "-NoProfile", "-File",
+                  "scripts/test_asa_version_proxy.ps1", "-OutDir", str(self.args.output / "asa-proxy")])
         self.node("apps/desktop/scripts/verify_desktop_reliability.cjs", "--executable", str(executable),
                   "--output", str(self.args.output / "desktop/report.json"), browser=True)
         if self.args.nsis_root:

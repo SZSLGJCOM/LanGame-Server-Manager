@@ -46,7 +46,11 @@ pub(super) fn read(
             ));
         }
         // A checkpoint may end at CR before the producer writes its paired LF.
-        let bytes = if pending_lf { bytes.strip_prefix(b"\n").unwrap_or(&bytes) } else { &bytes };
+        let bytes = if pending_lf {
+            bytes.strip_prefix(b"\n").unwrap_or(&bytes)
+        } else {
+            &bytes
+        };
         let normalized = String::from_utf8_lossy(bytes)
             .replace("\r\n", "\n")
             .replace('\r', "\n");

@@ -111,6 +111,21 @@ test("cluster conflicts block start while keeping stop available", async () => {
   state.unmount();
 });
 
+test("cluster stop preserves success while displaying an automatic backup failure", async () => {
+  const state = harness(undefined, async () => ({ action: "stop", members: [{
+    instance_id: "island", instance_name: "Island", outcome: "succeeded", message: "Stopped",
+    auto_backup_error: "Backup destination is not writable"
+  }] }));
+  state.render(); await settle();
+  state.render().buttons.find(button => button.props.children === "Stop cluster").props.onClick();
+  await settle();
+  const html = state.render().html;
+  assert.match(html, /1 completed, 0 skipped, 0 failed/);
+  assert.match(html, /Stopped/);
+  assert.match(html, /Automatic backup failed: Backup destination is not writable/);
+  state.unmount();
+});
+
 test("late inspection and operation results cannot overwrite another selected instance or an unmounted panel", async () => {
   const initial = deferred();
   const state = harness((id) => id === "island" ? initial.promise : Promise.resolve(cluster(id)));

@@ -79,7 +79,8 @@ pub(super) async fn run<L: StorageContextTaskLease>(
                 let _storage_lease = lease;
                 let state = app.state::<DesktopState>();
                 let _instance_lock = state.acquire_instance_mutation(&details.summary.id).await;
-                super::commands_instance_stop::backup_after_stop(
+                // Backup failures are logged without changing the confirmed stop outcome.
+                let _ = super::commands_instance_stop::backup_after_stop(
                     &storage,
                     &details,
                     InstanceShutdownSource::AppExit,

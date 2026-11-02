@@ -97,6 +97,7 @@ test("real fixture navigation can use its existing budget after a slow HTML resp
   assert.equal(report.cycles, 12);
   assert.equal(report.renders, 36);
   assert.equal(report.strict_mode_replays, report.cycles);
+  assert.equal(report.startup_receipt_transitions, report.cycles);
   assert.equal(report.listeners_released, report.listeners_created);
   assert.equal(report.listeners_remaining, 0);
   assert.equal(report.dom_nodes_after_unmount, 0);

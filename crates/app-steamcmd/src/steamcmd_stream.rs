@@ -444,12 +444,14 @@ where
     spawn_record_forwarder(reader, sender, false, |line, _, _| line, None)
 }
 
+type RawOutputRecord<T> = (InstallOutputSource, fn(InstallConsoleOutput) -> T);
+
 fn spawn_record_forwarder<R, T, F>(
     mut reader: R,
     sender: mpsc::Sender<Result<T, std::io::Error>>,
     include_completed_snapshots: bool,
     record: F,
-    raw_record: Option<(InstallOutputSource, fn(InstallConsoleOutput) -> T)>,
+    raw_record: Option<RawOutputRecord<T>>,
 ) -> AbortOnDropTask<()>
 where
     R: AsyncRead + Unpin + Send + 'static,

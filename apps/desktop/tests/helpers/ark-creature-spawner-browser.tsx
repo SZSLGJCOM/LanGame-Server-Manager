@@ -179,6 +179,7 @@ async function locale(value: LocaleCode) {
     await act(async () => { await new Promise(resolve => setTimeout(resolve, 15)); });
   }
 }
+const installationButton = () => element<HTMLButtonElement>('[data-ark-tools-action="install"]');
 const submit = () => element<HTMLButtonElement>('.ark-creature-spawner button[type="submit"]');
 function actionHelp(button: HTMLElement): string {
   const anchor = button.closest('.configuration-action-help');
@@ -192,19 +193,23 @@ async function coordinates() {
 }
 async function removalChecks() {
   await render({ instanceId: "ark-a", status: "Running" }, true, false, 328);
-  check(namedButton("安装服务端扩展").disabled && namedButton("卸载服务端扩展").disabled && actionHelp(namedButton("卸载服务端扩展")).includes("停止实例"),
+  check(installationButton().disabled && namedButton("卸载服务端扩展").disabled && actionHelp(namedButton("卸载服务端扩展")).includes("停止实例"),
     "An installed extension keeps both permanent actions disabled while running and explains the stop requirement");
+  const preparationsWhileRunning = installs.length;
+  await click(installationButton());
   await click(namedButton("卸载服务端扩展"));
   check(removals.length === 0 && !fixture.querySelector(".inline-confirm-review"), "A running instance cannot open or dispatch uninstall");
+  check(installs.length === preparationsWhileRunning, "A running installed extension cannot dispatch an update");
   connected = false;
   await render({ status: "Stopped" });
-  check(namedButton("安装服务端扩展").disabled && !namedButton("卸载服务端扩展").disabled,
-    "A stopped installed extension disables installation and permits uninstall");
+  check(!installationButton().disabled && !namedButton("卸载服务端扩展").disabled
+    && installationButton().getAttribute("aria-label") === "检查并更新服务端扩展",
+    "A stopped installed extension permits an explicit update check and uninstall");
   const uninstall = namedButton("卸载服务端扩展");
-  const uninstallBox = uninstall.getBoundingClientRect(), installBox = namedButton("安装服务端扩展").getBoundingClientRect();
+  const uninstallBox = uninstall.getBoundingClientRect(), installBox = installationButton().getBoundingClientRect();
   const timeBox = element('#gm-ark_set_time-time-input').closest('label')!.getBoundingClientRect();
   const toolbarBox = element(".ark-world-tool-grid").getBoundingClientRect();
-  check(Math.abs(toolbarBox.width - 328) < 1 && [namedButton("改时间"), namedButton("清除野生龙"), namedButton("安装服务端扩展"), uninstall].every(button => {
+  check(Math.abs(toolbarBox.width - 328) < 1 && [namedButton("改时间"), namedButton("清除野生龙"), installationButton(), uninstall].every(button => {
     const box = button.getBoundingClientRect();
     return box.top >= timeBox.top && Math.abs(box.width - timeBox.width) < 1 && box.height === 46
       && box.left >= toolbarBox.left && box.right <= toolbarBox.right + 1
@@ -235,7 +240,7 @@ async function removalChecks() {
   await click(namedButton("卸载服务端扩展"));
   await click(namedButton("确认卸载"));
   check(removals.length === 1 && removals[0] === "ark-a" && element("[role=alert]").textContent?.includes("file is in use")
-    && !namedButton("卸载服务端扩展").disabled && namedButton("安装服务端扩展").disabled,
+    && !namedButton("卸载服务端扩展").disabled && !installationButton().disabled,
     "A native removal failure preserves installed actions, exposes the cause and permits a deliberate retry");
   removeMode = "invalid";
   await click(namedButton("卸载服务端扩展"));
@@ -247,7 +252,7 @@ async function removalChecks() {
   const confirm = namedButton("确认卸载");
   await click(confirm);
   await click(confirm);
-  check(removals.length === 3 && confirm.disabled && namedButton("安装服务端扩展").disabled && submit().disabled,
+  check(removals.length === 3 && confirm.disabled && installationButton().disabled && submit().disabled,
     "Pending uninstall sends one request and blocks duplicate confirmation, installation and creature spawning");
   check(!fixture.querySelector('[role="progressbar"]'), "Removal never invents installation download progress");
   const requests = statusReplies.length;
@@ -257,45 +262,82 @@ async function removalChecks() {
   holdStatus = false;
   await render({}, false);
   await render();
-  check(namedButton("安装服务端扩展").disabled && namedButton("卸载服务端扩展").disabled && removals.length === 3, "Leaving and returning to the tool page preserves the removal lock");
+  check(installationButton().disabled && namedButton("卸载服务端扩展").disabled && removals.length === 3, "Leaving and returning to the tool page preserves the removal lock");
   await render({ instanceId: "ark-uninstall-other" });
   await act(async () => resolveRemove!({ ...removed, frameworkRetained: true }));
   check(!namedButton("卸载服务端扩展").disabled && !fixture.querySelector(removalResultSelector), "A late removal receipt does not change another selected instance");
   await render({ instanceId: "ark-a" });
-  check(!namedButton("安装服务端扩展").disabled && namedButton("卸载服务端扩展").disabled
+  check(!installationButton().disabled && namedButton("卸载服务端扩展").disabled
     && element(removalResultSelector).textContent?.includes("共享框架") && element(removalResultSelector).textContent?.includes("已保留"),
     "Successful uninstall enables installation, retains disabled uninstall and reports the framework preserved for other plugins");
   await render({}, false);
   await render();
-  check(!namedButton("安装服务端扩展").disabled && namedButton("卸载服务端扩展").disabled && submit().disabled
+  check(!installationButton().disabled && namedButton("卸载服务端扩展").disabled && submit().disabled
     && actionHelp(submit()).includes("安装服务端扩展"),
     "Remounting cannot resurrect cached installation success after uninstall");
 
-  const oldExtension = { installed: false, connected: false, canUninstall: true, issue: "Managed extension requires an update" };
-  extensionStates.set("ark-old-install", oldExtension);
-  await render({ instanceId: "ark-old-install" });
-  check(!namedButton("卸载服务端扩展").disabled && !namedButton("安装服务端扩展").disabled,
-    "An outdated managed extension remains uninstallable even when installed is false");
-  await click(namedButton("安装服务端扩展"));
+  const previousBuild = { installed: true, connected: false, canUninstall: true, issue: null };
+  const preparationsBeforeUpdate = installs.length;
+  extensionStates.set("ark-previous-build", previousBuild);
+  await render({ instanceId: "ark-previous-build" });
+  check(!installationButton().disabled && !namedButton("卸载服务端扩展").disabled
+    && installationButton().getAttribute("aria-label") === "检查并更新服务端扩展",
+    "An intact previous build remains installed and can be explicitly updated before a runtime connection is available");
+  await render({}, false);
+  await render();
+  check(!installationButton().disabled && !namedButton("卸载服务端扩展").disabled
+    && actionHelp(installationButton()).includes("检查并更新") && installs.length === preparationsBeforeUpdate,
+    "Reentering the tool page recognizes an intact previous build without automatically updating it");
+  await locale("en-US");
+  check(installationButton().getAttribute("aria-label") === "Check and update server extension"
+    && actionHelp(installationButton()).includes("Check and update"), "Installed extension update labels are localized");
+  await locale("zh-CN");
+  await click(installationButton());
+  check(installs.length === preparationsBeforeUpdate + 1 && installs.at(-1)?.instanceId === "ark-previous-build"
+    && installationButton().disabled && namedButton("卸载服务端扩展").disabled,
+    "An explicit update uses the existing preparation entry point and locks both maintenance actions");
+  await click(installationButton());
+  await click(namedButton("卸载服务端扩展"));
+  check(installs.length === preparationsBeforeUpdate + 1 && removals.length === 3,
+    "An active update cannot be duplicated or overlap an uninstall");
+  installProgress = { ...installProgress!, active: false, phase: "ready", elapsedSeconds: 2 };
+  await act(async () => resolveInstall!({ ...previousBuild, progress: installProgress! }));
+  check(!installationButton().disabled && !namedButton("卸载服务端扩展").disabled
+    && installationButton().getAttribute("aria-label") === "检查并更新服务端扩展",
+    "A successful preparation preserves installed status and allows a later deliberate update check");
+  const protocolIssue = "ARK tool response does not match this request, game edition, or protocol.";
+  extensionStates.set("ark-incompatible", { ...previousBuild, issue: protocolIssue });
+  await render({ instanceId: "ark-incompatible", status: "Running" });
+  check(submit().disabled && element(".ark-extension-feedback [role=alert]").textContent?.includes(protocolIssue),
+    "An installed extension with a failed protocol handshake blocks spawning and exposes its connection diagnosis");
+
+  const repairExtension = { installed: false, connected: false, canUninstall: true, issue: "Managed extension file is missing" };
+  extensionStates.set("ark-repair-install", repairExtension);
+  await render({ instanceId: "ark-repair-install", status: "Stopped" });
+  check(!namedButton("卸载服务端扩展").disabled && !installationButton().disabled,
+    "An incomplete managed extension remains removable and can be prepared again");
+  check(element(".ark-extension-feedback [role=alert]").textContent?.includes(repairExtension.issue),
+    "An incomplete installation explains why preparation and removal are both available");
+  await click(installationButton());
   check(namedButton("卸载服务端扩展").disabled, "Installing an update disables uninstall");
   await click(namedButton("卸载服务端扩展"));
   check(removals.length === 3, "No removal is dispatched while installation is active");
   const ready = { installed: true, connected: false, canUninstall: true, issue: null };
-  extensionStates.set("ark-old-install", ready);
+  extensionStates.set("ark-repair-install", ready);
   installProgress = { ...installProgress!, active: false, phase: "ready", elapsedSeconds: 2 };
   await act(async () => resolveInstall!({ ...ready, progress: installProgress! }));
-  extensionStates.set("ark-old-remove", oldExtension);
-  await render({ instanceId: "ark-old-remove" });
+  extensionStates.set("ark-repair-remove", repairExtension);
+  await render({ instanceId: "ark-repair-remove" });
   const beforeInstall = installs.length;
   await click(namedButton("卸载服务端扩展"));
   await click(namedButton("确认卸载"));
-  check(namedButton("安装服务端扩展").disabled && removals.length === 4 && removals[3] === "ark-old-remove",
-    "A stopped outdated extension can be removed while the install action is locked");
-  await click(namedButton("安装服务端扩展"));
+  check(installationButton().disabled && removals.length === 4 && removals[3] === "ark-repair-remove",
+    "A stopped incomplete extension can be removed while the install action is locked");
+  await click(installationButton());
   check(installs.length === beforeInstall, "Removal and installation cannot run together");
   await act(async () => resolveRemove!(removed));
-  check(!namedButton("安装服务端扩展").disabled && namedButton("卸载服务端扩展").disabled,
-    "Removing an outdated extension returns to the clean installation state");
+  check(!installationButton().disabled && namedButton("卸载服务端扩展").disabled,
+    "Removing an incomplete extension returns to the clean installation state");
 }
 async function run() {
   await act(prepareBrowserLocaleCatalogs);
@@ -304,23 +346,24 @@ async function run() {
   if (!instance) throw new Error("Missing fixture instance");
   baseDetails = await invokeMock<InstanceDetails>("read_instance_details_from_storage", { instanceId: instance.id, instance_id: instance.id });
   await render();
-  check(!namedButton("安装服务端扩展").disabled && namedButton("卸载服务端扩展").disabled,
+  check(!installationButton().disabled && namedButton("卸载服务端扩展").disabled
+    && installationButton().getAttribute("aria-label") === "安装服务端扩展",
     "A stopped uninstalled extension keeps installation enabled and uninstall visible but disabled");
   check(!fixture.querySelector('[data-ark-tools-action="check"]')
     && element(".ark-creature-spawner__parameters").querySelectorAll('input, select, button').length === 3
     && getComputedStyle(element(".ark-creature-spawner__parameters")).gridTemplateColumns.split(' ').length === 4,
     "The spawn row keeps level, state and spawn in the shared four-column grid, without a redundant connection button");
   const worldActions = element(".ark-world-tools");
-  const permanentActions = [namedButton("改时间"), namedButton("清除野生龙"), namedButton("安装服务端扩展"), namedButton("卸载服务端扩展")];
+  const permanentActions = [namedButton("改时间"), namedButton("清除野生龙"), installationButton(), namedButton("卸载服务端扩展")];
   const worldRow = element('#gm-ark_set_time-time-input').closest('label')!.getBoundingClientRect();
   check(permanentActions.every((button, index) => worldActions.contains(button) && button.getClientRects().length
     && Math.abs(button.getBoundingClientRect().width - worldRow.width) < 1 && button.getBoundingClientRect().height === 46
     && Math.abs(button.getBoundingClientRect().top - worldRow.top - Math.floor((index + 1) / 4) * 52) < 1)
-    && !element(".ark-creature-spawner").contains(namedButton("安装服务端扩展")),
+    && !element(".ark-creature-spawner").contains(installationButton()),
     "Install and uninstall remain with time and world actions rather than inside the creature form");
   await render({}, false, true);
   check(element(".ark-item-spawn").getClientRects().length && element<HTMLElement>(".ark-creature-tool").hidden
-    && element(".ark-world-tools") === worldActions && namedButton("安装服务端扩展").getClientRects().length
+    && element(".ark-world-tools") === worldActions && installationButton().getClientRects().length
     && namedButton("卸载服务端扩展").getClientRects().length,
     "Switching to the real item panel preserves the same permanent extension actions");
   await render();
@@ -334,7 +377,7 @@ async function run() {
   await locale('en-US');
   check(actionHelp(submit()).includes('Install the server extension'), 'The missing extension reason follows the selected UI language');
   await locale('zh-CN');
-  const installAnchor = namedButton('安装服务端扩展').closest<HTMLElement>('.configuration-action-help')!;
+  const installAnchor = installationButton().closest<HTMLElement>('.configuration-action-help')!;
   await act(async () => installAnchor.focus());
   const tooltipUntil = performance.now() + 3000;
   while (!document.querySelector('.configuration-field-help-tooltip.is-visible')) {
@@ -345,14 +388,14 @@ async function run() {
     'The uninstalled extension keeps a concise install tooltip for both ARK editions');
   await act(async () => installAnchor.blur());
   await render({ status: 'Running' });
-  check(namedButton('安装服务端扩展').disabled && namedButton('卸载服务端扩展').disabled,
+  check(installationButton().disabled && namedButton('卸载服务端扩展').disabled,
     'Both permanent extension actions reject a running instance');
   check(actionHelp(submit()).includes('停止实例') && actionHelp(submit()).includes('安装服务端扩展'), 'Spawn explains that installing a missing extension requires stopping first');
-  const runningAnchor = namedButton('安装服务端扩展').closest<HTMLElement>('.configuration-action-help')!;
+  const runningAnchor = installationButton().closest<HTMLElement>('.configuration-action-help')!;
   const reason = document.getElementById(runningAnchor.getAttribute('aria-describedby')!);
   check(reason?.textContent?.includes('请先停止实例'), 'The disabled action explains how to enable installation');
   await render({ status: 'Stopped' });
-  await click(namedButton("安装服务端扩展"));
+  await click(installationButton());
   check(element(".shell-activity-bar .shell-activity-notice.is-error").textContent?.includes("21 秒"), "Failed installation preserves its native final elapsed time in the global activity bar");
   await click(namedButton("消息详情"));
   check(element(".shell-activity-notice-diagnostics").textContent?.includes("connection reset"), "Immediate native installation failure keeps its concrete network cause in activity details");
@@ -360,21 +403,21 @@ async function run() {
   check(element(".shell-activity-notice-diagnostics").textContent?.includes("connection reset"), "A background handshake must not erase installation diagnostics");
   await click(element('.shell-activity-panel-close'));
   installMode = "deferred";
-  await click(namedButton("安装服务端扩展"));
+  await click(installationButton());
   check(installs.length === 2 && installs[1].instanceId === "ark-a" && installs[1].allowMatchingSymbolsDownload
     && installs[1].locale === "zh-CN" && /^[a-f0-9]{32}$/.test(installs[1].operationId) && installs[0].operationId !== installs[1].operationId,
     "Installation passes consent, locale and a fresh operation identity");
-  check(namedButton("安装服务端扩展").disabled && Boolean(fixture.querySelector('[role="progressbar"]')),
+  check(installationButton().disabled && Boolean(fixture.querySelector('[role="progressbar"]')),
     "Pending installation shows immediate progress and blocks duplicate dispatch");
   check(!fixture.querySelector('.ark-creature-spawner [role="progressbar"]') && fixture.querySelector('.shell-activity-bar [role="progressbar"]'),
     "Extension installation progress belongs to the global activity bar");
-  await click(namedButton("安装服务端扩展"));
+  await click(installationButton());
   check(installs.length === 2, "A second install click cannot start another native operation");
   installProgress = { ...installProgress!, phase: "downloading", source: "api.gitcode.com", downloadedBytes: 524288, totalBytes: 1048576 };
   await waitFor(() => fixture.querySelector('[role="progressbar"]')?.getAttribute('aria-valuenow') === "50", "Real installation byte progress was not displayed");
   check(fixture.textContent?.includes("512 KB / 1 MB") && fixture.textContent?.includes("api.gitcode.com"), "The install progress exposes current bytes and download source");
   await render({ settingsJson: JSON.stringify({ ...JSON.parse(props.settingsJson), install_revision: 2 }) });
-  check(namedButton("安装服务端扩展").disabled, "Settings refresh retains the active installation lock");
+  check(installationButton().disabled, "Settings refresh retains the active installation lock");
   installed = true;
   installProgress = { ...installProgress, active: false, phase: "ready", elapsedSeconds: 8 };
   await act(async () => resolveInstall!({ installed, connected, canUninstall: true, issue: null, progress: installProgress! }));
@@ -495,7 +538,7 @@ async function run() {
   installed = false;
   connected = false;
   await render({ instanceId: "ark-install-preview", status: "Stopped", selectedPlayer: null });
-  await click(namedButton("安装服务端扩展"));
+  await click(installationButton());
   installProgress = { ...installProgress!, phase: "downloading", source: "api.gitcode.com", downloadedBytes: 524288, totalBytes: 1048576, elapsedSeconds: 90 };
   await waitFor(() => fixture.querySelector('[role="progressbar"]')?.getAttribute('aria-valuenow') === "50", "Installation preview did not show current bytes");
   const elapsed = () => Number(element('.shell-activity-progress [role="timer"]').textContent?.match(/\d+/)?.[0]);
@@ -512,7 +555,7 @@ async function run() {
     "Opening details uses the same elapsed clock instead of restarting from the old snapshot");
   await click(element('.shell-activity-panel-close'));
   await render();
-  check(namedButton('安装服务端扩展').disabled && installs.length === preparationsBeforeNavigation && elapsed() >= elapsedBeforeNavigation,
+  check(installationButton().disabled && installs.length === preparationsBeforeNavigation && elapsed() >= elapsedBeforeNavigation,
     "Returning to the tool page preserves the operation lock and elapsed clock without installing again");
   const progressBox = element('.shell-activity-bar').getBoundingClientRect();
   check(progressBox.bottom <= innerHeight && document.documentElement.scrollWidth <= innerWidth + 1,

@@ -17,9 +17,11 @@ console.error = (...args) => { errors.push(args.map(String).join(" ")); original
 
 type Props = ComponentProps<typeof RuntimeSurfaceWorkbench>;
 const retainedLogs = new Map<string, LogTailSnapshot>();
-mockIPC((command, args) => {
+let initialReadBarrier: Promise<void> | null = null;
+mockIPC(async (command, args) => {
   check(command === "read_instance_log_document_from_storage", `Unexpected native command: ${command}`);
   check(args.maxLines === 400, "Native reads must request the bounded console budget");
+  await initialReadBarrier;
   const retained = retainedLogs.get(String(args.instanceId));
   check(retained, "Retained log read must target the mounted instance");
   return retained;
@@ -65,6 +67,10 @@ check(container, "Fixture container is missing");
 const fixture = container;
 const consoleText = () => fixture.querySelector("pre.server-runtime-console")?.textContent ?? "";
 const pause = () => new Promise<void>((resolve) => setTimeout(resolve, 10));
+function checkActiveListenerPair(message: string) {
+  const names = bridge.entries.filter(entry => bridge.active.has(entry.id)).map(entry => entry.name).sort();
+  check(names.join(",") === "runtime-log-stream,runtime-service-events-reset", `${message}: ${JSON.stringify(names)}`);
+}
 async function settleUntil(predicate: () => boolean, message: string) {
   const deadline = performance.now() + 5000;
   while (!predicate()) {
@@ -93,6 +99,7 @@ function publish(instance: string, logPath: string, lines: string[]) {
 async function run() {
   await Promise.all([import("../../src/i18n-messages"), import("../../src/i18n-messages-zh-cn")]);
   let replayedMounts = 0;
+  let startupReceiptTransitions = 0;
   let renders = 0;
   let maxTailLines = 0;
   let readbacks = 0;
@@ -103,16 +110,31 @@ async function run() {
     const instance = `instance-${cycle}`;
     const path = `fixture/run-${cycle}.log`;
     bridge.hold = true;
+    let completeReceiptRead = () => {};
+    // Separate React's replay from the real asynchronous receipt handoff, which
+    // legitimately replaces the log listener when the first read completes.
+    initialReadBarrier = new Promise<void>(resolve => { completeReceiptRead = resolve; });
     try {
       await render(root, properties(instance, path));
       renders += 1;
-      check(bridge.entries.length - before === 4, "StrictMode must replay both native listener setups exactly once");
+      check(bridge.entries.length - before === 4, `StrictMode must replay both native listener setups exactly once: ${JSON.stringify(bridge.entries.slice(before).map(entry => entry.name))}`);
       check(bridge.active.size === 0, "Deferred registration unexpectedly became active");
       await act(async () => { bridge.resolvePending(); });
-      check(bridge.active.size === 2, "StrictMode must leave exactly one log and one recovery listener");
-      check(bridge.entries[before].released, "StrictMode's retired registration was not released");
+      checkActiveListenerPair("StrictMode must leave exactly one log and one recovery listener");
+      check(bridge.entries.slice(before, before + 2).every(entry => entry.released),
+        "StrictMode's retired registrations were not released");
       replayedMounts += 1;
       bridge.hold = false;
+      const previousLogListener = bridge.entries.find(entry => entry.name === "runtime-log-stream" && bridge.active.has(entry.id));
+      const recoveryListener = bridge.entries.find(entry => entry.name === "runtime-service-events-reset" && bridge.active.has(entry.id));
+      await act(async () => { initialReadBarrier = null; completeReceiptRead(); });
+      const receiptListeners = bridge.entries.slice(before + 4);
+      check(receiptListeners.length === 1 && receiptListeners[0].name === "runtime-log-stream",
+        "Completing the initial receipt must replace exactly the log listener");
+      check(previousLogListener?.released && recoveryListener && bridge.active.has(recoveryListener.id),
+        "Receipt handoff must release the old log listener and retain the recovery listener");
+      checkActiveListenerPair("Receipt handoff leaked or duplicated a listener");
+      startupReceiptTransitions += 1;
       await act(async () => { publish(instance, path, ["current output"]); });
       await settleUntil(() => consoleText() === "current output", "Native event did not refresh the retained file");
       check(consoleText() === "current output", "Native event did not reach the real DOM");
@@ -121,7 +143,7 @@ async function run() {
       const replacementPath = `fixture/replacement-${cycle}.log`;
       await render(root, properties(instance, replacementPath));
       renders += 1;
-      check(bridge.active.size === 2, "Same-root path change leaked a listener");
+      checkActiveListenerPair("Same-root path change leaked a listener");
       await act(async () => {
         for (const registration of retired) if (registration.name === "runtime-log-stream") registration.deliver(event(instance, replacementPath, ["retired event"]));
         bridge.emit(event(instance, path, ["wrong path"]));
@@ -143,7 +165,7 @@ async function run() {
       };
       await render(root, replacement);
       renders += 1;
-      check(bridge.active.size === 2, "Same-root instance change leaked a listener");
+      checkActiveListenerPair("Same-root instance change leaked a listener");
       await act(async () => {
         bridge.emit(event(instance, replacementPath, ["wrong instance"]));
         publish(replacementInstance, replacementPath, ["new instance"]);
@@ -168,7 +190,7 @@ async function run() {
       check(readbacks === cycle + 1, "A service generation reset must invoke exactly one authoritative readback");
       check(consoleText() === "authoritative file output after service reset", "Reset did not replace the stale live tail with the file readback");
     } finally {
-      await act(async () => { root.unmount(); });
+      await act(async () => { root.unmount(); initialReadBarrier = null; completeReceiptRead(); });
       await act(async () => { bridge.resolvePending(); });
     }
     check(bridge.active.size === 0, "Unmount retained a native listener");
@@ -191,12 +213,12 @@ async function run() {
   check(errors.length === 0, `Browser/React errors: ${errors.join("; ")}`);
   return {
     status: "passed", react_version: React.version, cycles, renders,
-    strict_mode_replays: replayedMounts, listeners_created: bridge.entries.length,
+    strict_mode_replays: replayedMounts, startup_receipt_transitions: startupReceiptTransitions, listeners_created: bridge.entries.length,
     listeners_released: bridge.released, listeners_remaining: bridge.active.size,
     dom_nodes_after_unmount: fixture.childNodes.length, max_tail_lines: maxTailLines,
     readbacks,
     browser_errors: errors,
-    checks: ["strict_mode_replay", "same_root_path_change", "same_root_instance_change", "late_registration", "late_events", "bounded_dom_tail", "unmount_baseline", "service_generation_readback"]
+    checks: ["strict_mode_replay", "startup_receipt_handoff", "same_root_path_change", "same_root_instance_change", "late_registration", "late_events", "bounded_dom_tail", "unmount_baseline", "service_generation_readback"]
   };
 }
 

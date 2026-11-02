@@ -4,13 +4,13 @@
 
 ### Scope and responsibility
 
-Updated: 2026-10-18. Entro Genesis provides this notice for LanGame Server Manager. It describes the application and its configured connections, not every game, mod, website, model service, or independently operated management host. Those operators have their own data practices and terms.
+Updated: 2026-11-02. Entro Genesis provides this notice for LanGame Server Manager. It describes the application and its configured connections, not every game, mod, website, model service, or independently operated management host. Those operators have their own data practices and terms.
 
 The manager runs on a Windows computer without requiring a LanGame account. Server data is normally stored on the computer running the manager. If you connect to someone else's management interface, your instructions and submitted data reach that host. The host's administrator controls its storage and connected services; running the application locally does not make all its network activity local.
 
 ### Data stored on the manager host
 
-The manager stores application settings, the server database, instance configuration, saves, backups, process output, application logs, and available player-management records to provide server management and troubleshooting. Paths are configurable. The system page shows the active paths. Windows defaults place settings, the database and application logs under %LOCALAPPDATA%/LanGame/ServerManager; game programs, instance files and backups can be elsewhere.
+The manager stores application settings, the server database, instance configuration, saves, backups, process output, application logs, and available player-management records to provide server management and troubleshooting. Paths are configurable, and the system page shows the active locations. Fresh installations select a writable local drive for the LanGame data directory and keep a small location record under %LOCALAPPDATA%/LanGame/ServerManager. Existing settings and databases remain at their registered locations unless you request a storage migration.
 
 Interface preferences may also be stored in the desktop WebView or browser's local storage. This is separate from the manager's database and files. Local system-resource measurements support the monitoring interface; they are not, by themselves, uploads to LanGame. Application logs use size-based rotation, not a fixed number of days, and may include paths or other context. Protect access to the host, browser profile, backups and any directories you synchronize or share.
 
@@ -56,6 +56,8 @@ On Windows, closing the main window hides it to the tray. The runtime service, s
 
 ### Other external connections
 
+Preparing or updating the optional ASA server extension downloads matching symbols from its maintainers at cdn.pelayori.com, cdn.shadowhunter.co.za or cdn.shadowhunter-systems.co.za. These requests include the server executable's SHA-256 to select the compatible files, not the executable contents, local path or saved worlds. Ordinary server startup uses the prepared local cache without requesting these downloads.
+
 Browsing the game library or opening details can load images, video, descriptions, news or reviews from publishers, Steam and other configured media/API sources. Cached content can be reused; uncached or refreshed content contacts the source. Installing, validating or updating game programs and Workshop content contacts the relevant download/platform services. Knowledge synchronization contacts its listed sources. Opening an external link passes control to that site or application.
 
 These services can receive the source IP address, requested resource, feature parameters such as game/item IDs, language or search terms, and ordinary connection metadata. Games, SteamCMD, mods, embedded media and independently configured services may have their own accounts, logs, telemetry and retention. Their behavior is not covered by a promise that LanGame stores server files locally. Official releases automatically check for application updates using the configured update sources (langame.cn and GitHub); the default source-code configuration has no update feed.
@@ -72,13 +74,13 @@ This notice must track changes to actual storage, recipients and network behavio
 
 ### 范围与责任
 
-更新日期：2026-10-18。本说明由 Entro Genesis 提供，介绍 LanGame Server Manager 及其所配置连接的数据行为，不覆盖所有游戏、Mod、网站、模型服务或他人独立运营的管理端。这些运营方有各自的数据处理方式与条款。
+更新日期：2026-11-02。本说明由 Entro Genesis 提供，介绍 LanGame Server Manager 及其所配置连接的数据行为，不覆盖所有游戏、Mod、网站、模型服务或他人独立运营的管理端。这些运营方有各自的数据处理方式与条款。
 
 管理器运行在 Windows 电脑上，无需 LanGame 账号。服务器数据通常保存在运行管理端的电脑。如果你连接的是他人的管理界面，指令及提交的数据会到达那台主机，由其管理员控制存储与所连接的服务。在本机运行应用，不代表应用的全部网络活动都留在本机。
 
 ### 管理端本机保存的数据
 
-为提供服务器管理与排障，管理器会保存应用设置、服务器数据库、实例配置、存档、备份、进程输出、应用日志，以及可用的玩家管理记录。存储路径可以配置，系统页显示当前实际路径。Windows 默认将设置、数据库和应用日志放在 %LOCALAPPDATA%/LanGame/ServerManager 下；游戏程序、实例文件和备份可以位于其他目录。
+为提供服务器管理与排障，管理器会保存应用设置、服务器数据库、实例配置、存档、备份、进程输出、应用日志，以及可用的玩家管理记录。存储路径可以配置，系统页显示当前实际位置。全新安装会选择可写本地磁盘保存 LanGame 数据目录，在 %LOCALAPPDATA%/LanGame/ServerManager 下保留小型位置记录。除非你主动迁移存储位置，已有设置和数据库会保留在已登记的位置。
 
 界面偏好也可能保存在桌面 WebView 或浏览器的本地存储中，与管理端数据库及文件分开。本机资源采样用于监控界面，采样本身不等于上传给 LanGame。应用日志按容量轮转，不按固定天数保留，内容可能包含路径等上下文。请妥善管理主机、浏览器配置、备份及同步或共享目录的访问权限。
 
@@ -123,6 +125,8 @@ HTTPS 保护到所配置服务的传输，HTTP 不加密这段连接。回环地
 Windows 下关闭主窗口会隐藏到托盘，运行时服务、服务器和定时知识更新可能继续工作；关闭助手面板也不会停止知识更新。隐藏窗口不是断网开关。
 
 ### 其他外部连接
+
+准备或更新可选的 ASA 服务端扩展时，会从维护者的 cdn.pelayori.com、cdn.shadowhunter.co.za 或 cdn.shadowhunter-systems.co.za 下载匹配符号。请求包含服务器程序的 SHA-256，用于选择兼容文件，不发送程序内容、本地路径或游戏存档。普通开服使用已准备的本地缓存，不发起这些下载。
 
 浏览游戏库或打开详情时，可能从发行方、Steam 及配置的其他媒体或接口来源加载图片、视频、介绍、新闻和评测。缓存可复用，缺少缓存或刷新内容时会访问来源。安装、校验、更新游戏程序及创意工坊内容会访问相应下载或平台服务；知识库同步会访问其资料来源。打开外部链接后，由对应网站或应用处理后续访问。
 

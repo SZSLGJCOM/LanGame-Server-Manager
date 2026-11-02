@@ -376,6 +376,17 @@ class VerificationSelectionTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "build receipt"):
             runner.native()
 
+    def test_native_checks_include_isolated_asa_proxy_and_keep_desktop_and_installer_coverage(self):
+        runner = Runner(argparse.Namespace(frontend_dist=None, native_executable=Path("desktop.exe"),
+                                          cargo_wrapper=None, output=Path("evidence"), nsis_root=Path("nsis")))
+        with patch.object(runner, "run") as run, patch.object(runner, "node") as node:
+            runner.native()
+        self.assertEqual(run.call_args_list[0].args[0][-3:],
+                         ["scripts/test_asa_version_proxy.ps1", "-OutDir", str(Path("evidence/asa-proxy"))])
+        self.assertEqual(node.call_args.args[0], "apps/desktop/scripts/verify_desktop_reliability.cjs")
+        self.assertEqual(run.call_args_list[1].args[0][-3:],
+                         ["scripts/tests/test_desktop_installer_guard.ps1", "-NsisRoot", "nsis"])
+
 
 if __name__ == "__main__":
     unittest.main()

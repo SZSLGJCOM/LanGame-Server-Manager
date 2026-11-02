@@ -1093,6 +1093,7 @@ export interface StartInstanceResult {
 
 export interface StopInstanceResult {
   summary: InstanceSummary;
+  auto_backup_error: string | null;
   run_id: number | null;
   session_id: string | null;
   pid: number | null;

@@ -384,11 +384,13 @@ export function useInstanceActions(options: InstanceActionOptions) {
   async function handleStopServer(instanceId: string, operation?: RuntimeActionOperation) {
     options.setActivity(message(operation?.cancelsStartup ? "activity.cancellingServerStartup" : "activity.stoppingServer", { id: instanceId }));
     let startupCancelled = operation?.localCancellation === true;
+    let autoBackupError: string | null = null;
     try {
       if (!startupCancelled) {
         const result = operation?.startupAttemptId
           ? await stopInstance(instanceId, operation.startupAttemptId) : await stopInstance(instanceId);
         startupCancelled = result.outcome === "startup_cancelled";
+        autoBackupError = result.auto_backup_error;
       }
     } catch (error) {
       const errorMessage = describeError(error);
@@ -398,7 +400,11 @@ export function useInstanceActions(options: InstanceActionOptions) {
       );
       return;
     }
-    const completed = message(startupCancelled ? "activity.serverStartupCancelled" : "activity.serverStopSent", { id: instanceId });
+    const completed = startupCancelled
+      ? message("activity.serverStartupCancelled", { id: instanceId })
+      : autoBackupError
+        ? message("activity.serverStoppedBackupFailed", { id: instanceId, message: autoBackupError }, { tone: "warning" })
+        : message("activity.serverStopSent", { id: instanceId });
     try {
       await options.reloadBootstrap();
       options.markRuntimeRefreshed();
@@ -651,7 +657,6 @@ export function useInstanceActions(options: InstanceActionOptions) {
       message("activity.instanceBackupCreated", { name, path: result.backup_path, count: result.file_count });
     try {
       const details = options.instanceDetailsById[instanceId] ?? await readInstanceDetails(instanceId);
-      options.setInstanceDetailsById((current) => ({ ...current, [instanceId]: details }));
       const backups = await listInstanceBackups(instanceId);
       updateSelectedBackups(instanceId, backups);
       options.setActivity(completed(details.summary.name));
@@ -673,7 +678,6 @@ export function useInstanceActions(options: InstanceActionOptions) {
       message("activity.instanceBackupRestored", { name, backupId: result.backup_id, safeguardId: result.safeguard_backup_id });
     try {
       const details = options.instanceDetailsById[instanceId] ?? await readInstanceDetails(instanceId);
-      options.setInstanceDetailsById((current) => ({ ...current, [instanceId]: details }));
       const backups = await listInstanceBackups(instanceId);
       updateSelectedBackups(instanceId, backups);
       options.setActivity(completed(details.summary.name));
@@ -706,7 +710,6 @@ export function useInstanceActions(options: InstanceActionOptions) {
       message("activity.instanceBackupRenamed", { name, backupName: backupLabel(result) });
     try {
       const details = options.instanceDetailsById[instanceId] ?? await readInstanceDetails(instanceId);
-      options.setInstanceDetailsById((current) => ({ ...current, [instanceId]: details }));
       const backups = await listInstanceBackups(instanceId);
       updateSelectedBackups(instanceId, backups);
       options.setActivity(completed(details.summary.name));
@@ -729,7 +732,6 @@ export function useInstanceActions(options: InstanceActionOptions) {
       message("activity.instanceBackupDeleted", { name, backupName: backupLabel(result) });
     try {
       const details = options.instanceDetailsById[instanceId] ?? await readInstanceDetails(instanceId);
-      options.setInstanceDetailsById((current) => ({ ...current, [instanceId]: details }));
       const backups = await listInstanceBackups(instanceId);
       updateSelectedBackups(instanceId, backups);
       options.setActivity(completed(details.summary.name));

@@ -30,8 +30,12 @@ test("a late read cannot overwrite console revisions merged before their browser
     cancelAnimationFrame: handle => callbacks.delete(handle) };
   t.after(() => { globalThis.window = previousWindow; });
   const read = new Promise(resolve => { release = resolve; });
-  const mounted = mountWorkbench({ promise: Promise.resolve(() => {}) }, { readLogDocument: () => read });
+  let reads = 0;
+  const mounted = mountWorkbench({ promise: Promise.resolve(() => {}) }, { readLogDocument: () => ++reads === 1
+    ? Promise.resolve({ source_path: "fixture/run-1-main.log", lines: [] }) : read });
   t.after(mounted.dispose);
+  // The receipt must identify this run before runtime events become eligible.
+  await settle();
   for (let revision = 1; revision <= 2; revision++) mounted.receive({ lines: [`line ${revision}`], console: {
     stream_id: "stream", started_at_unix_ms: 1, revision, previous_revision: revision - 1, reset: revision === 1, partial_lines: [] } });
   release({ source_path: "fixture/run-1-main.log", lines: ["line 1"], console_sources: [{
@@ -81,15 +85,26 @@ test("the default ARK game log accepts native patches, rejects another map and r
     cancelAnimationFrame: handle => callbacks.delete(handle) };
   t.after(() => { globalThis.window = previousWindow; });
   let retained = { source_path: "fixture/native.log", snapshot_revision: 5, lines: ["native", "part"] };
+  const readArguments = [];
   const mounted = mountWorkbench({ promise: Promise.resolve(() => {}) }, {
     details: { summary: { id: "fixture", module_id: "arksurvivalascended", status: "running", active_process_count: 1 },
       active_run: { run_id: 7, log_path: "fixture/console.log", processes: [{ run_id: 7, process_key: "theisland", is_primary: true,
         display_name: "The Island", log_path: "fixture/console.log", status: "running" }] } },
-    readLogDocument: async (...args) => { reads++; assert.deepEqual(args, ["fixture", 400, 7, "game"]); return retained; }
+    readLogDocument: async (...args) => {
+      reads++; readArguments.push(args);
+      if (args[2] === undefined) {
+        assert.deepEqual(args, ["fixture", 400, undefined, undefined]);
+        return { source_path: "fixture/console.log", lines: [] };
+      }
+      assert.deepEqual(args, ["fixture", 400, 7, "game"]);
+      return retained;
+    }
   });
   t.after(mounted.dispose);
   await settle();
   const initialReads = reads;
+  assert.deepEqual(readArguments[0], ["fixture", 400, undefined, undefined], "Read the startup receipt before selecting the native map log");
+  assert.deepEqual(readArguments.at(-1), ["fixture", 400, 7, "game"]);
   const event = { log_path: "fixture/native.log", process_key: "theisland", run_id: 7, lines: [], document_patch: {
     previous_revision: 5, revision: 6, start: 1, delete_count: 1, lines: ["partial complete", "repeat", "repeat"],
     total_lines: 4, truncated: false, read_error: null } };

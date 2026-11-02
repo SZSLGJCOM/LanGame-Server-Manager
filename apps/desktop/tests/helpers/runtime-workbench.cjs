@@ -17,13 +17,35 @@ function deferred() {
   return { promise, resolve, reject };
 }
 
-// Exercise the component's real effects and functional state updates without a
-// native window. This fixture does not model React rendering or DOM resources.
+// Exercise component state transitions and dependency-owned effects without a
+// native window. Real React rendering and DOM resources stay in browser tests.
 function mountWorkbench(registration, options = {}) {
-  const effects = [];
   const writes = [];
   const states = [];
+  const slots = [];
   const listeners = new Map();
+  const registrations = [];
+  let cursor = 0;
+  let pendingEffects = [];
+  let disposed = false;
+  let scheduled = false;
+  let tree;
+  const sameDependencies = (previous, next) => previous && next && previous.length === next.length
+    && next.every((value, index) => Object.is(value, previous[index]));
+  function scheduleRender() {
+    if (disposed || scheduled) return;
+    scheduled = true;
+    queueMicrotask(() => { scheduled = false; if (!disposed) render(); });
+  }
+  function effectHook(effect, dependencies) {
+    const index = cursor++;
+    const previous = slots[index];
+    if (previous && sameDependencies(previous.dependencies, dependencies)) return;
+    const slot = { dependencies, effect, cleanup: previous?.cleanup };
+    slots[index] = slot;
+    pendingEffects.push(slot);
+  }
+  const translate = (key, _params, fallback) => fallback || key;
   const recoveryRegistration = options.recoveryRegistration ?? { promise: Promise.resolve(() => {}) };
   const instanceId = options.instanceId ?? "fixture";
   const logPath = options.logPath ?? "fixture/run-1-main.log";
@@ -34,29 +56,56 @@ function mountWorkbench(registration, options = {}) {
   loaded.filename = filename;
   loaded.require = (id) => {
     if (id === "react") return {
-      useEffect: (effect) => effects.push(effect),
-      useLayoutEffect: (effect) => effects.push(effect),
-      useMemo: (read) => read(),
+      useEffect: effectHook,
+      useLayoutEffect: effectHook,
+      useMemo: (read, dependencies) => {
+        const index = cursor++;
+        if (!slots[index] || !sameDependencies(slots[index].dependencies, dependencies)) {
+          slots[index] = { value: read(), dependencies };
+        }
+        return slots[index].value;
+      },
       useId: () => "runtime-tooltip",
-      useRef: (current) => ({ current }),
+      useRef: (current) => {
+        const index = cursor++;
+        slots[index] ??= { value: { current } };
+        return slots[index].value;
+      },
       useState: (initial) => {
-        const index = states.length;
-        states.push(index === 0 && options.commandDraft !== undefined ? options.commandDraft
-          : typeof initial === "function" ? initial() : initial);
-        return [states[index], (update) => {
-          states[index] = typeof update === "function" ? update(states[index]) : update;
-          writes.push(states[index]);
-        }];
+        const index = cursor++;
+        if (!slots[index]) {
+          const stateIndex = states.length;
+          states.push(stateIndex === 0 && options.commandDraft !== undefined ? options.commandDraft
+            : typeof initial === "function" ? initial() : initial);
+          slots[index] = { stateIndex, update(next) {
+            const previous = states[stateIndex];
+            states[stateIndex] = typeof next === "function" ? next(previous) : next;
+            writes.push(states[stateIndex]);
+            if (!Object.is(previous, states[stateIndex])) scheduleRender();
+          } };
+        }
+        return [states[slots[index].stateIndex], slots[index].update];
       }
     };
-    if (id === "../../i18n") return { useI18n: () => ({ locale: "en", t: (key, _params, fallback) => fallback || key }),
+    if (id === "../../i18n") return { useI18n: () => ({ locale: "en", t: translate }),
       selectLocaleText: (_locale, _zh, en) => en };
     if (id === "@tauri-apps/api/core") return { isTauri: () => true };
     if (id === "@tauri-apps/api/event") return { listen: (name, callback) => {
       assert.ok(["runtime-log-stream", "runtime-service-events-reset"].includes(name), `Unexpected native event: ${name}`);
-      assert.equal(listeners.has(name), false, `Duplicate native event listener: ${name}`);
+      const entry = { name, callback, active: false, released: false };
+      registrations.push(entry);
       listeners.set(name, callback);
-      return name === "runtime-log-stream" ? registration.promise : recoveryRegistration.promise;
+      const source = name === "runtime-log-stream" ? registration : recoveryRegistration;
+      const request = typeof source === "function" ? source() : source.promise;
+      return request.then(release => {
+        entry.active = true;
+        return () => {
+          assert.equal(entry.released, false, "A native registration must be released exactly once");
+          entry.active = false;
+          entry.released = true;
+          release();
+        };
+      });
     } };
     // The native publisher writes to the retained file before emitting. Model
     // that external boundary; the component still owns refresh and lifetime.
@@ -69,7 +118,7 @@ function mountWorkbench(registration, options = {}) {
     return originalRequire(id);
   };
   loaded._compile(transpileTypeScript(fs.readFileSync(filename, "utf8"), filename), filename);
-  let tree = loaded.exports.RuntimeSurfaceWorkbench({
+  const props = {
     moduleDetails: options.moduleDetails === undefined ? {
       summary: { id: "dontstarve" }, runtime: { shutdown: { commands: [{ transport: "stdin" }] } }
     } : options.moduleDetails,
@@ -80,21 +129,29 @@ function mountWorkbench(registration, options = {}) {
     archive: options.archive,
     onSendRuntimeCommand: options.onSendRuntimeCommand ?? (async () => null), onSuppressRuntimeWindows: async () => {},
     onRetryReads: options.onRetryReads
-  });
-  while (tree) {
-    if (typeof tree.type === "function") tree = tree.type(tree.props);
-    else if (tree.type === Symbol.for("react.fragment")) {
-      const children = Array.isArray(tree.props.children) ? tree.props.children : [tree.props.children];
-      tree = children.find((child) => typeof child?.type === "function");
-    } else break;
+  };
+  function render() {
+    cursor = 0;
+    pendingEffects = [];
+    tree = loaded.exports.RuntimeSurfaceWorkbench(props);
+    while (tree) {
+      if (typeof tree.type === "function") tree = tree.type(tree.props);
+      else if (tree.type === Symbol.for("react.fragment")) {
+        const children = Array.isArray(tree.props.children) ? tree.props.children : [tree.props.children];
+        tree = children.find((child) => typeof child?.type === "function");
+      } else break;
+    }
+    const effects = pendingEffects;
+    for (const slot of effects) slot.cleanup?.();
+    for (const slot of effects) slot.cleanup = slot.effect();
   }
-  const cleanups = effects.map((effect) => effect());
-  let disposed = false;
+  render();
   let emittedByteOffset = 0;
   return {
-    tree,
+    get tree() { return tree; },
     writes,
-    registrations: [...listeners.keys()],
+    get registrations() { return registrations.map(entry => entry.name); },
+    get activeRegistrations() { return registrations.filter(entry => entry.active); },
     // This hook-only fixture observes the selected live document, not the
     // separately retained IPC response. Browser fixtures verify its rendering.
     snapshot: () => states[6] ?? null,
@@ -109,7 +166,7 @@ function mountWorkbench(registration, options = {}) {
     dispose: () => {
       if (disposed) return;
       disposed = true;
-      for (const cleanup of cleanups) cleanup?.();
+      for (const slot of slots) slot?.cleanup?.();
     }
   };
 }

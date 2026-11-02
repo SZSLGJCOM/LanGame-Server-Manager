@@ -56,7 +56,11 @@ test("the shared runtime console displays only retained archive output and creat
   context.after(mounted.dispose);
   assert.deepEqual(mounted.registrations, [], "An archive must not subscribe to native runtime events");
   const [consoleElement] = findElement(mounted.tree, (element) => element.type === "pre");
-  assert.equal(consoleElement.props.children[0], archive.log.text);
+  const logRegions = findElement(consoleElement, (element) => element.props["data-log-region"] !== undefined);
+  assert.equal(logRegions.length, 1, "An archive must display one retained runtime source without startup output");
+  assert.equal(logRegions[0].props["data-log-region"], "runtime");
+  assert.equal(logRegions[0].props["data-source-path"], archive.log.relative_path);
+  assert.equal(logRegions[0].props.children, archive.log.text);
   assert.equal(consoleElement.props.title, "The log display is truncated.");
   const [commandInput] = findElement(mounted.tree, (element) => element.type === "input");
   assert.equal(commandInput.props.disabled, true);

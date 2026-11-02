@@ -1,5 +1,29 @@
 use super::*;
 
+#[test]
+fn lifecycle_completion_keeps_backup_warning_for_stop_and_restart_in_both_languages() {
+    for locale in [AssistantLifecycleLocale::ZhCn, AssistantLifecycleLocale::En] {
+        for evidence in [
+            json!({"autoBackupError":"Disk is full"}),
+            json!({"stopReceipt":{"autoBackupError":"Disk is full"}}),
+        ] {
+            let message =
+                locale.with_stop_backup_warning("Runtime operation completed.".into(), &evidence);
+            assert!(message.starts_with("Runtime operation completed."));
+            assert!(message.contains("Disk is full"));
+            assert!(message.contains(if locale == AssistantLifecycleLocale::ZhCn {
+                "自动备份失败"
+            } else {
+                "Automatic backup failed"
+            }));
+        }
+        assert_eq!(
+            locale.with_stop_backup_warning("Stopped.".into(), &json!({"autoBackupError":null})),
+            "Stopped."
+        );
+    }
+}
+
 fn copy_input(context: Option<&str>, prompt: &str) -> AssistantExecuteOperationInput {
     AssistantExecuteOperationInput {
         task: AssistantTaskRequest {

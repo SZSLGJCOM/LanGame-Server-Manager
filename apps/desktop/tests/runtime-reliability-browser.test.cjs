@@ -31,6 +31,7 @@ test("reliability real ReactDOM StrictMode lifecycle releases subscriptions and 
   assert.equal(report.cycles, 12);
   assert.equal(report.renders, 36);
   assert.equal(report.strict_mode_replays, report.cycles);
+  assert.equal(report.startup_receipt_transitions, report.cycles);
   assert.ok(report.listeners_created >= report.cycles * 4);
   assert.equal(report.listeners_released, report.listeners_created);
   assert.equal(report.listeners_remaining, 0);
@@ -39,7 +40,7 @@ test("reliability real ReactDOM StrictMode lifecycle releases subscriptions and 
   assert.equal(report.readbacks, report.cycles);
   assert.deepEqual(report.browser_errors, []);
   assert.deepEqual(report.checks, [
-    "strict_mode_replay", "same_root_path_change", "same_root_instance_change",
+    "strict_mode_replay", "startup_receipt_handoff", "same_root_path_change", "same_root_instance_change",
     "late_registration", "late_events", "bounded_dom_tail", "unmount_baseline", "service_generation_readback",
   ]);
   assert.equal(report.browser_exited, true);

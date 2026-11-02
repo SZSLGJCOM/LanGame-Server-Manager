@@ -88,6 +88,7 @@ async fn stop_cancels_pending_start_before_waiting_for_its_mutation_lock() {
         app_core::StopInstanceOutcome::StartupCancelled
     );
     assert!(result.run_id.is_none());
+    assert!(result.auto_backup_error.is_none());
     assert_eq!(result.process_count, 0);
     assert!(matches!(result.summary.status, InstanceStatus::Stopped));
     assert!(
@@ -107,6 +108,56 @@ async fn stop_cancels_pending_start_before_waiting_for_its_mutation_lock() {
     assert!(!log.contains("instance.stop.auto_backup_created"));
     assert!(!log.contains("instance.stop.completed"));
     drop(app);
+    fs::remove_dir_all(root).unwrap();
+}
+
+#[tokio::test]
+async fn automatic_backup_failure_returns_warning_and_preserves_stopped_world() {
+    let (root, storage, id) = fixture().await;
+    let mut details = read_instance_details(&storage.paths, &id).await.unwrap();
+    details.auto_backup_on_stop = true;
+    let saves = Path::new(&details.saves_path);
+    fs::create_dir_all(saves).unwrap();
+    let world = saves.join("world.fixture");
+    fs::write(&world, b"stopped world bytes").unwrap();
+    let backups = crate::commands::commands_program_storage::instance_root(&details)
+        .unwrap()
+        .join("backups");
+    if backups.is_dir() {
+        fs::remove_dir(&backups).unwrap();
+    }
+    fs::write(&backups, b"blocked destination").unwrap();
+
+    let warning = backup_after_stop(&storage, &details, InstanceShutdownSource::Manual)
+        .await
+        .expect("backup destination failure must reach the stop response");
+    assert!(!warning.is_empty());
+    assert_eq!(fs::read(&world).unwrap(), b"stopped world bytes");
+    let current = read_instance_details(&storage.paths, &id).await.unwrap();
+    assert!(matches!(current.summary.status, InstanceStatus::Stopped));
+    assert!(current.active_run.is_none());
+    let log = fs::read_to_string(storage.paths.app_log_path()).unwrap();
+    assert!(log.contains("instance.stop.auto_backup_failed"));
+    assert!(!log.contains("instance.stop.auto_backup_created"));
+    fs::remove_dir_all(root).unwrap();
+}
+
+#[tokio::test]
+async fn disabled_automatic_backup_returns_no_warning_or_backup() {
+    let (root, storage, id) = fixture().await;
+    let mut details = read_instance_details(&storage.paths, &id).await.unwrap();
+    details.auto_backup_on_stop = false;
+    assert!(
+        backup_after_stop(&storage, &details, InstanceShutdownSource::Manual)
+            .await
+            .is_none()
+    );
+    assert!(
+        app_storage::list_instance_backups(&storage.paths, &id)
+            .await
+            .unwrap()
+            .is_empty()
+    );
     fs::remove_dir_all(root).unwrap();
 }
 

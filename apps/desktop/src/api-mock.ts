@@ -2437,7 +2437,8 @@ export async function invokeMock<T>(command: string, args?: Record<string, unkno
           log_path: process.log_path,
           exit_code: 0
         })),
-        outcome: startupCancelled ? "startup_cancelled" : "stopped"
+        outcome: startupCancelled ? "startup_cancelled" : "stopped",
+        auto_backup_error: null
       } as T;
     }
     case "send_instance_runtime_command":

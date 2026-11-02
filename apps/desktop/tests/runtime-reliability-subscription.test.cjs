@@ -10,22 +10,27 @@ test("reliability: repeated workbench lifecycles release every successful regist
   let succeeded = 0;
   let failed = 0;
   for (let cycle = 0; cycle < 60; cycle += 1) {
-    const registration = deferred();
-    const recoveryRegistration = deferred();
-    let readbacks = 0;
-    const mounted = mountWorkbench(registration, { recoveryRegistration, onRetryReads: () => { readbacks += 1; } });
-    assert.deepEqual(mounted.registrations, ["runtime-log-stream", "runtime-service-events-reset"]);
-    const resolveRegistration = () => {
-      for (const pending of [registration, recoveryRegistration]) {
-        const resource = { cycle, pending };
-        resources.add(resource);
-        succeeded += 1;
-        pending.resolve(() => {
-          assert.equal(resources.delete(resource), true, "each native listener is released exactly once");
-          released += 1;
-        });
-      }
+    const requests = [];
+    let ready = false;
+    const resolveResource = pending => {
+      const resource = { cycle, pending };
+      resources.add(resource);
+      succeeded += 1;
+      pending.resolve(() => {
+        assert.equal(resources.delete(resource), true, "each native listener is released exactly once");
+        released += 1;
+      });
     };
+    const register = () => {
+      const pending = deferred();
+      requests.push(pending);
+      if (ready) resolveResource(pending);
+      return pending.promise;
+    };
+    let readbacks = 0;
+    const mounted = mountWorkbench(register, { recoveryRegistration: register, onRetryReads: () => { readbacks += 1; } });
+    assert.deepEqual(mounted.registrations, ["runtime-log-stream", "runtime-service-events-reset"]);
+    const resolveRegistration = () => { ready = true; requests.forEach(resolveResource); };
     if (cycle % 3 === 0) {
       resolveRegistration();
       await settle();
@@ -42,9 +47,8 @@ test("reliability: repeated workbench lifecycles release every successful regist
     const readbacksAtDisposal = readbacks;
     if (cycle % 3 === 1) resolveRegistration();
     if (cycle % 3 === 2) {
-      registration.reject(new Error("registration completed after navigation"));
-      recoveryRegistration.reject(new Error("recovery registration completed after navigation"));
-      failed += 2;
+      for (const pending of requests) pending.reject(new Error("registration completed after navigation"));
+      failed += requests.length;
     }
     await settle();
     mounted.receive({ lines: ["event queued before native cleanup"] });
@@ -52,6 +56,7 @@ test("reliability: repeated workbench lifecycles release every successful regist
     assert.equal(mounted.writes.length, writesAtDisposal);
     assert.equal(readbacks, readbacksAtDisposal);
     assert.equal(resources.size, 0, `cycle ${cycle} returned to its resource baseline`);
+    assert.equal(mounted.activeRegistrations.length, 0);
     assert.equal(released, succeeded);
   }
   assert.equal(warnings.length, failed);

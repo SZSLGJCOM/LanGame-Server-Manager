@@ -1,10 +1,10 @@
-//! ASA's native prerequisites precede owned-listener readiness. Each offset or
+//! ASA's native Mod validation precedes owned-listener readiness. Each
 //! CurseForge observation and deadline belongs to one current process identity.
 use super::RuntimeStartReservationLease;
 use super::commands_runtime_supervision::StrictBindEvaluation;
 use app_core::{InstanceDetails, PortBinding, ProcessLaunchPlan};
 use std::collections::BTreeMap;
-use std::time::{Duration, SystemTime};
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
 #[path = "commands_asa_curseforge_cache.rs"]
 mod curseforge_cache;
 #[path = "commands_asa_curseforge_evidence.rs"]
@@ -19,8 +19,6 @@ pub(super) use curseforge_failure::{
 mod curseforge_plan;
 #[path = "commands_asa_curseforge_startup.rs"]
 mod curseforge_startup;
-#[path = "commands_asa_startup_evidence.rs"]
-mod evidence;
 pub(super) use curseforge_plan::requires_validation as requires_mod_validation;
 
 pub(super) fn validate_mod_start_plans(
@@ -32,11 +30,16 @@ pub(super) fn validate_mod_start_plans(
     }
     Ok(())
 }
-use evidence::{Evidence, ImageCache, Observation, capture, observe, process_creation_time};
-#[cfg(test)]
-use evidence::{MAX_LOG_BYTES, cached_image, parse_observation, read_observation};
 
-const COLD_CACHE_TIMEOUT: Duration = Duration::from_secs(15 * 60);
+const MOD_VALIDATION_TIMEOUT: Duration = Duration::from_secs(15 * 60);
+
+fn process_creation_time(identity: &app_core::ProcessIdentity) -> Option<SystemTime> {
+    let ticks = identity
+        .creation_time
+        .checked_sub(116_444_736_000_000_000)?;
+    UNIX_EPOCH.checked_add(Duration::from_nanos(ticks.checked_mul(100)?))
+}
+
 #[path = "commands_asa_startup_clock.rs"]
 mod clock;
 use clock::PhaseClock;
@@ -44,14 +47,12 @@ type TargetId = (String, u32, u64, String);
 
 pub(super) struct StartupSession {
     started: tokio::time::Instant,
-    images: ImageCache,
     states: BTreeMap<TargetId, TargetState>,
 }
 impl Default for StartupSession {
     fn default() -> Self {
         Self {
             started: tokio::time::Instant::now(),
-            images: ImageCache::default(),
             states: BTreeMap::new(),
         }
     }
@@ -74,7 +75,6 @@ impl TargetState {
 #[derive(Clone)]
 struct Target {
     id: TargetId,
-    evidence: Option<Evidence>,
     required_ports: Vec<String>,
 }
 
@@ -84,8 +84,6 @@ pub(super) struct StartupBudget<'a> {
     normal_timeout: Duration,
     targets: Vec<Target>,
     console_log: Option<String>,
-    reported_cold: bool,
-    reported_binding: bool,
     reported_mod_check: bool,
     reported_mod_complete: bool,
     reported_mod_count: usize,
@@ -116,8 +114,6 @@ impl<'a> StartupBudget<'a> {
                     (!required.is_empty()).then(|| {
                         Ok::<_, String>((
                             plan.process_key.clone(),
-                            plan.launch_plan.install_root.clone(),
-                            plan.launch_plan.executable_path.clone(),
                             child.pid,
                             child.process_identity.clone(),
                             required,
@@ -131,44 +127,20 @@ impl<'a> StartupBudget<'a> {
         } else {
             Vec::new()
         };
-        let mut images = std::mem::take(&mut session.images);
-        let (captured, images, issues) = tokio::select! {
-            biased;
-            _ = reservation.cancelled() => return Err("ASA startup preparation was cancelled.".into()),
-            result = tokio::task::spawn_blocking(move || {
-                let mut captured = Vec::new();
-                let mut issues = Vec::new();
-                for (key, root, executable, pid, identity, required, mods, sdk_root) in candidates {
-                    let evidence = if cfg!(windows) {
-                        match capture(&root, &executable, pid, identity.clone(), &mut images) {
-                            Ok(evidence) => evidence,
-                            Err(error) => { issues.push(format!("pid {pid}: {error}")); None }
-                        }
-                    } else { None };
-                    captured.push(((key, pid, identity.creation_time, identity.image_path.clone()), identity, required, evidence, mods, sdk_root));
-                }
-                (captured, images, issues)
-            }) => result.map_err(|error| format!("ASA startup evidence worker failed: {error}"))?,
-        };
-        session.images = images;
-        if !issues.is_empty()
-            && let Some(path) = console_log.as_deref()
-        {
-            let _ = super::append_startup_console_line(
-                path,
-                &format!(
-                    "ASA offset evidence is unavailable; retaining the normal startup budget: {}",
-                    issues.into_iter().take(4).collect::<Vec<_>>().join("; ")
-                ),
-                "",
-            );
+        if reservation.is_cancelled() {
+            return Err("ASA startup preparation was cancelled.".into());
         }
-        // Both process age and monotonic reference are sampled after preparation.
-        // Hashing time is included exactly once in the absolute cold deadline.
+        // Process age keeps the Mod deadline anchored to native process start.
         let wall_now = SystemTime::now();
         let now = session.started.elapsed();
         let mut targets = Vec::new();
-        for (id, identity, required_ports, evidence, requirements, sdk_root) in captured {
+        for (key, pid, identity, required_ports, requirements, sdk_root) in candidates {
+            let id = (
+                key,
+                pid,
+                identity.creation_time,
+                identity.image_path.clone(),
+            );
             let age = process_creation_time(&identity)
                 .and_then(|created| wall_now.duration_since(created).ok())
                 .unwrap_or_default();
@@ -189,11 +161,7 @@ impl<'a> StartupBudget<'a> {
                     mods,
                 }
             });
-            targets.push(Target {
-                id,
-                evidence,
-                required_ports,
-            });
+            targets.push(Target { id, required_ports });
         }
         Ok(Self {
             session,
@@ -201,8 +169,6 @@ impl<'a> StartupBudget<'a> {
             normal_timeout,
             targets,
             console_log,
-            reported_cold: false,
-            reported_binding: false,
             reported_mod_check: false,
             reported_mod_complete: false,
             reported_mod_count: 0,
@@ -311,39 +277,6 @@ impl<'a> StartupBudget<'a> {
             }
             state.mods = Some(mods);
         }
-        let evidence = self
-            .targets
-            .iter()
-            .enumerate()
-            .filter_map(|(index, target)| target.evidence.clone().map(|evidence| (index, evidence)))
-            .collect::<Vec<_>>();
-        if !evidence.is_empty() {
-            let observations = tokio::task::spawn_blocking(move || {
-                evidence
-                    .iter()
-                    .map(|(index, evidence)| {
-                        observe(evidence).map(|observation| (*index, observation))
-                    })
-                    .collect::<Result<Vec<_>, _>>()
-            })
-            .await
-            .map_err(|error| format!("ASA startup evidence worker failed: {error}"))??;
-            let now = self.session.started.elapsed();
-            self.check_at(now)?;
-            for (index, observation) in observations {
-                let target = &self.targets[index];
-                let state = self
-                    .session
-                    .states
-                    .get_mut(&target.id)
-                    .expect("owned startup target");
-                if state.ready_samples < 3 {
-                    state
-                        .clock
-                        .observe(&observation, now, self.normal_timeout)?;
-                }
-            }
-        }
         self.report_phase();
         self.remaining_at(self.session.started.elapsed())
     }
@@ -434,14 +367,6 @@ impl<'a> StartupBudget<'a> {
                     return Err(self.target_error(target, error));
                 }
                 if ready && state.mods_ready() {
-                    state.clock.observe(
-                        &Observation {
-                            cold_download: false,
-                            initialized: true,
-                        },
-                        now,
-                        self.normal_timeout,
-                    )?;
                     state.ready_samples += 1;
                 }
             }
@@ -505,30 +430,6 @@ impl<'a> StartupBudget<'a> {
         };
         if let (Some(message), Some(path)) = (mod_message, self.console_log.as_deref()) {
             let _ = super::append_startup_console_line(path, &message, "");
-        }
-        let cold_seen = self
-            .targets
-            .iter()
-            .any(|target| self.session.states[&target.id].clock.cold_seen);
-        let initializing = self.targets.iter().any(|target| {
-            let clock = &self.session.states[&target.id].clock;
-            clock.cold_seen && !clock.initialized
-        });
-        let message = if cold_seen && !self.reported_cold {
-            self.reported_cold = true;
-            Some(
-                "ASA API is downloading offsets for this server executable (maximum 15 minutes from process start). Game listener verification remains pending.",
-            )
-        } else if cold_seen && !initializing && !self.reported_binding {
-            self.reported_binding = true;
-            Some(
-                "ASA API offset initialization finished. Waiting for the game's owned listeners within the normal startup budget.",
-            )
-        } else {
-            None
-        };
-        if let (Some(message), Some(path)) = (message, self.console_log.as_deref()) {
-            let _ = super::append_startup_console_line(path, message, "");
         }
     }
 }
