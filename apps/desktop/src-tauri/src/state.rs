@@ -1019,7 +1019,7 @@ mod tests {
             .expect("first stream should reserve the log path");
         assert!(streams.reserve(instance_id, log_path).is_none());
 
-        streams.release_instance(instance_id);
+        streams.release_path(instance_id, log_path);
         let new_lease = streams
             .reserve(instance_id, log_path)
             .expect("restart should reserve the same log path with a new lease");

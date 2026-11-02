@@ -199,7 +199,7 @@ async fn runtime_overview_reads_recent_runs_and_log_tail() {
         .join("run-1.log");
     fs::write(
         &log_path,
-        "booting\nloading world\nserver ready\nlistening on udp/10999\nheartbeat ok\n",
+        "booting\nloading world\n[00:00:02]: Server ready\nlistening on udp/10999\nheartbeat ok\n",
     )
     .unwrap();
 
@@ -225,16 +225,16 @@ async fn runtime_overview_reads_recent_runs_and_log_tail() {
     assert_eq!(overview.log_tail.total_lines, 5);
     assert!(overview.log_tail.read_error.is_none());
     assert_eq!(overview.health.status, "ready");
-    assert!(
-        overview.health.matched_line.is_some(),
-        "expected runtime health to capture a ready line"
+    assert_eq!(
+        overview.health.matched_line.as_deref(),
+        Some("[00:00:02]: Server ready")
     );
     assert!(
         overview
             .log_tail
             .lines
             .iter()
-            .any(|line| line.contains("server ready"))
+            .any(|line| line.contains("[00:00:02]: Server ready"))
     );
 
     let document = read_instance_log_document(&paths, &created.summary.id, 3, None)
@@ -243,7 +243,7 @@ async fn runtime_overview_reads_recent_runs_and_log_tail() {
     assert_eq!(document.total_lines, 5);
     assert!(document.truncated);
     assert_eq!(document.lines.len(), 3);
-    assert_eq!(document.lines[0], "server ready");
+    assert_eq!(document.lines[0], "[00:00:02]: Server ready");
 
     mark_instance_process_stopped(&paths, &created.summary.id, run.run_id, Some(0), false)
         .await
@@ -256,7 +256,7 @@ async fn runtime_overview_reads_recent_runs_and_log_tail() {
         .join("run-2.log");
     fs::write(
         &second_log_path,
-        "booting again\nloading mods\nserver ready second\nheartbeat second\n",
+        "booting again\nloading mods\n[00:00:03]: Server ready\nheartbeat second\n",
     )
     .unwrap();
 
@@ -280,7 +280,7 @@ async fn runtime_overview_reads_recent_runs_and_log_tail() {
         latest_document
             .lines
             .iter()
-            .any(|line| line.contains("server ready second"))
+            .any(|line| line.contains("[00:00:03]: Server ready"))
     );
 
     let first_run_document =
@@ -295,7 +295,7 @@ async fn runtime_overview_reads_recent_runs_and_log_tail() {
         first_run_document
             .lines
             .iter()
-            .any(|line| line.contains("server ready"))
+            .any(|line| line.contains("[00:00:02]: Server ready"))
     );
 
     mark_instance_process_stopped(

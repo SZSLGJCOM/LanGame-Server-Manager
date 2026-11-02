@@ -199,7 +199,8 @@ mod tests {
             let server = tokio::spawn(async move {
                 let (mut stream, _) = listener.accept().await.unwrap();
                 let mut request = [0; 2048];
-                stream.read(&mut request).await.unwrap();
+                let received = stream.read(&mut request).await.unwrap();
+                assert!(received > 0, "client closed before sending its request");
                 let size = if oversized { cache::MAX_ARCHIVE + 1 } else { 8 };
                 let response = format!(
                     "HTTP/1.1 200 OK\r\nContent-Length: {size}\r\nConnection: close\r\n\r\n"

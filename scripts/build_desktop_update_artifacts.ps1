@@ -14,6 +14,8 @@ param(
     [Parameter(ParameterSetName = 'Managed')]
     [switch]$FreshTarget,
     [Parameter(ParameterSetName = 'Managed')]
+    [AllowEmptyString()][ValidateSet('', 'D:', 'E:')][string]$PreferVolume = '',
+    [Parameter(ParameterSetName = 'Managed')]
     [ValidateRange(0, 21600)][int]$WaitTimeoutSeconds = 1800,
     [Parameter(Mandatory = $true, ParameterSetName = 'Export')]
     [ValidateNotNullOrEmpty()]
@@ -227,6 +229,7 @@ if ($BuildManaged) {
         '-WaitTimeoutSeconds', [string]$WaitTimeoutSeconds
     )
     if ($FreshTarget) { $buildArguments += '-FreshTarget' }
+    if ($PreferVolume) { $buildArguments += @('-PreferVolume', $PreferVolume) }
     if ($EnableGitHubUpdates) { $buildArguments += '-DesktopUpdatesEnabled' }
     $buildArguments += '--locked'
     $oldStaticVcruntime = [Environment]::GetEnvironmentVariable('STATIC_VCRUNTIME', 'Process')

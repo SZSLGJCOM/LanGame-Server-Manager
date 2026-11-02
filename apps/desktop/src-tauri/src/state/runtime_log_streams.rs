@@ -308,13 +308,6 @@ impl RuntimeLogStreams {
         true
     }
 
-    pub fn release_instance(&mut self, instance_id: &str) {
-        self.active.retain(|(id, _), _| id != instance_id);
-        self.completed_documents.retain(|(id, _)| id != instance_id);
-        self.completed_native_documents
-            .retain(|((id, _), _)| id != instance_id);
-    }
-
     pub fn release_path(&mut self, instance_id: &str, log_path: &str) {
         let key = stream_key(instance_id, log_path);
         self.active.remove(&key);
@@ -521,7 +514,7 @@ mod tests {
             streams.status("world", "server.log", new),
             RuntimeLogStreamStatus::Active
         );
-        streams.release_instance("world");
+        streams.release_path("world", "server.log");
         assert_eq!(
             streams.status("world", "server.log", new),
             RuntimeLogStreamStatus::Cancelled

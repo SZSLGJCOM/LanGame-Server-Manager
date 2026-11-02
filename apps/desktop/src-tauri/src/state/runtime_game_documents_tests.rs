@@ -139,7 +139,8 @@ fn final_patch_readback_survives_release_and_distinguishes_completed_error_recov
     assert_eq!(final_readback.revision, final_patch.revision);
     assert_eq!(final_readback.snapshot.lines, ["seed", "saved"]);
 
-    streams.release_instance("ark");
+    streams.release_path("ark", "console.log");
+    streams.release_path("ark", "native.log");
     assert!(streams.native_document("ark", "native.log", 1).is_none());
     let lease = reserve(&mut streams, "ark");
     let mut failure = document(&[], 80, 1);

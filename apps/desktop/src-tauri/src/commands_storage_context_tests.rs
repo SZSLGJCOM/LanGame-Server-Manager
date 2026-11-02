@@ -300,10 +300,8 @@ async fn verify_saved_location_protection(root: &Path) -> Result<(), Box<dyn std
     let error = update_app_settings(app.state::<DesktopState>(), input())
         .await
         .unwrap_err();
-    assert!(
-        error.contains("storage operation is in progress"),
-        "{error}"
-    );
+    assert!(error.contains("1 项操作"), "{error}");
+    assert!(error.contains("recovered storage fixture"), "{error}");
     assert_eq!(fs::read(&paths.settings_path)?, before);
     drop(operation);
     let saved = update_app_settings(app.state::<DesktopState>(), input()).await?;

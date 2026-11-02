@@ -29,7 +29,9 @@ test("an observed parent cannot claim a process born before it", () => {
 test("failed native host reads its actual cause without requiring a success report", async () => {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), "langame-reliability-desktop-readback-"));
   try {
-    const cause = { error: "Native drop [Files/drop-result] page exception: fixture failure", browser_process_ids: [1], server_pid: 2 };
+    const cause = { error: "Fixture page failed: Real console mount and native subscriptions exceeded 15000 ms",
+      stage: "initial_command", command_count: 0, busy: false, output_markers: [],
+      browser_process_ids: [], server_pid: 2 };
     await fs.writeFile(path.join(root, "failure.json"), JSON.stringify(cause), { flag: "wx" });
     const result = await readHostEvidence(root, { code: 1, signal: null });
     assert.deepEqual(result, { report: null, failure: cause, readError: null });

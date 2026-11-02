@@ -32,6 +32,11 @@ console.error = (...args) => { errors.push(args.map(String).join(" ")); original
 const nonce = new URLSearchParams(location.search).get("nonce");
 const fixture = document.getElementById("fixture")!;
 const root = createRoot(fixture);
+Object.assign(globalThis, { __reliabilityFixtureCleanup: async () => {
+  await act(async () => root.unmount()); await act(async () => { await Promise.resolve(); });
+  if (bridge.active.size) throw new Error("Native log listeners remain after map CMD unmount");
+  return { browser_errors: errors, native_dialogs: 0 };
+} });
 let checks = 0;
 let editions = 0;
 let patchCount = 0;
@@ -235,6 +240,7 @@ async function run() {
     active_run: { run_id: 1, process_count: 3, log_path: processes[0].log_path, processes },
     ports: updateMockArkPorts(stopped, settings, buildMockPorts(details.summary.module_id), stopped.ports) };
   Object.assign(globalThis, { isTauri: true });
+  let startupReceiptReads = 0;
   let holdCenterRead = false;
   let failCenterRead = false;
   let releaseCenterRead: (() => void) | undefined;
@@ -244,6 +250,12 @@ async function run() {
   // ReactDOM, translations, per-run log reads and event filtering remain active.
   mockIPC(async (command, args) => {
     if (command === "read_instance_log_document_from_storage") {
+      if (args.runId == null) {
+        check(args.source == null, "Startup receipt inspection must precede selecting a map log source");
+        startupReceiptReads++;
+        return { source_path: processes[0].log_path, lines: ["孤岛 控制台输出"], total_lines: 1,
+          truncated: false, read_error: null, startup_session: null };
+      }
       const runId = Number(args.runId); reads.push(runId);
       const revision = ++documentRevision;
       sourceReads.push({ runId, source: args.source });
@@ -273,7 +285,10 @@ async function run() {
   mode = "console"; await render();
   await settleUntil(() => element("pre.server-runtime-console").textContent!.includes("孤岛 has successfully started"), "Default map source omitted the native successful-start message");
   const sourceSelect = () => element<HTMLSelectElement>(".server-runtime-console-source-select");
-  check(sourceSelect().value === "game" && sourceReads.some(read => read.runId === 1 && read.source === "game"), "ARK must default to its selected map's native game log");
+  check(startupReceiptReads > 0 && sourceSelect().value === "game"
+    && sourceReads[0]?.runId === 1 && sourceReads[0]?.source === "game"
+    && !element("pre.server-runtime-console").textContent!.includes("孤岛 控制台输出"),
+    "After inspecting the startup receipt, ARK must read its selected map's native log without mixing the receipt source");
   check(element("pre.server-runtime-console").getAttribute("data-log-path") === gamePath(processes[0]), "Native source was not used by the console scope");
   await change(sourceSelect(), "console");
   await settleUntil(() => element("pre.server-runtime-console").textContent!.includes("孤岛 控制台输出"), "Managed console source is not accessible");
@@ -450,12 +465,7 @@ async function run() {
     "Escape must dismiss the full-name tooltip while keeping keyboard focus");
   await act(async () => { finalTarget.blur(); finalTarget.focus(); });
   check(errors.length === 0, `Browser errors: ${errors.join("; ")}`);
-  Object.assign(globalThis, { __reliabilityFixtureCleanup: async () => {
-    await act(async () => root.unmount()); await act(async () => { await Promise.resolve(); });
-    if (bridge.active.size) throw new Error("Native log listeners remain after map CMD unmount");
-    return { browser_errors: errors, native_dialogs: 0 };
-  } });
-  return { status: "passed", checks, editions, patches: patchCount, console_targets: finalTarget.options.length, commands: commands.length, browser_errors: errors };
+  return { status: "passed", checks, editions, patches: patchCount, console_targets: finalTarget.options.length, commands: commands.length, startup_receipt_reads: startupReceiptReads, browser_errors: errors };
 }
 void run().catch((error) => ({ status: "failed", checks, error: error instanceof Error ? error.stack : String(error), browser_errors: errors }))
   .then((report) => fetch(`/__reliability_result/${nonce}`, { method: "POST", body: JSON.stringify(report) }));

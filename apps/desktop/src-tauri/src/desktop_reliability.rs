@@ -74,7 +74,7 @@ impl Fixture {
         if let Some(snapshot) = &recovery
             && let Err(error) = progress.update_recovery(snapshot)
         {
-            progress.error = Some(error);
+            progress.error.get_or_insert(error);
         }
         // Server locking can briefly wait for bounded dispatch, so every caller
         // of this method runs in a blocking worker, never the UI/async executor.
@@ -211,6 +211,28 @@ async fn desktop_reliability_status(
 }
 
 #[tauri::command]
+fn desktop_reliability_failed(
+    app: tauri::AppHandle,
+    state: tauri::State<'_, Arc<Fixture>>,
+    nonce: String,
+    error: String,
+) -> Result<(), String> {
+    if nonce != state.config.nonce {
+        return Err("Fixture nonce mismatch".into());
+    }
+    if error.trim().is_empty() || error.len() > 16 * 1024 {
+        return Err("Fixture page failure must contain a bounded diagnostic".into());
+    }
+    // Frontend assertions used to stop only the page, hiding the first cause
+    // behind the log worker's 180-second deadline. Preserve it before cleanup.
+    lock(&state.progress)
+        .error
+        .get_or_insert_with(|| format!("Fixture page failed: {error}"));
+    app.exit(1);
+    Ok(())
+}
+
+#[tauri::command]
 async fn desktop_reliability_step(
     app: tauri::AppHandle,
     state: tauri::State<'_, Arc<Fixture>>,
@@ -232,7 +254,7 @@ async fn desktop_reliability_step(
             let mut progress = lock(&fixture.progress);
             progress.busy = false;
             if let Err(error) = &result {
-                progress.error = Some(error.clone());
+                progress.error.get_or_insert_with(|| error.clone());
             }
         }
         result?;
@@ -419,6 +441,7 @@ fn run(config_path: &Path) -> Result<(), String> {
         .on_window_event(crate::handle_window_event)
         .invoke_handler(tauri::generate_handler![
             desktop_reliability_status,
+            desktop_reliability_failed,
             desktop_reliability_step,
             read_instance_log_document_from_storage
         ])
@@ -475,14 +498,27 @@ fn run(config_path: &Path) -> Result<(), String> {
     let stopped = fixture.stop();
     let complete = lock(&fixture.progress).stage == Stage::Finished;
     if exit_code != 0 || !complete || stopped.is_err() {
-        let error = stopped
-            .err()
-            .or_else(|| lock(&fixture.progress).error.clone())
+        let error = lock(&fixture.progress)
+            .error
+            .clone()
+            .or_else(|| stopped.err())
             .or_else(|| lock(&fixture.output).error.clone())
             .unwrap_or_else(|| "Fixture exited before finishing".into());
+        let progress = lock(&fixture.progress);
+        let output = lock(&fixture.output);
         let report = config::write_new_json(
             &config.root.join("failure.json"),
-            &serde_json::json!({"error": error, "browser_process_ids": lock(&fixture.browser_process_ids).clone(), "server_pid": lock(&fixture.server).pid}),
+            &serde_json::json!({
+                "error": error,
+                "stage": progress.stage, "busy": progress.busy,
+                "command_count": progress.command_count,
+                "faults_requested": progress.faults_requested,
+                "native_failures": progress.native_failures,
+                "observations": progress.observations,
+                "output_markers": output.markers, "emitted_log_batches": output.batches,
+                "browser_process_ids": lock(&fixture.browser_process_ids).clone(),
+                "server_pid": lock(&fixture.server).pid,
+            }),
         );
         if let Err(report_error) = report {
             eprintln!("Save fixture failure: {report_error}");

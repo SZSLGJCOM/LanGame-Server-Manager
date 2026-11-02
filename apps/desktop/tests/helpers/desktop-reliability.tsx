@@ -48,6 +48,7 @@ const observations: Observations = {
   native_bridge: false, browser_errors: [],
 };
 let storageKey: string | null = null;
+let fixtureNonce: string | null = null;
 let failed = false;
 let stopEvents: UnlistenFn | null = null;
 const originalConsoleError = console.error;
@@ -64,6 +65,7 @@ function persist() {
 
 function fail(error: unknown) {
   const message = error instanceof Error ? error.message : String(error);
+  const firstFailure = !failed;
   observations.browser_errors.push(message);
   failed = true;
   try { persist(); } catch (storageError) {
@@ -73,6 +75,14 @@ function fail(error: unknown) {
   const status = document.getElementById("status");
   if (status) status.textContent = `Desktop reliability failed: ${observations.browser_errors.join("; ")}`;
   originalConsoleError("DESKTOP_RELIABILITY_FAILED", ...observations.browser_errors);
+  if (firstFailure) {
+    // Report the real assertion, not just a changed DOM that leaves the native
+    // host waiting until its outer deadline. The host preserves the first cause.
+    void (async () => {
+      const nonce = fixtureNonce ?? (await invoke<Status>("desktop_reliability_status")).nonce;
+      await invoke("desktop_reliability_failed", { nonce, error: message.slice(0, 4096) });
+    })().catch((reportError) => originalConsoleError("DESKTOP_RELIABILITY_REPORT_FAILED", reportError));
+  }
 }
 
 addEventListener("error", (event) => fail(event.message));
@@ -119,6 +129,7 @@ function validateStatus(status: Status) {
 
 async function readStatus() {
   const status = await bounded(invoke<Status>("desktop_reliability_status"), "Native fixture status");
+  fixtureNonce = status.nonce;
   validateStatus(status);
   return status;
 }
@@ -161,6 +172,21 @@ function observeMarkers(lines: string[], key: "event_command_counts" | "dom_comm
   }
   observations[key].sort();
   persist();
+}
+
+function readFixtureConsoleLines(consoleNode: Element): string[] {
+  const children = Array.from(consoleNode.children);
+  const regions = children.filter((child) => child.tagName === "SPAN" && child.getAttribute("data-log-region") === "runtime");
+  const region = regions[0];
+  if (regions.length !== 1 || !region) throw new Error("The real console must contain one runtime log region");
+  if (children.some((child) => child.children.length > 0 || (child !== region
+    && !(child.tagName === "SPAN" && child.getAttribute("class") === "server-runtime-command-feedback"
+      && child.getAttribute("role") === "status")))) {
+    throw new Error("Unexpected content inside the real console");
+  }
+  const lines = (region.textContent ?? "").split("\n");
+  if (lines.length > 400) throw new Error("The real DOM exceeded the 400-line tail budget");
+  return lines;
 }
 
 function activeNativeLogHandlers() {
@@ -245,13 +271,7 @@ async function run() {
     const consoleNode = fixture.querySelector("pre.server-runtime-console");
     if (!consoleNode) return;
     check(!consoleNode.querySelector(".server-runtime-console-errors"), "The real console reported a log read error");
-    check(Array.from(consoleNode.children).every((child) =>
-      child.matches("span.server-runtime-command-feedback[role='status']")), "Unexpected content inside the real console");
-    const logText = Array.from(consoleNode.childNodes)
-      .filter((node) => node.nodeType === Node.TEXT_NODE)
-      .map((node) => node.textContent ?? "").join("");
-    const lines = logText.split("\n");
-    check(lines.length <= 400, "The real DOM exceeded the 400-line tail budget");
+    const lines = readFixtureConsoleLines(consoleNode);
     observations.max_tail_lines = Math.max(observations.max_tail_lines, lines.length);
     observeMarkers(lines, "dom_command_counts");
   };

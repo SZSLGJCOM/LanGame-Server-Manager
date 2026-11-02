@@ -9,6 +9,7 @@ test("ARK editions manage maps in one instance and route each LanGameCMD through
   assert.equal(report.editions, 2);
   assert.equal(report.console_targets, 3);
   assert.equal(report.commands, 3);
+  assert.ok(report.startup_receipt_reads > 0, "The native log flow must first inspect its startup receipt");
   assert.ok(report.checks >= 43);
   assert.deepEqual(report.browser_errors, []);
   assert.equal(report.browser_processes_remaining, 0);

@@ -862,7 +862,6 @@ pub struct RuntimeLogDocument {
 #[tauri::command]
 pub async fn read_instance_log_document_from_storage(
     app_handle: tauri::AppHandle,
-    state: tauri::State<'_, DesktopState>,
     instance_id: String,
     max_lines: Option<usize>,
     run_id: Option<i64>,
@@ -870,6 +869,7 @@ pub async fn read_instance_log_document_from_storage(
     startup_attempt_id: Option<String>,
     startup_before_cursor: Option<String>,
 ) -> Result<RuntimeLogDocument, String> {
+    let state = app_handle.state::<DesktopState>();
     if source
         .as_deref()
         .is_some_and(|value| value != "game" && value != "console")

@@ -1437,7 +1437,6 @@ pub(crate) fn dispatch_command<'a>(
             to_json(
                 commands::read_instance_log_document_from_storage(
                     app_handle.clone(),
-                    app_handle.state::<DesktopState>(),
                     arg(&args, "instanceId", "instance_id")?,
                     opt_arg(&args, "maxLines", "max_lines")?,
                     opt_arg(&args, "runId", "run_id")?,
