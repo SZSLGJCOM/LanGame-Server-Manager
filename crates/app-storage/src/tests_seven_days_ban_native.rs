@@ -260,8 +260,16 @@ async fn confirmed_family_owner_is_recorded_atomically_without_importing_other_n
         .is_err()
     );
     assert_eq!(fs::read(config_path).unwrap(), baseline);
+    assert_eq!(fs::read_to_string(&native_path).unwrap(), XML);
     let owner = r#"<blacklisted platform="Steam" userid="76561198000000002" name="Owner" unbandate="2036-02-29 23:59:58" reason="LanGame"/>"#;
-    let source = XML.replace("</blacklist>", &format!("{owner}</blacklist>"));
+    let native_permissions =
+        r#"<webusers><user name="Native web admin" permission_level="0" /></webusers>"#;
+    let source = XML
+        .replace("</blacklist>", &format!("{owner}</blacklist>"))
+        .replace(
+            "</adminTools>",
+            &format!("{native_permissions}</adminTools>"),
+        );
     fs::write(&native_path, &source).unwrap();
     record_seven_days_bans_from_native(&paths, &created.summary.id, run.run_id, TARGET, &confirmed)
         .await
@@ -297,7 +305,45 @@ async fn confirmed_family_owner_is_recorded_atomically_without_importing_other_n
     let materialized = fs::read_to_string(&native_path).unwrap();
     let rendered =
         fs::read_to_string(config_path.parent().unwrap().join("serveradmin.xml")).unwrap();
-    assert_eq!(materialized, rendered);
+    // Managed sections must match the saved settings; native layout and Web
+    // permissions remain outside the template's ownership.
+    let admin_sections = |document: &str| {
+        let mut reader = quick_xml::Reader::from_str(document);
+        let mut sections = std::collections::BTreeMap::new();
+        loop {
+            match reader.read_event().unwrap() {
+                quick_xml::events::Event::Start(node)
+                    if matches!(
+                        node.name().as_ref(),
+                        "users" | "whitelist" | "blacklist" | "commands"
+                    ) =>
+                {
+                    let contents = reader.read_text(node.name()).unwrap().as_ref().to_owned();
+                    assert!(
+                        sections
+                            .insert(node.name().as_ref().to_owned(), contents)
+                            .is_none()
+                    );
+                }
+                quick_xml::events::Event::Eof => break,
+                _ => {}
+            }
+        }
+        assert_eq!(sections.len(), 4);
+        sections
+    };
+    let materialized_sections = admin_sections(&materialized);
+    assert_eq!(materialized_sections, admin_sections(&rendered));
+    assert!(materialized.contains(native_permissions));
+    assert_eq!(
+        materialized_sections["blacklist"]
+            .matches("<blacklisted ")
+            .count(),
+        2
+    );
+    assert!(materialized_sections["users"].contains(
+        r#"<user platform="Steam" userid="76561198000000003" name="" permission_level="5" />"#
+    ));
     assert_ne!(materialized, source);
     for userid in ["76561198000000001", "76561198000000002"] {
         let identity_attribute = format!("userid=\"{userid}\"");
