@@ -155,14 +155,19 @@ test("save stages world changes and only the startup path runs the bounded updat
 
   const policyStart = instancesSource.indexOf("async fn materialize_instance_configuration_with_policy");
   assert.notEqual(policyStart, -1);
-  const policySource = instancesSource.slice(policyStart);
-  const coordinatedWrite = policySource.indexOf("write_pending_instance_configuration_in_worker(");
-  const commit = policySource.indexOf("commit_instance_transaction(tx, config_mutation, settings_lock).await?");
-  const updater = policySource.indexOf("apply_module_prestart_support(&prestart_context, settings_lock).await?");
+  const transactionStart = instancesSource.indexOf("async fn materialize_instance_configuration_transaction", policyStart);
+  const transactionEnd = instancesSource.indexOf("pub(crate) async fn commit_instance_transaction", transactionStart);
+  assert.ok(policyStart < transactionStart && transactionStart < transactionEnd);
+  const policySource = instancesSource.slice(policyStart, transactionStart);
+  assert.match(policySource, /materialize_instance_configuration_transaction\(\s*&paths,\s*&instance_id,\s*&transaction_lock,\s*apply_prestart_support,?\s*\)\s*\.await/);
+  const transactionSource = instancesSource.slice(transactionStart, transactionEnd);
+  const coordinatedWrite = transactionSource.indexOf("write_pending_instance_configuration_in_worker(");
+  const commit = transactionSource.indexOf("commit_instance_transaction(tx, config_mutation, settings_lock).await?");
+  const updater = transactionSource.search(/apply_module_prestart_support\(\s*&prestart_context,\s*settings_lock,\s*descriptor\.as_ref\(\),?\s*\)\s*\.await\?/);
   assert.ok(coordinatedWrite >= 0 && coordinatedWrite < commit);
-  assert.ok(commit < updater, "external updater must run only after the database transaction commits");
-  assert.match(policySource, /load_active_instance_run\(&mut \*tx, instance_id\)/);
-  assert.match(policySource, /instance_running:\s*instance_running \|\| active_run\.is_some\(\)/);
+  assert.ok(updater >= 0 && commit < updater, "external updater must run only after the database transaction commits");
+  assert.match(transactionSource, /load_active_instance_run\(&mut \*tx, instance_id\)/);
+  assert.match(transactionSource, /instance_running:\s*instance_running \|\| active_run\.is_some\(\)/);
   assert.match(instancesSource, /materialize_instance_configuration_with_policy\(paths, instance_id, settings_lock, false\)/);
   assert.match(instancesSource, /materialize_instance_configuration_with_policy\(paths, instance_id, &settings_lock, true\)/);
 });

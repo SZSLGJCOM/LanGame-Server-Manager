@@ -15,6 +15,7 @@ const workspacePath = path.join(
 );
 const workspaceCssPath = path.join(desktopRoot, "src", "styles", "configuration-workspace.css");
 const guidedSettingsCssPath = path.join(desktopRoot, "src", "styles", "settings-guided.css");
+const serverLayoutCssPath = path.join(desktopRoot, "src", "views", "servers", "workbench", "operations", "server-layout.css");
 const serversViewSource = fs.readFileSync(serversViewPath, "utf8");
 const serverMaintenanceSource = fs.readFileSync(path.join(desktopRoot, "src", "views", "servers", "ServerMaintenanceWorkspace.tsx"), "utf8");
 const archiveWorkspaceSource = fs.readFileSync(path.join(desktopRoot, "src", "views", "servers", "ArchivedInstanceWorkspace.tsx"), "utf8");

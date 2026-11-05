@@ -30,7 +30,19 @@ async fn serve(replies: Vec<Reply>) -> Route {
         for reply in replies {
             let (mut socket, _) = listener.accept().await.unwrap();
             let mut request = [0; 2048];
-            socket.read(&mut request).await.unwrap();
+            let mut received = 0;
+            while !request[..received]
+                .windows(4)
+                .any(|bytes| bytes == b"\r\n\r\n")
+            {
+                assert!(
+                    received < request.len(),
+                    "Fixture request headers are too large"
+                );
+                let bytes = socket.read(&mut request[received..]).await.unwrap();
+                assert!(bytes > 0, "Fixture request ended before its headers");
+                received += bytes;
+            }
             count.fetch_add(1, Ordering::Relaxed);
             socket
                 .write_all(b"HTTP/1.1 200 OK\r\nContent-Length: 7\r\nConnection: close\r\n\r\n")

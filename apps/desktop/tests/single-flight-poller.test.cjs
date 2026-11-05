@@ -1,28 +1,20 @@
-const ts = require("@typescript/typescript6");
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
 const test = require("node:test");
-const { parseSource, sourceText, transpileTypeScript, visitSyntax } = require("../scripts/typescript_source_tools.cjs");
+const vm = require("node:vm");
+const { transpileTypeScript } = require("../scripts/typescript_source_tools.cjs");
 
 const desktopRoot = path.resolve(__dirname, "..");
 
-function workshopPollingEffect() {
-  const filename = path.join(desktopRoot, "src", "views", "servers", "ModWorkbench.tsx");
-  const source = fs.readFileSync(filename, "utf8");
-  const effects = [];
-  visitSyntax(parseSource(source, filename), (node) => {
-    if (!ts.isCallExpression(node) || !ts.isIdentifier(node.expression) || node.expression.text !== "useEffect") return;
-    const callback = node.arguments[0];
-    if (!callback || !ts.isArrowFunction(callback)) return;
-    let usesPoller = false;
-    visitSyntax(callback.body, (nested) => {
-      if (ts.isNewExpression(nested) && ts.isIdentifier(nested.expression) && nested.expression.text === "SingleFlightPoller") usesPoller = true;
-    });
-    if (usesPoller) effects.push({ source: sourceText(source, node), callback: sourceText(source, callback) });
-  });
-  assert.equal(effects.length, 1, "Workshop polling must have one effect that owns the shared poller");
-  return effects[0];
+function loadSourceModule(relativePath, imports, globals = {}) {
+  const filename = path.join(desktopRoot, relativePath);
+  const exports = {};
+  vm.runInNewContext(transpileTypeScript(fs.readFileSync(filename, "utf8"), filename), {
+    exports, ...globals,
+    require: (id) => { assert.ok(Object.hasOwn(imports, id), `Unexpected dependency ${id}`); return imports[id]; }
+  }, { filename });
+  return exports;
 }
 
 require.extensions[".ts"] = function compileTypeScript(module, filename) {
@@ -76,6 +68,56 @@ class FakeScheduler {
     return task.delayMs;
   }
 }
+
+function pollingHarness(relativePath, imports) {
+  const scheduler = new FakeScheduler();
+  const effects = [];
+  let effectIndex = 0;
+  let readSnapshot;
+  const hooks = loadSourceModule(relativePath, { ...imports, react: {
+    useCallback: (callback) => callback,
+    useSyncExternalStore: (_subscribe, snapshot) => { readSnapshot = snapshot; return snapshot(); },
+    useEffect: (create, dependencies) => {
+      const index = effectIndex++;
+      const previous = effects[index];
+      if (previous && dependencies.length === previous.dependencies.length
+        && dependencies.every((value, position) => Object.is(value, previous.dependencies[position]))) return;
+      previous?.cleanup?.();
+      effects[index] = { dependencies, cleanup: create() };
+    }
+  } }, { window: { setTimeout: scheduler.schedule, clearTimeout: scheduler.cancel } });
+  return { scheduler,
+    render(name, ...args) { effectIndex = 0; return hooks[name](...args); },
+    snapshot: () => readSnapshot(),
+    dispose: () => { for (const effect of effects) effect.cleanup?.(); }
+  };
+}
+
+const workshopOperations = loadSourceModule("src/views/servers/workshop-download-operations.ts", {
+  "../../app-state": loadSourceModule("src/app-state.ts", { "./api": {} })
+});
+
+function workshopPollingHarness(readBackgroundJobs) {
+  const owner = {};
+  return pollingHarness("src/views/servers/useWorkshopDownloadOperation.ts", {
+    "../../api": { readBackgroundJobs },
+    "../../domain/single-flight-poller": { SingleFlightPoller },
+    "../settings/InstanceSettingsSaveContext": { useInstanceSettingsSaveCoordinator: () => owner },
+    "./workshop-download-operations": workshopOperations
+  });
+}
+
+function libraryPollingHarness(readBackgroundJobs) {
+  return pollingHarness("src/hooks/useDesktopEffects.ts", {
+    "../api": { readBackgroundJobs }, "../app-state": {}, "../instance-panel-loader": {},
+    "../bootstrap-initialization": { createBootstrapInitializationCoordinator: () => ({}) },
+    "../domain/single-flight-poller": { SingleFlightPoller }, "../domain/system-resources": {}
+  });
+}
+
+const workshopRequest = { ids: ["123456"], contentIds: ["123456"], items: {}, locale: "en-US" };
+const workshopJob = (id, overrides = {}) => ({ id: `workshop-download:a:${id}`, target_id: "a",
+  kind: "DownloadWorkshop", status: "Running", progress_percent: 42, ...overrides });
 
 test("never overlaps polls and schedules the next read only after completion", async () => {
   const scheduler = new FakeScheduler();
@@ -171,55 +213,77 @@ test("a transient failure preserves the loop without overlapping the retry", asy
   poller.dispose();
 });
 
-test("library and workshop job polling use the shared single-flight lifecycle", () => {
-  const hooksSource = fs.readFileSync(path.join(
-    desktopRoot,
-    "src",
-    "hooks",
-    "useDesktopEffects.ts"
-  ), "utf8");
-  const libraryPolling = hooksSource.slice(
-    hooksSource.indexOf("export function useLibraryJobPolling"),
-    hooksSource.indexOf("export function useRuntimeViewPolling")
-  );
-  const workshopPolling = workshopPollingEffect().source;
+test("library polling stays single-flight and disposes pending reads", async () => {
+  const reads = [], values = [];
+  const view = libraryPollingHarness(() => { const read = deferred(); reads.push(read); return read.promise; });
+  const options = { enabled: false, onJobsSynced: (jobs) => values.push(jobs) };
+  view.render("useLibraryJobPolling", options);
+  assert.equal(reads.length, 0);
+  options.enabled = true;
+  view.render("useLibraryJobPolling", options);
+  view.render("useLibraryJobPolling", options);
+  assert.equal(reads.length, 1);
+  assert.equal(view.scheduler.tasks.size, 0, "Pending reads cannot schedule overlapping polls");
+  reads[0].resolve([]);
+  await flushPromises();
+  assert.deepEqual(values, [[]]);
+  assert.equal(view.scheduler.runNext(), 1200);
+  assert.equal(reads.length, 2);
+  view.dispose();
+  reads[1].resolve([workshopJob("late")]);
+  await flushPromises();
+  assert.deepEqual(values, [[]]);
+  assert.equal(view.scheduler.tasks.size, 0);
+});
 
-  for (const source of [libraryPolling, workshopPolling]) {
-    assert.match(source, /new SingleFlightPoller</);
-    assert.match(source, /poller\.dispose\(\)/);
-    assert.doesNotMatch(source, /setInterval\(/);
+test("workshop polling respects read-only, idle and queued states and discards a response after cleanup", async () => {
+  for (const [readOnly, stage] of [[true, "running"], [false, "idle"], [false, "queued"], [false, "running"]]) {
+    const pending = deferred();
+    let calls = 0;
+    const view = workshopPollingHarness(() => { calls++; return pending.promise; });
+    const initial = view.render("useWorkshopDownloadOperation", "a", readOnly);
+    if (stage !== "idle") {
+      const operation = initial.begin(workshopRequest);
+      if (stage === "running") operation.trackJobs([]);
+    }
+    view.render("useWorkshopDownloadOperation", "a", readOnly);
+    const active = !readOnly && stage === "running";
+    assert.equal(calls, active ? 1 : 0);
+    assert.equal(view.snapshot().job, null);
+    view.dispose();
+    pending.resolve([workshopJob("late")]);
+    await flushPromises();
+    assert.equal(view.snapshot().job, null, "A disposed instance must not receive the late Workshop response");
+    assert.equal(view.scheduler.tasks.size, 0);
   }
 });
 
-test("workshop polling respects read-only and idle states and discards a response after cleanup", async () => {
-  const vm = require("node:vm");
-  const callback = transpileTypeScript(`const effect = ${workshopPollingEffect().callback};`, "workshop-polling.ts");
-  for (const [readOnly, downloadState] of [[true, "running"], [false, "idle"], [false, "running"]]) {
-    const scheduler = new FakeScheduler();
-    const pending = deferred();
-    const values = [];
-    let calls = 0;
-    const context = { readOnly, downloadState, props: { details: { summary: { id: "a" } } },
-      SingleFlightPoller, readBackgroundJobs: () => { calls++; return pending.promise; },
-      isActiveJobStatus: (status) => status === "Running", setActiveJob: (value) => values.push(value),
-      window: { setTimeout: scheduler.schedule, clearTimeout: scheduler.cancel } };
-    const cleanup = vm.runInNewContext(`${callback}\neffect();`, context);
-    const active = !readOnly && downloadState === "running";
-    assert.equal(calls, active ? 1 : 0);
-    assert.deepEqual(values, [null]);
-    if (active) {
-      assert.equal(typeof cleanup, "function");
-      cleanup();
-      pending.resolve([{ target_id: "a", kind: "DownloadWorkshop", status: "Running" }]);
-      await flushPromises();
-      assert.deepEqual(values, [null], "A disposed instance must not receive the late Workshop response");
-    } else assert.equal(cleanup, undefined);
-    assert.equal(scheduler.tasks.size, 0);
-  }
+test("workshop polling records only its own accepted attempt and stops when it becomes read-only", async () => {
+  const reads = [];
+  const view = workshopPollingHarness(() => { const read = deferred(); reads.push(read); return read.promise; });
+  const operation = view.render("useWorkshopDownloadOperation", "a", false).begin(workshopRequest);
+  const existing = workshopJob("existing"), own = workshopJob("current");
+  operation.trackJobs([existing]);
+  view.render("useWorkshopDownloadOperation", "a", false);
+  view.render("useWorkshopDownloadOperation", "a", false);
+  assert.equal(reads.length, 1);
+  assert.equal(view.scheduler.tasks.size, 0);
+  reads[0].resolve([existing, workshopJob("other", { target_id: "b" }), own]);
+  await flushPromises();
+  assert.equal(view.snapshot().job, own);
+  view.render("useWorkshopDownloadOperation", "a", false);
+  assert.equal(reads.length, 1, "Progress updates must not restart an unchanged polling effect");
+  assert.equal(view.scheduler.runNext(), 350);
+  assert.equal(reads.length, 2);
+  view.render("useWorkshopDownloadOperation", "a", true);
+  reads[1].resolve([{ ...own, progress_percent: 99 }]);
+  await flushPromises();
+  assert.equal(view.snapshot().job, own, "A response started before read-only must not update progress");
+  assert.equal(view.scheduler.tasks.size, 0);
+  view.dispose();
 });
 
 test("server workspace discovers autostart jobs enqueued after an initially empty bootstrap", async () => {
-  const vm = require("node:vm");
   const appSource = fs.readFileSync(path.join(desktopRoot, "src", "App.tsx"), "utf8");
   const condition = appSource.match(/useLibraryJobPolling\(\{\s*enabled:\s*([^,]+),/)[1];
   const evaluate = (overrides = {}) => vm.runInNewContext(condition, {
@@ -231,22 +295,16 @@ test("server workspace discovers autostart jobs enqueued after an initially empt
   assert.equal(evaluate({ activeView: "system" }), false);
   assert.equal(evaluate({ activeView: "system", hasActiveJobs: true }), true);
   assert.equal(evaluate({ activeView: "system", creatingModuleIds: new Set(["minecraft"]) }), true);
-  const hooksSource = fs.readFileSync(path.join(desktopRoot, "src", "hooks", "useDesktopEffects.ts"), "utf8");
-  const source = hooksSource.slice(hooksSource.indexOf("export function useLibraryJobPolling"), hooksSource.indexOf("export function useRuntimeViewPolling"));
-  const scheduler = new FakeScheduler();
   const values = [];
   let result = [];
-  let cleanup;
-  const context = { exports: {}, useEffect: create => { cleanup = create(); }, SingleFlightPoller,
-    readBackgroundJobs: async () => result, window: { setTimeout: scheduler.schedule, clearTimeout: scheduler.cancel } };
-  vm.runInNewContext(transpileTypeScript(source, "useDesktopEffects.ts"), context);
-  context.exports.useLibraryJobPolling({ enabled: evaluate(), onJobsSynced: jobs => values.push(jobs) });
+  const view = libraryPollingHarness(async () => result);
+  view.render("useLibraryJobPolling", { enabled: evaluate(), onJobsSynced: jobs => values.push(jobs) });
   await flushPromises();
   assert.deepEqual(values, [[]]);
   result = [{ id: "auto-1", label: "Autostart Server", kind: "StartInstance", status: "Running" }];
-  assert.equal(scheduler.runNext(), 1200);
+  assert.equal(view.scheduler.runNext(), 1200);
   await flushPromises();
   assert.deepEqual(values[1], result);
-  cleanup();
-  assert.equal(scheduler.tasks.size, 0);
+  view.dispose();
+  assert.equal(view.scheduler.tasks.size, 0);
 });
