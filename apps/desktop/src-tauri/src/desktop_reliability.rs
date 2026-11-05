@@ -489,8 +489,11 @@ fn run(config_path: &Path) -> Result<(), String> {
         .map_err(|error| error.to_string())?;
     // run() exits the process directly; run_return lets the fixture join its
     // owners and preserve diagnostic evidence on failed or interrupted runs.
-    let exit_code = application.run_return(|app, event| {
+    let exit_recovery = Arc::new(Mutex::new(None));
+    let recovery_on_exit = Arc::clone(&exit_recovery);
+    let exit_code = application.run_return(move |app, event| {
         if matches!(event, tauri::RunEvent::Exit) {
+            *lock(&recovery_on_exit) = webview_recovery::snapshot(app);
             crate::webview_drop::detach_on_ui_thread();
         }
         webview_recovery::handle_run_event(app, &event);
@@ -514,6 +517,7 @@ fn run(config_path: &Path) -> Result<(), String> {
                 "command_count": progress.command_count,
                 "faults_requested": progress.faults_requested,
                 "native_failures": progress.native_failures,
+                "recovery": lock(&exit_recovery).clone(),
                 "observations": progress.observations,
                 "output_markers": output.markers, "emitted_log_batches": output.batches,
                 "browser_process_ids": lock(&fixture.browser_process_ids).clone(),

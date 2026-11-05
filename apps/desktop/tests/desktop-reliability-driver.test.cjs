@@ -31,10 +31,17 @@ test("failed native host reads its actual cause without requiring a success repo
   try {
     const cause = { error: "Fixture page failed: Real console mount and native subscriptions exceeded 15000 ms",
       stage: "initial_command", command_count: 0, busy: false, output_markers: [],
+      recovery: { paused: true, last_error: "WebView page load exceeded 15 seconds" },
       browser_process_ids: [], server_pid: 2 };
+    const recoveryLog = `${JSON.stringify({ action: "desktop.webview.attempt_completed", context: {
+      action: "Recreate", accepted: true, error: cause.recovery.last_error,
+    } })}\n`;
+    await fs.mkdir(path.join(root, "logs"));
+    await fs.writeFile(path.join(root, "logs", "webview-recovery.jsonl"), recoveryLog, { flag: "wx" });
     await fs.writeFile(path.join(root, "failure.json"), JSON.stringify(cause), { flag: "wx" });
     const result = await readHostEvidence(root, { code: 1, signal: null });
-    assert.deepEqual(result, { report: null, failure: cause, readError: null });
+    assert.deepEqual(result, { report: null, failure: cause, readError: null,
+      recoveryLog, recoveryLogTruncated: false, recoveryLogReadError: null });
     const missing = await readHostEvidence(root, { code: null, signal: "SIGTERM" });
     assert.deepEqual(missing.failure, cause);
     await fs.unlink(path.join(root, "failure.json"));
@@ -42,6 +49,17 @@ test("failed native host reads its actual cause without requiring a success repo
     assert.equal(killed.report, null);
     assert.equal(killed.failure, null);
     assert.match(killed.readError, /failure\.json/);
+    assert.equal(killed.recoveryLog, recoveryLog);
+    await fs.writeFile(path.join(root, "logs", "webview-recovery.jsonl"), `${"x".repeat(128 * 1024)}${recoveryLog}`);
+    const bounded = await readHostEvidence(root, { code: null, signal: "SIGTERM" });
+    assert.equal(bounded.recoveryLogTruncated, true);
+    assert.equal(Buffer.byteLength(bounded.recoveryLog), 128 * 1024);
+    assert.ok(bounded.recoveryLog.endsWith(recoveryLog));
+    await fs.unlink(path.join(root, "logs", "webview-recovery.jsonl"));
+    const unavailable = await readHostEvidence(root, { code: null, signal: "SIGTERM" });
+    assert.equal(unavailable.recoveryLog, null);
+    assert.match(unavailable.recoveryLogReadError, /webview-recovery\.jsonl/);
+    assert.match(unavailable.readError, /failure\.json/);
   } finally {
     assert.equal(path.dirname(root), path.resolve(os.tmpdir()));
     await fs.rm(root, { recursive: true, force: false });

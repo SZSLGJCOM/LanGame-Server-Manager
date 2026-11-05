@@ -75,12 +75,25 @@ async function removeScratch(scratch) {
 async function readHostEvidence(root, exit) {
   const success = exit.code === 0 && !exit.signal && !exit.error;
   const leaf = success ? "report.json" : "failure.json";
+  const recovery = { recoveryLog: null, recoveryLogTruncated: false, recoveryLogReadError: null };
+  try {
+    const file = await fs.open(path.join(root, "logs", "webview-recovery.jsonl"), "r");
+    try {
+      const { size } = await file.stat();
+      const buffer = Buffer.alloc(Math.min(size, outputLimit));
+      const { bytesRead } = await file.read(buffer, 0, buffer.length, Math.max(0, size - outputLimit));
+      recovery.recoveryLog = buffer.subarray(0, bytesRead).toString("utf8");
+      recovery.recoveryLogTruncated = size > outputLimit;
+    } finally { await file.close(); }
+  } catch (error) {
+    recovery.recoveryLogReadError = `Cannot read WebView recovery log: ${String(error)}`;
+  }
   try {
     const evidence = JSON.parse(await fs.readFile(path.join(root, leaf), "utf8"));
-    return { report: success ? evidence : null, failure: success ? null : evidence, readError: null };
+    return { report: success ? evidence : null, failure: success ? null : evidence, readError: null, ...recovery };
   } catch (error) {
     if (success) throw error;
-    return { report: null, failure: null, readError: `Cannot read native failure evidence: ${String(error)}` };
+    return { report: null, failure: null, readError: `Cannot read native failure evidence: ${String(error)}`, ...recovery };
   }
 }
 
@@ -94,7 +107,7 @@ async function run(executable, output) {
   const scratch = await fs.mkdtemp(path.join(os.tmpdir(), "langame-reliability-desktop-"));
   const observed = new Map();
   let server, child, exited, monitor, monitorError, stopMonitor = false;
-  let hostReport, hostFailure, hostExit, hostFailureReadError, failure, stderr = "", treeExited = false;
+  let hostReport, hostFailure, hostExit, hostFailureReadError, hostRecoveryEvidence, failure, stderr = "", treeExited = false;
   const cleanupErrors = [];
   const watchdog = setTimeout(() => {
     console.error(`Desktop acceptance exceeded its 240-second command deadline; retained scratch: ${scratch}`);
@@ -154,6 +167,7 @@ async function run(executable, output) {
     hostReport = evidence.report;
     hostFailure = evidence.failure;
     hostFailureReadError = evidence.readError;
+    hostRecoveryEvidence = evidence;
     if (exit.code !== 0 || exit.signal || exit.error) {
       throw new Error([
         `Native desktop host failed: ${JSON.stringify(exit)}`,
@@ -233,6 +247,9 @@ async function run(executable, output) {
     host: hostReport, host_output: stderr,
     host_exit: hostExit ?? null, host_failure: hostFailure ?? null,
     host_failure_read_error: hostFailureReadError ?? null,
+    recovery_log: hostRecoveryEvidence?.recoveryLog ?? null,
+    recovery_log_truncated: hostRecoveryEvidence?.recoveryLogTruncated ?? false,
+    recovery_log_read_error: hostRecoveryEvidence?.recoveryLogReadError ?? null,
     native_drop: hostReport?.native_drop ?? null,
     processes_observed: observed.size, processes_remaining: treeExited ? 0 : null,
     observed_processes: [...observed].map(([pid, created]) => ({ pid, created })),

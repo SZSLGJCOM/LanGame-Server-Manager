@@ -6864,15 +6864,15 @@ VCS commit / 版本提交: c56bbb5a7b47409759113903764c456f13b418e5
 Authors metadata / 作者元数据: The ICU4X Project Developers
 Legal text / 法律文本: f367c1b8e1aa262435251e442901da4607b4650e0e63a026f5044473ecfb90f2 — checksum-verified crate file zerovec-0.11.8/LICENSE
 --------------------------------------------------------------------------------
-Package / 软件包: zip@9.1.3
+Package / 软件包: zip@9.2.2
 Declared license / 声明许可证: MIT
 Selected reviewed terms / 选用审计条款: packaged upstream texts
-Archive SHA-256: 1156b39d142a34b999c2310a50455e0cb3760bf7efad0122f796d813bee26ccb
-Source archive / 源码归档: https://static.crates.io/crates/zip/zip-9.1.3.crate
+Archive SHA-256: e408c6cc4699dd017d53dc080cd51c2cea2b5354af57a1479bd265ed42911487
+Source archive / 源码归档: https://static.crates.io/crates/zip/zip-9.2.2.crate
 Repository / 仓库: https://github.com/zip-rs/zip2
-VCS commit / 版本提交: af2ed2a3e12af1fdd733b1886b3e9067bf510be5
+VCS commit / 版本提交: 1b431f6e3abe8155eb5d03de0a18aed472f7cc99
 Authors metadata / 作者元数据: Mathijs van de Nes <git@mathijs.vd-nes.nl>; Marli Frost <marli@frost.red>; Ryan Levick <ryan.levick@gmail.com>; Chris Hennick <hennickc@amazon.com>
-Legal text / 法律文本: 58545fed1565e42d687aecec6897d35c6d37ccb71479a137c0deb2203e125c79 — checksum-verified crate file zip-9.1.3/LICENSE
+Legal text / 法律文本: 58545fed1565e42d687aecec6897d35c6d37ccb71479a137c0deb2203e125c79 — checksum-verified crate file zip-9.2.2/LICENSE
 --------------------------------------------------------------------------------
 Package / 软件包: zlib-rs@0.6.8
 Declared license / 声明许可证: Zlib
@@ -15261,7 +15261,7 @@ SOFTWARE.
 
 Text SHA-256 / 文本 SHA-256: 58545fed1565e42d687aecec6897d35c6d37ccb71479a137c0deb2203e125c79
 Source / 来源: checksum-verified crate file tracing-core-0.1.36/src/spin/LICENSE
-Source / 来源: checksum-verified crate file zip-9.1.3/LICENSE
+Source / 来源: checksum-verified crate file zip-9.2.2/LICENSE
 --------------------------------------------------------------------------------
 The MIT License (MIT)
 

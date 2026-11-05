@@ -1997,9 +1997,16 @@ pub(super) fn manual_mod_archive_rejects_case_aliased_duplicate_paths() {
 #[test]
 pub(super) fn manual_mod_archive_rejects_windows_special_paths() {
     let root = temp_test_dir("manual-mod-zip-windows-paths");
-    for (index, entry_path) in ["Plugin.dll:payload", "CON.txt", "Folder./file.dll"]
-        .into_iter()
-        .enumerate()
+    for (index, (entry_path, reason)) in [
+        (
+            "Plugin.dll:payload",
+            "Windows alternate data stream separator",
+        ),
+        ("CON.txt", "reserved Windows device name"),
+        ("Folder./file.dll", "Windows-ambiguous trailing character"),
+    ]
+    .into_iter()
+    .enumerate()
     {
         let archive_path = root.join(format!("unsafe-{index}.zip"));
         let target = root.join(format!("Mods-{index}"));
@@ -2011,8 +2018,18 @@ pub(super) fn manual_mod_archive_rejects_windows_special_paths() {
         )
         .expect_err("Windows-special paths must be rejected");
 
-        assert!(error.contains("Windows"));
-        assert!(!target.exists());
+        // On Windows, zip rejects these names before our cross-platform Windows
+        // path policy. Both rejection paths must prevent publication and clean staging.
+        assert!(
+            error == format!("refusing to extract unsafe archive entry `{entry_path}`")
+                || error.contains(reason),
+            "{entry_path}: {error}"
+        );
+        assert!(!target.exists(), "{entry_path}");
+        assert!(
+            manual_mod_transaction_directories(&root).is_empty(),
+            "{entry_path}"
+        );
     }
     let _ = fs::remove_dir_all(&root);
 }
