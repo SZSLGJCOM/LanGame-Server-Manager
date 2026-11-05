@@ -1,5 +1,5 @@
 use super::*;
-use crate::instance_archive_external::{ExternalFile, ExternalProgramPlan};
+use crate::instance_archive::external::{ExternalFile, ExternalProgramPlan};
 
 #[test]
 fn archived_external_mod_owner_rebinds_without_reindexing_payload_slots() {

@@ -29,11 +29,12 @@ impl ManagementPaths {
         let initial = parent.join(app_storage::mod_management_state::initial_directory_name(
             &identity,
         ));
-        let root = if entry_exists(&initial)? {
-            initial
-        } else {
-            find_owned_state_directory(parent, &identity)?.unwrap_or(initial)
-        };
+        if entry_exists(&initial)? && read_state_owner(&initial)? != identity {
+            return Err("Mod management storage belongs to another target".into());
+        }
+        // A retained migration directory can coexist with the allocation path.
+        // Neither may win while both claim the same target and recovery payloads.
+        let root = find_owned_state_directory(parent, &identity)?.unwrap_or(initial);
         validate_manual_mod_existing_path_components(&root, false)?;
         if let Ok(metadata) = fs::symlink_metadata(&root)
             && (!metadata.is_dir() || manual_mod_metadata_is_reparse(&metadata))

@@ -41,11 +41,17 @@ function emptyGeometry(node: HTMLElement) {
   const panelBounds = panel.getBoundingClientRect(), style = getComputedStyle(panel);
   const centerX = (panelBounds.left + parseFloat(style.paddingLeft) + panelBounds.right - parseFloat(style.paddingRight)) / 2;
   const pager = panel.querySelector<HTMLElement>(".mw-pager");
-  const contentTop = panel.classList.contains("mw-browse-pane") && node.previousElementSibling
+  const sourceControls = panel.classList.contains("mw-detail-panel")
+    && node.previousElementSibling?.matches(".mw-source-lists, .mw-terraria-import") ? node.previousElementSibling : null;
+  // Native source controls remain available in an empty library; center the message in the remaining list area.
+  const contentTop = sourceControls
+    ? sourceControls.getBoundingClientRect().bottom + parseFloat(getComputedStyle(sourceControls).marginBottom) + (parseFloat(style.rowGap) || 0)
+    : panel.classList.contains("mw-browse-pane") && node.previousElementSibling
     ? node.previousElementSibling.getBoundingClientRect().bottom + parseFloat(style.rowGap || "0") : panelBounds.top + parseFloat(style.paddingTop);
   const contentBottom = pager ? pager.getBoundingClientRect().top - parseFloat(style.rowGap || "0") : panelBounds.bottom - parseFloat(style.paddingBottom);
   const centerY = (contentTop + contentBottom) / 2;
   return { text: node.textContent, panel: panel.className, panel_bounds: panelBounds.toJSON(), content_bounds: bounds,
+    available_top: contentTop, available_bottom: contentBottom,
     delta_x: (bounds.left + bounds.right) / 2 - centerX, delta_y: (bounds.top + bounds.bottom) / 2 - centerY };
 }
 async function run() {
@@ -106,6 +112,7 @@ async function run() {
   assert(errors.length === 0, "Empty and collection fixture has no browser errors");
   return { status: "passed", scene, checks, geometry, actions, mod_row_reference: modRowReference, structure: { headers: [...fixture.querySelectorAll(".mw-detail-col-title")].map((node) => node.textContent),
     has_frame: Boolean(fixture.querySelector(".mw-detail-layout")), has_settings: Boolean(fixture.querySelector(".mw-detail-config-col")),
+    has_source_lists: Boolean(fixture.querySelector(".mw-source-lists > summary")),
     row_columns: row ? getComputedStyle(row).gridTemplateColumns : null, row_height: rowBounds?.height,
     action_rail_width: row?.querySelector(".mw-entry-row-actions")?.getBoundingClientRect().width,
     pager_bottom_gap: pager && browsePane ? browsePane.getBoundingClientRect().bottom - parseFloat(getComputedStyle(browsePane).paddingBottom) - pager.getBoundingClientRect().bottom : null,

@@ -21,6 +21,10 @@ for (const viewport of [{ width: 1560, height: 900 }, { width: 960, height: 600 
         assert.equal(report.geometry.length, 1, "Owned empty state has one message");
         assert.equal(report.structure.has_frame, true); assert.equal(report.structure.headers.length, 1);
         assert.equal(report.structure.has_settings, false, "Empty library does not duplicate its message in a settings pane");
+        assert.equal(report.structure.has_source_lists, scene === "mods-empty", "Native source controls remain available only in My Mods");
+        const empty = report.geometry[0];
+        assert.ok(empty.content_bounds.top >= empty.available_top && empty.content_bounds.bottom <= empty.available_bottom,
+          "The empty message stays inside the list area without overlapping source controls");
       }
       if (scene.endsWith("-content")) {
         assert.equal(report.structure.has_frame, true); assert.equal(report.structure.headers.length, 1); assert.equal(report.structure.has_settings, true);

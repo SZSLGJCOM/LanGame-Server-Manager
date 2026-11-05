@@ -369,24 +369,45 @@ fn migrated_mod_state_preserves_disabled_payloads_and_pending_recovery() {
 
 #[test]
 fn duplicate_mod_state_owners_are_rejected_without_choosing_a_payload() {
-    let (root, target) = fixture("duplicate-state-owner");
-    write_package(&target, "Example");
-    manage_package(clone_target(&target), "Example", "adopt").unwrap();
-    let state = storage::ManagementPaths::new(&target.target_path).unwrap();
-    let relocated = root.join(format!(".langame-mod-state-{}", "a".repeat(64)));
-    fs::rename(&state.root, &relocated).unwrap();
-    let duplicate = root.join(format!(".langame-mod-state-{}", "b".repeat(64)));
-    fs::create_dir(&duplicate).unwrap();
-    fs::copy(relocated.join("owner.json"), duplicate.join("owner.json")).unwrap();
-    let error = storage::ManagementPaths::new(&target.target_path)
-        .err()
+    for keep_initial in [false, true] {
+        let (root, target) = fixture("duplicate-state-owner");
+        write_package(&target, "Example");
+        manage_package(clone_target(&target), "Example", "adopt").unwrap();
+        let state = storage::ManagementPaths::new(&target.target_path).unwrap();
+        let original = if keep_initial {
+            state.root
+        } else {
+            let relocated = root.join(format!(".langame-mod-state-{}", "a".repeat(64)));
+            fs::rename(&state.root, &relocated).unwrap();
+            relocated
+        };
+        let duplicate = root.join(format!(".langame-mod-state-{}", "b".repeat(64)));
+        fs::create_dir(&duplicate).unwrap();
+        fs::copy(original.join("owner.json"), duplicate.join("owner.json")).unwrap();
+        fs::write(
+            duplicate.join("pending.json"),
+            b"retained recovery evidence",
+        )
         .unwrap();
-    assert!(error.contains("More than one"));
-    assert_eq!(
-        fs::read(target.target_path.join("Example/plugin.dll")).unwrap(),
-        b"plugin"
-    );
-    fs::remove_dir_all(root).unwrap();
+        let error = storage::ManagementPaths::new(&target.target_path)
+            .err()
+            .unwrap();
+        assert!(error.contains("More than one"));
+        assert!(
+            recover_management(&target)
+                .unwrap_err()
+                .contains("More than one")
+        );
+        assert_eq!(
+            fs::read(duplicate.join("pending.json")).unwrap(),
+            b"retained recovery evidence"
+        );
+        assert_eq!(
+            fs::read(target.target_path.join("Example/plugin.dll")).unwrap(),
+            b"plugin"
+        );
+        fs::remove_dir_all(root).unwrap();
+    }
 }
 
 #[test]
