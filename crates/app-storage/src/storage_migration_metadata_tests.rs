@@ -285,3 +285,56 @@ async fn interrupted_windrose_bootstrap_is_rejected_before_destination_creation(
 
 #[path = "storage_migration_metadata_archive_tests.rs"]
 mod archive_tests;
+
+#[cfg(windows)]
+#[tokio::test]
+async fn migration_rebinds_mod_state_owner_without_renaming_or_rewriting_recovery_payloads() {
+    let fixture = Fixture::new();
+    let target = fixture.paths.instances_root.join("one/runtime/Mods");
+    fs::create_dir_all(&target).unwrap();
+    let owner = crate::mod_management_state::target_identity(&fs::canonicalize(&target).unwrap());
+    let leaf = crate::mod_management_state::initial_directory_name(&owner);
+    let state = target.parent().unwrap().join(&leaf);
+    let original = write_json(&state.join("owner.json"), &Value::String(owner));
+    let pending = write_json(&state.join("pending.json"), &json!({"action":"disable"}));
+    fs::create_dir_all(state.join("disabled")).unwrap();
+    fs::write(state.join("disabled/Example.dll"), b"disabled plugin").unwrap();
+    let movement = fixture.movement(&fixture.paths.instances_root, "moved-instances");
+    preflight_metadata(&fixture.paths, std::slice::from_ref(&movement))
+        .await
+        .unwrap();
+    assert!(!movement.target.exists());
+    copy_tree(&movement.source, &movement.target);
+    let plan = prepare_metadata(&fixture.paths, std::slice::from_ref(&movement))
+        .await
+        .unwrap();
+    assert_eq!(plan.files.len(), 1);
+    let expected_state = movement.target.join("one/runtime").join(&leaf);
+    let patch = &plan.files[0];
+    assert!(same_path(&patch.path, &expected_state.join("owner.json")).unwrap());
+    assert_eq!(patch.before, original);
+    let expected_owner = crate::mod_management_state::target_identity(
+        &fs::canonicalize(movement.target.join("one/runtime/Mods")).unwrap(),
+    );
+    assert_eq!(
+        serde_json::from_slice::<String>(&patch.after).unwrap(),
+        expected_owner
+    );
+    assert_ne!(
+        leaf,
+        crate::mod_management_state::initial_directory_name(&expected_owner)
+    );
+    assert_eq!(
+        fs::read(expected_state.join("pending.json")).unwrap(),
+        pending
+    );
+    assert_eq!(
+        fs::read(expected_state.join("disabled/Example.dll")).unwrap(),
+        b"disabled plugin"
+    );
+    assert_eq!(
+        fs::read(expected_state.join("owner.json")).unwrap(),
+        original
+    );
+    assert_eq!(fs::read(state.join("owner.json")).unwrap(), original);
+}

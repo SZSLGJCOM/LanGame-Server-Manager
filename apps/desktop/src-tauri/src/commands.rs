@@ -132,12 +132,12 @@ pub(crate) mod commands_dst_map;
 pub(crate) mod commands_dst_regeneration;
 #[path = "commands_dst_world_state.rs"]
 pub(crate) mod commands_dst_world_state;
-#[path = "commands_terraria_world.rs"]
-pub(crate) mod commands_terraria_world;
 #[path = "commands_maintenance_schedule.rs"]
 pub(crate) mod commands_maintenance_schedule;
 #[path = "commands_native_save.rs"]
 mod commands_native_save;
+#[path = "commands_terraria_world.rs"]
+pub(crate) mod commands_terraria_world;
 pub use commands_maintenance_schedule::{
     read_instance_maintenance_schedule, update_instance_maintenance_schedule,
 };

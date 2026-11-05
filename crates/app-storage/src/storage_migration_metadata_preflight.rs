@@ -7,6 +7,8 @@ pub(super) fn validate(
     paths: &StoragePaths,
     moves: &[RootMove],
     database: &db::Database,
+    copied: bool,
+    plan: &mut MetadataPlan,
 ) -> Result<(), StorageError> {
     let mut next = paths.clone();
     next.instances_root = remap_path(&paths.instances_root, moves)?;
@@ -31,7 +33,7 @@ pub(super) fn validate(
         {
             continue;
         }
-        scan_recovery(root)?;
+        scan_recovery(root, moves, copied, plan)?;
     }
     for row in &database.rows {
         if row.table != "instances" {
@@ -122,7 +124,12 @@ fn reject_archive_leaf_merges(
     Ok(())
 }
 
-fn scan_recovery(root: &Path) -> Result<(), StorageError> {
+fn scan_recovery(
+    root: &Path,
+    moves: &[RootMove],
+    copied: bool,
+    plan: &mut MetadataPlan,
+) -> Result<(), StorageError> {
     if !exists(root)? {
         return Ok(());
     }
@@ -204,6 +211,9 @@ fn scan_recovery(root: &Path) -> Result<(), StorageError> {
             }
         }
         if metadata.is_dir() {
+            if crate::mod_management_state::is_state_directory_name(name) {
+                mods::prepare_owner(&path, moves, copied, plan)?;
+            }
             for entry in fs::read_dir(&path).map_err(|source| StorageError::ReadPath {
                 path: path.clone(),
                 source,

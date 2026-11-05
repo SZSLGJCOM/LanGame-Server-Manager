@@ -200,6 +200,23 @@ async fn coordinator_migrates_archive_commits_settings_cleans_source_and_restore
 
     let fixture = Fixture::new();
     let (pool, id, archived) = archived_fixture(&fixture).await;
+    #[cfg(windows)]
+    let mod_state_leaf = {
+        let logical_target = fixture.paths.instances_root.join("one/runtime/Mods");
+        let owner = crate::mod_management_state::target_identity(
+            &normalize_resource_path(&logical_target).unwrap(),
+        );
+        let leaf = crate::mod_management_state::initial_directory_name(&owner);
+        let state = archived.join("runtime").join(&leaf);
+        write_json(&state.join("owner.json"), &Value::String(owner));
+        fs::create_dir_all(state.join("disabled")).unwrap();
+        fs::write(
+            state.join("disabled/Example.dll"),
+            b"archived disabled plugin",
+        )
+        .unwrap();
+        leaf
+    };
     let target = fixture.root.join("moved-instances");
     let mut requested = fixture.paths.settings();
     requested.servers_root = target.to_string_lossy().into_owned();
@@ -267,6 +284,22 @@ async fn coordinator_migrates_archive_commits_settings_cleans_source_and_restore
 
     let restored = crate::restore_instance_archive(&next, &id).await.unwrap();
     assert_eq!(Path::new(&restored.restored_instance_root), instance_root);
+    #[cfg(windows)]
+    {
+        let state = instance_root.join("runtime").join(&mod_state_leaf);
+        let owner: String =
+            serde_json::from_slice(&fs::read(state.join("owner.json")).unwrap()).unwrap();
+        assert_eq!(
+            owner,
+            crate::mod_management_state::target_identity(
+                &normalize_resource_path(&instance_root.join("runtime/Mods")).unwrap(),
+            )
+        );
+        assert_eq!(
+            fs::read(state.join("disabled/Example.dll")).unwrap(),
+            b"archived disabled plugin"
+        );
+    }
     for (relative, expected) in [
         ("saves/world.dat", b"preserved world payload".as_slice()),
         ("runtime/server.exe", b"preserved server payload".as_slice()),

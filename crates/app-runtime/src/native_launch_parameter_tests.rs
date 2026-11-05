@@ -262,6 +262,13 @@ fn run_runtime_acceptance_repository(
                     fixture_path.display()
                 ));
             }
+            // File-only fixtures are checked by the storage acceptance runner.
+            // An absent launch assertion is not a claim that the game uses no arguments.
+            if fixture.expected_launch.executable_suffix.is_none()
+                && fixture.expected_launch.arguments.is_empty()
+            {
+                continue;
+            }
             validate_fixture_launch_plan(module, &fixture, fixture_path)?;
         }
     }

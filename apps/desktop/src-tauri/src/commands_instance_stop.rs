@@ -188,6 +188,33 @@ pub(super) async fn backup_after_stop(
     }
 }
 
+async fn finish_manual_stop(
+    storage: &StorageBootstrap,
+    details: &InstanceDetails,
+    refresh_summary: impl std::future::Future<Output = Result<InstanceSummary, String>>,
+) -> Result<(InstanceSummary, Option<String>), String> {
+    // The process has already stopped. A failed UI-state refresh must not skip
+    // the operator's automatic backup policy or conceal a backup failure.
+    let auto_backup_error =
+        backup_after_stop(storage, details, InstanceShutdownSource::Manual).await;
+    let summary = refresh_summary.await.map_err(|refresh_error| {
+        let mut message =
+            format!("The server stopped, but refreshing the server list failed: {refresh_error}");
+        if let Some(error) = &auto_backup_error {
+            message.push_str(&format!(". Automatic backup also failed: {error}"));
+        }
+        append_desktop_app_log(
+            storage,
+            "error",
+            "instance.stop.refresh_failed",
+            &message,
+            json!({"instance_id": details.summary.id, "auto_backup_error": auto_backup_error}),
+        );
+        message
+    })?;
+    Ok((summary, auto_backup_error))
+}
+
 pub(super) async fn stop_instance(
     state: tauri::State<'_, DesktopState>,
     instance_id: String,
@@ -289,29 +316,25 @@ pub(super) async fn stop_instance(
         }
     };
 
-    let instances = list_instances(&storage.paths)
-        .await
-        .map_err(|error| error.to_string())?;
-    let summary =
-        find_instance_summary(&instances, &instance_id).unwrap_or_else(|| InstanceSummary {
-            id: instance_id.clone(),
-            name: instance_id.clone(),
-            module_id: String::new(),
-            status: InstanceStatus::Stopped,
-            active_process_count: 0,
-            bind_ip: String::from("0.0.0.0"),
-            port_count: 0,
-            autostart: false,
-        });
-
-    update_state_instances(&state, instances)?;
-
-    let auto_backup_error = super::commands_instance_stop::backup_after_stop(
-        &storage,
-        &details,
-        InstanceShutdownSource::Manual,
-    )
-    .await;
+    let (summary, auto_backup_error) = finish_manual_stop(&storage, &details, async {
+        let instances = list_instances(&storage.paths)
+            .await
+            .map_err(|error| error.to_string())?;
+        let summary =
+            find_instance_summary(&instances, &instance_id).unwrap_or_else(|| InstanceSummary {
+                id: instance_id.clone(),
+                name: instance_id.clone(),
+                module_id: String::new(),
+                status: InstanceStatus::Stopped,
+                active_process_count: 0,
+                bind_ip: String::from("0.0.0.0"),
+                port_count: 0,
+                autostart: false,
+            });
+        update_state_instances(&state, instances)?;
+        Ok(summary)
+    })
+    .await?;
 
     let primary_process = stopped_processes
         .iter()

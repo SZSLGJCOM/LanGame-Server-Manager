@@ -300,6 +300,96 @@ fn durable_intent_recovers_rename_before_manifest_publication() {
 }
 
 #[test]
+fn migrated_mod_state_preserves_disabled_payloads_and_pending_recovery() {
+    for interrupted in [false, true] {
+        let (root, mut target) = fixture("migrated-state");
+        write_package(&target, "Example");
+        manage_package(clone_target(&target), "Example", "adopt").unwrap();
+        let state = if interrupted {
+            prepare_interrupted_disable(&target)
+        } else {
+            manage_package(clone_target(&target), "local-Example", "disable").unwrap();
+            storage::ManagementPaths::new(&target.target_path).unwrap()
+        };
+        fs::write(state.root.join("preserved/operator.txt"), b"retained data").unwrap();
+        let state_leaf = state.root.file_name().unwrap().to_owned();
+        let moved = root.with_extension("moved");
+        fs::rename(&root, &moved).unwrap();
+        target.target_path = moved.join("Mods");
+        let owner = app_storage::mod_management_state::target_identity(
+            &resolve_manual_mod_path_with_missing_components(&target.target_path).unwrap(),
+        );
+        // Storage migration changes only the typed owner record. The allocation
+        // name and all pending/preserved payloads retain their original identity.
+        fs::write(
+            moved.join(&state_leaf).join("owner.json"),
+            serde_json::to_vec(&owner).unwrap(),
+        )
+        .unwrap();
+        let unrelated = moved.join(format!(".langame-mod-state-{}", "0".repeat(64)));
+        fs::create_dir(&unrelated).unwrap();
+        fs::write(unrelated.join("owner.json"), b"damaged unrelated owner").unwrap();
+        assert_ne!(
+            state_leaf.to_str().unwrap(),
+            app_storage::mod_management_state::initial_directory_name(&owner)
+        );
+        assert_eq!(
+            storage::ManagementPaths::new(&target.target_path)
+                .unwrap()
+                .root,
+            moved.join(&state_leaf)
+        );
+        recover_management(&target).unwrap();
+        let inventory =
+            crate::commands::commands_mods::mod_inventory::read_inventory(clone_target(&target))
+                .unwrap();
+        let item = inventory
+            .items
+            .iter()
+            .find(|item| item.name == "Example")
+            .unwrap();
+        assert!(!item.management.as_ref().unwrap().enabled);
+        assert_eq!(
+            fs::read(Path::new(&item.path).join("plugin.dll")).unwrap(),
+            b"plugin"
+        );
+        manage_package(clone_target(&target), "local-Example", "enable").unwrap();
+        assert_eq!(
+            fs::read(target.target_path.join("Example/config/operator.cfg")).unwrap(),
+            b"operator settings"
+        );
+        assert_eq!(
+            fs::read(moved.join(&state_leaf).join("preserved/operator.txt")).unwrap(),
+            b"retained data"
+        );
+        assert!(!moved.join(&state_leaf).join("pending.json").exists());
+        fs::remove_dir_all(moved).unwrap();
+    }
+}
+
+#[test]
+fn duplicate_mod_state_owners_are_rejected_without_choosing_a_payload() {
+    let (root, target) = fixture("duplicate-state-owner");
+    write_package(&target, "Example");
+    manage_package(clone_target(&target), "Example", "adopt").unwrap();
+    let state = storage::ManagementPaths::new(&target.target_path).unwrap();
+    let relocated = root.join(format!(".langame-mod-state-{}", "a".repeat(64)));
+    fs::rename(&state.root, &relocated).unwrap();
+    let duplicate = root.join(format!(".langame-mod-state-{}", "b".repeat(64)));
+    fs::create_dir(&duplicate).unwrap();
+    fs::copy(relocated.join("owner.json"), duplicate.join("owner.json")).unwrap();
+    let error = storage::ManagementPaths::new(&target.target_path)
+        .err()
+        .unwrap();
+    assert!(error.contains("More than one"));
+    assert_eq!(
+        fs::read(target.target_path.join("Example/plugin.dll")).unwrap(),
+        b"plugin"
+    );
+    fs::remove_dir_all(root).unwrap();
+}
+
+#[test]
 fn recovery_refuses_payload_changed_after_interruption() {
     let (root, target) = fixture("recovery-changed");
     write_package(&target, "Example");

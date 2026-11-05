@@ -757,7 +757,12 @@ test("Terraria exposes tModLoader Steam Workshop modpack settings", () => {
   assert.match(moduleToml, /\[mods\.source\][\s\S]*label = "tModLoader Steam Workshop"/);
   assert.match(moduleToml, /url = "https:\/\/steamcommunity\.com\/app\/1281930\/workshop\/"/);
   assert.match(moduleToml, /tmodloader\/steamapps/);
-  assert.match(moduleToml, /install_note = "[^\n]*My Mods[^\n]*automatically prepares and uses tModLoader/);
+  const installNote = /^install_note = "([^"\n]+)"\r?$/m.exec(moduleToml)?.[1];
+  assert.ok(installNote, "Terraria must explain Workshop enablement and runtime selection");
+  assert.match(installNote, /Download Workshop items in Mods/);
+  assert.match(installNote, /enable.*My Mods/i);
+  assert.match(installNote, /first Mod prepares tModLoader automatically/);
+  assert.match(installNote, /uses it whenever any Mods are enabled/);
   assert.match(
     moduleToml,
     /\[mods\.manual_staging\][\s\S]*target_template = "\{\{paths\.instance_root\}\}\/tmodloader\/steamapps\/workshop\/content\/1281930"/
@@ -1453,10 +1458,23 @@ test("Abiotic Factor UE4SS server mods stage into the Win64 ue4ss Mods directory
   assert.doesNotMatch(moduleToml, /\[mods\.enablement\]/);
 });
 
-test("Enshrouded records the current validated package and installed readme config evidence", () => {
+test("Enshrouded separates current runtime verification from historical package and README evidence", () => {
   const ledger = read(path.join(enshroudedRoot, "config-sources.toml"));
+  const runtimeSource = sourceRecord(ledger, "runtime_control_build_26430253");
+  const runtimeEvidence = JSON.parse(read(path.join(enshroudedRoot, runtimeSource.path)));
+  const packageSource = sourceRecord(ledger, "steamcmd_1_0_0_1_package_25967645");
 
-  assert.match(ledger, /last_verified = "2026-10-16"/);
+  assert.equal(runtimeSource.kind, "runtime_probe");
+  assert.equal(runtimeEvidence.module_id, "enshrouded");
+  assert.equal(runtimeEvidence.status, "passed");
+  assert.equal(runtimeEvidence.target.steam_app_id, 2278520);
+  assert.equal(runtimeEvidence.target.steam_build_id, "26430253");
+  assert.equal(runtimeEvidence.managed_lifecycle.exit_code, 0);
+  assert.equal(runtimeEvidence.managed_lifecycle.restart.exact_checkpoint_restored_and_hash_verified, true);
+  assert.equal(/^last_verified = "([^"]+)"\r?$/m.exec(ledger)?.[1], runtimeEvidence.review_date);
+  assert.equal(packageSource.kind, "install_probe");
+  assert.match(packageSource.description, /^2026-10-16 official public package/);
+  assert.match(packageSource.description, /build\/TargetBuildID 25967645/);
   assert.match(ledger, /Official role password[\s\S]*reverified 2026-09-08/);
   assert.match(ledger, /steamcmd_anonymous_probe_2278520/);
   assert.match(ledger, /StateFlags 4/);

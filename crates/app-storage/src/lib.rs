@@ -36,6 +36,7 @@ mod ark_cluster_backups;
 mod ark_clusters;
 mod ark_maps;
 mod atomic_file;
+pub mod mod_management_state;
 pub mod storage_migration;
 mod storage_migration_files;
 mod storage_migration_metadata;

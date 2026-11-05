@@ -24,13 +24,16 @@ impl ManagementPaths {
     pub(super) fn new(target: &Path) -> Result<Self, String> {
         validate_manual_mod_target_path(target)?;
         let resolved = resolve_manual_mod_path_with_missing_components(target)?;
-        let identity = resolved.to_string_lossy().replace('/', "\\").to_lowercase();
-        let digest = sha2::Sha256::digest(identity.as_bytes());
-        let suffix = digest
-            .iter()
-            .map(|byte| format!("{byte:02x}"))
-            .collect::<String>();
-        let root = management_storage_parent(target)?.join(format!(".langame-mod-state-{suffix}"));
+        let identity = app_storage::mod_management_state::target_identity(&resolved);
+        let parent = management_storage_parent(target)?;
+        let initial = parent.join(app_storage::mod_management_state::initial_directory_name(
+            &identity,
+        ));
+        let root = if entry_exists(&initial)? {
+            initial
+        } else {
+            find_owned_state_directory(parent, &identity)?.unwrap_or(initial)
+        };
         validate_manual_mod_existing_path_components(&root, false)?;
         if let Ok(metadata) = fs::symlink_metadata(&root)
             && (!metadata.is_dir() || manual_mod_metadata_is_reparse(&metadata))
@@ -52,14 +55,7 @@ impl ManagementPaths {
         if !entry_exists(&self.root)? {
             return Ok(());
         }
-        let owner = self.root.join("owner.json");
-        let metadata = validate_manual_mod_source_filesystem_entry(&owner)?;
-        if !metadata.is_file() || metadata.len() > 32768 {
-            return Err("Invalid Mod management storage identity".into());
-        }
-        let identity: String =
-            serde_json::from_slice(&fs::read(owner).map_err(|error| error.to_string())?)
-                .map_err(|_| "Invalid Mod management storage identity")?;
+        let identity = read_state_owner(&self.root)?;
         if identity != self.identity {
             return Err("Mod management storage belongs to another target".into());
         }
@@ -87,6 +83,48 @@ impl ManagementPaths {
         }
         Ok(())
     }
+}
+
+/// Directory names are allocation keys. A migration rebinds owner.json without
+/// renaming disabled payloads, preserved files, or pending recovery journals.
+fn find_owned_state_directory(parent: &Path, identity: &str) -> Result<Option<PathBuf>, String> {
+    let entries = match fs::read_dir(parent) {
+        Ok(entries) => entries,
+        Err(error) if error.kind() == ErrorKind::NotFound => return Ok(None),
+        Err(error) => return Err(format!("Cannot inspect Mod management storage: {error}")),
+    };
+    let mut found = None;
+    for entry in entries {
+        let entry = entry.map_err(|error| error.to_string())?;
+        if !entry
+            .file_name()
+            .to_str()
+            .is_some_and(app_storage::mod_management_state::is_state_directory_name)
+        {
+            continue;
+        }
+        let root = entry.path();
+        // An unrelated or incomplete sibling cannot establish ownership or
+        // block another target. The original allocation path is checked strictly.
+        let Ok(candidate) = read_state_owner(&root) else {
+            continue;
+        };
+        if candidate == identity && found.replace(root).is_some() {
+            return Err("More than one Mod management directory owns this target".into());
+        }
+    }
+    Ok(found)
+}
+
+fn read_state_owner(root: &Path) -> Result<String, String> {
+    validate_manual_mod_existing_path_components(root, true)?;
+    let owner = root.join("owner.json");
+    let metadata = validate_manual_mod_source_filesystem_entry(&owner)?;
+    if !metadata.is_file() || metadata.len() > 32768 {
+        return Err("Invalid Mod management storage identity".into());
+    }
+    serde_json::from_slice(&fs::read(owner).map_err(|error| error.to_string())?)
+        .map_err(|_| "Invalid Mod management storage identity".into())
 }
 
 /// A sibling of `~mods` is still inside the recursive Pak loading tree. For

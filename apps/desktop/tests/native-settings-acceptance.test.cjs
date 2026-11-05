@@ -159,16 +159,19 @@ test("all native-output cohort modules declare versioned acceptance fixtures", (
   ]) {
     const files = fixtureFiles(moduleId);
     assert.ok(files.length > 0, `${moduleId} has no native-output fixture`);
+    let launchFixtures = 0;
     for (const fileName of files) {
       assert.match(fileName, /^\d{4}-\d{2}-\d{2}-.+\.json$/);
       const fixture = JSON.parse(
         read(path.join("modules", moduleId, "config-fixtures", fileName))
       );
+      assert.equal(fixture.fixture_version, 1, `${moduleId}/${fileName} fixture version`);
       assert.equal(fixture.module_id, moduleId);
-      assert.ok(fixture.expected.files.length > 0);
-      assert.ok(
-        fixture.expected.launch.executable_suffix || fixture.expected.launch.arguments.length > 0
-      );
+      assert.ok(fixture.expected.files.length > 0, `${moduleId}/${fileName} has no file assertion`);
+      if (fixture.expected.launch.executable_suffix || fixture.expected.launch.arguments.length > 0) {
+        launchFixtures++;
+      }
     }
+    assert.ok(launchFixtures > 0, `${moduleId} has no launch-parameter fixture`);
   }
 });

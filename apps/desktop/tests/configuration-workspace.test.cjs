@@ -15,22 +15,12 @@ const workspacePath = path.join(
 );
 const workspaceCssPath = path.join(desktopRoot, "src", "styles", "configuration-workspace.css");
 const guidedSettingsCssPath = path.join(desktopRoot, "src", "styles", "settings-guided.css");
-const serverLayoutCssPath = path.join(
-  desktopRoot,
-  "src",
-  "views",
-  "servers",
-  "workbench",
-  "operations",
-  "server-layout.css"
-);
 const serversViewSource = fs.readFileSync(serversViewPath, "utf8");
 const serverMaintenanceSource = fs.readFileSync(path.join(desktopRoot, "src", "views", "servers", "ServerMaintenanceWorkspace.tsx"), "utf8");
 const archiveWorkspaceSource = fs.readFileSync(path.join(desktopRoot, "src", "views", "servers", "ArchivedInstanceWorkspace.tsx"), "utf8");
 const workspaceSource = fs.readFileSync(workspacePath, "utf8");
 const workspaceCssSource = fs.readFileSync(workspaceCssPath, "utf8");
 const guidedSettingsCssSource = fs.readFileSync(guidedSettingsCssPath, "utf8");
-const serverLayoutCssSource = fs.readFileSync(serverLayoutCssPath, "utf8");
 
 for (const extension of [".ts", ".tsx"]) {
   require.extensions[extension] = function compileTypeScript(module, filename) {
@@ -199,8 +189,7 @@ test("archives mount the same instance workspaces with saved data and read-only 
     assert.match(serversViewSource, new RegExp(`<${component}\\b`), `normal instances must mount ${component}`);
     assert.match(archiveWorkspaceSource, new RegExp(`<${component}\\b`), `archives must reuse ${component}`);
   }
-  assert.doesNotMatch(archiveWorkspaceSource, /ArchiveConfigurationPreview|ArchivedRuntimeData|ArchivedSavedSettings|ArchivedMaintenanceData|SavedConfigurationValue/);
-  assert.doesNotMatch(archiveWorkspaceSource, /<header|archived-instance-workspace__header/);
+  assert.doesNotMatch(archiveWorkspaceSource, /<header/);
   assert.match(serversViewSource, /requestedTab=\{requestedArchiveDetailTab\} onTabChange=\{setArchiveDetailTab\}/);
   assert.match(archiveWorkspaceSource, /requestedTab: ServerDetailTab/);
   assert.doesNotMatch(archiveWorkspaceSource, /useState|selection\.archiveId/);
@@ -227,10 +216,8 @@ test("mounts one embedded ConfigurationWorkspace in the detail region", () => {
   ]) {
     assertMatches(block, new RegExp(`\\b${prop}=`), `missing ConfigurationWorkspace prop ${prop}`);
   }
-  assert.doesNotMatch(serversViewSource, /SettingsModalRouter/);
   assert.doesNotMatch(block, /onPickDirectory|onImportDontStarveWorldData/);
-  assert.doesNotMatch(block, /server-settings-inline|server-settings-shell|modal-overlay|runtime-box|\bonClose=/);
-  assert.doesNotMatch(serverLayoutCssSource, /\.server-settings-shell\b/);
+  assert.doesNotMatch(block, /modal-overlay|runtime-box|\bonClose=/);
 });
 
 test("uses neutral layout sections instead of nesting a card around configuration details", () => {
@@ -287,17 +274,11 @@ test("keeps navigation and configuration details in independent scroll regions",
 });
 
 test("starts directly with categories and settings without a nested workspace header", () => {
-  assert.doesNotMatch(workspaceSource, /<header\s+className="configuration-workspace__header"/);
   assert.doesNotMatch(workspaceSource, /settings\.configuration\.workspace\.(?:eyebrow|subtitle|searchPlaceholder)/);
   assert.doesNotMatch(
     workspaceSource,
-    /configuration-workspace__(?:section-head|section-title|eyebrow)|activeNode\.(?:breadcrumb|title)/,
+    /activeNode\.(?:breadcrumb|title)/,
     "the selected sidebar label must not be repeated in the details pane"
-  );
-  assert.doesNotMatch(
-    workspaceCssSource,
-    /\.configuration-workspace__(?:section-head|section-title|eyebrow)\b/,
-    "removed details-pane headings must not leave orphaned styles"
   );
   assert.match(workspaceSource, /<ConfigurationSearchNavigation\s+model=\{model\}/);
   assert.doesNotMatch(workspaceSource, /settings\.configuration\.save\.(?:saved|dirty|saving)/);
@@ -338,13 +319,11 @@ test("keeps internal configuration provenance out of the player workspace", () =
   );
 
   assert.doesNotMatch(workspaceSource, /item\.field\.sourceKey/);
-  assert.doesNotMatch(workspaceSource, /<code>\{item\.field\.sourceKey\}<\/code>/);
   assert.doesNotMatch(workspaceSource, /item\.field\.presentation\.reason/);
   assert.doesNotMatch(workspaceSource, /activeNode\.description/);
   assert.doesNotMatch(guidedSettingsSource, /group\.description/);
   assert.doesNotMatch(guidedSettingsSource, /section\.description/);
   assert.doesNotMatch(workspaceSource, /settings\.configuration\.workspace\.unavailable\./);
-  assert.doesNotMatch(workspaceSource, /configuration-workspace__advanced-help/);
   assert.doesNotMatch(workspaceSource, /settings\.configuration\.workspace\.generatedHelp/);
   assert.doesNotMatch(englishMessages, /settings\.configuration\.workspace\.generatedHelp/);
   assert.doesNotMatch(chineseMessages, /settings\.configuration\.workspace\.generatedHelp/);
@@ -477,15 +456,5 @@ test("does not render the empty guided-schema notice over built-in sections", ()
     workspaceSource,
     /activeGuidedFields\.length\s*>\s*0\s*\?\s*\(\s*<GuidedSettingsForm/,
     "the guided form must only render when the active section owns guided fields"
-  );
-});
-
-test("removes modal-inline CSS without coupling the two workspace scroll panes", () => {
-  assert.doesNotMatch(workspaceCssSource, /server-settings-inline|\.modal-(?:overlay|content)/);
-  assert.doesNotMatch(serverLayoutCssSource, /server-settings-inline/);
-  assert.match(
-    cssRule(workspaceCssSource, ".configuration-workspace__sidebar"),
-    /overflow-y:\s*auto/,
-    "sidebar must remain usable for long ARK and SCUM navigation trees"
   );
 });

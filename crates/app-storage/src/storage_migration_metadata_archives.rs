@@ -265,15 +265,16 @@ fn external_program(
 }
 
 fn is_path_marker(relative: &str) -> bool {
-    matches!(
-        relative,
-        ".langame-program-acquisition.json"
-            | ".langame-retained-library.json"
-            | ".langame-shared-program.json"
-            | ".langame-exclusive-program.json"
-            | ".langame-package-baseline.json"
-            | ".langame-runtime-projection.json"
-    )
+    mods::is_owner(relative)
+        || matches!(
+            relative,
+            ".langame-program-acquisition.json"
+                | ".langame-retained-library.json"
+                | ".langame-shared-program.json"
+                | ".langame-exclusive-program.json"
+                | ".langame-package-baseline.json"
+                | ".langame-runtime-projection.json"
+        )
 }
 
 fn rewrite_captured_marker(
@@ -285,6 +286,9 @@ fn rewrite_captured_marker(
     moves: &[RootMove],
     copied: bool,
 ) -> Result<(), StorageError> {
+    if mods::is_owner(name) {
+        return mods::rewrite_owner(value, moves, slot);
+    }
     let version = if name == ".langame-package-baseline.json" {
         2
     } else {
@@ -427,3 +431,7 @@ fn rebind_snapshot_cursors(
     }
     Ok(())
 }
+
+#[cfg(all(test, windows))]
+#[path = "storage_migration_metadata_mods_archive_tests.rs"]
+mod mod_state_tests;

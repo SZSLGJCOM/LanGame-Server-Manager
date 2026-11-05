@@ -25,6 +25,8 @@ mod console;
 mod db;
 #[path = "storage_migration_metadata_documents.rs"]
 mod documents;
+#[path = "storage_migration_metadata_mods.rs"]
+mod mods;
 #[path = "storage_migration_metadata_preflight.rs"]
 mod preflight;
 
@@ -163,8 +165,8 @@ async fn prepare(
         })
         .collect();
     tokio::task::spawn_blocking(move || {
-        preflight::validate(&paths, &moves, &database)?;
         let mut plan = MetadataPlan::default();
+        preflight::validate(&paths, &moves, &database, copied, &mut plan)?;
         documents::prepare(&paths, &moves, &database, copied, &mut plan)?;
         archives::prepare(&paths, &moves, &database, copied, &mut plan)?;
         db::prepare_rows(&database, &moves, copied, &mut plan)?;

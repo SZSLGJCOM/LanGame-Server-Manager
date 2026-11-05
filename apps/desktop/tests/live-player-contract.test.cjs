@@ -111,8 +111,10 @@ test("TypeScript live-player unions mirror the Rust JSON vocabulary", () => {
     "names_unavailable",
     "query_unavailable",
     "authentication_failed",
-    "extension_unavailable"
+    "extension_unavailable",
+    "moderation_unavailable"
   ]);
+  assert.deepEqual(typeAliasValues("RuntimeLivePlayerIssueCode"), rustEnumJsonValues("RuntimeLivePlayerIssueCode"));
   assert.deepEqual(typeAliasValues("RuntimePlayerExtensionStatus"), rustEnumJsonValues("RuntimePlayerExtensionStatus"));
   assert.deepEqual(typeAliasValues("RuntimeLivePlayerActionStatus"), ["sent"]);
 });

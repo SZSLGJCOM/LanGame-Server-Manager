@@ -128,9 +128,12 @@ async fn automatic_backup_failure_returns_warning_and_preserves_stopped_world() 
     }
     fs::write(&backups, b"blocked destination").unwrap();
 
-    let warning = backup_after_stop(&storage, &details, InstanceShutdownSource::Manual)
-        .await
-        .expect("backup destination failure must reach the stop response");
+    let (summary, warning) =
+        finish_manual_stop(&storage, &details, async { Ok(details.summary.clone()) })
+            .await
+            .unwrap();
+    let warning = warning.expect("backup destination failure must reach the stop response");
+    assert!(matches!(summary.status, InstanceStatus::Stopped));
     assert!(!warning.is_empty());
     assert_eq!(fs::read(&world).unwrap(), b"stopped world bytes");
     let current = read_instance_details(&storage.paths, &id).await.unwrap();
@@ -139,6 +142,54 @@ async fn automatic_backup_failure_returns_warning_and_preserves_stopped_world() 
     let log = fs::read_to_string(storage.paths.app_log_path()).unwrap();
     assert!(log.contains("instance.stop.auto_backup_failed"));
     assert!(!log.contains("instance.stop.auto_backup_created"));
+
+    let error = finish_manual_stop(&storage, &details, async {
+        Err("injected list refresh failure".into())
+    })
+    .await
+    .unwrap_err();
+    assert!(error.contains("The server stopped"));
+    assert!(error.contains("injected list refresh failure"));
+    assert!(error.contains("Automatic backup also failed"));
+    assert!(error.contains(&warning));
+    assert_eq!(fs::read(&world).unwrap(), b"stopped world bytes");
+    let log = fs::read_to_string(storage.paths.app_log_path()).unwrap();
+    assert!(log.contains("instance.stop.refresh_failed"));
+    fs::remove_dir_all(root).unwrap();
+}
+
+#[tokio::test]
+async fn stopped_instance_refresh_failure_still_publishes_automatic_backup() {
+    let (root, storage, id) = fixture().await;
+    let mut details = read_instance_details(&storage.paths, &id).await.unwrap();
+    details.auto_backup_on_stop = true;
+    let saves = Path::new(&details.saves_path);
+    fs::create_dir_all(saves).unwrap();
+    let world = saves.join("world.fixture");
+    fs::write(&world, b"stopped world bytes").unwrap();
+
+    let error = finish_manual_stop(&storage, &details, async {
+        let backups = app_storage::list_instance_backups(&storage.paths, &id)
+            .await
+            .unwrap();
+        assert_eq!(backups.len(), 1, "backup must publish before refreshing");
+        assert_eq!(
+            fs::read(Path::new(&backups[0].backup_path).join("saves/world.fixture")).unwrap(),
+            b"stopped world bytes"
+        );
+        Err("injected list refresh failure".into())
+    })
+    .await
+    .unwrap_err();
+
+    assert!(error.contains("The server stopped"));
+    assert!(error.contains("injected list refresh failure"));
+    assert!(!error.contains("Automatic backup also failed"));
+    assert_eq!(fs::read(&world).unwrap(), b"stopped world bytes");
+    let log = fs::read_to_string(storage.paths.app_log_path()).unwrap();
+    assert!(log.contains("instance.stop.auto_backup_created"));
+    assert!(log.contains("instance.stop.refresh_failed"));
+    assert!(!log.contains("instance.stop.auto_backup_failed"));
     fs::remove_dir_all(root).unwrap();
 }
 
