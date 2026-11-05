@@ -105,45 +105,6 @@ test("Dragonwilds optional ownership instructions survive field projection and t
   }
 });
 
-function fieldControlForSchemaProperty(property) {
-  if (Array.isArray(property.enum)) {
-    return "select";
-  }
-  if (property.format === "textarea") {
-    return "textarea";
-  }
-  if (property.type === "boolean") {
-    return "checkbox";
-  }
-  if (property.type === "integer" || property.type === "number") {
-    return "number";
-  }
-  return "text";
-}
-
-function fieldsForModule(moduleId) {
-  const schema = JSON.parse(fs.readFileSync(path.join(modulesDir, moduleId, "schema.json"), "utf8"));
-  return Object.entries(schema.properties ?? {}).map(([key, property]) => ({
-    key,
-    title: typeof property.title === "string" ? property.title : key,
-    description: typeof property.description === "string" ? property.description : "",
-    type:
-      property.type === "integer"
-        ? "integer"
-        : property.type === "number"
-          ? "number"
-          : property.type === "boolean"
-            ? "boolean"
-            : "string",
-    control: fieldControlForSchemaProperty(property),
-    sectionId: typeof property["x-lsgm-section"] === "string" ? property["x-lsgm-section"] : "advanced",
-    required: false,
-    enumOptions: Array.isArray(property.enum)
-      ? property.enum.map((value) => ({ label: String(value), value }))
-      : undefined
-  }));
-}
-
 function collectSettingsTranslationKeys() {
   const requestedKeys = new Set();
   const t = (key, _params, fallback) => {
@@ -157,19 +118,22 @@ function collectSettingsTranslationKeys() {
     const definition = resolveSettingsModuleDefinition(moduleId);
     assert.ok(definition, `${moduleId} should have a settings module definition`);
 
-    const sections = definition.getSections ? definition.getSections(t, "zh-CN") : (definition.sections ?? []);
-    const fields = fieldsForModule(moduleId);
-
-    for (const section of sections) {
-      const sectionFields = fields.filter((field) => field.sectionId === section.id);
+    definition.getSections?.(t, "zh-CN");
+    const details = moduleDetailsFor(moduleId);
+    const properties = JSON.parse(details.schema_json).properties ?? {};
+    // Probe only copy used by real controls; parser fallback lookups are optional.
+    const schema = parseGuidedSettingsSchema(details, "zh-CN", makeCatalogTranslator(ZH_CN_MESSAGES));
+    assert.equal(schema.parseError, null, moduleId);
+    for (const section of schema.sections) {
+      const sectionFields = schema.fields.filter((field) => field.sectionId === section.id);
       definition.buildFieldGroups?.(section.id, sectionFields, "zh-CN", t);
-
-      for (const field of sectionFields) {
-        definition.getFieldCopy?.(field.key, t, "zh-CN");
-
-        for (const option of field.enumOptions ?? []) {
-          definition.getEnumOptionLabel?.(field.key, option.value, "zh-CN", t);
-        }
+    }
+    for (const field of schema.presentationFields) {
+      // Additional native fields supply their own copy instead of a schema-field hook.
+      if (!Object.hasOwn(properties, field.key)) continue;
+      definition.getFieldCopy?.(field.key, t, "zh-CN");
+      for (const value of properties[field.key]?.enum ?? []) {
+        definition.getEnumOptionLabel?.(field.key, value, "zh-CN", t);
       }
     }
   }

@@ -58,8 +58,8 @@
     ]
   },
   "coverage": {
-    "editable": 33,
-    "specialized": 3,
+    "editable": 28,
+    "specialized": 8,
     "derived": 0,
     "generated": 0,
     "excluded": 5
@@ -93,17 +93,17 @@
       "launch_args.-LogGameplayConfig",
       "launch_args.-GameplayConfigNoGeneratedComments",
       "launch_args.-GameplayConfigNoEmptyValues",
-      "workshop_config_json.Ignore_Children_File_IDs",
-      "workshop_config_json.Query_Cache_Max_Age_Seconds",
-      "workshop_config_json.Max_Query_Retries",
-      "workshop_config_json.Use_Cached_Downloads",
-      "workshop_config_json.Monitor_Updates",
       "launch_args.custom_launch_flags"
     ],
     "specialized": [
       "commands_dat.Owner",
       "commands_dat.Admin",
-      "workshop_config_json.File_IDs"
+      "workshop_config_json.File_IDs",
+      "workshop_config_json.Ignore_Children_File_IDs",
+      "workshop_config_json.Query_Cache_Max_Age_Seconds",
+      "workshop_config_json.Max_Query_Retries",
+      "workshop_config_json.Use_Cached_Downloads",
+      "workshop_config_json.Monitor_Updates"
     ],
     "derived": [],
     "generated": [],

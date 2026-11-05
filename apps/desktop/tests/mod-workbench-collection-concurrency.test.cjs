@@ -24,6 +24,9 @@ const patch = require("../src/views/servers/mod-settings-patch.ts");
 const dstPolicy = require("../src/views/servers/mod-workbench-dst-policy.ts");
 const workshopControls = require("../src/views/servers/mod-workbench-workshop-controls.ts");
 const workshopInventory = require("../src/views/servers/mod-workbench-workshop-inventory.ts");
+const { WorkshopDownloadOperations } = require("../src/views/servers/workshop-download-operations.ts");
+const { formatDesktopError } = require("../src/desktop-error-message.ts");
+const { EN_US_EXTRA_MESSAGES } = require("../src/i18n-messages-en-extra.ts");
 const { arkModFields } = require("../src/views/servers/ark-map-mods.ts");
 const { parseSettingsObject, parseWorkshopIdList } = require("../src/views/settings/guided-settings.ts");
 
@@ -59,6 +62,12 @@ function fixture() {
   const scanStarted = deferred();
   const releaseScan = deferred();
   const state = { writes: [], downloads: [], downloadError: null, downloadState: "idle" };
+  const downloads = new WorkshopDownloadOperations();
+  downloads.subscribe(() => {
+    const snapshot = downloads.snapshot("instance-pz");
+    state.downloadState = snapshot.status;
+    state.downloadError = snapshot.error;
+  });
   const exports = {};
   const root = {
     id: COLLECTION_ID, title: "Installed collection", status: "resolved", item_kind: "collection",
@@ -67,7 +76,7 @@ function fixture() {
   };
   const noOp = () => {};
   const context = {
-    ...model, ...plans, ...collections, ...patch, parseSettingsObject, exports, Set, Map,
+    ...model, ...plans, ...collections, ...patch, parseSettingsObject, formatDesktopError, exports, Set, Map,
     moduleId, isArk: arkModFields(moduleId).length > 0,
     expectedAppId: 108600, locale: "en-US", readOnly: false, steamAccount: undefined,
     workflow: { steamDownloadMode: "steamcmd-cache" },
@@ -76,14 +85,16 @@ function fixture() {
     manualEnablement: null, manualStaging: null,
     settings: structuredClone(INITIAL_SETTINGS), latestSettingsRef: { current: structuredClone(INITIAL_SETTINGS) },
     lookupMap: { [COLLECTION_ID]: root }, resolvedLookupMap: { [COLLECTION_ID]: root },
-    t: (key, _params, fallback) => fallback ?? key,
+    t: (key, params, fallback) => (fallback ?? EN_US_EXTRA_MESSAGES[key] ?? key)
+      .replace(/\{(\w+)\}/g, (_, name) => String(params?.[name] ?? "")),
     describeError: (error) => error instanceof Error ? error.message : String(error),
     startTransition: (operation) => operation(),
     // React coordination is outside this regression; execute its real owned operation.
     runModMutation: async (_kind, operation) => operation(),
-    setInstallingWorkshopIds: noOp, setDownloadResult: noOp, setApplyMessage: noOp,
+    readBackgroundJobs: async () => [],
+    downloadOperation: { begin: (request) => downloads.begin("instance-pz", request) },
+    setApplyMessage: noOp,
     setPzSnapshot: noOp, setScanNonce: noOp,
-    setDownloadState: (value) => { state.downloadState = value; },
     setDownloadError: (value) => { state.downloadError = value; },
     readInstanceDetails: async (id) => {
       assert.equal(id, "instance-pz");

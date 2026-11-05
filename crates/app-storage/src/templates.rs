@@ -24,6 +24,7 @@ pub(crate) use templates_prestart::apply_module_prestart_support;
 #[path = "templates_rimworld.rs"]
 mod rimworld;
 pub(crate) use rimworld::preserve_retired_settings as preserve_rimworld_retired_settings;
+pub(crate) use rimworld::validate_market_archive_update as validate_rimworld_market_archive_update;
 #[path = "templates_projectzomboid_policy.rs"]
 mod projectzomboid_policy;
 pub(crate) use projectzomboid_policy::preserve_retired_settings as preserve_projectzomboid_retired_settings;
@@ -230,7 +231,6 @@ const BAROTRAUMA_LOCAL_MODS_DIR: &str = "LocalMods";
 const BAROTRAUMA_WORKSHOP_APP_ID: &str = "602960";
 const TERRARIA_TMODLOADER_WORKSHOP_APP_ID: &str = "1281930";
 const TERRARIA_TMODLOADER_WORKSHOP_ITEM_IDS_KEY: &str = "tmodloader_workshop_item_ids";
-const TERRARIA_TMODLOADER_ENABLED_MOD_NAMES_KEY: &str = "tmodloader_enabled_mod_names";
 const CONAN_ENGINE_FILE: &str = "Engine.ini";
 const CONAN_GAME_FILE: &str = "Game.ini";
 const CONAN_SERVER_SETTINGS_FILE: &str = "ServerSettings.ini";

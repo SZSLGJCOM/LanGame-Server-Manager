@@ -225,8 +225,10 @@ test("every bundled module preserves omitted boolean overrides and valid numeric
   const copy = { concealSecret: "Hide", revealSecret: "Show", restartScopes: {} };
   const specializedBooleanFields = [];
   for (const id of modules) {
+    const schemaJson = fs.readFileSync(path.join(modulesRoot, id, "schema.json"), "utf8");
+    const properties = JSON.parse(schemaJson).properties;
     const schema = parseGuidedSettingsSchema({
-      summary: { id, name: id }, schema_json: fs.readFileSync(path.join(modulesRoot, id, "schema.json"), "utf8")
+      summary: { id, name: id }, schema_json: schemaJson
     }, "en-US", (_key, _params, fallback) => fallback ?? "");
     assert.deepEqual(validateGuidedSettingsObject(schema, {}).filter((issue) => issue.reason === "number"), [], id);
     for (const field of schema.fields.filter((field) => field.control === "checkbox" && isOptionalBooleanOverride(field))) {
@@ -244,8 +246,10 @@ test("every bundled module preserves omitted boolean overrides and valid numeric
       const html = renderToStaticMarkup(React.createElement(ConfigurationField, {
         field, settings: {}, value: readGuidedFieldValue(field, {}), copy, onPatch() {}
       }));
+      const inheritedLabel = properties[field.key]["x-lsgm-default-source"] === "existing_native_configuration"
+        ? "Keep current server setting" : "Use game default";
       assert.ok(html.includes(`<option value="" selected="">${field.preserveNativeWhenUnset
-        ? "Keep native setting (current value not read)" : "Use game default"}</option>`), `${id}:${field.key}`);
+        ? "Keep native setting (current value not read)" : inheritedLabel}</option>`), `${id}:${field.key}`);
     }
   }
   assert.deepEqual(specializedBooleanFields.sort(), [

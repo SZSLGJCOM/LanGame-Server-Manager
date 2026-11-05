@@ -1230,6 +1230,12 @@ fn build_launch_plan_prefers_platform_specific_executable_directory() {
         process.working_directory_template = Some(String::from("{{terraria.working_directory}}"));
         let templated_plan = build_launch_plan_with_override(&settings, &module, &instance, None)
             .expect("template plan");
+        assert!(
+            templated_plan
+                .args
+                .iter()
+                .all(|arg| arg != "-steamworkshopfolder" && arg != "-tmlsavedirectory")
+        );
         assert_eq!(
             PathBuf::from(&templated_plan.executable_path),
             windows_executable
@@ -1252,7 +1258,7 @@ fn terraria_tmodloader_runtime_uses_instance_scoped_entrypoint_and_save_director
     let install_root = games_root.join("terraria");
     let config_path = temp_root
         .join("instances")
-        .join("terraria-tmod")
+        .join("terraria instance")
         .join("config")
         .join("instance.json");
     let instance_root = config_path
@@ -1261,14 +1267,22 @@ fn terraria_tmodloader_runtime_uses_instance_scoped_entrypoint_and_save_director
         .parent()
         .unwrap()
         .to_path_buf();
-    let runtime_dir = instance_root.join("tmodloader").join("runtime");
-    let runtime_entrypoint = runtime_dir.join("start-tModLoaderServer.bat");
+    let runtime_dir = instance_root.join("tmodloader").join("runtime with spaces");
+    let launch_utils = runtime_dir.join("LaunchUtils");
+    let runtime_entrypoint = launch_utils.join("busybox64.exe");
 
-    std::fs::create_dir_all(&runtime_dir).expect("create tmodloader runtime dir");
+    std::fs::create_dir_all(&launch_utils).expect("create tmodloader launch directory");
     std::fs::create_dir_all(config_path.parent().expect("config parent"))
         .expect("create config parent");
     std::fs::create_dir_all(&install_root).expect("create vanilla install root");
-    std::fs::write(&runtime_entrypoint, "@echo off").expect("write tmodloader entrypoint");
+    std::fs::write(&runtime_entrypoint, []).expect("write tmodloader entrypoint");
+    for path in [
+        launch_utils.join("ScriptCaller.sh"),
+        runtime_dir.join("tModLoader.dll"),
+        runtime_dir.join("tModLoader.runtimeconfig.json"),
+    ] {
+        std::fs::write(path, []).expect("write required tmodloader runtime file");
+    }
 
     let settings = AppSettings {
         archives_root: String::new(),
@@ -1328,7 +1342,9 @@ fn terraria_tmodloader_runtime_uses_instance_scoped_entrypoint_and_save_director
         backup_uses_declared_saves_path: false,
         auto_backup_on_stop: false,
         backup_retention_count: 10,
-        settings_json: String::from(r#"{"server_runtime":"tmodloader"}"#),
+        settings_json: String::from(
+            r#"{"server_runtime":"tmodloader","tmodloader_runtime_dir":"runtime with spaces"}"#,
+        ),
         ports: vec![],
         active_run: None,
     };
@@ -1342,20 +1358,96 @@ fn terraria_tmodloader_runtime_uses_instance_scoped_entrypoint_and_save_director
     );
     assert!(launch_plan.executable_exists);
     assert_eq!(PathBuf::from(&launch_plan.working_directory), runtime_dir);
-    assert_eq!(launch_plan.args[0], "-nosteam");
-    assert_eq!(launch_plan.args[1], "-config");
     assert_eq!(
-        PathBuf::from(&launch_plan.args[2]),
-        instance_root.join("config").join("serverconfig.txt")
+        &launch_plan.args[..4],
+        [
+            "bash",
+            "./LaunchUtils/ScriptCaller.sh",
+            "-server",
+            "-config"
+        ]
     );
-    assert_eq!(launch_plan.args[3], "-tmlsavedirectory");
     assert_eq!(
         PathBuf::from(&launch_plan.args[4]),
+        instance_root.join("config").join("serverconfig.txt")
+    );
+    assert_eq!(launch_plan.args[5], "-tmlsavedirectory");
+    assert_eq!(
+        PathBuf::from(&launch_plan.args[6]),
         instance_root.join("tmodloader")
     );
-    assert_eq!(launch_plan.args[5], "-ip");
-    assert_eq!(launch_plan.args[6], "0.0.0.0");
-    assert!(launch_plan.uses_script_entrypoint);
+    assert_eq!(launch_plan.args[7], "-steamworkshopfolder");
+    assert_eq!(
+        PathBuf::from(&launch_plan.args[8]),
+        instance_root
+            .join("tmodloader")
+            .join("steamapps")
+            .join("workshop")
+    );
+    assert_eq!(launch_plan.args[9..], ["-ip", "0.0.0.0"]);
+    assert!(!launch_plan.uses_script_entrypoint);
+
+    std::fs::remove_file(launch_utils.join("ScriptCaller.sh")).expect("remove bootstrap");
+    let build_plan =
+        || build_launch_plan_with_override(&settings, &module, &instance, None).unwrap();
+    assert!(build_plan().validation_issues.iter().any(|issue| {
+        issue.code == "launch_required_file_missing"
+            && issue
+                .path
+                .as_deref()
+                .is_some_and(|path| Path::new(path).ends_with("ScriptCaller.sh"))
+    }));
+    std::fs::remove_file(&runtime_entrypoint).unwrap();
+    std::fs::remove_dir(&launch_utils).unwrap();
+    std::fs::remove_file(runtime_dir.join("tModLoader.dll")).unwrap();
+    for name in ["tModLoaderServer.exe", "start-tModLoaderServer.bat"] {
+        let entry = runtime_dir.join(name);
+        std::fs::write(&entry, []).unwrap();
+        let plan = build_plan();
+        assert_eq!(PathBuf::from(plan.executable_path), entry);
+        assert_eq!(plan.args[0], "-nosteam");
+        assert_eq!(plan.args[1..], launch_plan.args[3..]);
+        std::fs::remove_file(entry).unwrap();
+    }
+
+    let external_runtime = temp_root.join("shared runtime");
+    std::fs::create_dir_all(&external_runtime).unwrap();
+    std::fs::write(external_runtime.join("tModLoaderServer.exe"), []).unwrap();
+    let mut external = instance.clone();
+    external.settings_json = serde_json::json!({
+        "server_runtime": "tmodloader",
+        "tmodloader_runtime_dir": external_runtime,
+    })
+    .to_string();
+    let plan = build_launch_plan_with_override(&settings, &module, &external, None).unwrap();
+    assert_eq!(PathBuf::from(plan.working_directory), external_runtime);
+    assert_eq!(plan.args[1..], launch_plan.args[3..]);
+
+    // An already-saved vanilla preference plus a real enabled Mod is the
+    // first-install case. The launch preview must still allow pressing Start.
+    let mut first = instance;
+    first.settings_json = serde_json::json!({
+        "server_runtime": "vanilla", "tmodloader_enabled_mod_names": "BarnacleMod",
+        "tmodloader_workshop_item_ids": "3831007901",
+    })
+    .to_string();
+    let plan = build_launch_plan_with_override(&settings, &module, &first, None).unwrap();
+    assert_eq!(
+        PathBuf::from(plan.working_directory),
+        app_core::terraria::managed_runtime_dir(&instance_root)
+    );
+    assert!(plan.executable_path.ends_with("busybox64.exe"));
+    assert!(!plan.executable_exists);
+    assert!(plan.ready_to_launch, "{:?}", plan.validation_issues);
+    assert!(
+        plan.validation_issues
+            .iter()
+            .any(|issue| issue.code == "tmodloader_preparation_required")
+    );
+    first.settings_json =
+        r#"{"server_runtime":"vanilla","tmodloader_workshop_item_ids":"3831007901"}"#.into();
+    let plan = build_launch_plan_with_override(&settings, &module, &first, None).unwrap();
+    assert!(plan.executable_path.ends_with("TerrariaServer.exe"));
 
     let _ = std::fs::remove_dir_all(temp_root);
 }

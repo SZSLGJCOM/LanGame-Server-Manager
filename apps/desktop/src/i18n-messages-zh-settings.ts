@@ -55,6 +55,7 @@ export const ZH_CN_SETTINGS_MESSAGES: MessageCatalog = {
   "settings.configuration.secret.show": "显示内容",
   "settings.configuration.secret.hide": "隐藏内容",
   "settings.configuration.useGameDefault": "使用游戏默认值",
+  "settings.configuration.keepCurrentServerSetting": "沿用服务器当前设置",
   "settings.configuration.specialized.unavailable": "此设置缺少对应的专用编辑器。",
   "settings.configuration.restart.none": "无需重启",
   "settings.configuration.restart.server": "需重启服务器",

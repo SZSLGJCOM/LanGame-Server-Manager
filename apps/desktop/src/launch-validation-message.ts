@@ -23,6 +23,8 @@ export function formatLaunchValidationIssue(issue: LaunchValidationIssue, t?: Tr
       return render("launch.validation.executableMissing", "启动程序不存在：{path}。请在游戏库安装或修复服务端文件。", "Launch executable does not exist: {path}. Install or repair the server files in the library.", { path });
     case "launch_preparation_required":
       return render("launch.validation.preparationRequired", "服务端源文件已就绪，启动时会自动为此实例准备启动程序。", "Server source files are ready. The launch executable will be prepared automatically for this instance when starting.");
+    case "tmodloader_preparation_required":
+      return render("launch.validation.tmodloaderPreparation", "将自动下载并准备 tModLoader。", "tModLoader will be downloaded and prepared automatically.");
     case "launch_required_file_missing":
       return path
         ? render("launch.validation.requiredFileMissing", "启动所需文件不存在：{path}。请检查启动文件路径，或修复服务端文件。", "Required launch file does not exist: {path}. Check the launch file path or repair the server files.", { path })

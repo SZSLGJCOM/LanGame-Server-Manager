@@ -70,6 +70,8 @@ export function buildConfigurationFieldCopy(t: ReturnType<typeof useI18n>["t"]):
     showSuggestions: t("settings.guided.suggestions.toggle", undefined, "Show suggestions"),
     notSaved: t("servers.archives.configuration.notSaved", undefined, "Not saved"),
     useGameDefault: t("settings.configuration.useGameDefault", undefined, "Use game default"),
+    keepCurrentServerSetting: t("settings.configuration.keepCurrentServerSetting", undefined,
+      "Keep current server setting"),
     preserveNativeWhenUnset: t("settings.configuration.preserveNativeWhenUnset", undefined,
       "Keep native setting (current value not read)"),
     enabled: t("common.enabled", undefined, "Enabled"),

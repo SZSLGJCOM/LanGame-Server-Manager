@@ -22,6 +22,7 @@ struct Snapshot {
     const char* issue{"awaiting_native_update"};
     std::uint32_t count{};
     Player players[kMaxPlayers]{};
+    bool moderationSupported{true};
 };
 struct NativeLookupContext {
     std::uintptr_t output{}, manager{};

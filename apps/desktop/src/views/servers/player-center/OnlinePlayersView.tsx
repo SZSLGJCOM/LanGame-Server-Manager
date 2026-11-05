@@ -205,8 +205,9 @@ export function OnlinePlayersView(props: OnlinePlayersViewProps) {
   const actionIds = declaredPlayerActionIds;
   const managementUnavailableReason = props.moduleId === "enshrouded"
     ? enshroudedPlayerManagementUnavailableReason(props.snapshot?.issue, props.locale, props.t) : null;
+  const moderationOnlyReason = props.snapshot?.issue?.code === "moderation_unavailable" ? managementUnavailableReason : null;
   const missingEnshroudedExtensionIdentity = props.moduleId === "enshrouded"
-    && (Boolean(managementUnavailableReason) || !hasEnshroudedExtensionIdentity(matchedLivePlayer));
+    && ((!moderationOnlyReason && Boolean(managementUnavailableReason)) || !hasEnshroudedExtensionIdentity(matchedLivePlayer));
   const enshroudedModerationProtected = props.moduleId === "enshrouded"
     && matchedLivePlayer?.attributes.some((attribute) => attribute.key === "moderation_immune" && attribute.value === "true");
   const protectedPlayerReason = props.t("servers.playerCenter.enshrouded.moderationProtected", undefined,
@@ -214,12 +215,14 @@ export function OnlinePlayersView(props: OnlinePlayersViewProps) {
   const disabledActionReasons = {
     ...(selectedPlayerBanned || selectedNativeBanned ? { ban_player: props.t("servers.playerCenter.actions.alreadyBanned", undefined, "This player is already in the ban roster."),
       ban_user: props.t("servers.playerCenter.actions.alreadyBanned", undefined, "This player is already in the ban roster.") } : {}),
-    ...(enshroudedModerationProtected ? { kick_player: protectedPlayerReason, ban_player: protectedPlayerReason } : {})
+    ...(enshroudedModerationProtected ? { kick_player: protectedPlayerReason, ban_player: protectedPlayerReason } : {}),
+    ...(moderationOnlyReason ? { kick_player: moderationOnlyReason, ban_player: moderationOnlyReason } : {})
   };
-  const runtimePlayer = matchedLivePlayer && (selectedPlayerBanned || selectedNativeBanned || missingEnshroudedExtensionIdentity || enshroudedModerationProtected)
+  const blockEnshroudedModeration = Boolean(moderationOnlyReason || enshroudedModerationProtected);
+  const runtimePlayer = matchedLivePlayer && (selectedPlayerBanned || selectedNativeBanned || missingEnshroudedExtensionIdentity || blockEnshroudedModeration)
     ? { ...matchedLivePlayer, available_action_ids: matchedLivePlayer.available_action_ids.filter((id) =>
       !missingEnshroudedExtensionIdentity && (!(selectedPlayerBanned || selectedNativeBanned) || id !== "ban_player" && id !== "ban_user")
-      && (!enshroudedModerationProtected || (id !== "kick_player" && id !== "ban_player"))) } : matchedLivePlayer;
+      && (!blockEnshroudedModeration || (id !== "kick_player" && id !== "ban_player"))) } : matchedLivePlayer;
   const showPlayerPanel = actionIds.length > 0;
   const hasControls = Boolean(showPlayerPanel || canManual || fields.length > 0 || nativeBans);
   const showMemberPane = hasControls || props.presentation.tableVisible;
@@ -229,7 +232,7 @@ export function OnlinePlayersView(props: OnlinePlayersViewProps) {
     : props.moduleId === "enshrouded" && !enshroudedNativeActionsDeclared
       ? props.t("servers.playerCenter.enshrouded.managementUnavailable", undefined,
         "No native admin interface connected; kick and immediate ban are unavailable. Edit the ban roster while stopped; it applies on start.")
-      : props.moduleId === "enshrouded" && !enshroudedExtensionIdentityAvailable
+      : props.moduleId === "enshrouded" && (managementUnavailableReason || !enshroudedExtensionIdentityAvailable)
         ? managementUnavailableReason ?? props.t("servers.playerCenter.enshrouded.extensionIdentityUnavailable", undefined,
           "No verified player identity from the extension; kick and ban are unavailable and the list is view-only.")
         : null].filter(Boolean).join(" ");
@@ -243,7 +246,7 @@ export function OnlinePlayersView(props: OnlinePlayersViewProps) {
         ? props.t("servers.playerCenter.actions.listReadFailed", undefined, "The player list could not be read. Refresh it before retrying.")
         : props.presentation.refreshReason === "expired"
           ? props.t("servers.playerCenter.actions.snapshotExpired", undefined, "The player list has expired. Refresh it before running an action.")
-          : managementUnavailableReason
+          : managementUnavailableReason && !moderationOnlyReason
             ? managementUnavailableReason
             : !props.presentation.authoritative
               ? props.t("servers.playerCenter.actions.snapshotNotCurrent", undefined, "The player snapshot is not complete and current. Refresh it before retrying.")
@@ -416,7 +419,7 @@ export function OnlinePlayersView(props: OnlinePlayersViewProps) {
             declaredActions={props.declaredActions}
             disabledReason={runtimeUnavailableReason}
             disabledNotice={props.moduleId === "enshrouded" && inspectedPlayer
-              ? runtimeUnavailableReason ?? (enshroudedModerationProtected ? protectedPlayerReason : null) : null}
+              ? runtimeUnavailableReason ?? moderationOnlyReason ?? (enshroudedModerationProtected ? protectedPlayerReason : null) : null}
             disabledActionReasons={disabledActionReasons}
             locale={props.locale}
             onActionCompleted={nativeBans ? refreshAfterModeration : props.onRefresh}
@@ -434,7 +437,7 @@ export function OnlinePlayersView(props: OnlinePlayersViewProps) {
           disabled={props.access.disabled || nativeUnbanBusy} locale={props.locale} onMutate={props.access.onMutate}
           disabledReason={props.access.disabledReason}
           mergedUnban={mergedUnbanField ? { fieldKey: mergedUnbanField.key, live: props.runtimeAvailable && !props.readOnly,
-            liveUnavailableReason: props.snapshot?.issue?.code === "extension_unavailable" ? managementUnavailableReason : null } : undefined}
+            liveUnavailableReason: moderationOnlyReason ?? (props.snapshot?.issue?.code === "extension_unavailable" ? managementUnavailableReason : null) } : undefined}
           /> : null}
         {nativeUnban && props.instanceDetails && props.moduleId ? <NativeBanRosterActions key={props.instanceDetails.summary.id} instanceId={props.instanceDetails.summary.id} moduleId={props.moduleId}
           entry={unbanEntry} hasSelection={Boolean(selectedPlayer || manualTab && manualTarget)} state={bans}

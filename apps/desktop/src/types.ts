@@ -216,7 +216,8 @@ export type RuntimeLivePlayerIssueCode =
   | "names_unavailable"
   | "query_unavailable"
   | "authentication_failed"
-  | "extension_unavailable";
+  | "extension_unavailable"
+  | "moderation_unavailable";
 
 export interface RuntimeLivePlayerIdentifier {
   kind: RuntimePlayerIdentityKind;
@@ -1203,6 +1204,7 @@ export interface ManualModInventoryItem {
   path: string;
   item_type: "directory" | "file";
   inferred_id?: string | null;
+  tmodloader_mod_name?: string | null;
   file_count: number;
   total_bytes: number;
   modified_unix_ms?: number | null;

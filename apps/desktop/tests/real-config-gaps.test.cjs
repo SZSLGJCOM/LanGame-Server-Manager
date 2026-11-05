@@ -757,8 +757,7 @@ test("Terraria exposes tModLoader Steam Workshop modpack settings", () => {
   assert.match(moduleToml, /\[mods\.source\][\s\S]*label = "tModLoader Steam Workshop"/);
   assert.match(moduleToml, /url = "https:\/\/steamcommunity\.com\/app\/1281930\/workshop\/"/);
   assert.match(moduleToml, /tmodloader\/steamapps/);
-  assert.match(moduleToml, /Mods\/install\.txt/);
-  assert.match(moduleToml, /Vanilla TerrariaServer\.exe does not load tModLoader mods/);
+  assert.match(moduleToml, /install_note = "[^\n]*My Mods[^\n]*automatically prepares and uses tModLoader/);
   assert.match(
     moduleToml,
     /\[mods\.manual_staging\][\s\S]*target_template = "\{\{paths\.instance_root\}\}\/tmodloader\/steamapps\/workshop\/content\/1281930"/
@@ -777,9 +776,7 @@ test("Terraria exposes tModLoader Steam Workshop modpack settings", () => {
   assert.equal(schema.properties.tmodloader_enabled_mod_names["x-lsgm-source-key"], "Mods/enabled.json");
   assert.equal(schema.properties.tmodloader_enabled_mod_names["x-lsgm-section"], "mods");
   assert.match(settingsDefinition, /keys: \["server_runtime", "tmodloader_runtime_dir"\]/);
-  assert.match(settingsDefinition, /keys: \["tmodloader_workshop_item_ids", "tmodloader_enabled_mod_names"\]/);
-  assert.match(settingsDefinition, /key === "tmodloader_workshop_item_ids"[\s\S]*return "workshop-id-list"/);
-  assert.match(settingsDefinition, /key === "tmodloader_enabled_mod_names"[\s\S]*return "string-list"/);
+  assert.doesNotMatch(settingsDefinition, /tmodloader_workshop_item_ids|tmodloader_enabled_mod_names|id: "mods"/);
   assert.match(ledger, /tmodloader_dedicated_server_utils/);
   assert.match(ledger, /tmodloader_steam_workshop/);
   assert.match(ledger, /steamapps\/workshop\/content\/1281930/);

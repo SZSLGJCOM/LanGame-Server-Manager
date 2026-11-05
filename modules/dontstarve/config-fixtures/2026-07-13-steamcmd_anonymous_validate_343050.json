@@ -88,8 +88,8 @@
     "allow_ioopenwrite_sandbox_escape": true
   },
   "coverage": {
-    "editable": 320,
-    "specialized": 2,
+    "editable": 318,
+    "specialized": 4,
     "derived": 0,
     "generated": 0,
     "excluded": 32
@@ -413,13 +413,13 @@
       "dedicated_server_mods_setup.ServerModSetup",
       "dedicated_server_mods_setup.ServerModCollectionSetup",
       "master_modoverrides.modoverrides.lua:enabled_workshop_ids",
-      "caves_modoverrides.modoverrides.lua:enabled_workshop_ids",
-      "master_modoverrides.modoverrides.lua:raw_lua",
-      "caves_modoverrides.modoverrides.lua:raw_lua"
+      "caves_modoverrides.modoverrides.lua:enabled_workshop_ids"
     ],
     "specialized": [
       "master_modoverrides.modoverrides.lua:configuration_options",
-      "caves_modoverrides.modoverrides.lua:configuration_options"
+      "master_modoverrides.modoverrides.lua:raw_lua",
+      "caves_modoverrides.modoverrides.lua:configuration_options",
+      "caves_modoverrides.modoverrides.lua:raw_lua"
     ],
     "derived": [],
     "generated": [],

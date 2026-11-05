@@ -1,4 +1,4 @@
-import type { ModuleDetails, SteamWorkshopLookupChild, SteamWorkshopLookupItem } from "../../types";
+import type { ManualModInventoryItem, ModuleDetails, SteamWorkshopLookupChild, SteamWorkshopLookupItem } from "../../types";
 import { parseWorkshopIdList } from "../settings/guided-setting-values";
 import type { SettingsObject } from "../settings/settings-schema";
 import type { ModProviderKind } from "./mod-workbench-capability";
@@ -6,6 +6,7 @@ import { readAsaModMembership } from "./mod-workbench-asa";
 import { parseEvolvedModIds } from "./ark-evolved-mod-ids";
 import { DONTSTARVE_SHARDS } from "../settings/modules/dontstarve-shards";
 import { readDstRawModDeclarations } from "./mod-workbench-dst-raw";
+import { readTerrariaEnabledModNames, readTerrariaWorkshopMetadata } from "./mod-workbench-terraria";
 
 export type ModEntryKind = "steam-item" | "steam-collection" | "game-mod" | "map" | "native" | "manual";
 export type SteamWorkshopBrowseSort = "relevance" | "trend" | "popular" | "recent" | "subscribers";
@@ -159,7 +160,8 @@ function enabledEntryValues(entry: ModSourceEntry): string[] {
 }
 
 export function canReorderEnabledRow(row: ModEnabledRow): boolean {
-  return row.entry.key !== "dst-enabled" && !row.entry.key.endsWith("-disabled") && enabledEntryValues(row.entry).length > 1;
+  return row.entry.key !== "dst-enabled" && row.entry.key !== "terraria-unmapped-names"
+    && !row.entry.key.endsWith("-disabled") && enabledEntryValues(row.entry).length > 1;
 }
 
 export function reorderEnabledEntryValues(
@@ -184,6 +186,10 @@ export function isCanonicalWorkshopModId(id: unknown): id is string {
   return typeof id === "string" && /^[1-9]\d{5,19}$/.test(id) && BigInt(id) <= 18446744073709551615n;
 }
 
+export function readTerrariaOwnedWorkshopIds(settings: SettingsObject): string[] {
+  return parseWorkshopIdList(settings.tmodloader_workshop_item_ids).filter(isCanonicalWorkshopModId);
+}
+
 export function readDstRemovedWorkshopModIds(settings: SettingsObject): string[] {
   const value = settings.dst_removed_workshop_mod_ids;
   return Array.isArray(value) ? uniqueEntries(value.filter(isCanonicalWorkshopModId)) : [];
@@ -199,10 +205,23 @@ export function buildConfiguredEntries(
   settings: SettingsObject,
   moduleDetails?: ModuleDetails | null,
   /** Member IDs saved in this instance's collection records, never remote lookup children. */
-  ownedMemberIds: readonly string[] = []
+  ownedMemberIds: readonly string[] = [],
+  inventoryItems?: readonly ManualModInventoryItem[] | null
 ): ModSourceEntry[] {
   const entries: Array<ModSourceEntry | null> = [];
   const enablement = moduleDetails?.mods?.enablement;
+  if (moduleId === "terraria") {
+    const owned = readTerrariaOwnedWorkshopIds(settings);
+    const { uniqueNames } = readTerrariaWorkshopMetadata(owned, inventoryItems);
+    const unmapped = readTerrariaEnabledModNames(settings.tmodloader_enabled_mod_names).filter((name) => !uniqueNames.has(name));
+    entries.push(buildEntry("terraria-tmodloader_workshop_item_ids", enablement?.setting_label ?? "Workshop items",
+      "tmodloader_workshop_item_ids", "steam-item", owned));
+    if (unmapped.length) entries.push({
+      key: "terraria-unmapped-names", label: "Enabled tModLoader names", fieldLabel: "tmodloader_enabled_mod_names",
+      kind: "game-mod", values: unmapped, ids: []
+    });
+    return entries.filter((entry): entry is ModSourceEntry => Boolean(entry));
+  }
   if (enablement) {
     if (moduleId === "arksurvivalascended") {
       const state = readAsaModMembership(settings);
@@ -327,6 +346,7 @@ export function canToggleModEnabledRow(
   // Only these workflows retain an instance-owned entry after disabling it.
   return isManualEnablementModule || (moduleId === "dontstarve" &&
     (row.entry.key === "dst-enabled" || row.entry.key === "dst-disabled")) ||
+    (moduleId === "terraria" && (row.entry.key === "terraria-tmodloader_workshop_item_ids" || row.entry.key === "terraria-unmapped-names")) ||
     (moduleId === "projectzomboid" && row.entry.key === "pz-workshop") ||
     (["arksurvivalevolved", "barotrauma", "conanexiles", "soulmask"].includes(moduleId) &&
       (row.entry.key === `${moduleId}-disabled` || row.entry.key === `${moduleId}-${row.entry.fieldLabel}`));

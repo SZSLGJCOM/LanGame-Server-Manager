@@ -161,7 +161,6 @@ const GROUP_COPY: Record<string, { title: string; description: string }> = {
   islandsmods: { title: "Islands Mods", description: "Islands enablement and configuration_options." },
   volcanomods: { title: "Volcano Mods", description: "Volcano enablement and configuration_options." },
   rawworld: { title: "Raw world files", description: "Expert full-file and extra Lua overrides." },
-  rawmods: { title: "Raw Mod files", description: "Expert full-file modoverrides.lua." },
   launch: { title: "Launch options", description: "Official dedicated-server command-line switches." }
 };
 
@@ -179,7 +178,7 @@ function groupId(sectionId: string, key: string): string {
   }
   if (sectionId === "advanced") {
     if (key.includes("world")) return "rawworld";
-    return key.includes("modoverrides") ? "rawmods" : "launch";
+    return "launch";
   }
 
   return "other";
@@ -307,7 +306,7 @@ export const dontStarveSettingsDefinition: SettingsModuleDefinition = {
         "Manage this instance's downloads, shard enable lists, and per-Mod options.") },
     { id: "advanced", parentId: "runtime", title: t("dst.settings.sections.advanced", undefined, "Advanced native overrides"), order: 50,
       description: t("dst.settings.sections.advancedDescription", undefined,
-        "Edit world and Mod Lua files for every shard, including Island Adventures Islands and Volcano.") }
+        "Edit world Lua files for every shard, including Island Adventures Islands and Volcano.") }
   ],
   buildFieldGroups: (sectionId, fields, locale, t) => buildDstFieldGroups(sectionId, fields, locale, t),
   getFieldCopy: (key, t) => buildDstFieldCopy(key, t),

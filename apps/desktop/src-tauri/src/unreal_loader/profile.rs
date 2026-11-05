@@ -23,7 +23,8 @@ impl Profile {
             (
                 "abioticfactor",
                 "2563f8d798c8277400acd28eefde604c0ac7d77601627296211af48b30dba25f"
-                | "de8b4bdaee7a21f56b6f55bc1cc37e97e34c4c1b8649672635b876220f7a935d",
+                | "de8b4bdaee7a21f56b6f55bc1cc37e97e34c4c1b8649672635b876220f7a935d"
+                | "5773a41a98b119f9900719eeb2b5f7582e74958d8e79fc22ee53d3d3d3d5209a",
             ) => Ok(None),
             ("conanexiles", "d0ea317e7e037e68454414f12828d5995cc9e519b9c34eda264be1954d352b14") => {
                 Ok(Some("2eec9aa9aa443fb476db583cfdc5044285ccc246df0a60e93155fb37e14324b6"))

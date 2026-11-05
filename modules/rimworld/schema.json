@@ -922,7 +922,7 @@
     "action_market_is_enabled": {
       "type": "boolean",
       "title": "Allow Market Trading",
-      "description": "Allows ordinary players to use the shared player market. Server administrators bypass this restriction.",
+      "description": "Opens the market button for players using the matching Together client.",
       "x-lsgm-default-source": "existing_native_configuration",
       "x-lsgm-section": "world",
       "x-lsgm-order": 1620,
@@ -933,7 +933,7 @@
     "action_market_cooldown": {
       "type": "number",
       "title": "Market Trading Cooldown (ms)",
-      "description": "Minimum interval between market trading requests from one ordinary player. 1000 ms is one second; administrators bypass this cooldown.",
+      "description": "Minimum interval between an ordinary player's requests on the local market, in milliseconds. Administrators bypass this cooldown.",
       "x-lsgm-default-source": "existing_native_configuration",
       "x-lsgm-section": "world",
       "x-lsgm-order": 1630,
@@ -944,7 +944,7 @@
     "action_market_minimum_price": {
       "type": "integer",
       "title": "Minimum Market Purchase Price",
-      "description": "Used when an item's base price is below this value; otherwise the purchase markup applies.",
+      "description": "On the local market, an item below this base value uses the minimum purchase price.",
       "x-lsgm-default-source": "existing_native_configuration",
       "x-lsgm-section": "world",
       "x-lsgm-order": 1640,
@@ -957,7 +957,7 @@
     "action_market_price_multiplier": {
       "type": "number",
       "title": "Market Price Spread",
-      "description": "For value x, the normal purchase price is base × (1 + x); seller proceeds are base ÷ (1 + 2x), truncated to integers. The minimum purchase price is separate.",
+      "description": "On the local market, value x gives a purchase price of base × (1 + x) and seller proceeds of base ÷ (1 + 2x), truncated to integers. The minimum purchase price is separate.",
       "x-lsgm-default-source": "existing_native_configuration",
       "x-lsgm-section": "world",
       "x-lsgm-order": 1650,
@@ -970,7 +970,7 @@
     "action_market_max_entries_per_player": {
       "type": "integer",
       "title": "Market Listings per Player",
-      "description": "Maximum number of simultaneous listings owned by one player.",
+      "description": "Local server listing limit. Together 26.11.2.1 compares the owner hash with a username, so ordinary usernames can exceed a positive limit.",
       "x-lsgm-default-source": "existing_native_configuration",
       "x-lsgm-section": "world",
       "x-lsgm-order": 1660,
@@ -979,6 +979,17 @@
       "x-lsgm-source-surface": "config_file",
       "minimum": -2147483648,
       "maximum": 2147483647
+    },
+    "action_market_use_global_server": {
+      "type": "boolean",
+      "title": "Use Cross-Server Market",
+      "description": "Connect players to Together's public marketplace. Turn off for trading within this server. Unset preserves the native choice. New servers use the public market and upgraded local markets stay local.",
+      "x-lsgm-default-source": "existing_native_configuration",
+      "x-lsgm-section": "world",
+      "x-lsgm-order": 1625,
+      "x-lsgm-source": "market_26_11_2_1",
+      "x-lsgm-source-key": "Configs/Actions/Market.json#UseGlobalServer",
+      "x-lsgm-source-surface": "config_file"
     },
     "action_pollution_is_enabled": {
       "type": "boolean",
@@ -1252,6 +1263,17 @@
       "x-lsgm-source-surface": "config_file",
       "minimum": -3.4028234663852886e+38,
       "maximum": 3.4028234663852886e+38
+    },
+    "action_rollback_is_enabled": {
+      "type": "boolean",
+      "title": "Allow Player Save Rollback",
+      "description": "Lets players use Together's rollback button to reload their last local save. Requires the matching 26.11.2.1 client and server. Unset preserves the native setting.",
+      "x-lsgm-default-source": "existing_native_configuration",
+      "x-lsgm-section": "world",
+      "x-lsgm-order": 1895,
+      "x-lsgm-source": "rollback_26_11_2_1",
+      "x-lsgm-source-key": "Configs/Actions/Rollback.json#IsEnabled",
+      "x-lsgm-source-surface": "config_file"
     },
     "action_scenario_is_enabled": {
       "type": "boolean",

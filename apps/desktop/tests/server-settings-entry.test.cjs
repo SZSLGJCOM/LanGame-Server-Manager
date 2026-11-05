@@ -899,6 +899,13 @@ test("mods workbench ownership is never inferred from field names or sources", (
         title: "Master modoverrides.lua",
         "x-lsgm-source": "master_modoverrides",
         "x-lsgm-source-key": "modoverrides.lua:raw_lua"
+      },
+      custom_modoverrides_lua: {
+        type: "string",
+        title: "Custom modoverrides.lua",
+        "x-lsgm-section": "mods",
+        "x-lsgm-source": "master_modoverrides",
+        "x-lsgm-source-key": "modoverrides.lua:raw_lua"
       }
     }
   });
@@ -911,7 +918,13 @@ test("mods workbench ownership is never inferred from field names or sources", (
 
   assert.equal(guidedSchema.fields.some((field) => field.key === "server_name"), false);
   assert.equal(guidedSchema.fields.some((field) => field.key === "workshop_items"), false);
-  assert.equal(guidedSchema.fields.some((field) => field.key === "master_modoverrides_lua"), false);
+  assert.equal(guidedSchema.fields.some((field) => field.key === "master_modoverrides_lua"), true,
+    "the exact registered field belongs to Mods");
+  assert.equal(guidedSchema.fields.some((field) => field.key === "custom_modoverrides_lua"), false,
+    "matching names, sections and source metadata do not delegate an unregistered field");
+  const general = parseGuidedSettingsSchema(moduleDetailsWithSteamMods("dontstarve", schemaJson));
+  assert.equal(general.fields.find((field) => field.key === "custom_modoverrides_lua")?.presentation.owner, "configuration");
+  assert.equal(general.fields.some((field) => field.key === "master_modoverrides_lua"), false);
   assert.deepEqual(
     guidedSchema.sections
       .filter((section) => ["room", "network", "access", "runtime"].includes(section.id))
@@ -924,17 +937,18 @@ test("mods workbench ownership is never inferred from field names or sources", (
   )));
 });
 
-test("known mod-capable games keep non-operational mod parameters in Configuration", () => {
+test("known Mod workspaces preserve exact ownership and editable lists without duplicate Configuration controls", () => {
   const exactModsOwnedFields = new Map([
     ["dontstarve", new Set([
       "shared_workshop_mod_ids", "shared_workshop_collection_ids",
       "master_enabled_workshop_mod_ids", "caves_enabled_workshop_mod_ids",
       "islands_enabled_workshop_mod_ids", "volcano_enabled_workshop_mod_ids",
       "master_mod_configuration_options", "caves_mod_configuration_options",
-      "islands_mod_configuration_options", "volcano_mod_configuration_options"
+      "islands_mod_configuration_options", "volcano_mod_configuration_options",
+      "master_modoverrides_lua", "caves_modoverrides_lua", "islands_modoverrides_lua", "volcano_modoverrides_lua"
     ])],
     ["projectzomboid", new Set(["workshop_items", "mods", "map_name"])],
-    ["terraria", new Set(["tmodloader_workshop_item_ids"])]
+    ["terraria", new Set(["tmodloader_workshop_item_ids", "tmodloader_enabled_mod_names"])]
   ]);
   for (const moduleId of ["dontstarve", "projectzomboid", "terraria"]) {
     const schemaJson = readSource("modules", moduleId, "schema.json");
@@ -944,6 +958,12 @@ test("known mod-capable games keep non-operational mod parameters in Configurati
       "en-US",
       (_key, _params, fallback) => fallback ?? ""
     );
+    const modsSchema = parseGuidedSettingsSchema(
+      moduleDetailsWithSteamMods(moduleId, schemaJson), "en-US",
+      (_key, _params, fallback) => fallback ?? "", { surface: "mods" }
+    );
+    assert.equal(guidedSchema.parseError, null, moduleId);
+    assert.equal(modsSchema.parseError, null, moduleId);
     const delegated = exactModsOwnedFields.get(moduleId) ?? new Set();
     const expectedFieldKeys = Object.entries(properties)
       .filter(([fieldKey, property]) => property["x-lsgm-section"] === "mods" && !delegated.has(fieldKey))
@@ -959,25 +979,32 @@ test("known mod-capable games keep non-operational mod parameters in Configurati
       .sort();
 
     assert.deepEqual(actualFieldKeys, expectedFieldKeys, `${moduleId} must delegate only exact operational fields`);
+    assert.deepEqual(guidedSchema.presentationFields.filter((field) => field.presentation.owner === "mods")
+      .map((field) => field.key).sort(), [...delegated].sort(), `${moduleId} must retain complete ownership metadata`);
+    for (const key of delegated) {
+      const metadata = guidedSchema.presentationFields.find((field) => field.key === key);
+      assert.equal(metadata?.presentation.owner, "mods", `${moduleId}.${key}`);
+      assert.equal(metadata?.presentation.state, "specialized", `${moduleId}.${key}`);
+      assert.equal(guidedSchema.fields.some((field) => field.key === key), false, `${moduleId}.${key}`);
+      const scalar = ["string", "boolean", "integer", "number"].includes(properties[key]?.type);
+      assert.equal(modsSchema.fields.some((field) => field.key === key), scalar,
+        `${moduleId}.${key} must expose a scalar Mod control or retain its dedicated structured editor`);
+    }
     if (moduleId === "dontstarve") {
       assert.deepEqual(expectedFieldKeys, [], "all ordinary DST Mod controls belong to the external workspace");
-      for (const key of ["master_modoverrides_lua", "caves_modoverrides_lua", "islands_modoverrides_lua", "volcano_modoverrides_lua"]) {
+      for (const key of ["master_worldgenoverride_lua", "caves_worldgenoverride_lua", "islands_worldgenoverride_lua", "volcano_worldgenoverride_lua"]) {
         assert.ok(guidedSchema.fields.some((field) => field.key === key && field.sectionId === "advanced"),
-          `${key} must remain available as an advanced native override`);
+          `${key} must remain available as an advanced world override`);
       }
-      continue;
     }
     if (moduleId === "projectzomboid") {
       assert.deepEqual(expectedFieldKeys, [], "PZ Mod lists belong to the external workspace");
       assert.equal(guidedSchema.fields.some((field) => field.key === "map_name"), false,
         "native map order is edited only in the Mods workspace");
-      continue;
     }
-    assert.ok(expectedFieldKeys.length > 0, `${moduleId} should retain game-native mod parameters`);
-    assert.ok(
-      guidedSchema.sections.some((section) => section.id === "mods" || section.variant === "dst-workshop-hub"),
-      `${moduleId} should retain its game-native Mods section inside Configuration`
-    );
+    if (moduleId === "terraria") for (const key of ["server_runtime", "tmodloader_runtime_dir"]) {
+      assert.ok(guidedSchema.fields.some((field) => field.key === key), `${key} remains a Configuration control`);
+    }
   }
 });
 

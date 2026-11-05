@@ -1,4 +1,4 @@
-//! Fixed SMR WindowsServer inputs for this opt-in native acceptance only.
+//! Fixed official WindowsServer inputs for this opt-in native acceptance only.
 //! Product Mod mutations intentionally reject Satisfactory until its installation
 //! workflow is modeled; this fixture must not change that production boundary.
 #![cfg(test)]
@@ -18,8 +18,9 @@ struct Package {
     game_feature: bool,
 }
 
-// https://api.ficsit.app/v1/version/<id>/WindowsServer/download
-// SML 74YqQBq2KJKN77; FRM DaDacXi8Lgf6zY, checked 2026-10-27.
+// SML: https://api.ficsit.app/v1/version/74YqQBq2KJKN77/WindowsServer/download
+// FRM: https://github.com/porisius/FicsitRemoteMonitoring/releases/tag/1.5.5-529
+// FRM WindowsServer asset size and SHA-256 checked against the official release 2026-11-05.
 const PACKAGES: [Package; 2] = [
     Package {
         name: "SML",
@@ -30,9 +31,9 @@ const PACKAGES: [Package; 2] = [
     },
     Package {
         name: "FicsitRemoteMonitoring",
-        version: "1.5.4",
-        archive_bytes: 36_570_254,
-        sha256: "d860093063192481bd6836295983b9308c58e57c986f1aab727052de88b3f630",
+        version: "1.5.5",
+        archive_bytes: 35_046_047,
+        sha256: "15e124c36ee29e627437dd7ca387cc802c39d76c3012458879314ad6eb908734",
         game_feature: true,
     },
 ];
@@ -101,7 +102,7 @@ pub(super) fn load(source: &Path, archives: &Path) -> Result<Vec<VerifiedMod>> {
         let archive_path = plain(&archives.join(format!("{}-WindowsServer.zip", package.name)))?;
         let mut archive_file = File::open(&archive_path)?;
         if archive_file.metadata()?.len() != package.archive_bytes || hash(&mut archive_file.by_ref().take(package.archive_bytes + 1))? != package.sha256 {
-            return Err("Satisfactory fixture Mod archive differs from its reviewed SMR WindowsServer artifact".into());
+            return Err("Satisfactory fixture Mod archive differs from its reviewed official WindowsServer artifact".into());
         }
         archive_file.seek(SeekFrom::Start(0))?;
         let mut archive = zip::ZipArchive::new(archive_file)?;
@@ -173,7 +174,7 @@ pub(super) fn stage(mods: &[VerifiedMod], runtime: &Path) -> Result<()> {
         }
     }
     println!(
-        "NATIVE_SATISFACTORY_FRM phase=staged fixture_only=true sml=3.12.0 frm=1.5.4 target=owned_runtime source_members=verified_smr_windows_server production_installer=not_claimed"
+        "NATIVE_SATISFACTORY_FRM phase=staged fixture_only=true sml=3.12.0 frm=1.5.5 target=owned_runtime source_members=verified_windows_server production_installer=not_claimed"
     );
     Ok(())
 }

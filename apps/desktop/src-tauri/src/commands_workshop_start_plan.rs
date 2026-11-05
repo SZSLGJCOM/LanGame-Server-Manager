@@ -24,7 +24,7 @@ pub(in crate::commands) fn collect_start_workshop_item_ids(
         "barotrauma" | "conanexiles" | "soulmask" => {
             collect_setting_ids(settings, "mod_workshop_ids", &mut ids)?;
         }
-        "terraria" if settings["server_runtime"].as_str() == Some("tmodloader") => {
+        "terraria" if app_core::terraria::uses_tmodloader(settings) => {
             collect_setting_ids(settings, "tmodloader_workshop_item_ids", &mut ids)?;
         }
         "palworld" | "squad" => {

@@ -110,3 +110,58 @@
   }
 }
 ```
+
+## `2026-11-04-native_admin_sections.json`
+
+- Evidence: `best_effort_verified` at `2026-11-04` (build `Official app 294420 build 26310339 generated seven top-level serveradmin.xml sections. The Web access contents here are synthetic.`)
+- Sources: `native_admin_sections`
+- Coverage: editable `0`, specialized `0`, derived `0`, generated `0`, excluded `0`
+
+### Initial native files
+
+```json
+{
+  "files": [
+    {
+      "content": "<adminTools><users/><blacklist/><apitokens><token name=\"fixture\" /></apitokens><webmodules/><webusers/></adminTools>",
+      "path": "serveradmin.xml",
+      "root": "saves"
+    }
+  ]
+}
+```
+
+### Settings
+
+```json
+{
+  "blacklist_entries": [
+    {
+      "platform": "Steam",
+      "userid": "76561198000000001"
+    }
+  ]
+}
+```
+
+### Expected outputs
+
+```json
+{
+  "files": [
+    {
+      "format": "xml",
+      "fragments": [
+        "<apitokens><token name=\"fixture\" /></apitokens><webmodules/><webusers/>",
+        "<blacklisted platform=\"Steam\" userid=\"76561198000000001\""
+      ],
+      "path": "serveradmin.xml",
+      "root": "saves"
+    }
+  ],
+  "launch": {
+    "arguments": [],
+    "executable_suffix": null
+  }
+}
+```

@@ -2,12 +2,6 @@ import type { MessageCatalog } from "../../i18n-config";
 
 // Generated from modules/*/schema.json by generate_i18n_schema_catalogs.cjs.
 export const EN_US_SCHEMA_GENERATED_MESSAGES_CHUNK_02: MessageCatalog = {
-  "settings.schema.dontstarve.master_spiders.option.rare": "Rare",
-  "settings.schema.dontstarve.master_spiders.option.uncommon": "Uncommon",
-  "settings.schema.dontstarve.master_squid.option.always": "Always",
-  "settings.schema.dontstarve.master_squid.option.default": "Default",
-  "settings.schema.dontstarve.master_squid.option.never": "Never",
-  "settings.schema.dontstarve.master_squid.option.often": "Often",
   "settings.schema.dontstarve.master_squid.option.rare": "Rare",
   "settings.schema.dontstarve.master_stageplays.option.default": "Default",
   "settings.schema.dontstarve.master_stageplays.option.never": "Never",
@@ -1517,8 +1511,6 @@ export const EN_US_SCHEMA_GENERATED_MESSAGES_CHUNK_02: MessageCatalog = {
   "terraria.settings.groups.host.title": "Host",
   "terraria.settings.groups.journey.description": "Terraria Dedicated Server journey settings.",
   "terraria.settings.groups.journey.title": "Journey",
-  "terraria.settings.groups.mods.description": "Terraria Dedicated Server mods settings.",
-  "terraria.settings.groups.mods.title": "Mods",
   "terraria.settings.groups.network.description": "Listen and public addresses, ports, and remote control connections.",
   "terraria.settings.groups.network.title": "Network",
   "terraria.settings.groups.room.description": "Identity, join password, player capacity, listing, and world selection.",

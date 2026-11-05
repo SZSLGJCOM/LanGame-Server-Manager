@@ -1,0 +1,47 @@
+{
+  "schema": 1,
+  "module_id": "enshrouded",
+  "review_date": "2026-11-04",
+  "evidence_kind": "read_only_static_executable_comparison",
+  "reference": {
+    "steam_build_id": "26083076",
+    "executable_sha256": "d7baa768eb00aa895d9f5a1cd8747ccf66858c7b542f50983092b2e3261588ee",
+    "earlier_real_player_receipt": "2026-10-17-native_moderation_build_25988414.json"
+  },
+  "target": {
+    "steam_build_id": "26404334",
+    "executable_sha256": "c5c9fe50c6398d2adedd98923c2d04bf9d9b4af64c1447ac167cdf8f874ff84f",
+    "native_svn": 1285601,
+    "pe_timestamp": 1793700549,
+    "pe_image_size": 31318016
+  },
+  "dispatcher": {
+    "reference_rva_range": ["0x79de40", "0x79e521"],
+    "target_rva_range": ["0x7a6e50", "0x7a7558"],
+    "native_caller_rvas": ["0x7b398e", "0x7bcefe"],
+    "abi": "Windows x64, RCX = server, RDX = event. The native account hash is u64 at event + 8 and the operation is u8 at event + 0x14.",
+    "contiguous_unwind_fragments_per_build": 7,
+    "reference_nonpadding_instructions": 400,
+    "target_nonpadding_instructions": 406,
+    "reference_instructions_matched": 400,
+    "internal_direct_branches_with_matching_destinations": 55,
+    "comparison": "Ignored instruction padding and normalized relative call, jump and RIP-data displacements. Compared internal jump destinations through the instruction correspondence and separately resolved the native callees used for account identity, removal and disconnect.",
+    "added_instructions": "Each of three existing slice-capacity diagnostic paths adds a pointer load and a store of 0x2a before its diagnostic call."
+  },
+  "matched_callees": [
+    {"role": "enumerate_full_handles", "reference": "0x9f7690", "target": "0xa01fe0", "matching_nonpadding_instructions": 49},
+    {"role": "copy_native_player_identity", "reference": "0x9f7600", "target": "0xa01f50", "matching_nonpadding_instructions": 36},
+    {"role": "deep_copy_player_record", "reference": "0x9ed200", "target": "0x9f7a20", "matching_nonpadding_instructions": 37},
+    {"role": "native_account_hash_assignment_fragment", "reference": "0x9ed7be", "target": "0x9f7fde", "matching_nonpadding_instructions": 79},
+    {"role": "disconnect", "reference": "0x9f8340", "target": "0xa02ca0", "matching_nonpadding_instructions": 78},
+    {"role": "remove_native_ban", "reference": "0xa04050", "target": "0xa0eaa0", "matching_nonpadding_instructions": 78}
+  ],
+  "operations": {
+    "kick": "Action 0. Matches the copied account hash and rejects immunity, then checks the native slot's protection bit and calls disconnect at 0x7a74d1 with reason 0.",
+    "ban": "Action 1. Matches the copied account hash and rejects immunity, checks the slot protection bit, updates the native ban data and dirty flag, and calls disconnect at 0x7a7488 with reason 1.",
+    "unban": "Action 2. Uses event + 8 directly for removal at 0x7a6e8c, before online enumeration. Updates the native ban configuration and its dirty flag."
+  },
+  "loaded_moderation_window_rvas": ["0x7a6e71", "0x7a70dd", "0x7a7110", "0x7a7472", "0x7a74b9"],
+  "capability_gate": "This build admits moderation only while the dispatcher entry and all five route windows match. A failure at any of those six sites leaves the separately verified observation and save paths available. Unknown executable, PE identity, mandatory observer or caller-site failures still reject the profile.",
+  "scope": "Source adaptation only. The earlier 2026-11-04-control_build_26404334.json describes a different DLL whose moderation dispatcher was disabled. No build, game execution, real-client action, packaging or deployment was performed for this moderation source revision."
+}

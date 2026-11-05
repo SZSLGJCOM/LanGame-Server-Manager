@@ -1,6 +1,38 @@
 status = "best_effort_verified"
-last_verified = "2026-10-16"
-notes = "Official Enshrouded 1.0.0.1 app 2278520 build 25967645, depot 2278521 manifest 3715394091293008757 and native SVN 1267041 were verified in isolation on 2026-10-16. LanGame models 75 fields: 74 in Configuration and one ban roster owned by Player Access. The packaged Version 1.0.0.0 README covers all 38 modeled gameSettings. Flame Level for Shroud Removal is validated at effective integer 1-11 (default 11), and Automatic belongs only to randomSpawnerAmount; build 25936466 previously clamped README inputs 0 and 20 to 1 and 11, while the final hotfix probe directly accepted 1 and 11. Updraft charge duration has no verified dedicated-server key. Five native cycles passed old-world upgrade, restart, post-migration manual restore, pre-migration manual restore and re-upgrade, and native rotating-backup restore; every fresh log reached world deserialization and Run, matched all 38 requested gameplay values, and retained all four role groups. Production saves preserve synthetic nonempty bannedAccounts records and unknown metadata in managed JSON through native typed rewrite; only an explicit target removal unbans that account. Production DLL/folder/ZIP staging retained exact payloads and removed them before native launch. Original saves, configurations, executable and verified recovery copies remained unchanged; owned processes and the disposable fixture were released. The old-world sample is three files totaling 3634 bytes with no persisted entities. Complex worlds, real clients, native ban enforcement, Steam64 conversion, community loader execution and the full 1.0.0.1 Tauri/AutoStop lifecycle remain outside this evidence; historical sources retain their original build and scope."
+last_verified = "2026-11-05"
+notes = "2026-11-05: public build 26430253 (1.0.1.2) passed isolated managed save, exact checkpoint reload and normal stops. A separately hash-pinned native DLL passed observer, synthetic offline-unban, completed save and retained-ban restart checks. Real clients and complex worlds remain outside these runs; see runtime_control_build_26430253. Earlier evidence: Official Enshrouded 1.0.0.1 app 2278520 build 25967645, depot 2278521 manifest 3715394091293008757 and native SVN 1267041 were verified in isolation on 2026-10-16. LanGame models 75 fields: 74 in Configuration and one ban roster owned by Player Access. The packaged Version 1.0.0.0 README covers all 38 modeled gameSettings. Flame Level for Shroud Removal is validated at effective integer 1-11 (default 11), and Automatic belongs only to randomSpawnerAmount; build 25936466 previously clamped README inputs 0 and 20 to 1 and 11, while the final hotfix probe directly accepted 1 and 11. Updraft charge duration has no verified dedicated-server key. Five native cycles passed old-world upgrade, restart, post-migration manual restore, pre-migration manual restore and re-upgrade, and native rotating-backup restore; every fresh log reached world deserialization and Run, matched all 38 requested gameplay values, and retained all four role groups. Production saves preserve synthetic nonempty bannedAccounts records and unknown metadata in managed JSON through native typed rewrite; only an explicit target removal unbans that account. Production DLL/folder/ZIP staging retained exact payloads and removed them before native launch. Original saves, configurations, executable and verified recovery copies remained unchanged; owned processes and the disposable fixture were released. The old-world sample is three files totaling 3634 bytes with no persisted entities. Complex worlds, real clients, native ban enforcement, Steam64 conversion, community loader execution and the full 1.0.0.1 Tauri/AutoStop lifecycle remain outside this evidence; historical sources retain their original build and scope."
+
+[[sources]]
+id = "runtime_control_build_26430253"
+kind = "runtime_probe"
+path = "reference-fixtures/2026-11-05-runtime_control_build_26430253.json"
+url = "https://enshrouded.com/en-US/news/changelog-for-hotfix-5-v1012"
+authority = "official_windows_server_and_isolated_managed_lifecycle_and_native_control"
+description = "2026-11-05: freshly installed public build 26430253 (1.0.1.2 / SVN 1287369) passed managed startup, confirmed manual save, exact pre-stop checkpoint restoration, new-run native reload and two exit-0 stops. A separate loopback probe with a hash-pinned locally built DLL verified fresh advancing empty rosters, one native offline-unban of synthetic account 42 while retaining 9007199254740993, completed save and persisted ban state after restart; both direct runs also exited 0. Existing libraries and operator saves were untouched. Real-player kick/ban enforcement, complex worlds, GUI and installer deployment remain untested."
+
+[[sources]]
+id = "native_control_build_26430253"
+kind = "documentation"
+path = "reference-fixtures/2026-11-05-native_control_build_26430253.json"
+url = "https://enshrouded.com/en-US/news/changelog-for-hotfix-5-v1012"
+authority = "official_windows_dedicated_server_binary_and_inert_profile_tests"
+description = "Enshrouded 1.0.1.2, official Steam build 26430253, depot 2278521 manifest 8886672487109033979. Direct static inspection verified kick, ban, offline unban, player identity and save ABI. The updated profile passed inert PE admission and capability mutation checks plus native control tests. The packaged configuration README is unchanged. No game execution, real-player action, packaging or deployment was performed for this adaptation."
+
+[[sources]]
+id = "native_control_build_26404334"
+kind = "runtime_probe"
+path = "reference-fixtures/2026-11-04-control_build_26404334.json"
+url = "https://enshrouded.com/en-US/news/changelog-for-hotfix-4-v1011"
+authority = "steam_public_server_and_isolated_native_world_save_recovery"
+description = "2026-11-04: official build 26404334, native SVN 1285601. Two saves returned native completion and changed world0.ksd. A third non-admin process loaded the second snapshot with the same digest and reached Run. All three empty-world servers stopped with exit 0. The extension used for these runs had player moderation disabled."
+
+[[sources]]
+id = "native_moderation_build_26404334"
+kind = "documentation"
+path = "reference-fixtures/2026-11-04-native_moderation_build_26404334.json"
+url = "https://enshrouded.com/en-US/news/changelog-for-hotfix-4-v1011"
+authority = "official_windows_dedicated_server_binaries"
+description = "Static comparison of Steam builds 26083076 and 26404334 identified the native account action dispatcher and its kick, ban and offline unban branches. The event carries the native account hash and action code. This inspection covers the server ABI; live player outcomes were not tested."
 
 [[sources]]
 id = "native_1_0_0_1_five_cycle_25967645"

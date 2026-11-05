@@ -44,7 +44,17 @@ test("operational Mod lists and per-Mod options belong to the Mods workspace", (
     ["projectzomboid.map_name", "mod-workbench-map-order"],
     ["soulmask.mod_workshop_ids", "mod-workbench-workshop-ids"],
     ["terraria.tmodloader_workshop_item_ids", "mod-workbench-workshop-ids"],
+    ["terraria.tmodloader_enabled_mod_names", "mod-workbench-tmodloader-names"],
     ["unturned.workshop_file_ids", "mod-workbench-workshop-ids"],
+    ...Object.entries({
+      abioticfactor: ["mod_ids", "mods_directory", "mod_install_timeout_seconds", "override_mod_warnings",
+        "sideload_mods", "sideload_mods_path"],
+      arksurvivalascended: ["passive_mod_ids_csv"],
+      arksurvivalevolved: ["auto_managed_mod_ids", "auto_managed_mods"],
+      dontstarve: ["master_modoverrides_lua", "caves_modoverrides_lua", "islands_modoverrides_lua", "volcano_modoverrides_lua"],
+      unturned: ["workshop_ignore_children_file_ids", "workshop_query_cache_max_age_seconds",
+        "workshop_max_query_retries", "workshop_use_cached_downloads", "workshop_monitor_updates"]
+    }).flatMap(([moduleId, keys]) => keys.map((key) => [`${moduleId}.${key}`, "mod-workbench-source-list"])),
     ...[
       "shared_workshop_mod_ids", "shared_workshop_collection_ids",
       "master_enabled_workshop_mod_ids", "caves_enabled_workshop_mod_ids",
@@ -63,6 +73,10 @@ test("operational Mod lists and per-Mod options belong to the Mods workspace", (
       observed.push(qualifiedKey);
       assert.equal(presentation.state, "specialized", qualifiedKey);
       assert.equal(presentation.rendererId, expected.get(qualifiedKey), qualifiedKey);
+      if (moduleId === "terraria" || moduleId === "abioticfactor") {
+        assert.equal(property["x-lsgm-section"], "mods", qualifiedKey);
+        assert.equal(presentation.sectionId, "mods", qualifiedKey);
+      }
       assert.deepEqual(resolveConfigurationRendererContract(presentation.rendererId, definition), {
         kind: "workspace",
         workspace: "mods"
@@ -86,24 +100,15 @@ test("every manifest-declared Mod enablement field belongs to the Mods workspace
   }
 });
 
-test("native mod-related server parameters remain editable only in Configuration", () => {
+test("server admission, credentials, runtime and map choices remain editable in Configuration", () => {
   for (const qualifiedKey of [
-    "arksurvivalascended.passive_mod_ids_csv",
-    "dontstarve.master_modoverrides_lua",
-    "dontstarve.caves_modoverrides_lua",
-    "dontstarve.islands_modoverrides_lua",
-    "dontstarve.volcano_modoverrides_lua",
-    "arksurvivalevolved.auto_managed_mod_ids",
-    "arksurvivalevolved.auto_managed_mods",
+    "abioticfactor.allow_local_only_mods",
+    "abioticfactor.modio_token",
+    "arksurvivalevolved.map_mod_id",
     "palworld.allow_client_mod",
     "rimworld.steam_workshop_url",
-    "terraria.tmodloader_runtime_dir",
-    "terraria.tmodloader_enabled_mod_names",
-    "unturned.workshop_ignore_children_file_ids",
-    "unturned.workshop_query_cache_max_age_seconds",
-    "unturned.workshop_max_query_retries",
-    "unturned.workshop_use_cached_downloads",
-    "unturned.workshop_monitor_updates"
+    "terraria.server_runtime",
+    "terraria.tmodloader_runtime_dir"
   ]) {
     const [moduleId, fieldKey] = qualifiedKey.split(".");
     const presentation = resolveConfigurationFieldPresentation(

@@ -106,6 +106,13 @@ int main() {
     current.complete = false;
     if (!Is(ValidateRequest(changed, identity, current, 10002), "none")) return 23;
     const auto json = SerializeSnapshot(identity, current);
+    auto readOnly = current; readOnly.moderationSupported = false;
+    if (SerializeSnapshot(identity, readOnly).find("\"moderation_supported\":false") == std::string::npos
+        || json.find("moderation_supported") != std::string::npos) return 58;
+    for (const auto action : {Action::Kick, Action::Ban, Action::Unban}) {
+        auto unavailable = request; unavailable.action = action;
+        if (!Is(ValidateRequest(unavailable, identity, readOnly, 10002), "unsupported_moderation_profile")) return 59;
+    }
     if (json.find("\"account_id\":\"9007199254740993\"") == std::string::npos
         || json.find("\"generation\":\"1\"") == std::string::npos) return 24;
     RequestHistory history{}; HistoryRecord* record{}; const char* issue{};

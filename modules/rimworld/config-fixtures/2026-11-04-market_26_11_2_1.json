@@ -1,0 +1,29 @@
+{
+  "fixture_version": 1,
+  "module_id": "rimworld",
+  "evidence": {
+    "status": "best_effort_verified",
+    "verified_at": "2026-11-04",
+    "build": "Official Together 26.11.2.1 market mode, local protocol sale and client rollback policy",
+    "source_ids": ["market_26_11_2_1", "local_market_runtime_20261104", "rollback_26_11_2_1"]
+  },
+  "coverage": {"editable": 2, "specialized": 0, "derived": 0, "generated": 0, "excluded": 1},
+  "classifications": {
+    "editable": ["market_26_11_2_1.Configs/Actions/Market.json#UseGlobalServer", "rollback_26_11_2_1.Configs/Actions/Rollback.json#IsEnabled"],
+    "specialized": [], "derived": [], "generated": [], "excluded": ["rollback_26_11_2_1.Configs/Actions/Rollback.json#Cooldown"]
+  },
+  "initial": {
+    "files": [
+      {"root": "install", "path": "Configs/Actions/Market.json", "content": "{\"UseGlobalServer\":true,\"IsEnabled\":true,\"MinimumPrice\":25}"},
+      {"root": "install", "path": "Configs/Actions/Rollback.json", "content": "{\"IsEnabled\":true,\"Cooldown\":1234}"}
+    ]
+  },
+  "settings": {"action_market_use_global_server": false, "action_rollback_is_enabled": false},
+  "expected": {
+    "files": [
+      {"root": "install", "path": "Configs/Actions/Market.json", "format": "json", "keys": {"UseGlobalServer": false, "IsEnabled": true, "MinimumPrice": 25}},
+      {"root": "install", "path": "Configs/Actions/Rollback.json", "format": "json", "keys": {"IsEnabled": false, "Cooldown": 1234}}
+    ],
+    "launch": {"executable_suffix": "RTServer.exe", "arguments": []}
+  }
+}

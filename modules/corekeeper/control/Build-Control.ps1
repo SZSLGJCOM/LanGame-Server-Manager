@@ -21,9 +21,10 @@ if ($Module -eq 'corekeeper') {
     $primary='CoreKeeperServer_Data/Managed/Pug.Other.dll'
     $entities='CoreKeeperServer_Data/Managed/Unity.Entities.dll'
     $components='CoreKeeperServer_Data/Managed/Pug.ECS.Components.dll'
-    switch ((Get-FileHash -LiteralPath (Join-Path $runtime $primary) -Algorithm SHA256).Hash.ToLowerInvariant()) {
-        '631b58cfb806e838bc0c770963b3ec13edeba368007e2ad91e280bd7bf8ad2b0' {
-            $expected[$primary]='631b58cfb806e838bc0c770963b3ec13edeba368007e2ad91e280bd7bf8ad2b0'
+    $primaryDigest=(Get-FileHash -LiteralPath (Join-Path $runtime $primary) -Algorithm SHA256).Hash.ToLowerInvariant()
+    switch ($primaryDigest) {
+        { $_ -in @('631b58cfb806e838bc0c770963b3ec13edeba368007e2ad91e280bd7bf8ad2b0','74836f1660d8e3dd9f7893fecf7a10827dff7c92a73d76139ff6cb5c93544c23') } {
+            $expected[$primary]=$primaryDigest
             $expected[$entities]='e4f03d5dcc4547f2730218fd128e918a26d24590f31b827d334c09a0de2e762a'
             $expected[$components]='c2822ba48eec76430167963ddfd885eb2d5225cf5193850f1833583a27401d0f'
         }

@@ -35,8 +35,8 @@
     "build": "buildid 24159508; server v91.8; depot 2430931 manifest 2381721962790820553"
   },
   "coverage": {
-    "editable": 262,
-    "specialized": 5,
+    "editable": 261,
+    "specialized": 6,
     "derived": 0,
     "generated": 0,
     "excluded": 315
@@ -299,7 +299,6 @@
       "launch_args.-noperfthreads",
       "launch_args.-nosound",
       "launch_args.-onethread",
-      "launch_args.-passivemods",
       "launch_args.-servergamelog",
       "launch_args.-servergamelogincludetribelogs",
       "launch_args.-usestore",
@@ -311,6 +310,7 @@
       "exclusive_join_file.PlayersExclusiveJoinList.txt:account_id",
       "launch_args.-ClusterDirOverride",
       "launch_args.-mods",
+      "launch_args.-passivemods",
       "priority_join_file.PlayersJoinNoCheckList.txt:account_id"
     ],
     "derived": [],

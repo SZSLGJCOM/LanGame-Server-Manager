@@ -217,6 +217,23 @@
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--shell-accent) 12%, transparent);
 }
 
+.mw-terraria-import,
+.mw-source-lists {
+  margin: 0 0 8px;
+  color: var(--shell-muted);
+  font-size: var(--text-body);
+}
+.mw-terraria-import summary,
+.mw-source-lists summary {
+  color: var(--shell-text);
+  cursor: pointer;
+}
+.mw-terraria-import form,
+.mw-terraria-import label { display: grid; gap: 6px; margin-top: 6px; }
+.mw-terraria-import button { justify-self: start; }
+.mw-source-field { padding-block: 8px; }
+.mw-source-field + .mw-source-field { border-top: 1px solid var(--shell-line); }
+
 .mw-mod-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));

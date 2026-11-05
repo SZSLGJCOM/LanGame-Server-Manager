@@ -24,6 +24,7 @@ fn item(name: &str, package_name: Option<&str>) -> ManualModInventoryItem {
         path: format!("D:/instance/Mods/{name}"),
         item_type: "directory".into(),
         inferred_id: package_name.map(String::from),
+        tmodloader_mod_name: None,
         file_count: 1,
         total_bytes: 3,
         modified_unix_ms: None,
@@ -117,7 +118,7 @@ fn empty_or_client_only_workflows_have_no_start_refresh() {
 }
 
 #[test]
-fn terraria_only_refreshes_its_selected_tmodloader_runtime() {
+fn terraria_refreshes_for_mod_enablement_or_an_explicit_modded_runtime() {
     for runtime in [None, Some("vanilla")] {
         let mut settings = json!({"tmodloader_workshop_item_ids":"100000"});
         if let Some(runtime) = runtime {
@@ -125,6 +126,13 @@ fn terraria_only_refreshes_its_selected_tmodloader_runtime() {
         }
         assert!(collect("terraria", settings).is_empty());
     }
+    assert_eq!(
+        collect(
+            "terraria",
+            json!({"server_runtime":"vanilla", "tmodloader_enabled_mod_names":"BarnacleMod", "tmodloader_workshop_item_ids":"3831007901"})
+        ),
+        ["3831007901"]
+    );
     assert_eq!(
         collect(
             "terraria",

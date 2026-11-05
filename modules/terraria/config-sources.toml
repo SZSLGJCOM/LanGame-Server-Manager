@@ -1,6 +1,14 @@
 status = "best_effort_verified"
 last_verified = "2026-10-16"
-notes = "The module uses official Terraria 1.4.5.8. Its Windows server was verified on one isolated host with XNA 4.0 and Windows ConPTY for console commands, world saving and normal shutdown. Package and configuration provenance remains recorded separately below; these checks do not establish client joins or tModLoader runtime behavior. The configuration sample remains byte-identical to 1.4.5.6. Terraria Wiki documentation, official packages and tModLoader utilities are crosswalked for the Windows serverconfig.txt, launch arguments, console commands, banlist and modpack surfaces. Launch and path values owned by instance state are not duplicated as schema fields."
+notes = "The module uses official Terraria 1.4.5.8. Its Windows server was verified on one isolated host with XNA 4.0 and Windows ConPTY for console commands, world saving and normal shutdown. The configuration sample remains byte-identical to 1.4.5.6. A separate November probe covers the optional tModLoader Windows console using the official stable package. Client joins and installed Workshop mods were outside both tests. Terraria Wiki documentation, official packages and tModLoader utilities are crosswalked for the Windows serverconfig.txt, launch arguments, console commands, banlist and modpack surfaces. Launch and path values owned by instance state are not duplicated as schema fields."
+
+[[sources]]
+id = "tmodloader_foreground_console_20261104"
+kind = "runtime_probe"
+path = "reference-fixtures/2026-11-04-tmodloader-native-console.json"
+url = "https://github.com/tModLoader/tModLoader/releases/tag/v2026.09.3.1"
+authority = "official_tmodloader_archive_and_isolated_windows_conpty_probe"
+description = "The official 1.4.4 stable Windows batch launcher exited while its server listened in another console. Running the packaged BusyBox bootstrap in the managed terminal preserved the ready line, playing, save and exit in two independent worlds, including paths with spaces. The stock server shell consumes -nosteam and invokes this bootstrap with -server. Classic standalone executables and operator-supplied batch layouts retain their own launch contracts."
 
 [[sources]]
 id = "managed_native_manual_save_20261031"
@@ -92,7 +100,7 @@ id = "tmodloader_dedicated_server_utils"
 kind = "documentation"
 path = "tmodloader/Mods and tmodloader/steamapps/workshop/content/1281930"
 authority = "official_tmodloader_dedicated_server_utils"
-description = "tModLoader dedicated server utilities document a Mods folder containing local .tmod files plus install.txt and enabled.json, with Steam Workshop content under a sibling steamapps folder. LanGame uses this for the tModLoader runtime mode while keeping vanilla Terraria as the default."
+description = "tModLoader dedicated server utilities document a Mods folder containing local .tmod files plus install.txt and enabled.json, with Steam Workshop content under a sibling steamapps folder. LanGame uses the enabled names to select tModLoader at startup. With no enabled names, the operator's runtime preference applies and defaults to vanilla."
 url = "https://docs.tmodloader.net/docs/stable/md__github_workspace_src_t_mod_loader__terraria_release_extras__dedicated_server_utils__r_e_a_d_m_e.html"
 
 [[sources]]
@@ -100,7 +108,7 @@ id = "tmodloader_steam_workshop"
 kind = "workshop"
 path = "steamapps/workshop/content/1281930"
 authority = "steam_tmodloader_workshop"
-description = "Steam exposes tModLoader mods through Workshop app 1281930. LanGame downloads selected Workshop items with SteamCMD and stages the item folders into the instance-local tmodloader/steamapps/workshop/content/1281930 cache."
+description = "Steam exposes tModLoader mods through Workshop app 1281930. LanGame stages selected Workshop items into the instance-local tmodloader/steamapps/workshop/content/1281930 cache. The Mods workspace reads package internal names to manage the tModLoader enabled.json list."
 url = "https://steamcommunity.com/app/1281930/workshop/"
 
 [[items]]

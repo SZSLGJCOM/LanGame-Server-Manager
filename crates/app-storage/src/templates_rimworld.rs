@@ -128,6 +128,118 @@ pub(super) fn materialize_configuration(
     native::materialize(context, files)
 }
 
+/// The new server reads per-listing files with owner hashes and item def names.
+/// The old ledger contains usernames and display labels, which cannot safely
+/// identify the owner and item of a migrated listing.
+fn old_market_has_listings(root: &Path) -> Result<bool, StorageError> {
+    let path = root.join("Assets/Market.json");
+    let Some((document, _)) = read_optional_json(&path)? else {
+        return Ok(false);
+    };
+    match document.get("Entries").and_then(Value::as_array) {
+        Some(entries) if entries.iter().all(Value::is_object) => Ok(!entries.is_empty()),
+        Some(_) => Err(failure(
+            &path,
+            "The old RimWorld market ledger contains a malformed listing. Verify the original ledger before starting or updating.",
+        )),
+        None => Err(failure(
+            &path,
+            "The old RimWorld market ledger must contain an Entries array. Verify the original ledger before updating.",
+        )),
+    }
+}
+
+fn active_market_error(root: &Path) -> StorageError {
+    failure(
+        &root.join("Assets/Market.json"),
+        "The old RimWorld local market has active listings. Use a verified original Together server (26.8.31.1, 26.10.15.1 or 26.10.20.1 (1)) with the matching client to let sellers withdraw their items, then retry. Restore an unmodified copy of the original package and ledger if the installed program cannot be verified.",
+    )
+}
+
+pub(crate) fn validate_market_archive_update(root: &Path) -> Result<(), StorageError> {
+    if old_market_has_listings(root)? {
+        return Err(active_market_error(root));
+    }
+    Ok(())
+}
+
+// Each official Windows archive below contains only RTServer.exe. Its actual
+// bytes identify a server that can read and withdraw the old local listings.
+pub(super) fn old_market_archive(image: &str) -> Option<&'static str> {
+    match image {
+        "939fe9a83434d31c543b3c486ed3398c6498ae9a9a609f8296e73c84cd5b7cc6" => {
+            Some("f16c703f1e3e4e6de0f4877d8ae502a817c85482681956aa01e8a4b619bab68c")
+        }
+        "ef8e9acaf32ce4af5863295300254c25e8dd5388c39f59ce2b4ffd80eff04ac6" => {
+            Some("fdebc2ccd6789b4bd33fbd6941d2ea8b41f8a0d063c30db09abcfb851fec18a1")
+        }
+        "871abd0df922baddf26437cec48676c01bbc4ca7cac2c077a6c773662a25c7bc" => {
+            Some("ebffcd587bac87405d8d5f2e671d8fce0d5db3a0872a3d14699395ece512790d")
+        }
+        _ => None,
+    }
+}
+
+fn can_withdraw_old_market(root: &Path) -> Result<bool, StorageError> {
+    let path = root.join("RTServer.exe");
+    let mut image = match crate::instance_archive_files::native::open_verified_file(&path, false) {
+        Ok(image) => image,
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(false),
+        Err(error) => return Err(failure(&path, error)),
+    };
+    let bytes = image
+        .reader()
+        .metadata()
+        .map_err(|e| failure(&path, e))?
+        .len();
+    if !matches!(bytes, 69_131_303 | 69_142_747 | 75_269_969) {
+        return Ok(false);
+    }
+    let digest = crate::private_runtime_refresh::hash_open_file(image.reader(), &path, None)?;
+    let Some(archive) = old_market_archive(&digest) else {
+        return Ok(false);
+    };
+    let inventory = crate::program_seed::read_clean_package_copy_inventory(root, None)?;
+    Ok(inventory.is_none_or(|inventory| {
+        inventory.module_id == "rimworld"
+            && inventory
+                .archive_sha256
+                .as_deref()
+                .is_none_or(|recorded| recorded == archive)
+            && inventory
+                .package
+                .files
+                .iter()
+                .any(|(name, hash)| name.eq_ignore_ascii_case("RTServer.exe") && *hash == digest)
+    }))
+}
+
+pub(super) fn validate_release_before_start(
+    root: &Path,
+    descriptor: Option<&app_modules::ModuleDescriptor>,
+    requested_feature: Option<&str>,
+) -> Result<(), StorageError> {
+    if old_market_has_listings(root)? && !can_withdraw_old_market(root)? {
+        return Err(active_market_error(root));
+    }
+    let Some(feature) = requested_feature else {
+        return Ok(());
+    };
+    let current = match descriptor {
+        Some(descriptor) => crate::archive_program_is_current(root, descriptor, None)?,
+        None => false,
+    };
+    if !current {
+        return Err(failure(
+            root,
+            format!(
+                "{feature} requires the verified Together 26.11.2.1 server package. Restore the RimWorld module and update the instance program, or turn off this option for the installed version."
+            ),
+        ));
+    }
+    Ok(())
+}
+
 pub(super) fn materialize_server_config(
     context: &ModuleSupportMaterializationContext<'_>,
     files: &mut ManagedConfigMutation,

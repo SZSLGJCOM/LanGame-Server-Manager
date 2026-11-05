@@ -1,6 +1,6 @@
 import { ActivityNotice } from "./ActivityNotice";
-import { useEffect, useId, useLayoutEffect, useRef, useState, type ButtonHTMLAttributes, type ReactNode } from "react";
-import { useI18n } from "../i18n";
+import { InlineConfirmReview } from "./InlineConfirmReview";
+import { useEffect, useLayoutEffect, useRef, useState, type ButtonHTMLAttributes, type ReactNode } from "react";
 import { describeError } from "../app-state";
 import "./inline-confirm-action.css";
 
@@ -17,15 +17,12 @@ interface InlineConfirmActionProps extends Omit<ButtonHTMLAttributes<HTMLButtonE
 
 export function InlineConfirmAction({ children, confirmation, confirmLabel, cancelLabel, onConfirm, prepareConfirmation,
   scopeKey, wrapperClassName = "", disabled, ...buttonProps }: InlineConfirmActionProps) {
-  const { t } = useI18n();
-  const descriptionId = useId();
   const [review, setReview] = useState<{ scope: string; source: string; message: string; ready: boolean } | null>(null);
   const [preparing, setPreparing] = useState(false);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const containerRef = useRef<HTMLSpanElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
-  const cancelRef = useRef<HTMLButtonElement>(null);
   const submittingRef = useRef(false);
   const restoreFocusRef = useRef(false);
   const mountedRef = useRef(false);
@@ -40,8 +37,7 @@ export function InlineConfirmAction({ children, confirmation, confirmLabel, canc
   }, []);
 
   useLayoutEffect(() => {
-    if (open) cancelRef.current?.focus();
-    else if (restoreFocusRef.current) triggerRef.current?.focus();
+    if (!open && restoreFocusRef.current) triggerRef.current?.focus();
     restoreFocusRef.current = false;
   }, [open]);
 
@@ -53,25 +49,9 @@ export function InlineConfirmAction({ children, confirmation, confirmLabel, canc
     setError(null);
   }, [scopeKey, confirmation, disabled]);
 
-  useEffect(() => {
-    if (!open) return;
-    function dismissOutside(event: Event) {
-      if (event.target instanceof Node && !containerRef.current?.contains(event.target) && !submittingRef.current) {
-        setReview(null);
-        preparationGeneration.current++;
-      }
-    }
-    document.addEventListener("pointerdown", dismissOutside);
-    document.addEventListener("focusin", dismissOutside);
-    return () => {
-      document.removeEventListener("pointerdown", dismissOutside);
-      document.removeEventListener("focusin", dismissOutside);
-    };
-  }, [open]);
-
-  function cancel() {
+  function cancel(restoreFocus: boolean) {
     if (submittingRef.current) return;
-    restoreFocusRef.current = true;
+    restoreFocusRef.current = restoreFocus;
     preparationGeneration.current++;
     setPreparing(false);
     setReview(null);
@@ -115,31 +95,18 @@ export function InlineConfirmAction({ children, confirmation, confirmLabel, canc
     }
   }
 
-  return <span ref={containerRef} className={`inline-confirm-action ${open ? "is-confirming" : ""} ${wrapperClassName}`.trim()}
-    onKeyDown={(event) => {
-      if (open && event.key === "Escape") {
-        event.preventDefault();
-        event.stopPropagation();
-        cancel();
-      }
-    }}>
-    {!open ? <button {...buttonProps} ref={triggerRef} type={buttonProps.type ?? "button"} disabled={disabled || pending} aria-busy={pending || undefined}
+  if (open) return <InlineConfirmReview wrapperClassName={wrapperClassName} containerRef={containerRef}
+    label={buttonProps["aria-label"] ?? confirmation} message={review.message} confirmLabel={confirmLabel} cancelLabel={cancelLabel}
+    pending={pending} preparing={preparing} scrollable={Boolean(prepareConfirmation && review.ready)}
+    onCancel={() => cancel(true)} onDismissOutside={() => cancel(false)}
+    onConfirm={review.ready ? () => void confirm() : undefined}
+    onRetry={!preparing && !review.ready ? () => void beginReview() : undefined}
+    error={error ? <ActivityNotice tone="error" onDismiss={() => setError(null)}>{error}</ActivityNotice> : null} />;
+
+  return <span className={`inline-confirm-action ${wrapperClassName}`.trim()}>
+    <button {...buttonProps} ref={triggerRef} type={buttonProps.type ?? "button"} disabled={disabled || pending} aria-busy={pending || undefined}
       onClick={(event) => { event.preventDefault(); void beginReview(); }}>
       {children}
-    </button> : <span className="inline-confirm-review" role="group" aria-label={buttonProps["aria-label"] ?? confirmation} aria-describedby={descriptionId} aria-busy={pending || preparing}>
-      <span id={descriptionId} className="inline-confirm-message" tabIndex={prepareConfirmation && review.ready ? 0 : undefined}>
-        {preparing ? t("common.loading") : review.message}
-      </span>
-      {error ? <ActivityNotice tone="error" onDismiss={() => setError(null)}>{error}</ActivityNotice> : null}
-      <span className="inline-confirm-buttons">
-        <button ref={cancelRef} type="button" className="secondary-button" disabled={pending} onClick={cancel}>
-          {cancelLabel ?? t("common.cancel")}
-        </button>
-        {!preparing && !review.ready && <button type="button" className="secondary-button" onClick={() => void beginReview()}>{t("common.retry")}</button>}
-        <button type="button" className="secondary-button inline-confirm-submit" disabled={pending || preparing || !review.ready} onClick={() => void confirm()}>
-          {pending ? t("common.processing") : confirmLabel ?? t("common.confirm")}
-        </button>
-      </span>
-    </span>}
+    </button>
   </span>;
 }

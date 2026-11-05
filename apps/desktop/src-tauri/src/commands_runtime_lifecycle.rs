@@ -5,6 +5,7 @@ use super::commands_stdin_dispatch::{
     RuntimeStdinDispatchBudget, RuntimeStdinDispatchConfirmation, RuntimeStdinWriteCompletion,
     dispatch_managed_stdin_command_with_budget,
 };
+use super::commands_terraria_world::TerrariaWorldConflict;
 use super::*;
 use app_storage::{materialize_instance_configuration_for_start, update_instance_ports};
 
@@ -49,6 +50,24 @@ pub(super) fn private_runtime_install_root(instance: &InstanceDetails) -> Result
     app_storage::resolve_instance_runtime_root(instance_root)
         .map(|path| path.to_string_lossy().into_owned())
         .map_err(|error| error.to_string())
+}
+
+async fn check_terraria_world_before_start(
+    instance: &InstanceDetails,
+    reservation: &RuntimeStartReservationLease,
+    fresh_file: Option<&str>,
+) -> Result<(), String> {
+    if instance.summary.module_id != "terraria" {
+        return Ok(());
+    }
+    let instance = instance.clone();
+    let fresh_file = fresh_file.map(str::to_owned);
+    spawn_blocking_storage_context_task(reservation, move || match fresh_file {
+        Some(name) => super::commands_terraria_world::ensure_fresh_for_start(&instance, &name),
+        None => super::commands_terraria_world::ensure_compatible_for_start(&instance),
+    })
+    .await
+    .map_err(|error| format!("Terraria world check failed: {error}"))?
 }
 
 fn failed_start_error_with_cleanup(
@@ -128,12 +147,23 @@ pub(super) fn build_instance_launch_preview(
     Ok(plan)
 }
 
+// Preserve the existing DST preview on the wire. Terraria requires an explicit
+// creation intent; returning its read-only preview alone never selects a world.
+#[derive(Debug, serde::Deserialize)]
+#[serde(untagged)]
+pub enum WorldStartConfirmation {
+    DontStarve(DstWorldStartPreview),
+    CreateTerraria {
+        create_terraria_world: TerrariaWorldConflict,
+    },
+}
+
 #[tauri::command]
 pub async fn start_instance_process(
     app_handle: tauri::AppHandle,
     state: tauri::State<'_, DesktopState>,
     instance_id: String,
-    expected_world_start: Option<DstWorldStartPreview>,
+    expected_world_start: Option<WorldStartConfirmation>,
     startup_attempt_id: Option<String>,
 ) -> Result<StartInstanceResult, String> {
     start_instance_process_inner(
@@ -150,7 +180,7 @@ pub(super) async fn start_instance_process_inner(
     app_handle: tauri::AppHandle,
     state: tauri::State<'_, DesktopState>,
     instance_id: String,
-    expected_world_start: Option<DstWorldStartPreview>,
+    expected_world_start: Option<WorldStartConfirmation>,
     startup_attempt_id: Option<String>,
 ) -> Result<StartInstanceResult, String> {
     let _storage_context_operation = state.begin_storage_context_operation("runtime start")?;
@@ -199,7 +229,7 @@ pub(super) async fn start_instance_process_after_reconcile(
         instance_id,
         source,
         RuntimeStartPreconditions {
-            world_start: expected_world_start,
+            world_start: expected_world_start.map(WorldStartConfirmation::DontStarve),
             instance: None,
             file_changes: Vec::new(),
         },
@@ -209,7 +239,7 @@ pub(super) async fn start_instance_process_after_reconcile(
 
 #[derive(Default)]
 pub(super) struct RuntimeStartPreconditions {
-    pub(super) world_start: Option<DstWorldStartPreview>,
+    pub(super) world_start: Option<WorldStartConfirmation>,
     pub(super) instance: Option<InstanceDetails>,
     pub(super) file_changes: Vec<app_storage::InstanceFilePatchResult>,
 }
@@ -300,7 +330,10 @@ pub(super) async fn start_instance_process_after_reconcile_reserved(
     let preserve_confirmed_ports = expected_instance.is_some();
     ensure_storage_context_snapshot_current(state, storage, "runtime start")?;
     // Preview workers always take admission before the instance lock.
-    let world_preview_permit = if expected_world_start.is_some() {
+    let world_preview_permit = if matches!(
+        &expected_world_start,
+        Some(WorldStartConfirmation::DontStarve(_))
+    ) {
         Some(acquire_dst_world_preview_permit().await?)
     } else {
         None
@@ -420,25 +453,48 @@ pub(super) async fn start_instance_process_after_reconcile_reserved(
             ));
         }
     }
-    let (instance_lock, instance) = if let Some(expected) = expected_world_start {
-        let (instance_lock, instance, validation) =
-            spawn_blocking_storage_context_task(runtime_start_reservation, move || {
-                let _permit = world_preview_permit;
-                let validation = validate_dst_world_start_confirmation(&expected, &instance);
-                (instance_lock, instance, validation)
+    let (instance_lock, shared_install_guard, instance, fresh_world) = match expected_world_start {
+        Some(WorldStartConfirmation::DontStarve(expected)) => {
+            let (instance_lock, instance, validation) =
+                spawn_blocking_storage_context_task(runtime_start_reservation, move || {
+                    let _permit = world_preview_permit;
+                    let validation = validate_dst_world_start_confirmation(&expected, &instance);
+                    (instance_lock, instance, validation)
+                })
+                .await
+                .map_err(|error| format!("DST start confirmation task failed: {error}"))?;
+            validation?;
+            (instance_lock, shared_install_guard, instance, None)
+        }
+        Some(WorldStartConfirmation::CreateTerraria {
+            create_terraria_world,
+        }) => {
+            let paths = storage.paths.clone();
+            run_runtime_start_worker_to_completion(runtime_start_reservation, async move {
+                let updated = super::commands_terraria_world::select_new_for_start(
+                    &paths,
+                    &instance,
+                    &create_terraria_world,
+                )
+                .await?;
+                Ok((
+                    instance_lock,
+                    shared_install_guard,
+                    updated,
+                    Some(create_terraria_world.suggested_world_file),
+                ))
             })
-            .await
-            .map_err(|error| format!("DST start confirmation task failed: {error}"))?;
-        validation?;
-        (instance_lock, instance)
-    } else {
-        (instance_lock, instance)
+            .await?
+        }
+        None => (instance_lock, shared_install_guard, instance, None),
     };
     if source == super::commands_autostart::AUTOSTART_SOURCE
         && (!instance.summary.autostart || !state.autostart.is_eligible(&instance_id)?)
     {
         return Err(String::from(super::commands_autostart::AUTOSTART_CANCELLED));
     }
+    check_terraria_world_before_start(&instance, runtime_start_reservation, fresh_world.as_deref())
+        .await?;
     let descriptors =
         discover_modules(&storage.paths.modules_root).map_err(|error| error.to_string())?;
     let descriptor = find_descriptor(&descriptors, &instance.summary.module_id)?;
@@ -858,6 +914,10 @@ pub(super) async fn start_instance_process_after_reconcile_reserved(
         .await;
     }
     let session_id = Some(generate_session_id(&instance_id));
+    // The world may have been replaced during first-time installation or a
+    // scheduled wait. Check it again before the game can open it for writing.
+    check_terraria_world_before_start(&instance, runtime_start_reservation, fresh_world.as_deref())
+        .await?;
 
     let mut spawned_processes = Vec::<(ProcessLaunchPlan, app_runtime::SpawnedProcess)>::new();
     let mut asa_startup_images = super::commands_asa_startup_budget::StartupSession::default();

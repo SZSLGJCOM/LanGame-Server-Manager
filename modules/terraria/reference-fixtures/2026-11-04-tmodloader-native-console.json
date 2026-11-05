@@ -1,0 +1,35 @@
+{
+  "verified_on": "2026-11-04",
+  "module_id": "terraria",
+  "distribution": "tModLoader v2026.09.3.1 for Terraria 1.4.4.9",
+  "release": "https://github.com/tModLoader/tModLoader/releases/tag/v2026.09.3.1",
+  "package_sha256": "5aaed81b245044286c3ade200f8bac9162ef932ee8ff11a31e05da49a186c07b",
+  "package_bytes": 61159864,
+  "dotnet": "Private Microsoft.NETCore.App 8.0.0 win-x64 matching the packaged runtimeconfig",
+  "dotnet_zip_sha512": "b786869739c87ea286ee494fbf72cc92cf0cd91c1f22ede0133a523aa150740dd89cdca6a1530bd1f39d24db4f34939e17e2b0dce3d7efd06e4eced30b530643",
+  "host": "Isolated Windows ConPTY with explicit NULL standard handles and a process Job",
+  "upstream_batch": {
+    "launcher_exit": 0,
+    "owned_child_listened_on_loopback": true,
+    "ready_line_in_managed_console": false,
+    "playing_answer_in_managed_console": false,
+    "managed_output_bytes_at_readiness": 16,
+    "report_sha256": "d55638bee4fa4a28ddceb36394e9858b5d33727de1193063465464093a8bd4da"
+  },
+  "foreground_bootstrap": {
+    "executable": "LaunchUtils/busybox64.exe",
+    "argument_prefix": ["bash", "./LaunchUtils/ScriptCaller.sh", "-server"],
+    "completed_runs": 2,
+    "runtime_config_and_save_paths_with_spaces_tested": true,
+    "primary_alive_at_readiness": true,
+    "native_server_started_and_playing_answered": true,
+    "native_save_output_and_nonempty_world_observed": true,
+    "normal_exit_codes": [0, 0],
+    "process_jobs_empty_after_exit": true,
+    "reports_sha256": [
+      "73254a98f23c952227605ef9f482b00b310ade2f519bbdac9d830106c06c8fa1",
+      "566a169c36fb704e82fd8b692f917dc3aa3d72e57f00da842d305365a57e564f"
+    ]
+  },
+  "scope": "Native launcher, terminal commands and shutdown on unmodded worlds. The independent host reproduces the manager's ConPTY handle contract. No GUI, Workshop mod, client join or classic-runtime gameplay was tested."
+}

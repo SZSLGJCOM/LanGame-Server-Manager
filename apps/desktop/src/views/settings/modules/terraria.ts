@@ -103,15 +103,6 @@ function buildTerrariaSections(t: TranslateFn): GuidedSettingsSection[] {
       )
     },
     {
-      id: "mods",
-      title: t("terraria.settings.sections.mods", undefined, "tModLoader Mods"),
-      description: t(
-        "terraria.settings.sections.modsDescription",
-        undefined,
-        "Workshop item IDs and tModLoader internal names used by the instance-local modpack files."
-      )
-    },
-    {
       id: "journey",
       parentId: "access",
       title: t("terraria.settings.sections.journey", undefined, "Journey Powers"),
@@ -203,11 +194,11 @@ function buildTerrariaFieldGroups(
     host: [
       {
         id: "runtime-mode",
-        title: t("terraria.settings.groups.runtimeMode", undefined, "Server runtime"),
+        title: t("terraria.settings.groups.runtimeMode", undefined, "Advanced startup preferences"),
         description: t(
           "terraria.settings.groups.runtimeModeDescription",
           undefined,
-          "Choose the server runtime before changing mod files."
+          "Enabled Mods automatically start with tModLoader. These preferences are optional."
         ),
         layoutClass: "terraria-runtime-mode",
         keys: ["server_runtime", "tmodloader_runtime_dir"]
@@ -222,19 +213,6 @@ function buildTerrariaFieldGroups(
         ),
         layoutClass: "terraria-simulation",
         keys: ["npcstream", "slowliquids", "priority"]
-      }
-    ],
-    mods: [
-      {
-        id: "tmodloader-workshop",
-        title: t("terraria.settings.groups.tmodloaderWorkshop", undefined, "Workshop modpack"),
-        description: t(
-          "terraria.settings.groups.tmodloaderWorkshopDescription",
-          undefined,
-          "Steam Workshop IDs populate install.txt; enabled.json still needs tModLoader internal mod names."
-        ),
-        layoutClass: "terraria-tmodloader-workshop",
-        keys: ["tmodloader_workshop_item_ids", "tmodloader_enabled_mod_names"]
       }
     ],
     journey: [
@@ -341,13 +319,7 @@ export const terrariaSettingsDefinition: SettingsModuleDefinition = {
   getFieldCopy: (key, t) => buildTerrariaFieldCopy(key, t),
   getEnumOptionLabel: (fieldKey, value, _locale, t) => getTerrariaEnumOptionLabel(fieldKey, value, t),
   resolveFieldEditorVariant(key) {
-    if (key === "tmodloader_workshop_item_ids") {
-      return "workshop-id-list";
-    }
     if (key === "banlist_entries") {
-      return "string-list";
-    }
-    if (key === "tmodloader_enabled_mod_names") {
       return "string-list";
     }
     return undefined;

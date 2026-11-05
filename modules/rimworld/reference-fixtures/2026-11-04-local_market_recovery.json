@@ -1,0 +1,15 @@
+{
+  "module_id": "rimworld",
+  "verified_on": "2026-11-04",
+  "old_packages": [
+    {"tag": "26.8.31.1", "archive_sha256": "f16c703f1e3e4e6de0f4877d8ae502a817c85482681956aa01e8a4b619bab68c", "executable_sha256": "939fe9a83434d31c543b3c486ed3398c6498ae9a9a609f8296e73c84cd5b7cc6", "executable_bytes": 69131303},
+    {"tag": "26.10.15.1", "archive_sha256": "fdebc2ccd6789b4bd33fbd6941d2ea8b41f8a0d063c30db09abcfb851fec18a1", "executable_sha256": "ef8e9acaf32ce4af5863295300254c25e8dd5388c39f59ce2b4ffd80eff04ac6", "executable_bytes": 69142747},
+    {"tag": "26.10.20.1_(1)", "archive_sha256": "ebffcd587bac87405d8d5f2e671d8fce0d5db3a0872a3d14699395ece512790d", "executable_sha256": "871abd0df922baddf26437cec48676c01bbc4ca7cac2c077a6c773662a25c7bc", "executable_bytes": 75269969}
+  ],
+  "replacement_tag": "26.11.2.1",
+  "replacement_executable_sha256": "1eb52be49d7b3fdd430295b56cc8cc47692bcf552b14d06466d029de068fbc6e",
+  "method": "The release author published each Server-win-x64.zip on GitHub. The official asset digest matched the downloaded archive, which contained only RTServer.exe. SHA256 and length were measured on each executable. All three old tags have byte-identical Source/Server/PacketManagers/PM_Market.cs (SHA256 225beb172bf3ec5d6cf4fc2d22839131f82b9f8787710fdd059d8d59b9247250): OnRemove finds a listing in Master.MarketFile.Entries by its Identifier and removes it. The new server uses a different on-disk listing format.",
+  "upstream": "https://github.com/RimWorld-Together/Rimworld-Together/releases",
+  "old_market_source": "https://github.com/RimWorld-Together/Rimworld-Together/blob/26.10.15.1/Source/Server/PacketManagers/PM_Market.cs",
+  "scope": "These identities select the old market reader for sellers to withdraw listings. They do not certify a completed player trade."
+}

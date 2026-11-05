@@ -191,6 +191,9 @@ pub fn merge_archive_program_update(
             "installation ownership or contents changed during archive update",
         ));
     }
+    if descriptor.summary.id == "rimworld" {
+        crate::templates::validate_rimworld_market_archive_update(&stage)?;
+    }
     check_creation_cancelled(cancellation)
 }
 

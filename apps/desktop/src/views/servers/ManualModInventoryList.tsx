@@ -2,12 +2,15 @@ import { ShellIcon } from "../../components/ShellIcon";
 import { useI18n } from "../../i18n";
 import type { ManualModInventoryItem } from "../../types";
 import { formatWorkshopByteSize } from "./steam-workshop-store-model";
+import { WorkshopStatus } from "./WorkshopStatus";
 
 interface Props {
   items: ManualModInventoryItem[];
   selectedPath: string | null;
   canEnable: boolean;
   disabled: boolean;
+  installingPaths?: ReadonlySet<string>;
+  progressPercent?: number | null;
   onSelect: (path: string) => void;
   onEnable: (item: ManualModInventoryItem) => void;
   canRemove?: (item: ManualModInventoryItem) => boolean;
@@ -33,6 +36,7 @@ export function ManualModInventoryList(props: Props) {
       <span className="mw-entry-row-copy">
         <span className="mw-entry-row-title mw-entry-row-title--singleline">{item.name}</span>
         <span className="mw-entry-row-status">
+          {props.installingPaths?.has(item.path) ? <WorkshopStatus state="installing" progressPercent={props.progressPercent} /> : null}
           {item.inferred_id && item.inferred_id !== item.name ? <span className="mw-entry-id">{item.inferred_id}</span> : null}
           <span>{formatWorkshopByteSize(item.total_bytes)}</span>
           {props.fileManagement ? <span>{item.management

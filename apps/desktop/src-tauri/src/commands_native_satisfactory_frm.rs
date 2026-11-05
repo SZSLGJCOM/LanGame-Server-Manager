@@ -148,7 +148,7 @@ impl Fixture {
         let raw = native_empty_array().await?;
         owned_web(runtime, running)?;
         println!(
-            "NATIVE_SATISFACTORY_FRM cycle={cycle} sml=3.12.0 frm=1.5.4 loaded_versions=current_run_log getPlayer=production_collector_ready response_bytes={raw} response_empty_array=true complete=true stale=false online_players=0 source=http_api listener=owned_native_process fixture_only=true client_join=not_tested"
+            "NATIVE_SATISFACTORY_FRM cycle={cycle} sml=3.12.0 frm=1.5.5 loaded_versions=current_run_log getPlayer=production_collector_ready response_bytes={raw} response_empty_array=true complete=true stale=false online_players=0 source=http_api listener=owned_native_process fixture_only=true client_join=not_tested"
         );
         Ok(())
     }
@@ -272,7 +272,7 @@ struct LoadEvidence {
 impl LoadEvidence {
     fn observe(&mut self, line: &str) {
         // SML v3.12.0 SatisfactoryModLoader.cpp and ModLoadingLibrary.cpp;
-        // FRM tag 1.5.4-515 FicsitRemoteMonitoring.cpp, InitAPIRegistry().
+        // FRM tag 1.5.5-529 FicsitRemoteMonitoring.cpp, InitAPIRegistry().
         if let Some((_, message)) = line.split_once("LogSatisfactoryModLoader: Display:") {
             let message = message.trim();
             self.preinit |= message
@@ -286,7 +286,7 @@ impl LoadEvidence {
                 .is_some_and(|value| version(value.trim(), "3.12.0"));
             self.frm |= message
                 .strip_prefix("FicsitRemoteMonitoring:")
-                .is_some_and(|value| version(value.trim(), "1.5.4"));
+                .is_some_and(|value| version(value.trim(), "1.5.5"));
         }
         self.player_endpoint |= line
             .split_once("LogHttpServer:")

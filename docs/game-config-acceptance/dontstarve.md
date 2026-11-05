@@ -9,7 +9,7 @@
 
 - Evidence: `best_effort_verified` at `2026-07-13` (build `Steam build 24080846; game version 740477; depot 343051 manifest 3868725695188346238; scripts.zip SHA-256 AF3145D056D831F8ADBB63DCC67624C58DDD52CB5A26BF99637BB997D7A50E53`)
 - Sources: `steamcmd_anonymous_validate_343050`, `installed_package_world_options`, `installed_package_mod_docs`, `cluster_ini`, `cluster_token`, `master_server_ini`, `caves_server_ini`, `shared_worldgenoverride`, `master_worldgenoverride`, `caves_worldgenoverride`, `adminlist`, `whitelist`, `blocklist`, `dedicated_server_mods_setup`, `master_modoverrides`, `caves_modoverrides`, `launch_args`
-- Coverage: editable `320`, specialized `2`, derived `0`, generated `0`, excluded `32`
+- Coverage: editable `318`, specialized `4`, derived `0`, generated `0`, excluded `32`
 
 ### Settings
 
@@ -536,7 +536,7 @@
 
 - Evidence: `best_effort_verified` at `2026-09-30` (build `Configuration contract: official game 747465 and Island Adventures author release presets 1.0.61; native generation evidence is recorded separately by the opt-in smoke probe.`)
 - Sources: `shard_layout`, `island_adventures_presets`, `islands_modoverrides`, `volcano_modoverrides`
-- Coverage: editable `7`, specialized `2`, derived `0`, generated `0`, excluded `0`
+- Coverage: editable `5`, specialized `4`, derived `0`, generated `0`, excluded `0`
 
 ### Settings
 

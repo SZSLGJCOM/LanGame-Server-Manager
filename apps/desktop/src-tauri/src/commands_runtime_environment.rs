@@ -78,15 +78,28 @@ pub(super) async fn prepare(
         }
     };
     let mut preparation = Box::pin(async {
+        let settings: Value =
+            serde_json::from_str(&instance.settings_json).map_err(|error| error.to_string())?;
+        let uses_tmodloader = instance.summary.module_id == "terraria"
+            && app_core::terraria::uses_tmodloader(&settings);
+        if uses_tmodloader {
+            let instance_root = super::commands_program_storage::instance_root(instance)?;
+            if let app_core::terraria::TmodLoaderInstallation::Managed(_) =
+                app_core::terraria::installation(instance_root, &settings)
+            {
+                app_steamcmd::prepare_tmodloader_runtime(
+                    &state.install_locks,
+                    instance_root,
+                    cancellation.clone(),
+                    &mut on_progress,
+                )
+                .await
+                .map_err(|error| error.to_string())?;
+            }
+        }
         let initial_plans =
             build_process_launch_plans_for_instance(&storage.settings, &module, instance)?;
         let initial_executables = runtime_executables(&module, &root, &initial_plans);
-        let settings: Value =
-            serde_json::from_str(&instance.settings_json).map_err(|error| error.to_string())?;
-        let uses_tmodloader = settings
-            .get("server_runtime")
-            .and_then(Value::as_str)
-            .is_some_and(|value| value.trim().eq_ignore_ascii_case("tmodloader"));
         // Java/.NET host probes can themselves need VC++. Prepare the native
         // dependencies first, rather than misdiagnosing a load failure as a
         // damaged bundled runtime.

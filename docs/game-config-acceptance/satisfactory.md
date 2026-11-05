@@ -414,3 +414,83 @@
   }
 }
 ```
+
+## `2026-11-05-native_world_save_build_26281360.json`
+
+- Evidence: `best_effort_verified` at `2026-11-05` (build `Steam public build 26281360 / CL517554: the four explicit INI overrides read back as effective values through the owned native HTTPS API before and after restart. Unknown/FRM entries below are synthetic preservation controls, not raw server data.`)
+- Sources: `native_world_save_build_26281360`, `native_runtime_options_build_24656085`, `native_weather_option_build_24656085`
+- Coverage: editable `4`, specialized `0`, derived `0`, generated `0`, excluded `5`
+
+### Initial native files
+
+```json
+{
+  "files": [
+    {
+      "content": "; Synthetic existing preferences for preservation coverage.\n[/Script/FactoryGame.FGGameUserSettings]\nmIntValues=((\"FG.DSAutoPause\", 0),(\"FG.NetworkQuality\", 3),(\"FG.SendGameplayData\", 0),(\"FG.FutureOption\", -17),(\"FicsitRemoteMonitoring.Server.uWS.Port\", 8081),(\"FicsitRemoteMonitoring.Server.uWS.Autostart\", 1))\nmFloatValues=((\"FG.AutosaveInterval\", 300.000000))\n\n[OtherSection]\nRetained=fixture-value\n",
+      "path": "data/Saved/Config/WindowsServer/GameUserSettings.ini",
+      "root": "instance"
+    }
+  ]
+}
+```
+
+### Lifecycle
+
+```json
+{
+  "pre_start": "Materialize only the existing known integer-map contract. Newly observed API key names do not establish independent writable INI controls or aliases; preserve them through the existing unknown-content mechanism.",
+  "save_stage": "Write the same four explicit values verified in the current native two-cycle acceptance; preserve other pre-existing INI entries."
+}
+```
+
+### Settings
+
+```json
+{
+  "auto_pause_when_empty": true,
+  "network_quality": 2,
+  "send_gameplay_data": false,
+  "weather_preset": 0
+}
+```
+
+### Expected outputs
+
+```json
+{
+  "files": [
+    {
+      "entries": [
+        {
+          "key": "/Script/FactoryGame.FGGameUserSettings.mIntValues",
+          "value": "((\"FG.DSAutoPause\", 1),(\"FG.NetworkQuality\", 2),(\"FG.SendGameplayData\", 0),(\"FG.FutureOption\", -17),(\"FicsitRemoteMonitoring.Server.uWS.Port\", 8081),(\"FicsitRemoteMonitoring.Server.uWS.Autostart\", 1),(\"FG.WeatherPreset\", 0))"
+        },
+        {
+          "key": "/Script/FactoryGame.FGGameUserSettings.mFloatValues",
+          "value": "((\"FG.AutosaveInterval\", 300.000000))"
+        },
+        {
+          "key": "OtherSection.Retained",
+          "value": "fixture-value"
+        }
+      ],
+      "format": "ini",
+      "path": "data/Saved/Config/WindowsServer/GameUserSettings.ini",
+      "root": "instance"
+    }
+  ],
+  "launch": {
+    "arguments": [
+      "FactoryGame",
+      "-unattended",
+      "-stdout",
+      "-FullStdOutLogOutput",
+      "-UserDir={{paths.data_dir}}",
+      "-Port=7777",
+      "-ReliablePort=8888"
+    ],
+    "executable_suffix": "Engine/Binaries/Win64/FactoryServer-Win64-Shipping-Cmd.exe"
+  }
+}
+```

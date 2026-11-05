@@ -233,6 +233,10 @@ fn corekeeper_native_files(
 fn select_corekeeper_files(primary: &str, files: &mut [(&'static str, &'static str)]) -> bool {
     match primary {
         "631b58cfb806e838bc0c770963b3ec13edeba368007e2ad91e280bd7bf8ad2b0" => {}
+        "74836f1660d8e3dd9f7893fecf7a10827dff7c92a73d76139ff6cb5c93544c23" => {
+            // The 1.3.0.7 security update replaced Pug.Other only.
+            files[0].1 = "74836f1660d8e3dd9f7893fecf7a10827dff7c92a73d76139ff6cb5c93544c23";
+        }
         "042b6db4b62a34c5354b19e478302b723b3c89a4e6c6912ffd0ce91c78311938" => {
             // Build 25537714 uses the same native save API. Select its whole
             // dependency tuple; independently mixing admitted DLLs is invalid.

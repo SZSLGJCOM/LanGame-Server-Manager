@@ -100,6 +100,21 @@ fn invalid_or_stale_identity_never_authorizes_actions() {
 
 #[test]
 fn protected_and_incomplete_players_have_no_action_authority() {
+    let mut read_only = packet_fixture();
+    read_only["moderation_supported"] = json!(false);
+    let snapshot = response::project(
+        parse(&read_only, 1001).unwrap(),
+        "instance",
+        "snapshot",
+        5000,
+    )
+    .unwrap();
+    assert!(snapshot.private_action_bindings.is_empty());
+    assert!(
+        snapshot.public_snapshot.entries[0]
+            .available_action_ids
+            .is_empty()
+    );
     let mut protected = packet_fixture();
     protected["players"][0]["moderation_immune"] = json!(true);
     let projected = response::project(

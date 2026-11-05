@@ -431,6 +431,36 @@ async fn scalar_player_access_replace_and_clear_reject_stale_expected_values() {
 }
 
 #[tokio::test]
+async fn sevendaystodie_prestart_preserves_native_admin_sections() {
+    let (root, paths, created) =
+        provision_real_module_instance("sevendaystodie", "7DTD native admin sections").await;
+    let details = read_instance_details(&paths, &created.summary.id)
+        .await
+        .unwrap();
+    let admin = Path::new(&details.saves_path).join("serveradmin.xml");
+    let managed = fs::read_to_string(&admin).unwrap();
+    let native = r#"  <apitokens><token name="fixture" permission_level="1000" /></apitokens>
+  <webmodules><module name="fixture" permission_level="1000" /></webmodules>
+  <webusers><user name="fixture" /></webusers>
+  <future-native-section />"#;
+    let before = managed.replace("</adminTools>", &format!("{native}\n</adminTools>"));
+    fs::write(&admin, &before).unwrap();
+    materialize_instance_configuration_for_start(&paths, &created.summary.id)
+        .await
+        .expect("prepare existing 7DTD instance for launch");
+    assert_eq!(fs::read_to_string(&admin).unwrap(), before);
+    let malformed = "<adminTools><users/><webusers>";
+    fs::write(&admin, malformed).unwrap();
+    assert!(
+        materialize_instance_configuration_for_start(&paths, &created.summary.id)
+            .await
+            .is_err()
+    );
+    assert_eq!(fs::read_to_string(&admin).unwrap(), malformed);
+    cleanup_root(&root);
+}
+
+#[tokio::test]
 async fn sevendaystodie_player_access_mutation_persists_and_materializes_serveradmin_xml() {
     let (root, paths, created) =
         provision_real_module_instance("sevendaystodie", "Player Access 7DTD Integration").await;

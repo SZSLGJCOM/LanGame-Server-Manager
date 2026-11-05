@@ -59,6 +59,12 @@ test("Conan accepts all twelve documented floating-point settings and keeps sche
 });
 
 test("RimWorld exposes actual pricing, travel and save behavior instead of file provenance", () => {
+  const market = field("rimworld", "zh-CN", "action_market_use_global_server");
+  assert.equal(market.type, "boolean");
+  assert.equal(market.defaultValue, undefined);
+  assert.equal(market.defaultSource, undefined);
+  assert.match(market.description, /开启.*公共市场.*关闭.*本服交易/);
+  assert.match(field("rimworld", "en-US", "action_market_cooldown").description, /local market/);
   assert.match(field("rimworld", "en-US", "action_market_price_multiplier").description, /base × \(1 \+ x\).*base ÷ \(1 \+ 2x\)/);
   assert.match(field("rimworld", "zh-CN", "action_road_dirt_path_multiplier").description, /值越小.*越快/);
   assert.match(field("rimworld", "zh-CN", "action_site_building_cost").title, /白银/);

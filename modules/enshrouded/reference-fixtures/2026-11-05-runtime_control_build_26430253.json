@@ -1,0 +1,106 @@
+{
+  "schema": 1,
+  "module_id": "enshrouded",
+  "review_date": "2026-11-05",
+  "evidence_kind": "isolated_managed_lifecycle_exact_checkpoint_and_native_control_probe",
+  "status": "passed",
+  "release_source": "https://enshrouded.com/en-US/news/changelog-for-hotfix-5-v1012",
+  "target": {
+    "release": "1.0.1.2",
+    "release_notes_svn": 1287369,
+    "steam_app_id": 2278520,
+    "steam_build_id": "26430253",
+    "windows_depot": 2278521,
+    "manifest": "8886672487109033979",
+    "steamcmd_exit_code": 0,
+    "state_flags": 4,
+    "update_result": 0,
+    "executable_sha256": "f0d824be7fcd48ebfe2458ff5c28da26060c2074e3ec1fcac587e5a1d508aeb2",
+    "executable_bytes": 22786048,
+    "appmanifest_sha256": "0ea5cd2859afba96eb45a09dacac5a6cca8dd08301dcdbd2ed4c4a2f132c11a4",
+    "acquisition": "Fresh anonymous Valve SteamCMD app_update 2278520 validate, independent from existing game libraries and saves."
+  },
+  "managed_lifecycle": {
+    "source_identity_sha256": "460f1df7b5d4a0bff605b4a94efcf503dca5e5a7262d9eb7fbb4cdb80816a0d2",
+    "test_executable_sha256": "f9e31574ef13bc04412e744401ed27ac9e9b3a81d531eb527c6ab55ba3ffa666",
+    "resource_files_matched_to_build_manifest": 218,
+    "test": "commands::tests::manual_runtime_tests::native_lifecycle_tests::native_manual_save",
+    "flags": ["--exact", "--ignored", "--test-threads=1", "--nocapture"],
+    "settings": {"program_update": {"policy": "pinned"}},
+    "manual_save_restart": true,
+    "save_require_completed": true,
+    "exact_save_readback": true,
+    "process_context": "Windows x64, ordinary interactive user, managed background console",
+    "binding": "Fixture defaults; not a loopback-only claim",
+    "exit_code": 0,
+    "elapsed_seconds": 229.38,
+    "completed_utc": "2026-11-05T02:10:35.0187000Z",
+    "normal_game_exit_codes": [0, 0],
+    "initial_save": {
+      "attempted_once": true,
+      "retried": false,
+      "completion": "confirmed",
+      "checkpoint_captured_before_stop": true,
+      "files": 3,
+      "world_bytes": 42833,
+      "world_sha256": "613f78313f651eba4f08eb902049c17a5ab3f5ffafa0a0a662071b1b3ff63311"
+    },
+    "restart": {
+      "fresh_managed_run": true,
+      "normal_shutdown_snapshot_excluded": true,
+      "exact_checkpoint_restored_and_hash_verified": true,
+      "native_world_load_passed": true,
+      "second_save_sent": false
+    },
+    "cleanup": "passed",
+    "stdout_sha256": "b5600c1971c51f9683d05b17d64bf4293616f3275dfc67e4d8be6e9f34f3db70",
+    "stderr_sha256": "424c0cd8e9bf2f078ec8a11cf2bb254b26c59dc210c9cfb339b0891139916e31",
+    "per_cycle_dll_hash_captured": false
+  },
+  "direct_control_probe": {
+    "scope": "Separate loopback-only disposable world, same official executable, explicitly staged locally built DLL; this is not the manager command chain.",
+    "dll_sha256": "0e24ba713e7d670e0696b55a40e407a7cb04dc6b46a94b263245ea9b4778ab86",
+    "probe_script_sha256": "9ebd929c2a53047937c4706682dab6581e9c43d74f46d235628c993873feff66",
+    "launch_wrapper_sha256": "6a5f9da2044266ec8dfa41c761dd05697c177a96bfb4837e83144681efc72efb",
+    "process_context": "Windows x64, ordinary WinSta0 interactive user, hidden console",
+    "exit_code": 0,
+    "normal_game_exit_codes": [0, 0],
+    "completed_utc": "2026-11-05T02:16:25.5655716Z",
+    "observer": {
+      "both_cycles": true,
+      "pid_creation_time_executable_and_dll_matched": true,
+      "fresh_complete_empty_roster": true,
+      "sequence_advanced": true,
+      "fresh_run_nonce_on_restart": true,
+      "effective_moderation_supported": true,
+      "positive_moderation_wire_field_omitted": true
+    },
+    "offline_unban": {
+      "synthetic_target": "42",
+      "synthetic_retained_account": "9007199254740993",
+      "request_publications": 1,
+      "reply_status": "dispatched",
+      "reply_issue": "none",
+      "target_removed_from_native_banned_accounts": true,
+      "other_record_unchanged": true,
+      "same_result_after_normal_stop_and_restart": true
+    },
+    "save": {
+      "request_publications": 1,
+      "reply_status": "completed",
+      "reply_issue": "none",
+      "world_bytes": 42833,
+      "world_sha256_before_stop": "a15351c3aad39ad355e53d626dba9ff44e65392f0ddc3e16ef1429bd7df79186",
+      "restart_deserialized_world": true,
+      "exact_manual_checkpoint_readback": false
+    },
+    "final_phase": "complete",
+    "state_receipt_sha256": "b30eb2e44b2e5b31739c4e091ac3d33426542b23208fda57804302a818136d23",
+    "runner_receipt_sha256": "f5fd740bd0fc2146d2a4e25068405e9adc32905edccd056be509d30875926690"
+  },
+  "limits": [
+    "Generated empty worlds only; no real client, populated world migration, real-player kick, ban enforcement or reconnect was tested.",
+    "The managed test proves exact manual-checkpoint reload; the separate direct probe proves the pinned DLL observer and native offline-unban path. These are distinct runs.",
+    "No desktop GUI, installer packaging, production Mod loader, operator library update, or deployment to existing retained instances was performed."
+  ]
+}

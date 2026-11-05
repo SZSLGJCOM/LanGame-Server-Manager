@@ -144,6 +144,7 @@ pub(in crate::commands) fn decorate_inventory(
             path: path.to_string_lossy().into_owned(),
             item_type: "file".into(),
             inferred_id: None,
+            tmodloader_mod_name: None,
             file_count: 0,
             total_bytes: 0,
             modified_unix_ms: None,

@@ -586,6 +586,9 @@ fn abiotic_reviewed_builds_admit_exact_images_and_reject_image_changes() {
         include_str!(
             "../../../../../modules/abioticfactor/reference-fixtures/2026-10-30-save_factory_build_26315119.json"
         ),
+        include_str!(
+            "../../../../../modules/abioticfactor/reference-fixtures/2026-11-04-native_guard_build_26373207.json"
+        ),
     ] {
         let evidence: serde_json::Value = serde_json::from_str(fixture).unwrap();
         let current = evidence["executable_sha256"].as_str().unwrap();

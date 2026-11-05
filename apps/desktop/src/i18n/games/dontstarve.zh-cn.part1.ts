@@ -15,7 +15,7 @@ export const ZH_CN_DONT_STARVE_CORE_MESSAGES: MessageCatalog = {
   "dst.settings.sections.clusterRuntimeDescription": "配置无人时暂停、同步频率，以及服务器日志备份的周期和保留份数。",
   "dst.settings.sections.surfaceDescription": "配置地表分片的新世界生成方式，以及世界运行期间的环境和生存规则。",
   "dst.settings.sections.cavesDescription": "配置洞穴分片的新世界生成方式，以及世界运行期间的环境和生存规则。",
-  "dst.settings.sections.advancedDescription": "直接编辑各分片的世界和 Mod Lua 配置，包括 Island Adventures 的岛屿和火山。",
+  "dst.settings.sections.advancedDescription": "编辑各分片的世界 Lua 配置，包括 Island Adventures 的岛屿和火山。",
   "dst.settings.validation.rawModConflict": "同一分片不能同时使用原始 modoverrides.lua、Mod 启用列表或结构化 Mod 选项。",
   "dst.settings.caves.inactive": "洞穴已关闭，设置已保留。启用后将在下次启动服务器时生效。",
   "dst.settings.caves.enable": "启用洞穴",

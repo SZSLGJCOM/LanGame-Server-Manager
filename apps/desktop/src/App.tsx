@@ -1,4 +1,5 @@
 import { version as desktopVersion } from "../package.json";
+import type { WorldStartConfirmation } from "./api-terraria-world";
 import { useCallback, useEffect, useEffectEvent, useMemo, useRef, useState, type Dispatch, type SetStateAction } from "react";
 import { isTauri } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
@@ -67,7 +68,6 @@ import type {
   AssistantExecutionState,
   BackgroundJob,
   BootstrapResponse,
-  DstWorldStartPreview,
   InstanceBackupResult,
   InstanceBroadcastPolicy,
   InstanceDetails,
@@ -1571,7 +1571,7 @@ function DesktopApp({ theme, onThemeChange }: DesktopAppProps) {
     }
   }
 
-  async function handleStartServerWithBroadcast(instanceId: string, expectedWorldStart?: DstWorldStartPreview, operation?: RuntimeActionOperation) {
+  async function handleStartServerWithBroadcast(instanceId: string, expectedWorldStart?: WorldStartConfirmation, operation?: RuntimeActionOperation) {
     const started = await handleStartServer(instanceId, expectedWorldStart, operation);
     if (started) {
       void maybeRunLifecycleBroadcast(instanceId, "startup");

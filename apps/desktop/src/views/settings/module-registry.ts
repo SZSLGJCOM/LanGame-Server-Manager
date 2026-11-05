@@ -5,6 +5,7 @@ import type {
 import type { ConfigurationFieldBehavior } from "./settings-schema";
 import { withConfigurationFieldGroups } from "./configuration-field-groups";
 import { withMaintenanceSavePolicy } from "./save-policy";
+import modWorkspaceSections from "./mod-workspace-sections.json";
 import { abioticFactorSettingsDefinition } from "./modules/abioticfactor";
 import { arkSurvivalAscendedSettingsDefinition } from "./modules/ark-asa";
 import { arkSurvivalEvolvedSettingsDefinition } from "./modules/ark-ase";
@@ -95,8 +96,12 @@ const FIELD_BEHAVIOR_OVERRIDES: Readonly<Record<string, Readonly<Record<string, 
     master_worldgenoverride_lua: "raw",
     caves_world_overrides_extra: "raw",
     caves_worldgenoverride_lua: "raw",
+    islands_worldgenoverride_lua: "raw",
+    volcano_worldgenoverride_lua: "raw",
     master_modoverrides_lua: "raw",
-    caves_modoverrides_lua: "raw"
+    caves_modoverrides_lua: "raw",
+    islands_modoverrides_lua: "raw",
+    volcano_modoverrides_lua: "raw"
   },
   enshrouded: { custom_user_groups_json: "raw" },
   humanitz: { settings_extra: "raw", extra_launch_args: "raw" },
@@ -210,6 +215,7 @@ function withWorkspaceRenderedField(
     fieldPresentationOverrides: {
       ...definition.fieldPresentationOverrides,
       [fieldKey]: {
+        ...definition.fieldPresentationOverrides?.[fieldKey],
         state: "specialized",
         owner: workspace,
         sectionId,
@@ -262,13 +268,6 @@ const palworldPresentation = withWorkspaceRenderedField(
   "mod-workbench-package-names",
   "mods"
 );
-const terrariaPresentation = withWorkspaceRenderedField(
-  terrariaSettingsDefinition,
-  "tmodloader_workshop_item_ids",
-  "mods",
-  "mod-workbench-workshop-ids",
-  "mods"
-);
 const unturnedPresentation = withWorkspaceRenderedField(
   unturnedSettingsDefinition,
   "workshop_file_ids",
@@ -290,6 +289,27 @@ const dontStarvePresentation = [
 ].reduce<SettingsModuleDefinition>((definition, fieldKey) => withWorkspaceRenderedField(
   definition, fieldKey, "mods", "mod-workbench-dst-mods", "mods"
 ), dontStarveSettingsDefinition);
+
+export const MOD_SOURCE_LIST_RENDERER = "mod-workbench-source-list";
+const sourceListFields: Record<string, readonly [string, readonly string[]]> = {
+  arksurvivalascended: ["mods", ["passive_mod_ids_csv"]],
+  arksurvivalevolved: ["mods", ["auto_managed_mods", "auto_managed_mod_ids"]],
+  dontstarve: ["mods", ["master_modoverrides_lua", "caves_modoverrides_lua", "islands_modoverrides_lua", "volcano_modoverrides_lua"]],
+  unturned: ["advanced", ["workshop_ignore_children_file_ids", "workshop_query_cache_max_age_seconds",
+    "workshop_max_query_retries", "workshop_use_cached_downloads", "workshop_monitor_updates"]]
+};
+
+function withModWorkspaceFields(definition: SettingsModuleDefinition): SettingsModuleDefinition {
+  const dedicatedSections: Readonly<Record<string, Readonly<Record<string, string>>>> = modWorkspaceSections;
+  for (const [key, renderer] of Object.entries(dedicatedSections[definition.id] ?? {})) {
+    definition = withWorkspaceRenderedField(definition, key, "mods", renderer, "mods");
+  }
+  const source = sourceListFields[definition.id];
+  if (!source) return definition;
+  return source[1].reduce((next, key) => withWorkspaceRenderedField(
+    next, key, source[0], MOD_SOURCE_LIST_RENDERER, "mods"
+  ), definition);
+}
 const BASE_SETTINGS_MODULE_DEFINITIONS: Record<string, SettingsModuleDefinition> = {
   [abioticFactorSettingsDefinition.id]: abioticFactorSettingsDefinition,
   [arkSurvivalEvolvedPresentation.id]: arkSurvivalEvolvedPresentation,
@@ -324,7 +344,7 @@ const BASE_SETTINGS_MODULE_DEFINITIONS: Record<string, SettingsModuleDefinition>
   [soulmaskPresentation.id]: soulmaskPresentation,
   [sonsOfTheForestSettingsDefinition.id]: sonsOfTheForestSettingsDefinition,
   [squadSettingsDefinition.id]: squadSettingsDefinition,
-  [terrariaPresentation.id]: terrariaPresentation,
+  [terrariaSettingsDefinition.id]: terrariaSettingsDefinition,
   [theforestSettingsDefinition.id]: theforestSettingsDefinition,
   [unturnedPresentation.id]: unturnedPresentation,
   [valheimSettingsDefinition.id]: valheimSettingsDefinition,
@@ -335,7 +355,7 @@ const BASE_SETTINGS_MODULE_DEFINITIONS: Record<string, SettingsModuleDefinition>
 const SETTINGS_MODULE_DEFINITIONS: Record<string, SettingsModuleDefinition> = Object.fromEntries(
   Object.entries(BASE_SETTINGS_MODULE_DEFINITIONS).map(([moduleId, definition]) => [
     moduleId,
-    withConfigurationFieldGroups(withExplicitFieldPresentation(withMaintenanceSavePolicy(definition)))
+    withConfigurationFieldGroups(withExplicitFieldPresentation(withModWorkspaceFields(withMaintenanceSavePolicy(definition))))
   ])
 );
 

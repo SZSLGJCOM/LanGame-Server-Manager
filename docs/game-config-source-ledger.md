@@ -4,15 +4,15 @@
 
 | module | status | schema fields | ledger items | exclusions | sources |
 | --- | --- | ---: | ---: | ---: | ---: |
-| `abioticfactor` | best_effort_verified | 67 | 67 | 12 | 19 |
+| `abioticfactor` | best_effort_verified | 67 | 67 | 12 | 20 |
 | `arksurvivalascended` | best_effort_verified | 277 | 289 | 315 | 42 |
 | `arksurvivalevolved` | exhaustive_verified | 375 | 414 | 137 | 36 |
 | `astroneer` | best_effort_verified | 19 | 19 | 6 | 19 |
 | `barotrauma` | best_effort_verified | 125 | 125 | 4 | 39 |
 | `conanexiles` | best_effort_verified | 305 | 305 | 47 | 34 |
-| `corekeeper` | verified_with_direct_connection | 15 | 24 | 19 | 26 |
+| `corekeeper` | verified_with_direct_connection | 15 | 24 | 19 | 27 |
 | `dontstarve` | best_effort_verified | 335 | 335 | 32 | 32 |
-| `enshrouded` | best_effort_verified | 75 | 75 | 9 | 25 |
+| `enshrouded` | best_effort_verified | 75 | 75 | 9 | 29 |
 | `humanitz` | best_effort_verified | 98 | 98 | 27 | 32 |
 | `minecraft` | exhaustive_verified | 73 | 73 | 5 | 22 |
 | `necesse` | best_effort_verified | 19 | 19 | 41 | 14 |
@@ -20,17 +20,17 @@
 | `palworld` | best_effort_verified | 121 | 121 | 9 | 23 |
 | `projectzomboid` | best_effort_verified | 145 | 145 | 79 | 37 |
 | `returntomoria` | best_effort_verified | 27 | 27 | 4 | 13 |
-| `rimworld` | best_effort_verified | 118 | 118 | 5 | 18 |
+| `rimworld` | best_effort_verified | 120 | 120 | 6 | 22 |
 | `romestead` | best_effort_verified | 9 | 9 | 2 | 19 |
 | `runescapedragonwilds` | best_effort_verified | 7 | 7 | 9 | 25 |
 | `rust` | best_effort_verified | 71 | 71 | 17 | 45 |
-| `satisfactory` | best_effort_verified | 20 | 24 | 14 | 31 |
+| `satisfactory` | best_effort_verified | 20 | 24 | 16 | 33 |
 | `scum` | best_effort_verified | 11 | 481 | 10 | 33 |
-| `sevendaystodie` | best_effort_verified | 70 | 70 | 6 | 28 |
+| `sevendaystodie` | best_effort_verified | 70 | 70 | 6 | 29 |
 | `sonsoftheforest` | exhaustive_verified | 44 | 44 | 4 | 19 |
 | `soulmask` | best_effort_verified | 292 | 292 | 6 | 15 |
 | `squad` | best_effort_verified | 62 | 62 | 5 | 37 |
-| `terraria` | best_effort_verified | 40 | 40 | 9 | 15 |
+| `terraria` | best_effort_verified | 40 | 40 | 9 | 16 |
 | `theforest` | exhaustive_verified | 22 | 22 | 6 | 17 |
 | `unturned` | best_effort_verified | 301 | 301 | 13 | 60 |
 | `valheim` | best_effort_verified | 18 | 18 | 7 | 48 |

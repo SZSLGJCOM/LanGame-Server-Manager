@@ -510,3 +510,69 @@
   }
 }
 ```
+
+## `2026-11-04-market_26_11_2_1.json`
+
+- Evidence: `best_effort_verified` at `2026-11-04` (build `Official Together 26.11.2.1 market mode, local protocol sale and client rollback policy`)
+- Sources: `market_26_11_2_1`, `local_market_runtime_20261104`, `rollback_26_11_2_1`
+- Coverage: editable `2`, specialized `0`, derived `0`, generated `0`, excluded `1`
+
+### Initial native files
+
+```json
+{
+  "files": [
+    {
+      "content": "{\"UseGlobalServer\":true,\"IsEnabled\":true,\"MinimumPrice\":25}",
+      "path": "Configs/Actions/Market.json",
+      "root": "install"
+    },
+    {
+      "content": "{\"IsEnabled\":true,\"Cooldown\":1234}",
+      "path": "Configs/Actions/Rollback.json",
+      "root": "install"
+    }
+  ]
+}
+```
+
+### Settings
+
+```json
+{
+  "action_market_use_global_server": false,
+  "action_rollback_is_enabled": false
+}
+```
+
+### Expected outputs
+
+```json
+{
+  "files": [
+    {
+      "format": "json",
+      "keys": {
+        "IsEnabled": true,
+        "MinimumPrice": 25,
+        "UseGlobalServer": false
+      },
+      "path": "Configs/Actions/Market.json",
+      "root": "install"
+    },
+    {
+      "format": "json",
+      "keys": {
+        "Cooldown": 1234,
+        "IsEnabled": false
+      },
+      "path": "Configs/Actions/Rollback.json",
+      "root": "install"
+    }
+  ],
+  "launch": {
+    "arguments": [],
+    "executable_suffix": "RTServer.exe"
+  }
+}
+```

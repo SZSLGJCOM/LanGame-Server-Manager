@@ -38,8 +38,8 @@
     "build": "buildid 21241282; depot 376031 manifest 6366771435093287465"
   },
   "coverage": {
-    "editable": 406,
-    "specialized": 5,
+    "editable": 404,
+    "specialized": 7,
     "derived": 0,
     "generated": 0,
     "excluded": 137
@@ -206,7 +206,6 @@
       "game_ini./script/shootergame.shootergamemode.bUseDinoLevelUpAnimations",
       "game_ini./script/shootergame.shootergamemode.bUseSingleplayerSettings",
       "game_ini./script/shootergame.shootergamemode.bUseTameLimitForStructuresOnly",
-      "game_ini.ModInstaller.ModIDS",
       "game_ini.raw_extra_lines",
       "game_user_settings./Script/Engine.GameSession.MaxPlayers",
       "game_user_settings.MessageOfTheDay.Duration",
@@ -425,7 +424,6 @@
       "launch_args.-UseStructureStasisGrid",
       "launch_args.-UseTameEffectivenessClamp",
       "launch_args.-UseVivox",
-      "launch_args.-automanagedmods",
       "launch_args.-clusterid",
       "launch_args.-crossplay",
       "launch_args.-culture",
@@ -456,8 +454,10 @@
     "specialized": [
       "admin_steam_ids.AllowedCheaterSteamIDs.txt:steam64",
       "exclusive_join_file.PlayersExclusiveJoinList.txt:steam64",
+      "game_ini.ModInstaller.ModIDS",
       "game_user_settings.ServerSettings.ActiveMods",
       "launch_args.-ClusterDirOverride",
+      "launch_args.-automanagedmods",
       "priority_join_file.PlayersJoinNoCheckList.txt:steam64"
     ],
     "derived": [],

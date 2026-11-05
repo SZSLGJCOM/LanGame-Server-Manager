@@ -173,6 +173,7 @@ pub enum RuntimeLivePlayerIssueCode {
     QueryUnavailable,
     AuthenticationFailed,
     ExtensionUnavailable,
+    ModerationUnavailable,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

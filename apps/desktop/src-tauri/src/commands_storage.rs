@@ -2,6 +2,8 @@ use super::*;
 
 #[path = "commands_program_update_policy.rs"]
 mod program_update_policy;
+#[path = "commands_terraria_preparation.rs"]
+mod terraria_preparation;
 
 #[path = "commands_runtime_start_projection.rs"]
 mod runtime_start_projection;
@@ -1452,16 +1454,17 @@ async fn update_instance_record_with_precondition(
     )
     .await?;
     let update_paths = storage.paths.clone();
-    let update_result = spawn_storage_context_task(&storage_context_operation, async move {
-        let _instance_lock = instance_lock;
-        let _program_policy_guard = program_policy_guard;
-        match expected_settings_json {
-            Some(expected) => update_instance_if_current(&update_paths, input, &expected).await,
-            None => update_instance(&update_paths, input).await,
-        }
-    })
-    .await
-    .map_err(|error| format!("instance update task failed: {error}"))?;
+    let (update_result, instance_lock) =
+        spawn_storage_context_task(&storage_context_operation, async move {
+            let _program_policy_guard = program_policy_guard;
+            let result = match expected_settings_json {
+                Some(expected) => update_instance_if_current(&update_paths, input, &expected).await,
+                None => update_instance(&update_paths, input).await,
+            };
+            (result, instance_lock)
+        })
+        .await
+        .map_err(|error| format!("instance update task failed: {error}"))?;
     let details = update_result.map_err(|error| {
         let message = error.to_string();
         append_desktop_app_log(
@@ -1473,6 +1476,18 @@ async fn update_instance_record_with_precondition(
         );
         logged_error_message(&storage, message)
     })?;
+    // The settings are committed. Register any eager preparation under the
+    // same instance lock. The download uses its own runtime directory lease.
+    if let Err(message) = terraria_preparation::on_saved(&state, &storage, &current, &details) {
+        append_desktop_app_log(
+            &storage,
+            "warn",
+            "instance.tmodloader.prepare_not_queued",
+            &message,
+            json!({ "instance_id": details.summary.id }),
+        );
+    }
+    drop(instance_lock);
     state
         .live_player_registry
         .invalidate_instance(&details.summary.id);

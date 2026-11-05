@@ -429,6 +429,7 @@ const baseEnUs: MessageCatalog = {
   "settings.configuration.secret.show": "Show value",
   "settings.configuration.secret.hide": "Hide value",
   "settings.configuration.useGameDefault": "Use game default",
+  "settings.configuration.keepCurrentServerSetting": "Keep current server setting",
   "settings.configuration.specialized.unavailable": "A specialized editor is unavailable.",
   "settings.configuration.restart.none": "No restart required",
   "settings.configuration.restart.server": "Restart server",

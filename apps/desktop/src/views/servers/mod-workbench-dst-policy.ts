@@ -1,7 +1,7 @@
 import type { SettingsObject } from "../settings/settings-schema";
 import { getDontStarveLayoutShards } from "../settings/modules/dontstarve-shards";
 
-export const DST_RAW_MOD_WARNING = "Raw modoverrides.lua is active. Edit it in settings before using structured Mod controls.";
+export const DST_RAW_MOD_WARNING = "A custom modoverrides.lua controls this server. Clear it in My Mods under Mod lists and source files to use individual Mod controls.";
 
 /** Synchronized controls must not modify a shard owned by custom Lua. */
 export function hasDstRawModOverrides(settings: Readonly<SettingsObject>): boolean {

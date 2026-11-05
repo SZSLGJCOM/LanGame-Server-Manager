@@ -1,0 +1,35 @@
+{
+  "schema_version": 1,
+  "module_id": "rimworld",
+  "verified_on": "2026-11-04",
+  "release": "26.11.2.1",
+  "server_executable_sha256": "1eb52be49d7b3fdd430295b56cc8cc47692bcf552b14d06466d029de068fbc6e",
+  "environment": "Isolated Windows loopback server with a synthetic world and two non-admin protocol players using official RTNetwork and RTShared assemblies.",
+  "startup": {
+    "first_native_use_global_server": true,
+    "same_instance_after_restart": false,
+    "listening_process_verified": true,
+    "console_commands": ["getversion", "list", "backup", "quit"],
+    "backup_contains_selected_market_config": true,
+    "quit_exit_code": 0,
+    "port_released": true
+  },
+  "local_trade": {
+    "both_players_authenticated": true,
+    "both_received_local_market_mode": true,
+    "both_received_disabled_rollback_policy": true,
+    "item_def": "Steel",
+    "base_silver": 100,
+    "listing_persisted": true,
+    "configured_listings_per_player": 1,
+    "observed_simultaneous_seller_listings": 2,
+    "second_listing_withdrawn_by_seller": true,
+    "buyer_saw_listing": true,
+    "purchase_silver": 120,
+    "listing_removed": true,
+    "seller_payment_silver": 85,
+    "persisted_balance_after_collection": 0,
+    "second_collection_silver": 0
+  },
+  "scope": "Local native protocol and disk state. Graphical inventory delivery and public marketplace trades were outside this probe."
+}

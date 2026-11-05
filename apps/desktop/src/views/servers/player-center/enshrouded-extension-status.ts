@@ -7,6 +7,12 @@ export function enshroudedPlayerManagementUnavailableReason(
   locale: LocaleCode,
   t?: TranslateFn
 ): string | null {
+  if (issue?.code === "moderation_unavailable") {
+    const fallback = selectLocaleText(locale,
+      "此版本可查询在线玩家，暂不支持通过管理器即时踢出、封禁或解封。可在停服后编辑封禁名单，下次开服时生效。",
+      "The player list is available. This server build does not support live kick, ban or unban through the manager. Ban-list edits made while stopped take effect at the next start.");
+    return t ? t("servers.playerCenter.enshrouded.moderationUnavailable", undefined, fallback) : fallback;
+  }
   if (issue?.code === "protocol_incomplete") {
     const fallback = selectLocaleText(locale,
       "尚未取得完整有效的玩家身份，暂时无法踢出或封禁。请刷新玩家名单后重试。",

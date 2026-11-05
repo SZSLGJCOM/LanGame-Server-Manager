@@ -1,7 +1,9 @@
 import { message, type UiMessage } from "../app-ui";
 import { previewDontStarveWorldStart } from "../api";
+import { previewTerrariaModWorld, type WorldStartConfirmation } from "../api-terraria-world";
+import { useTerrariaWorldConsent } from "./servers/useTerrariaWorldConsent";
 import { describeError, type RuntimeRefreshIssue } from "../app-state";
-import { Fragment, useEffect, useId, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { Fragment, useEffect, useId, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import type { AiSettings } from "../ai-settings";
 import { ServerCardFrame } from "./servers/ServerCardFrame";
 import { ServerCardWorldSave } from "./servers/ServerCardWorldSave";
@@ -9,13 +11,13 @@ import { SaveImportOperationsProvider } from "./servers/SaveImportOperations";
 import { ShellIcon } from "../components/ShellIcon";
 import { ActivityNotice } from "../components/ActivityNotice";
 import { InlineConfirmAction } from "../components/InlineConfirmAction";
+import { InlineConfirmReview } from "../components/InlineConfirmReview";
 import { inspectInstanceRemoval, isStorageManagementAvailable } from "../api-storage";
 import { formatInstanceRemovalPlan } from "./servers/instance-removal-presentation";
 import { useI18n } from "../i18n";
 import type {
   BindAddressCandidate,
   DstWorldImportResult,
-  DstWorldStartPreview,
   ExecuteInstancePlayerActionInput,
   ExecuteInstancePlayerActionResult,
   InstanceBackupResult,
@@ -103,7 +105,7 @@ interface ServersViewProps {
   onActivity: (value: UiMessage) => void;
   onResumeAutoRefresh: () => void;
   onSelectInstance: (instanceId: string) => void;
-  onStart: (instanceId: string, expectedWorldStart?: DstWorldStartPreview, operation?: RuntimeActionOperation) => void | Promise<void>;
+  onStart: (instanceId: string, expectedWorldStart?: WorldStartConfirmation, operation?: RuntimeActionOperation) => void | Promise<void>;
   onStop: (instanceId: string, operation?: RuntimeActionOperation) => void | Promise<void>;
   onInstallModule: (moduleId: string, validate: boolean, account?: SteamInstallationAccountContext) => Promise<void>;
   onOpenModuleLibrary: (moduleId: string) => void;
@@ -172,6 +174,7 @@ interface ServerListCardProps {
   onStart: (instanceId: string) => void;
   onStop: (instanceId: string) => void;
   pendingAction?: RuntimeActionPending | null;
+  worldReview: ReturnType<typeof useTerrariaWorldConsent>["review"];
   installation?: ServerModuleInstallation;
   launchPlan?: LaunchPlan;
   launchFailed?: boolean;
@@ -184,6 +187,14 @@ interface ServerListCardProps {
 function ServerListCard(props: ServerListCardProps) {
   const removalPending = useRef(false);
   const [removing, setRemoving] = useState(false);
+  const primary = useRef<HTMLButtonElement>(null);
+  const returnToStart = useRef(false);
+  useLayoutEffect(() => {
+    if (!props.worldReview && returnToStart.current && primary.current && !primary.current.disabled) {
+      returnToStart.current = false;
+      primary.current.focus();
+    }
+  }, [props.worldReview, props.pendingAction]);
 
   const actionModel = resolveServerPrimaryAction({
     instanceId: props.instance.id,
@@ -218,6 +229,15 @@ function ServerListCard(props: ServerListCardProps) {
     active={props.active} status={actionModel.displayedStatus} statusLabel={statusLabel}
     onSelect={() => props.onSelectInstance(props.instance.id)}
     actions={<div className="row-card-actions row-card-actions--server server-list-card-actions">
+              {props.worldReview && <InlineConfirmReview wrapperClassName="server-list-card-confirm server-list-card-new-world"
+                label={props.t("terraria.start.newWorldTitle")} scrollable
+                message={props.t("terraria.start.worldTooNew", {
+                  original: props.worldReview.world.world_file, next: props.worldReview.world.suggested_world_file
+                })}
+                confirmLabel={props.t("terraria.start.createAndStart")}
+                onCancel={() => { returnToStart.current = true; props.worldReview?.respond(false); }}
+                onDismissOutside={() => props.worldReview?.respond(false)}
+                onConfirm={() => { returnToStart.current = true; props.worldReview?.respond(true); }} />}
               <InlineConfirmAction
                 wrapperClassName="server-list-card-confirm server-list-card-delete"
                 type="button"
@@ -256,7 +276,7 @@ function ServerListCard(props: ServerListCardProps) {
                 supported={props.installation?.hasImmediateWorldSave === true}
                 disabled={Boolean(props.pendingAction || props.storageBusy || props.retirement)}
                 onActivity={props.onActivity} />} />}
-    primary={<button
+    primary={<button ref={primary}
               type="button"
               className={actionModel.className}
               disabled={actionModel.disabled || Boolean(props.retirement)}
@@ -325,12 +345,16 @@ export function ServersView(props: ServersViewProps) {
     `${entry.instance_name ?? ""} ${entry.instance_id ?? ""} ${entry.archive_id} ${entry.module_id ?? ""}`.toLowerCase().includes(normalizedSearchText)) : [];
   const selectedDeletion = pendingDeletions.find((entry) => entry.operation_id === selectedDeletionId);
   const selectedArchive = archives.list?.archives.find((entry) => entry.archive_id === selectedArchiveId);
+  const terrariaWorld = useTerrariaWorldConsent(listMode === "normal" && !selectedDeletion && !selectedRetirement
+    && props.instances.some((instance) => instance.id === props.selectedInstanceId && !pendingIds.has(instance.id))
+    ? props.selectedInstanceId : null);
+  const worldReviewId = terrariaWorld.review?.world.instance_id;
   const visibleInstances = useMemo(
     () =>
       props.instances.filter((instance) =>
-        (!onlyRunning || instanceHasRunningProcess(instance)) && matchesQuery(instance, normalizedSearchText)
+        instance.id === worldReviewId || ((!onlyRunning || instanceHasRunningProcess(instance)) && matchesQuery(instance, normalizedSearchText))
       ),
-    [onlyRunning, normalizedSearchText, props.instances]
+    [onlyRunning, normalizedSearchText, props.instances, worldReviewId]
   );
   const runningCount = props.instances.filter((instance) => instanceHasRunningProcess(instance)).length;
   const autostartCount = props.instances.filter((instance) => instance.autostart).length;
@@ -404,7 +428,7 @@ export function ServersView(props: ServersViewProps) {
         props.onWorkspaceSectionChange("overview");
         await operation.ready;
         if (!operation.isCurrent()) return;
-        let expectedWorldStart: DstWorldStartPreview | undefined;
+        let expectedWorldStart: WorldStartConfirmation | undefined;
         const instance = props.instances.find((item) => item.id === instanceId);
         if (instance?.module_id === "dontstarve") {
           expectedWorldStart = await prepareDstWorldStart(instanceId, {
@@ -413,6 +437,17 @@ export function ServersView(props: ServersViewProps) {
           });
         } else {
           await settingsSaveCoordinator.flush(instanceId);
+          if (instance?.module_id === "terraria" && operation.isCurrent()) {
+            const world = await previewTerrariaModWorld(instanceId);
+            if (world) {
+              if (world.instance_id !== instanceId) throw new Error(t("terraria.start.previewChanged"));
+              if (!await terrariaWorld.ask(world, operation.isCurrent)) {
+                if (operation.isCurrent()) props.onActivity(message("terraria.start.worldUnchanged"));
+                return;
+              }
+              expectedWorldStart = { create_terraria_world: world };
+            }
+          }
         }
         if (!operation.isCurrent()) return;
         await props.onStart(instanceId, expectedWorldStart, operation);
@@ -429,7 +464,9 @@ export function ServersView(props: ServersViewProps) {
       }
     } catch (error) {
       if (!operation.isCurrent()) return;
-      props.onActivity(error instanceof DstWorldStartError
+      props.onActivity(startup?.moduleId === "terraria"
+        ? message("terraria.start.prepareFailed", { message: describeError(error) }, { tone: "error" })
+        : error instanceof DstWorldStartError
         ? message(`dst.start.error.${error.code}`, undefined, { fallback: error.message, tone: "error" })
         : error instanceof InstanceSettingsDraftInvalidError
           ? message("dst.start.error.invalid", undefined, { tone: "error" })
@@ -650,6 +687,7 @@ export function ServersView(props: ServersViewProps) {
                 onStart={(instanceId) => void runRuntimeAction(instanceId, "start")}
                 onStop={(instanceId) => void runRuntimeAction(instanceId, "stop")}
                 pendingAction={runtimeActionsByInstanceId[instance.id] ?? null}
+                worldReview={worldReviewId === instance.id ? terrariaWorld.review : null}
                 installation={props.moduleInstallations[instance.module_id]}
                 launchPlan={props.instanceLaunchPlans[instance.id]}
                 launchFailed={props.instanceLaunchFailures[instance.id]}

@@ -1,0 +1,47 @@
+{
+  "module_id": "abioticfactor",
+  "steam_app_id": 2857200,
+  "steam_build_id": "26373207",
+  "game_version": "1.5.0.31876",
+  "verified_on": "2026-11-04",
+  "acquisition": {
+    "source": "Valve anonymous SteamCMD public Windows package",
+    "depot_id": "2857201",
+    "depot_manifest": "992661325890226997",
+    "size_on_disk": 3259606402,
+    "state_flags": 4,
+    "update_result": 0,
+    "target_build_id": "26373207"
+  },
+  "executable_sha256": "5773a41a98b119f9900719eeb2b5f7582e74958d8e79fc22ee53d3d3d3d5209a",
+  "executable_bytes": 142254080,
+  "pdb_bytes": 1700737024,
+  "pe_rsds_and_pdb_guid": "2A9934C9-DE81-04D1-0BA7-8441919E9CED",
+  "pdb_age": 1,
+  "comparison": {
+    "baseline": "2026-10-30-save_factory_build_26315119.json",
+    "factory": {
+      "rva": "0x49a9c60", "bytes": 260,
+      "sha256": "12cb9c6c48c79a490d20433c4cfa46e54b6fa48e3e0f5c948d06910a088935c2",
+      "reflection": "0x04022401, parameter structure size 16. WorldContextObject is UObject at offset 0 (flags 0x10000000000082). ReturnValue is USaveCurrentWorld at offset 8 (flags 0x10000000000580). Both are scalar ObjectProperty values."
+    },
+    "activate": {
+      "rva": "0x49950a0", "bytes": 531, "unwind_fragments": 3,
+      "sha256": "175886371194c414889a23769b748ad6ccf858601f6e0a6deb93cf741f0035d8",
+      "base_exec_rva": "0x2bdf280", "base_exec_bytes": 31, "derived_vtable_rva": "0x7092580", "dispatch_slot": "0x2b8",
+      "reflection": "Base Activate still takes no parameters and has flags 0x04020402. Its virtual dispatch lands on the current derived override."
+    },
+    "method": "Matched PE RSDS to the packaged PDB, located the current functions, reflection data and vtable from PDB symbols, decoded the PE fields and verified the full factory and derived Activate byte hashes against the admitted baseline."
+  },
+  "native_probe": {
+    "environment": "PLAP Windows, current user's limited token, two isolated LAN-only no-client runs with fresh identities, a hidden console, loopback game binding and an ephemeral join password",
+    "copied_runtime_files": 36,
+    "copied_runtime_bytes": 1580406933,
+    "ue4ss_archive_sha256": "4f9762f812329a640c8cfa14444c2bb97ecc213b8320bd4c5433383c3eef48f7",
+    "proxy_sha256": "d4ea52e1629d3057eaf2a5bfd5525213783bcf2c97d12aa876130207015154d9",
+    "assembled_production_lua_sha256": "7ae986f6969e4ce2304e96a7febbc80e5dc24943d5e607a82395dc491dd7950a",
+    "cycles": 2,
+    "each_result": "Session short code reached. A correlated saveprobe returned world_unavailable before invocation. Ready, invoked, call_returned and write_confirmed were all false. No save was sent and Ctrl+C exited normally with code 0.",
+    "scope": "Standalone loader and no-client save guard only. The probe did not exercise managed dispatch, an occupied world, durable saving, client join or mod.io downloads."
+  }
+}

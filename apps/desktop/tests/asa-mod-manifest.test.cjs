@@ -5,7 +5,7 @@ const { transpileTypeScript } = require("../scripts/typescript_source_tools.cjs"
 for (const extension of [".ts", ".tsx"]) require.extensions[extension] = (module, filename) =>
   module._compile(transpileTypeScript(fs.readFileSync(filename, "utf8"), filename), filename);
 const { parseAsaModManifest } = require("../src/views/servers/asa-mod-manifest.ts");
-const { buildAsaActiveListPlan, readAsaModMembership } = require("../src/views/servers/mod-workbench-asa.ts");
+const { buildAsaActiveListPlan, buildAsaLoadListPlan, readAsaModMembership } = require("../src/views/servers/mod-workbench-asa.ts");
 
 test("ASA manifest canonicalizes numeric IDs and preserves first occurrence order", () => {
   assert.deepEqual(parseAsaModManifest("001346144,1346145;1346144\n1346146，1346145；1346147、1346146"), {
@@ -50,4 +50,19 @@ test("ASA checklist writes nothing for an unchanged list and accepts an empty li
   assert.deepEqual(cleared.curseforge_disabled_mod_ids, ["400", "100", "300"]);
   assert.throws(() => buildAsaActiveListPlan(current, ["12.5"]), /invalid-id/);
   assert.throws(() => buildAsaActiveListPlan({ ...current, custom_launch_flags: "-mods=1" }, ["100"]), /raw-mod-flags/);
+});
+
+test("editing passive membership accepts native references and preserves active and per-map settings", () => {
+  const parsed = parseAsaModManifest("cf-200 https://example.org/mods/300 invalid", true);
+  assert.deepEqual(parsed.ids, ["200", "300"]);
+  assert.deepEqual(parsed.invalidTokens, ["invalid"]);
+  const current = { mod_ids_csv: "100", passive_mod_ids_csv: "100\n400", curseforge_disabled_mod_ids: ["500"],
+    curseforge_disabled_passive_mod_ids: ["200"], curseforge_removed_mod_ids: ["300"],
+    ark_mod_map_overrides: { main: { mods: { 100: { active: true } } } } };
+  const next = buildAsaLoadListPlan(current, parsed.ids, "passive");
+  assert.equal(next.passive_mod_ids_csv, "200\n300");
+  assert.deepEqual(next.curseforge_disabled_passive_mod_ids, ["100", "400"]);
+  assert.deepEqual(next.curseforge_removed_mod_ids, []);
+  for (const key of ["mod_ids_csv", "curseforge_disabled_mod_ids", "ark_mod_map_overrides"]) assert.deepEqual(next[key], current[key]);
+  assert.throws(() => buildAsaLoadListPlan({ ...current, custom_launch_flags: "-passivemods=22" }, [], "passive"), /raw-mod-flags/);
 });

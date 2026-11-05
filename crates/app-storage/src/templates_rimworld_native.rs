@@ -5,6 +5,7 @@ use crate::templates::{ManagedConfigMutation, ModuleSupportMaterializationContex
 use serde_json::{Map, Value};
 use std::collections::BTreeMap;
 
+const MARKET_CONFIG: &str = "Configs/Actions/Market.json";
 type SettingSpec = (&'static str, &'static str, &'static [&'static str]);
 
 fn rimworld_native_setting_specs() -> &'static [SettingSpec] {
@@ -315,29 +316,26 @@ fn rimworld_native_setting_specs() -> &'static [SettingSpec] {
             "Configs/Actions/Leaderboard.json",
             &["Cooldown"],
         ),
+        ("action_market_is_enabled", MARKET_CONFIG, &["IsEnabled"]),
         (
-            "action_market_is_enabled",
-            "Configs/Actions/Market.json",
-            &["IsEnabled"],
+            "action_market_use_global_server",
+            MARKET_CONFIG,
+            &["UseGlobalServer"],
         ),
-        (
-            "action_market_cooldown",
-            "Configs/Actions/Market.json",
-            &["Cooldown"],
-        ),
+        ("action_market_cooldown", MARKET_CONFIG, &["Cooldown"]),
         (
             "action_market_minimum_price",
-            "Configs/Actions/Market.json",
+            MARKET_CONFIG,
             &["MinimumPrice"],
         ),
         (
             "action_market_price_multiplier",
-            "Configs/Actions/Market.json",
+            MARKET_CONFIG,
             &["PriceMultiplier"],
         ),
         (
             "action_market_max_entries_per_player",
-            "Configs/Actions/Market.json",
+            MARKET_CONFIG,
             &["MaxEntriesPerPlayer"],
         ),
         (
@@ -456,6 +454,11 @@ fn rimworld_native_setting_specs() -> &'static [SettingSpec] {
             &["RoadValues", "AsphaltHighwayMultiplier"],
         ),
         (
+            "action_rollback_is_enabled",
+            "Configs/Actions/Rollback.json",
+            &["IsEnabled"],
+        ),
+        (
             "action_scenario_is_enabled",
             "Configs/Actions/Scenario.json",
             &["IsEnabled"],
@@ -534,6 +537,39 @@ pub(crate) fn plan_overrides(
     context: &ModuleSupportMaterializationContext<'_>,
 ) -> Result<Vec<ManagedConfigMergePlan>, StorageError> {
     let mut documents: BTreeMap<&str, (Value, Option<Vec<u8>>)> = BTreeMap::new();
+    let market_path = context.install_root.join(MARKET_CONFIG);
+    let market = read_optional_json(&market_path)?;
+    if let Some(mode) = market
+        .as_ref()
+        .and_then(|(doc, _)| doc.get("UseGlobalServer"))
+        && !mode.is_boolean()
+        && !context
+            .settings
+            .get("action_market_use_global_server")
+            .is_some_and(Value::is_boolean)
+    {
+        return Err(failure(
+            &market_path,
+            "RimWorld UseGlobalServer must be a boolean. Select the local or cross-server market to replace the invalid value.",
+        ));
+    }
+    // Version 26.11.2.1 defaults an absent field to the public market. An old
+    // instance has the earlier action file or the always-created local ledger.
+    if market
+        .as_ref()
+        .is_none_or(|(doc, _)| doc.get("UseGlobalServer").is_none())
+    {
+        let old_ledger = context.install_root.join("Assets/Market.json");
+        let use_global = market.is_none()
+            && !old_ledger
+                .try_exists()
+                .map_err(|error| failure(&old_ledger, error))?;
+        let (mut doc, original) = market
+            .map(|(doc, bytes)| (doc, Some(bytes)))
+            .unwrap_or_else(|| (Value::Object(Map::new()), None));
+        doc["UseGlobalServer"] = Value::Bool(use_global);
+        documents.insert(MARKET_CONFIG, (doc, original));
+    }
     for &(schema_key, relative, key_path) in rimworld_native_setting_specs() {
         let Some(value) = context
             .settings

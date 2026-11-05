@@ -232,9 +232,6 @@ export function buildModSettingsApplyPlan(
       const workshopItems = mergeWorkshopList(nextSettings, "tmodloader_workshop_item_ids", buckets.itemIds);
       nextSettings.tmodloader_workshop_item_ids = workshopItems.value;
       addedIds.push(...workshopItems.addedIds);
-      if (typeof nextSettings.server_runtime === "undefined" || String(nextSettings.server_runtime).trim() === "") {
-        nextSettings.server_runtime = "tmodloader";
-      }
       break;
     }
     default:
@@ -293,10 +290,10 @@ export function buildModSettingsApplyPlan(
       summaryFallback: "Will add Workshop IDs for Soulmask -mod startup."
     },
     terraria: {
-      actionKey: "servers.mods.applyAction.addWorkshopIds",
-      actionFallback: "Add Workshop IDs",
+      actionKey: "servers.mods.applyAction.addEnable",
+      actionFallback: "Add and enable",
       summaryKey: "servers.mods.applySummary.terraria",
-      summaryFallback: "Will write tModLoader Workshop IDs to Mods/install.txt for this instance."
+      summaryFallback: "Add the selected Workshop Mods to this instance and enable them for tModLoader."
     }
   };
 

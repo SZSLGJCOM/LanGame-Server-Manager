@@ -310,6 +310,34 @@ test("Terraria can remove download IDs when no internal names are enabled, prese
   assert.equal(plan.nextSettings.tmodloader_enabled_mod_names, source.tmodloader_enabled_mod_names);
 });
 
+test("Terraria collection removal uses only known owned members and keeps another owner's shared name", () => {
+  const source = settings({ tmodloader_workshop_item_ids: [X, Y, Z].join("\n"),
+    tmodloader_enabled_mod_names: "# keep\r\nAlpha\r\nShared\r\nManual\r\n" });
+  const scanned = inventory([
+    inventoryItem(X, X, { tmodloader_mod_name: "Alpha" }),
+    inventoryItem(Y, Y, { tmodloader_mod_name: "Shared" }),
+    inventoryItem(Z, Z, { tmodloader_mod_name: "Shared" })
+  ], { module_id: "terraria", instance_id: "terraria-instance" });
+  const removed = buildWorkshopCollectionRemovalPlan(input("terraria", { settings: source, manualInventory: scanned }));
+  assert.deepEqual(removed.nextSettings, {
+    ...source, steam_workshop_collections: [], tmodloader_workshop_item_ids: Z,
+    tmodloader_enabled_mod_names: "# keep\r\nShared\r\nManual\r\n"
+  });
+  assert.deepEqual(removed.retainedLocalIds, ["Shared"]);
+
+  const onlyX = { ...scanned, items: [scanned.items[0]] };
+  const partial = buildWorkshopCollectionRemovalPlan(input("terraria", { settings: source, selectedMemberIds: [X], manualInventory: onlyX }));
+  assert.equal(partial.nextSettings.tmodloader_workshop_item_ids, Y + "\n" + Z);
+  assert.equal(partial.nextSettings.tmodloader_enabled_mod_names, "# keep\r\nShared\r\nManual\r\n");
+  expectCode("local-metadata-missing", () => buildWorkshopCollectionRemovalPlan(input("terraria", { settings: source, manualInventory: onlyX })));
+  const alreadyAbsent = { ...source, tmodloader_workshop_item_ids: Z };
+  assert.deepEqual(buildWorkshopCollectionRemovalPlan(input("terraria", { settings: alreadyAbsent })).nextSettings,
+    { ...alreadyAbsent, steam_workshop_collections: [] });
+  expectCode("invalid-records", () => buildWorkshopCollectionRemovalPlan(input("terraria", {
+    settings: { ...source, tmodloader_workshop_item_ids: [X] }
+  })));
+});
+
 test("Squad leaves settings untouched except provenance and returns only reviewed members for the file transaction", () => {
   const source = settings({ server_name: "Fixture", local_options: { [X]: { keep: true } } });
   const plan = buildWorkshopCollectionRemovalPlan(input("squad", { settings: source, selectedMemberIds: [Y, Y] }));

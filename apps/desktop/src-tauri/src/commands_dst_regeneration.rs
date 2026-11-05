@@ -172,7 +172,9 @@ pub async fn regenerate_dontstarve_world(
                 app_handle,
                 state.clone(),
                 instance_id.clone(),
-                Some(preview),
+                Some(
+                    super::commands_runtime_lifecycle::WorldStartConfirmation::DontStarve(preview),
+                ),
                 None,
             )
         },

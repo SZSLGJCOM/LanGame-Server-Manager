@@ -28,6 +28,7 @@ export interface ConfigurationFieldCopy {
   specializedUnavailable?: string;
   notSaved?: string;
   useGameDefault?: string;
+  keepCurrentServerSetting?: string;
   preserveNativeWhenUnset?: string;
   enabled?: string;
   disabled?: string;
@@ -341,13 +342,16 @@ export function ConfigurationField(props: ConfigurationFieldProps) {
       })}
     </div>;
   } else if (props.field.control === "checkbox" && optionalBooleanOverride) {
+    const inheritedLabel = props.field.inheritsExistingNativeValue
+      ? props.copy.keepCurrentServerSetting ?? "Keep current server setting"
+      : props.copy.useGameDefault ?? "Use game default";
     control = <select {...accessibility} className="settings-schema-input settings-schema-select"
       value={typeof props.settings[props.field.key] === "boolean" ? String(props.settings[props.field.key]) : ""}
       disabled={disabled}
       onChange={(event) => patchValue(event.target.value === "" ? undefined : event.target.value === "true")}>
       <option value="">{props.field.preserveNativeWhenUnset
         ? props.copy.preserveNativeWhenUnset ?? "Keep native setting (current value not read)"
-        : props.copy.useGameDefault ?? "Use game default"}</option>
+        : inheritedLabel}</option>
       <option value="true">{props.copy.enabled ?? "Enabled"}</option>
       <option value="false">{props.copy.disabled ?? "Disabled"}</option>
     </select>;

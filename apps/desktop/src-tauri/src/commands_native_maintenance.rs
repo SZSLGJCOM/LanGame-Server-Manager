@@ -43,15 +43,18 @@ impl ProgramMaintenance {
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 enum MaintenanceRefusal {
     Pinned,
-    WholePackage,
+    MissingArchiveBaseline,
 }
 
 impl MaintenanceRefusal {
-    fn expected(policy: app_core::InstanceProgramUpdatePolicy, replacement: bool) -> Option<Self> {
+    fn expected(
+        policy: app_core::InstanceProgramUpdatePolicy,
+        missing_archive_baseline: bool,
+    ) -> Option<Self> {
         if policy == app_core::InstanceProgramUpdatePolicy::Pinned {
             Some(Self::Pinned)
-        } else if replacement {
-            Some(Self::WholePackage)
+        } else if missing_archive_baseline {
+            Some(Self::MissingArchiveBaseline)
         } else {
             None
         }
@@ -60,7 +63,7 @@ impl MaintenanceRefusal {
     fn verify(self, error: &str) -> Result<(), String> {
         let reason = match self {
             Self::Pinned => "当前版本已固定",
-            Self::WholePackage => "此游戏使用整包替换安装",
+            Self::MissingArchiveBaseline => "original verified package inventory",
         };
         if !error.contains(reason) {
             return Err(format!(
@@ -73,7 +76,7 @@ impl MaintenanceRefusal {
     fn outcome(self) -> &'static str {
         match self {
             Self::Pinned => "pinned_rejected",
-            Self::WholePackage => "whole_package_rejected",
+            Self::MissingArchiveBaseline => "unverified_archive_rejected",
         }
     }
 }
@@ -264,12 +267,12 @@ pub(super) async fn verify_program_maintenance<R: tauri::Runtime>(
         );
         return Ok(false);
     }
-    let refusal = MaintenanceRefusal::expected(
-        app_core::InstanceProgramUpdatePolicy::from_settings_json(&details.settings_json)?,
-        replacement,
-    );
     let fixture = &runtime.package.root;
     let root = seed_probe::checked_path(fixture, runtime.effective_install_root, true)?;
+    let refusal = MaintenanceRefusal::expected(
+        app_core::InstanceProgramUpdatePolicy::from_settings_json(&details.settings_json)?,
+        replacement && !app_storage::archive_program_has_baseline(&root, runtime.descriptor)?,
+    );
     let before =
         app_storage::read_instance_program_install(&runtime.storage.paths, &details.summary.id)
             .await?
@@ -299,12 +302,10 @@ pub(super) async fn verify_program_maintenance<R: tauri::Runtime>(
     let refused_programs = refusal.map(|_| save_inventory(&root)).transpose()?;
     // A failed native installer may retain a child process. Keep the owned
     // package until shutdown is known, just as the runtime cycle does.
-    if !replacement {
-        runtime
-            .package
-            .cleanup_allowed
-            .store(false, Ordering::SeqCst);
-    }
+    runtime
+        .package
+        .cleanup_allowed
+        .store(false, Ordering::SeqCst);
     let result = update_instance_program(
         runtime.app.clone(),
         details.summary.id.clone(),
@@ -378,22 +379,28 @@ pub(super) async fn verify_program_maintenance<R: tauri::Runtime>(
 }
 
 #[test]
-fn native_maintenance_refusal_observes_pinned_policy_before_package_format() {
+fn native_maintenance_requires_an_archive_baseline_and_respects_pinned_policy() {
     use app_core::InstanceProgramUpdatePolicy::{Automatic, Pinned};
 
-    for replacement in [false, true] {
-        let expected = MaintenanceRefusal::expected(Pinned, replacement).unwrap();
+    for missing_archive_baseline in [false, true] {
+        let expected = MaintenanceRefusal::expected(Pinned, missing_archive_baseline).unwrap();
         assert_eq!(expected, MaintenanceRefusal::Pinned);
         expected
             .verify("实例“n”的当前版本已固定，请先切换到启动前更新，再更新它使用的服务器程序。")
             .unwrap();
-        assert!(expected.verify("此游戏使用整包替换安装").is_err());
+        assert!(
+            expected
+                .verify("original verified package inventory")
+                .is_err()
+        );
         assert!(expected.verify("network request failed").is_err());
     }
-    let replacement = MaintenanceRefusal::expected(Automatic, true).unwrap();
-    assert_eq!(replacement, MaintenanceRefusal::WholePackage);
-    replacement.verify("此游戏使用整包替换安装").unwrap();
-    assert!(replacement.verify("当前版本已固定").is_err());
+    let missing = MaintenanceRefusal::expected(Automatic, true).unwrap();
+    assert_eq!(missing, MaintenanceRefusal::MissingArchiveBaseline);
+    missing
+        .verify("Archive update requires its original verified package inventory.")
+        .unwrap();
+    assert!(missing.verify("当前版本已固定").is_err());
     assert_eq!(MaintenanceRefusal::expected(Automatic, false), None);
 }
 

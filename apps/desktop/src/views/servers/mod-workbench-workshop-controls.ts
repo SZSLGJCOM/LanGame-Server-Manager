@@ -1,11 +1,14 @@
-import type { ProjectZomboidWorkshopModsSnapshot } from "../../types";
+import type { ManualModInventoryItem, ProjectZomboidWorkshopModsSnapshot } from "../../types";
 import { parseWorkshopIdList } from "../settings/guided-setting-values";
 import { parseEvolvedModIds } from "./ark-evolved-mod-ids";
 import type { SettingsObject } from "../settings/settings-schema";
 import {
   isCanonicalWorkshopModId, mergeProjectZomboidMapList, mergeTextList, mergeWorkshopList,
-  parseLineOrSemicolonEntries, readDisabledWorkshopModIds, removeTextListValues, removeWorkshopListIds
+  parseLineOrSemicolonEntries, readDisabledWorkshopModIds, readTerrariaOwnedWorkshopIds, removeTextListValues, removeWorkshopListIds
 } from "./mod-workbench-model";
+import {
+  editTerrariaEnabledNames, isTerrariaModName, readTerrariaEnabledModNames, readTerrariaWorkshopMetadata
+} from "./mod-workbench-terraria";
 
 export type WorkshopControlErrorCode = "unsupported-module" | "invalid-selection" | "not-owned"
   | "local-metadata-missing" | "invalid-settings" | "ownership-limit";
@@ -22,6 +25,8 @@ export interface WorkshopControlState {
   enabled: boolean;
   partiallyEnabled: boolean;
   canToggle: boolean;
+  canRemove?: boolean;
+  internalModName?: string;
 }
 
 export interface WorkshopModControlPlan {
@@ -34,10 +39,11 @@ const DISABLED_MODULES = new Set(["barotrauma", "conanexiles", "soulmask"]);
 const MAX_DISABLED_IDS = 8192;
 
 export function supportsWorkshopModEnablement(moduleId: string): boolean {
-  return moduleId === "projectzomboid" || moduleId === "arksurvivalevolved" || DISABLED_MODULES.has(moduleId);
+  return moduleId === "terraria" || moduleId === "projectzomboid" || moduleId === "arksurvivalevolved" || DISABLED_MODULES.has(moduleId);
 }
 
 function readWorkshopOwnership(moduleId: string, settings: SettingsObject): { ids: string[]; active: Set<string> } {
+  if (moduleId === "terraria") return { ids: readTerrariaOwnedWorkshopIds(settings), active: new Set() };
   if (moduleId === "projectzomboid") return { ids: parseWorkshopIdList(settings.workshop_items), active: new Set() };
   if (moduleId === "arksurvivalevolved") {
     const active = new Set(parseEvolvedModIds(settings.active_mod_ids));
@@ -90,10 +96,27 @@ function readPzLocalIds(
 }
 
 export function readWorkshopControlStates(
-  moduleId: string, settings: SettingsObject, pzSnapshot?: ProjectZomboidWorkshopModsSnapshot | null
+  moduleId: string, settings: SettingsObject, pzSnapshot?: ProjectZomboidWorkshopModsSnapshot | null,
+  inventoryItems?: readonly ManualModInventoryItem[] | null
 ): Map<string, WorkshopControlState> {
   const { ids, active } = readWorkshopOwnership(moduleId, settings);
   const states = new Map<string, WorkshopControlState>();
+  if (moduleId === "terraria") {
+    const raw = settings.tmodloader_enabled_mod_names;
+    const valid = raw === undefined || typeof raw === "string";
+    const enabled = new Set(readTerrariaEnabledModNames(raw));
+    const { namesById, uniqueNames } = readTerrariaWorkshopMetadata(ids, inventoryItems);
+    for (const id of ids) {
+      const name = namesById.get(id);
+      const resolved = !!name && uniqueNames.has(name);
+      states.set(id, {
+        owned: true, enabled: !!name && enabled.has(name), partiallyEnabled: false,
+        canToggle: valid && resolved, canRemove: valid && (!!name || enabled.size === 0),
+        ...(name ? { internalModName: name } : {})
+      });
+    }
+    return states;
+  }
   for (const id of ids) {
     states.set(id, { owned: true, enabled: active.has(id), partiallyEnabled: false, canToggle: moduleId !== "projectzomboid" });
   }
@@ -124,15 +147,17 @@ export function readWorkshopControlStates(
 }
 
 export function readWorkshopControlState(
-  moduleId: string, settings: SettingsObject, id: string, pzSnapshot?: ProjectZomboidWorkshopModsSnapshot | null
+  moduleId: string, settings: SettingsObject, id: string, pzSnapshot?: ProjectZomboidWorkshopModsSnapshot | null,
+  inventoryItems?: readonly ManualModInventoryItem[] | null
 ): WorkshopControlState {
-  return readWorkshopControlStates(moduleId, settings, pzSnapshot).get(id)
+  return readWorkshopControlStates(moduleId, settings, pzSnapshot, inventoryItems).get(id)
     ?? { owned: false, enabled: false, partiallyEnabled: false, canToggle: false };
 }
 
 function checkedSelection(moduleId: string, settings: SettingsObject, ids: readonly string[], requireOwnership: boolean): string[] {
   if (!supportsWorkshopModEnablement(moduleId)) throw new WorkshopControlError("unsupported-module");
   if (!ids.length || ids.length > MAX_DISABLED_IDS || !ids.every(isCanonicalWorkshopModId)) throw new WorkshopControlError("invalid-selection", ids);
+  if (moduleId === "terraria") terrariaSettingText(settings.tmodloader_workshop_item_ids);
   if (DISABLED_MODULES.has(moduleId)) {
     const disabled = settings[DISABLED_FIELD];
     if (disabled !== undefined && (!Array.isArray(disabled) || disabled.length > MAX_DISABLED_IDS ||
@@ -145,6 +170,37 @@ function checkedSelection(moduleId: string, settings: SettingsObject, ids: reado
   const missing = requireOwnership ? selected.filter((id) => !owned.has(id)) : [];
   if (missing.length) throw new WorkshopControlError("not-owned", missing);
   return selected;
+}
+
+function terrariaSettingText(value: unknown): string {
+  if (value === undefined) return "";
+  if (typeof value !== "string") throw new WorkshopControlError("invalid-settings");
+  return value;
+}
+
+function editTerrariaNameSettings(
+  settings: SettingsObject, additions: readonly string[], removals: ReadonlySet<string>
+): SettingsObject {
+  const raw = terrariaSettingText(settings.tmodloader_enabled_mod_names);
+  const value = editTerrariaEnabledNames(raw, additions, removals);
+  return value === raw ? { ...settings } : { ...settings, tmodloader_enabled_mod_names: value };
+}
+
+export function buildTerrariaEnabledNameAddPlan(settings: SettingsObject, names: readonly string[]): WorkshopModControlPlan {
+  if (!names.length || !names.every(isTerrariaModName)) throw new WorkshopControlError("invalid-selection", names);
+  return { nextSettings: editTerrariaNameSettings(settings, names, new Set()), retainedLocalIds: [] };
+}
+
+export function buildTerrariaUnmappedNameDisablePlan(
+  settings: SettingsObject, name: string, inventoryItems?: readonly ManualModInventoryItem[] | null
+): WorkshopModControlPlan {
+  terrariaSettingText(settings.tmodloader_workshop_item_ids);
+  const raw = terrariaSettingText(settings.tmodloader_enabled_mod_names);
+  const { uniqueNames } = readTerrariaWorkshopMetadata(readTerrariaOwnedWorkshopIds(settings), inventoryItems);
+  if (!readTerrariaEnabledModNames(raw).includes(name) || uniqueNames.has(name)) {
+    throw new WorkshopControlError("invalid-selection", [name]);
+  }
+  return { nextSettings: editTerrariaNameSettings(settings, [], new Set([name])), retainedLocalIds: [] };
 }
 
 function writeDisabled(next: SettingsObject, ids: readonly string[]): void {
@@ -172,9 +228,21 @@ function disablePzLocalIds(settings: SettingsObject, ids: string[], local: Map<s
 
 export function buildWorkshopModEnablementPlan(
   moduleId: string, settings: SettingsObject, ids: readonly string[], enabled: boolean,
-  pzSnapshot?: ProjectZomboidWorkshopModsSnapshot | null
+  pzSnapshot?: ProjectZomboidWorkshopModsSnapshot | null, inventoryItems?: readonly ManualModInventoryItem[] | null
 ): WorkshopModControlPlan {
   const selected = checkedSelection(moduleId, settings, ids, true);
+  if (moduleId === "terraria") {
+    const { namesById, uniqueNames } = readTerrariaWorkshopMetadata(readTerrariaOwnedWorkshopIds(settings), inventoryItems);
+    const names: string[] = [];
+    const unresolved: string[] = [];
+    for (const id of selected) {
+      const name = namesById.get(id);
+      if (name && uniqueNames.has(name)) names.push(name);
+      else unresolved.push(id);
+    }
+    if (unresolved.length) throw new WorkshopControlError("local-metadata-missing", unresolved);
+    return { nextSettings: editTerrariaNameSettings(settings, enabled ? names : [], new Set(enabled ? [] : names)), retainedLocalIds: [] };
+  }
   const nextSettings = { ...settings };
   if (moduleId === "projectzomboid") {
     const local = readPzLocalIds([...new Set([...parseWorkshopIdList(settings.workshop_items), ...selected])], pzSnapshot);
@@ -210,10 +278,36 @@ export function buildProjectZomboidWorkshopRemovalPlan(
   return plan;
 }
 
+export function buildTerrariaWorkshopRemovalPlan(
+  settings: SettingsObject, ids: readonly string[], inventoryItems?: readonly ManualModInventoryItem[] | null
+): WorkshopModControlPlan {
+  const selected = checkedSelection("terraria", settings, ids, true);
+  const enabled = new Set(readTerrariaEnabledModNames(terrariaSettingText(settings.tmodloader_enabled_mod_names)));
+  const { namesById, ownersByName } = readTerrariaWorkshopMetadata(readTerrariaOwnedWorkshopIds(settings), inventoryItems);
+  const unresolved = selected.filter((id) => !namesById.get(id));
+  if (enabled.size && unresolved.length) throw new WorkshopControlError("local-metadata-missing", unresolved);
+
+  const targets = new Set(selected);
+  const removals = new Set<string>();
+  const retained = new Set<string>();
+  for (const name of new Set(selected.map((id) => namesById.get(id)))) {
+    if (!name || !enabled.has(name)) continue;
+    if ([...(ownersByName.get(name) ?? [])].some((owner) => !targets.has(owner))) retained.add(name);
+    else removals.add(name);
+  }
+  const nextSettings = editTerrariaNameSettings(settings, [], removals);
+  nextSettings.tmodloader_workshop_item_ids = removeWorkshopListIds(settings, "tmodloader_workshop_item_ids", selected).value;
+  return { nextSettings, retainedLocalIds: [...retained] };
+}
+
 export function buildWorkshopDownloadOwnershipPlan(moduleId: string, settings: SettingsObject, ids: readonly string[]): SettingsObject {
   const selected = checkedSelection(moduleId, settings, ids, false);
   const next = { ...settings };
   if (moduleId === "projectzomboid") next.workshop_items = mergeWorkshopList(settings, "workshop_items", selected).value;
+  else if (moduleId === "terraria") {
+    const ownership = mergeWorkshopList(settings, "tmodloader_workshop_item_ids", selected);
+    if (ownership.addedIds.length) next.tmodloader_workshop_item_ids = ownership.value;
+  }
   else if (moduleId === "arksurvivalevolved") {
     next.auto_managed_mod_ids = mergeTextList(settings, "auto_managed_mod_ids", selected, parseEvolvedModIds).value;
     next.auto_managed_mods = true;

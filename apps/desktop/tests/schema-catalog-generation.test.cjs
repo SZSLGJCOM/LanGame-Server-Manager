@@ -38,6 +38,21 @@ test("scoped schema generation removes withdrawn help and preserves other module
   assert.equal(catalog["ark.settings.shared.title"], "Shared title");
 });
 
+test("scoped DST generation retires obsolete workspace labels under its dst prefix", () => {
+  const existing = {
+    "dst.settings.fieldGroups.advanced.rawmods.description": "Old settings entry",
+    "dst.settings.fieldGroups.advanced.rawworld.title": "World files",
+    "terraria.settings.groups.runtimeMode": "Startup preferences"
+  };
+  assert.deepEqual(mergeModuleCatalog(existing, {
+    "dst.settings.fieldGroups.advanced.rawworld.title": "Raw world files"
+  }, ["dontstarve"]), {
+    "dst.settings.fieldGroups.advanced.rawworld.title": "Raw world files",
+    "terraria.settings.groups.runtimeMode": "Startup preferences"
+  });
+  assert.equal(mergeModuleCatalog(existing, {}, ["terraria"])["dst.settings.fieldGroups.advanced.rawmods.description"], "Old settings entry");
+});
+
 test("missing field help does not invent a group description or discard existing authored help", () => {
   const en = {};
   const zh = {};

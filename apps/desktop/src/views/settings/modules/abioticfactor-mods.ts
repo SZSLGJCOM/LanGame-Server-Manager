@@ -21,20 +21,19 @@ export function validateAbioticModField(
   t: TranslateFn
 ): string | undefined {
   const ids = String(settings.mod_ids ?? "").trim().split(/[\s,;]+/).filter(Boolean);
-  if (key === "mod_ids") {
-    if (ids.some((id) => !/^[1-9]\d{0,19}$/.test(id) || BigInt(id) > 18446744073709551615n)) {
-      return t("abiotic.settings.validation.modIds", undefined,
-        "Use positive mod.io numeric IDs separated by newlines, commas or semicolons.");
-    }
-    if (settings.sideload_mods === true && ids.length === 0) {
-      return t("abiotic.settings.validation.sideloadIds", undefined,
-        "Sideloaded Mods still require their mod.io IDs in the official Mod list.");
-    }
+  if (key === "mod_ids" && ids.some((id) => !/^[1-9]\d{0,19}$/.test(id) || BigInt(id) > 18446744073709551615n)) {
+    return t("abiotic.settings.validation.modIds", undefined,
+      "Use positive mod.io numeric IDs separated by newlines, commas or semicolons.");
+  }
+  if ((key === "mod_ids" || key === "sideload_mods") && settings.sideload_mods === true && ids.length === 0) {
+    return t("abiotic.settings.validation.sideloadIds", undefined,
+      "Sideloaded Mods still require their mod.io IDs in the official Mod list.");
   }
   if (key === "modio_token" && /[\s\x00-\x1f\x7f"]/.test(String(value ?? "").trim())) {
     return t("abiotic.settings.validation.modioToken", undefined,
       "The mod.io token cannot contain whitespace, control characters or double quotes.");
   }
+  if (key === "modio_token") return validateAbioticModField("mods_directory", settings.mods_directory, settings, t);
   if (key === "mods_directory" || key === "sideload_mods_path") {
     const download = key === "mods_directory";
     const text = typeof value === "string" ? value.trim() : download ? DOWNLOAD_DIRECTORY : SIDELOAD_DIRECTORY;

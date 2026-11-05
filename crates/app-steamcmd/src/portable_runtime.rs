@@ -11,6 +11,9 @@ use app_core::InstallPhase;
 mod dotnet;
 #[path = "portable_java_runtime.rs"]
 mod java;
+#[path = "tmodloader_runtime.rs"]
+mod tmodloader;
+pub use tmodloader::prepare_tmodloader_runtime;
 
 const PREPARATION_BUDGET: Duration = Duration::from_secs(10 * 60);
 const MARKER: &str = ".langame-runtime.json";

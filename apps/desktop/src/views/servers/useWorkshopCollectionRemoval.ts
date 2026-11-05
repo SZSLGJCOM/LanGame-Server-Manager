@@ -75,7 +75,7 @@ export function useWorkshopCollectionRemoval(props: Props) {
         }
         const pzSnapshot = memberIds.length && props.moduleId === "projectzomboid"
           ? await readProjectZomboidWorkshopModsSnapshot(props.instanceId, [...new Set([...parseWorkshopIdList(current.settings.workshop_items), ...memberIds])]) : null;
-        const manualInventory = memberIds.length && props.moduleId === "palworld"
+        const manualInventory = memberIds.length && (props.moduleId === "palworld" || props.moduleId === "terraria")
           ? await readManualModInventory(props.instanceId) : null;
         if (scope.current !== token) return;
         const plan = buildWorkshopCollectionRemovalPlan({ settings: current.settings, moduleId: props.moduleId,

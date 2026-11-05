@@ -6,7 +6,7 @@ export const ZH_CN_DONT_STARVE_SHARD_MESSAGES: MessageCatalog = {
   "dst.settings.modConfiguration.islands.label": "岛屿",
   "dst.settings.modConfiguration.volcano.label": "火山",
   "dst.settings.modConfiguration.rawSource": "来源 modoverrides.lua",
-  "dst.settings.modConfiguration.rawSourceBody": "来源 Lua 决定启用状态和选项。静态声明只读展示，嵌套选项和脚本完整保留在原文件中；请在高级设置中编辑完整文件。",
+  "dst.settings.modConfiguration.rawSourceBody": "此 Lua 文件决定模组的启用状态和参数。要编辑完整文件，请打开「我的 Mod」中的「模组清单与源文件」。",
   "dst.settings.fieldGroups.mods.islandsmods.title": "岛屿 Mod",
   "dst.settings.fieldGroups.mods.islandsmods.description": "岛屿分片的启用列表和 configuration_options。",
   "dst.settings.fieldGroups.mods.volcanomods.title": "火山 Mod",

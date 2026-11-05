@@ -1,6 +1,26 @@
 use super::*;
 use crate::commands::commands_managed_save_control::{profile, tests::Fixture};
 
+#[test]
+fn corekeeper_security_patch_selects_the_verified_six_file_tuple() {
+    let evidence: serde_json::Value = serde_json::from_str(include_str!(
+        "../../../../modules/corekeeper/reference-fixtures/2026-11-04-native_save_build_26331994.json"
+    ))
+    .unwrap();
+    let actual = evidence["native_files"].as_object().unwrap();
+    let mut selected = native_files(profile("corekeeper").unwrap()).unwrap();
+    assert!(select_corekeeper_files(
+        actual["Pug.Other.dll"].as_str().unwrap(),
+        &mut selected
+    ));
+    assert_eq!(selected.len(), actual.len());
+    for (path, digest) in &selected {
+        let name = path.rsplit('/').next().unwrap();
+        assert_eq!(actual[name].as_str(), Some(*digest));
+    }
+    assert!(!select_corekeeper_files("unknown", &mut selected));
+}
+
 fn previous_vrising_observer(root: &Path) {
     let game = profile("vrising").unwrap();
     publish_payload(root, game, b"previous plugin".to_vec()).unwrap();

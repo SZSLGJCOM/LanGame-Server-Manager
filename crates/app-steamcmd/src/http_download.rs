@@ -252,7 +252,7 @@ fn is_interrupted(error: &SteamCmdError) -> bool {
     matches!(error, SteamCmdError::HttpDownloadInterrupted { .. })
 }
 
-fn permits_source_fallback(error: &SteamCmdError) -> bool {
+pub(super) fn permits_source_fallback(error: &SteamCmdError) -> bool {
     matches!(
         error,
         SteamCmdError::HttpDownload {
@@ -405,7 +405,6 @@ async fn download_file_from_candidates(
     .await
 }
 
-#[cfg(test)]
 pub(super) async fn download_file_from_candidates_with_progress<F>(
     client: &reqwest::Client,
     candidates: &[String],

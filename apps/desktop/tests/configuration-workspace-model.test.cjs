@@ -261,8 +261,10 @@ test("external specialized owners remain evidence but never become actionable in
   })), [{ fieldKey: "workshop_ids", owner: "mods", state: "specialized" }]);
 });
 
-test("Workshop lists have no duplicate Configuration controls or empty Mod categories", () => {
+test("Mod lists have no duplicate Configuration controls or empty Mod categories", () => {
   const fieldsByModule = {
+    abioticfactor: ["mod_ids", "mods_directory", "mod_install_timeout_seconds", "override_mod_warnings", "sideload_mods", "sideload_mods_path"],
+    terraria: ["tmodloader_workshop_item_ids", "tmodloader_enabled_mod_names"],
     barotrauma: ["mod_workshop_ids"],
     conanexiles: ["mod_workshop_ids"],
     projectzomboid: ["workshop_items", "mods", "map_name"],
@@ -287,13 +289,17 @@ test("Workshop lists have no duplicate Configuration controls or empty Mod categ
   }
 });
 
-test("real DST parser preserves world controls and advanced Lua while Mod editing has one external owner", () => {
+test("real DST parser keeps world Lua in Configuration and all four Mod Lua overrides in Mods", () => {
   const moduleDetails = {
     summary: { id: "dontstarve", name: "Don't Starve Together" },
     schema_json: fs.readFileSync(path.join(desktopRoot, "..", "..", "modules", "dontstarve", "schema.json"), "utf8")
   };
   const parsed = parseGuidedSettingsSchema(moduleDetails, "en-US", (_key, _params, fallback) => fallback ?? "");
-  const structuredKeys = ["master_mod_configuration_options", "caves_mod_configuration_options"];
+  const shardIds = ["master", "caves", "islands", "volcano"];
+  const structuredKeys = shardIds.map((shard) => `${shard}_mod_configuration_options`);
+  const mods = parseGuidedSettingsSchema(moduleDetails, "en-US", (_key, _params, fallback) => fallback ?? "", { surface: "mods" });
+  assert.equal(mods.parseError, null);
+  assert.doesNotThrow(() => buildConfigurationWorkspaceModel(mods));
 
   assert.deepEqual(
     structuredKeys.filter((key) => parsed.fields.some((field) => field.key === key)),
@@ -335,11 +341,20 @@ test("real DST parser preserves world controls and advanced Lua while Mod editin
   assert.equal(navigation.some((node) => node.id === "mods"), false);
   assert.equal(model.actionableSectionIds.includes("mods"), false);
   assert.equal(parsed.fields.some((field) => field.sectionId === "mods"), false);
-  for (const key of ["master_modoverrides_lua", "caves_modoverrides_lua"]) {
-    const field = parsed.fields.find((candidate) => candidate.key === key);
-    assert.equal(field?.sectionId, "advanced");
-    assert.equal(field?.presentation.owner, "configuration");
-    assert.equal(field?.presentation.behavior, "raw");
+  for (const shard of shardIds) {
+    const key = `${shard}_modoverrides_lua`;
+    assert.equal(parsed.fields.some((field) => field.key === key), false, key);
+    assert.equal(model.items.find((item) => item.fieldKey === key)?.owner, "mods", key);
+    const modField = mods.fields.find((field) => field.key === key);
+    assert.equal(modField?.sectionId, "mods", key);
+    assert.equal(modField?.presentation.owner, "mods", key);
+    assert.equal(modField?.presentation.rendererId, "mod-workbench-source-list", key);
+    assert.equal(modField?.presentation.behavior, "raw", key);
+    assert.equal(modField?.control, "textarea", key);
+    const worldField = parsed.fields.find((field) => field.key === `${shard}_worldgenoverride_lua`);
+    assert.equal(worldField?.sectionId, "advanced", shard);
+    assert.equal(worldField?.presentation.owner, "configuration", shard);
+    assert.equal(worldField?.presentation.behavior, "raw", shard);
   }
   assert.ok(navigation.some((node) => node.id === "advanced"));
 });

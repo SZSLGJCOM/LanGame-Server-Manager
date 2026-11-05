@@ -1,0 +1,101 @@
+{
+  "schema_version": 1,
+  "module_id": "satisfactory",
+  "verified_on": "2026-11-05",
+  "verification_timezone": "Asia/Shanghai",
+  "evidence_classification": "isolated_managed_native_https_world_save_and_preinstalled_mod_two_cycles",
+  "status": "passed",
+  "base_package_evidence": "2026-11-05-build-26281360-native.json",
+  "steam_public_build_id": "26281360",
+  "changelist": 517554,
+  "source_identity_sha256": "2120945be77465b0832796f05ec3d6ac3115cb8126733e203a84a688d1e21d96",
+  "test_executable_sha256": "e27d48a103c8341ebddbe2f7dc835caf8e1b50be6ca89d6dd2bf340c172f9eea",
+  "resource_files_matched_to_build_manifest": 218,
+  "mod_inputs": [
+    {
+      "id": "SML",
+      "version": "3.12.0",
+      "archive": "SML-WindowsServer.zip",
+      "download_url": "https://api.ficsit.app/v1/version/74YqQBq2KJKN77/WindowsServer/download",
+      "archive_bytes": 19045046,
+      "archive_sha256": "7479e2702da4b81eb5880a98d264d7bbe1fa2831e247e2cbcfb2b8add87512f1",
+      "runtime_relative_path": "FactoryGame/Mods/SML",
+      "game_feature": false,
+      "verified_members": 14,
+      "payload_bytes": 77323165,
+      "member_inventory_sha256": "60055bde70d6ad4b7f11cf501e39b34edc09a88041f6616afb5e2b0f9524e75f"
+    },
+    {
+      "id": "FicsitRemoteMonitoring",
+      "version": "1.5.5",
+      "release_tag": "1.5.5-529",
+      "archive": "FicsitRemoteMonitoring-WindowsServer.zip",
+      "download_url": "https://github.com/porisius/FicsitRemoteMonitoring/releases/download/1.5.5-529/FicsitRemoteMonitoring-WindowsServer.zip",
+      "archive_bytes": 35046047,
+      "archive_sha256": "15e124c36ee29e627437dd7ca387cc802c39d76c3012458879314ad6eb908734",
+      "runtime_relative_path": "FactoryGame/Mods/GameFeatures/FicsitRemoteMonitoring",
+      "game_feature": true,
+      "verified_members": 263,
+      "payload_bytes": 140390536,
+      "member_inventory_sha256": "4da7e9f093ef20a62c3b38780430c0af50b4bb9ac958396f613f0d1ab0568ff5"
+    }
+  ],
+  "member_inventory_encoding": "UTF-8; archive relative filenames sorted case-sensitively; filename, TAB, decimal bytes, TAB, lowercase SHA256, LF.",
+  "staging": {
+    "scope": "Reviewed official WindowsServer archives extracted only into this task's independent package, then independently rehashed and staged into a fresh owned runtime by the existing native acceptance fixture.",
+    "verified_members": 277,
+    "source_package_bytes_copied": 15813758396,
+    "production_mod_installer_tested": false
+  },
+  "acceptance": {
+    "test": "commands::tests::manual_runtime_tests::native_lifecycle_tests::native_manual_save",
+    "flags": ["--exact", "--ignored", "--test-threads=1", "--nocapture"],
+    "process_context": "Windows x64, ordinary interactive user, managed background console",
+    "binding": "Fixture defaults; not a loopback-only claim",
+    "program_update_policy": "pinned",
+    "exit_code": 0,
+    "elapsed_seconds": 325.17,
+    "completed_utc": "2026-11-05T02:50:58.7470697Z",
+    "cycles": ["initial", "restart"],
+    "sml_and_frm_exact_versions_loaded_in_both_current_run_logs": true,
+    "get_player": {
+      "both_cycles": true,
+      "production_collector_status": "ready",
+      "complete": true,
+      "stale": false,
+      "online_players": 0,
+      "independent_http_response_bytes": 2,
+      "independent_http_response": "[]",
+      "listener_owned_by_current_native_process": true
+    },
+    "native_management_authentication": {
+      "both_cycles": true,
+      "anonymous_read": "rejected",
+      "invalid_token_read": "rejected",
+      "authorized_world_operations": "passed",
+      "insecure_local_api_enabled": false
+    },
+    "effective_ini_overrides_verified_both_cycles": {
+      "FG.DSAutoPause": 1,
+      "FG.NetworkQuality": 2,
+      "FG.SendGameplayData": 0,
+      "FG.WeatherPreset": 0
+    },
+    "save_receipts_confirmed": 2,
+    "save_publications_each_cycle": 1,
+    "save_retries": 0,
+    "restart_loaded_unique_existing_manual_save": true,
+    "normal_game_exit_codes": [-1073741510, -1073741510],
+    "normal_console_exit_hex": "0xC000013A",
+    "crash_flags": [false, false],
+    "credential_absence_confirmed": true,
+    "owned_process_and_disposable_cleanup": "passed",
+    "stdout_sha256": "6f5e7a3cf7e278f9ece23bc08859039bd95201f72947c3041f555b614843d1bf",
+    "stderr_sha256": "17295855520fcfa975f152f6012290df45c4415ce1c18374d6bc400425cc65b1"
+  },
+  "limits": [
+    "Empty player roster only; no real-client join, player identities or gameplay state was exercised.",
+    "No exact gameplay checkpoint content, simultaneous-instance FRM isolation, full backup/archive lifecycle or desktop GUI was tested.",
+    "Fixture staging is not production Mod installation support. Existing operator libraries, configurations and saves were not replaced."
+  ]
+}

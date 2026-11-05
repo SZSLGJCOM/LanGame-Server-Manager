@@ -382,10 +382,7 @@ export const ZH_CN_SCHEMA_GENERATED_MESSAGES_CHUNK_01: MessageCatalog = {
   "dontstarve.settings.sections.networkDescription": "监听与公开地址、端口及远程控制连接。",
   "dontstarve.settings.sections.room": "房间配置",
   "dontstarve.settings.sections.roomDescription": "名称、简介、加入密码、人数、列表展示与地图或世界选择。",
-  "dst.settings.fieldGroups.advanced.rawmods.title": "原始",
   "dst.settings.fieldGroups.advanced.rawworld.title": "原始",
-  "dst.settings.fieldGroups.mods.cavesmods.title": "模组",
-  "dst.settings.fieldGroups.mods.mastermods.title": "模组",
   "dst.settings.option.default": "默认",
   "dst.settings.option.longDay": "白天",
   "dst.settings.option.max": "最大",
@@ -2501,5 +2498,8 @@ export const ZH_CN_SCHEMA_GENERATED_MESSAGES_CHUNK_01: MessageCatalog = {
   "settings.schema.dontstarve.master_spiders_setting.option.rare": "稀少",
   "settings.schema.dontstarve.master_spiders.description": "控制主世界蜘蛛巢数量。",
   "settings.schema.dontstarve.master_spiders.option.always": "始终",
-  "settings.schema.dontstarve.master_spiders.option.default": "默认"
+  "settings.schema.dontstarve.master_spiders.option.default": "默认",
+  "settings.schema.dontstarve.master_spiders.option.insane": "极高",
+  "settings.schema.dontstarve.master_spiders.option.mostly": "很多",
+  "settings.schema.dontstarve.master_spiders.option.never": "从不"
 };

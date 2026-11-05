@@ -88,12 +88,12 @@ test("ARK configuration remains reachable while save policies belong to Maintena
   const expectations = {
     arksurvivalevolved: {
       maintenance: ["auto_save_period_minutes", "max_num_of_save_backups"],
-      mods: ["active_mod_ids", "ark_mod_map_overrides"],
+      mods: ["active_mod_ids", "ark_mod_map_overrides", "auto_managed_mod_ids", "auto_managed_mods"],
       structured: ["player_base_stat_multipliers_attribute", "override_engram_entries"]
     },
     arksurvivalascended: {
       maintenance: ["auto_save_period_minutes"],
-      mods: ["mod_ids_csv", "asa_mod_configurations", "ark_mod_map_overrides"],
+      mods: ["mod_ids_csv", "asa_mod_configurations", "ark_mod_map_overrides", "passive_mod_ids_csv"],
       structured: []
     }
   };
@@ -203,12 +203,12 @@ test("ARK edition-specific mod fields are isolated and have one operational owne
   assert.deepEqual(
     { owner: presentation("arksurvivalevolved", "auto_managed_mods").owner,
       state: presentation("arksurvivalevolved", "auto_managed_mods").state },
-    { owner: "configuration", state: "editable" }
+    { owner: "mods", state: "specialized" }
   );
   assert.deepEqual(
     { owner: presentation("arksurvivalevolved", "auto_managed_mod_ids").owner,
       state: presentation("arksurvivalevolved", "auto_managed_mod_ids").state },
-    { owner: "configuration", state: "editable" }
+    { owner: "mods", state: "specialized" }
   );
   assert.deepEqual(
     { owner: presentation("arksurvivalascended", "mod_ids_csv").owner,
@@ -224,7 +224,7 @@ test("ARK edition-specific mod fields are isolated and have one operational owne
   assert.deepEqual(
     { owner: presentation("arksurvivalascended", "passive_mod_ids_csv").owner,
       state: presentation("arksurvivalascended", "passive_mod_ids_csv").state },
-    { owner: "configuration", state: "editable" }
+    { owner: "mods", state: "specialized" }
   );
 });
 

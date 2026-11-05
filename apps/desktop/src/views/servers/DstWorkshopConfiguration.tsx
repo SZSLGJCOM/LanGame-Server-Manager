@@ -83,7 +83,7 @@ export function DstWorkshopConfiguration(props: DstWorkshopConfigurationProps) {
       {hasDstRawModOverrides(settings) ? <details className="mw-selected-config-empty-note">
         <summary>{t("dst.settings.modConfiguration.rawSource", undefined, "Source modoverrides.lua")}</summary>
         <p>{t("dst.settings.modConfiguration.rawSourceBody", undefined,
-          "The source Lua controls enablement and options. Literal declarations are shown read-only; nested options and scripts remain in the original file. Edit the complete file under Advanced.")}</p>
+          "The source Lua controls enablement and options. Edit the complete file in My Mods under Mod lists and source files.")}</p>
         {(shard === "all" ? shards : [shard]).map((key) => {
           const raw = props.settings[`${key}_modoverrides_lua`];
           return typeof raw === "string" && hasDstRawModOverrides({ master_modoverrides_lua: raw })

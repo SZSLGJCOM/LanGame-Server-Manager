@@ -223,8 +223,8 @@
     },
     "server_runtime": {
       "type": "string",
-      "title": "Server Runtime",
-      "description": "Vanilla Terraria on Windows requires Microsoft XNA Framework Redistributable 4.0. LanGame checks it before launch and prepares the verified official runtime when missing; Windows may request elevation. Choose tModLoader only after preparing this instance's tModLoader runtime and .tmod files.",
+      "title": "Runtime when no Mods are enabled",
+      "description": "With no Mods enabled, use vanilla Terraria by default or choose tModLoader explicitly. With any Mods enabled in My Mods, the server always starts with tModLoader.",
       "default": "vanilla",
       "enum": [
         "vanilla",
@@ -242,8 +242,8 @@
     },
     "tmodloader_runtime_dir": {
       "type": "string",
-      "title": "tModLoader Runtime Directory",
-      "description": "Optional runtime folder override. Leave empty to use this instance's tmodloader/runtime directory.",
+      "title": "Custom tModLoader folder (optional)",
+      "description": "Leave blank for automatic setup. To use your own installation, enter its extracted tModLoader folder.",
       "default": "",
       "x-lsgm-section": "host",
       "x-lsgm-order": -10,
@@ -254,7 +254,7 @@
     "tmodloader_workshop_item_ids": {
       "type": "string",
       "title": "tModLoader Workshop Items",
-      "description": "One tModLoader Steam Workshop item ID or URL per line. LanGame writes these IDs into tmodloader/Mods/install.txt and downloads item content into the instance Workshop cache.",
+      "description": "The Mods tab manages the Workshop items owned by this instance. Their IDs are written to tmodloader/Mods/install.txt.",
       "default": "",
       "format": "textarea",
       "x-lsgm-section": "mods",
@@ -266,7 +266,7 @@
     "tmodloader_enabled_mod_names": {
       "type": "string",
       "title": "Enabled tModLoader Mods",
-      "description": "One internal tModLoader mod name per line. LanGame writes these names into tmodloader/Mods/enabled.json; use internal names from a saved tModLoader modpack, not Steam titles.",
+      "description": "My Mods controls which mods load on startup. LanGame reads their internal names from installed .tmod files and writes tmodloader/Mods/enabled.json. Existing modpack names can also be imported in My Mods.",
       "default": "",
       "format": "textarea",
       "x-lsgm-section": "mods",

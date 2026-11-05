@@ -207,6 +207,7 @@ fn identified_local_or_disabled_package_does_not_authorize_same_name_cache_adopt
         path: "unused/local".into(),
         item_type: "directory".into(),
         inferred_id: Some("FixtureMod".into()),
+        tmodloader_mod_name: None,
         file_count: 0,
         total_bytes: 0,
         modified_unix_ms: None,

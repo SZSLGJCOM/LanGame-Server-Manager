@@ -3,6 +3,9 @@ use crate::templates::rimworld::{
     preserve_retired_settings, render_rimworld_password_json, validate_before_start,
 };
 
+#[path = "templates_rimworld_market_tests.rs"]
+mod market;
+
 struct RimWorldFixture {
     root: PathBuf,
     paths: StoragePaths,

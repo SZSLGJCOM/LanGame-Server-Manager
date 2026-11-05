@@ -4,6 +4,7 @@ import json
 import re
 import sys
 import tomllib
+from functools import cache
 from pathlib import Path
 
 from verify_module_setting_coverage_constants import *
@@ -1582,10 +1583,19 @@ def store_copy_has_key(source: str, object_markers: list[str], module_id: str) -
     return any(key_pattern.search(extract_ts_object_block(source, marker)) for marker in object_markers)
 
 
+@cache
+def mod_workspace_sections() -> dict[str, dict[str, str]]:
+    # The desktop registry consumes the same field-to-renderer mapping for dedicated Mods sections.
+    return json.loads((DESKTOP_SRC_DIR / "views/settings/mod-workspace-sections.json").read_text(encoding="utf-8"))
+
+
 def validate_schema_ui_metadata(module_id: str, properties: dict[str, dict]) -> list[str]:
     failures: list[str] = []
     seen_orders: set[tuple[str, float]] = set()
     allowed_sections = module_schema_sections(module_id)
+    mod_fields = mod_workspace_sections().get(module_id, {})
+    for key in mod_fields.keys() - properties.keys():
+        failures.append(f"{module_id}: registered Mods workspace field {key!r} is missing from the schema")
 
     for key, property_def in sorted(properties.items()):
         if not str(property_def.get("title") or "").strip():
@@ -1596,7 +1606,9 @@ def validate_schema_ui_metadata(module_id: str, properties: dict[str, dict]) -> 
             failures.append(f"{module_id}: schema field {key!r} is missing default or x-lsgm-default-source")
 
         section = property_def.get("x-lsgm-section")
-        if section not in allowed_sections:
+        if key in mod_fields and section != "mods":
+            failures.append(f"{module_id}: Mods workspace field {key!r} must use x-lsgm-section 'mods'")
+        elif section not in allowed_sections and not (section == "mods" and key in mod_fields):
             failures.append(
                 f"{module_id}: schema field {key!r} has invalid x-lsgm-section {section!r}"
             )

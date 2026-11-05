@@ -2,9 +2,6 @@ import type { MessageCatalog } from "../../i18n-config";
 
 // Generated from modules/*/schema.json by generate_i18n_schema_catalogs.cjs.
 export const ZH_CN_SCHEMA_GENERATED_MESSAGES_CHUNK_02: MessageCatalog = {
-  "settings.schema.dontstarve.master_spiders.option.insane": "极高",
-  "settings.schema.dontstarve.master_spiders.option.mostly": "很多",
-  "settings.schema.dontstarve.master_spiders.option.never": "从不",
   "settings.schema.dontstarve.master_spiders.option.often": "较多",
   "settings.schema.dontstarve.master_spiders.option.rare": "稀少",
   "settings.schema.dontstarve.master_spiders.option.uncommon": "较少",
@@ -1016,8 +1013,6 @@ export const ZH_CN_SCHEMA_GENERATED_MESSAGES_CHUNK_02: MessageCatalog = {
   "terraria.settings.groups.host.title": "主机",
   "terraria.settings.groups.journey.description": "Terraria Dedicated Server 的原生配置：Journey设置。",
   "terraria.settings.groups.journey.title": "原生配置：Journey",
-  "terraria.settings.groups.mods.description": "Terraria Dedicated Server 的模组设置。",
-  "terraria.settings.groups.mods.title": "模组",
   "terraria.settings.groups.network.description": "监听与公开地址、端口及远程控制连接。",
   "terraria.settings.groups.network.title": "网络",
   "terraria.settings.groups.room.description": "名称、简介、加入密码、人数、列表展示与地图或世界选择。",

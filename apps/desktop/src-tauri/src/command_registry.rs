@@ -200,6 +200,7 @@ register_commands! {
     (purge_instance_archive, [crate::commands::commands_storage_management], Runtime, Denied, Owned),
     (import_dontstarve_world_data, [crate::commands::commands_storage], Runtime, Allowed, Owned),
     (preview_dontstarve_world_start, [crate::commands::commands_dst_world_state], Runtime, Denied, Bounded),
+    (preview_terraria_mod_world, [crate::commands::commands_terraria_world], Runtime, Allowed, Bounded),
     (regenerate_dontstarve_world, [crate::commands::commands_dst_regeneration], Runtime, Denied, Owned),
     (read_dontstarve_world_map, [crate::commands::commands_dst_map], Runtime, Allowed, Bounded),
     (read_instance_maintenance_schedule, [crate::commands::commands_maintenance_schedule], Runtime, Allowed, Bounded),

@@ -1,0 +1,14 @@
+{
+  "abioticfactor": {
+    "mod_ids": "mod-workbench-source-list",
+    "mods_directory": "mod-workbench-source-list",
+    "mod_install_timeout_seconds": "mod-workbench-source-list",
+    "override_mod_warnings": "mod-workbench-source-list",
+    "sideload_mods": "mod-workbench-source-list",
+    "sideload_mods_path": "mod-workbench-source-list"
+  },
+  "terraria": {
+    "tmodloader_workshop_item_ids": "mod-workbench-workshop-ids",
+    "tmodloader_enabled_mod_names": "mod-workbench-tmodloader-names"
+  }
+}

@@ -16,11 +16,18 @@ The compiled profiles cover these exact official executable SHA256 digests:
 | --- | --- | --- |
 | 25967645 | `4de2acdd3b18e562f129bc488a2daea2da16b00341497304423e1e18c49a83ba` | Player control and world saving; earlier acceptance below |
 | 25988414 | `b627639ce4a3f8c940fe90afa1d36ed59db3ff9ced24e935890eb7c99b04d5bf` | Player control; immediate world saving remains unsupported |
-| 26083076 | `d7baa768eb00aa895d9f5a1cd8747ccf66858c7b542f50983092b2e3261588ee` | Player-control ABI rechecked statically; current world-save profile below |
+| 26083076 | `d7baa768eb00aa895d9f5a1cd8747ccf66858c7b542f50983092b2e3261588ee` | Player-control ABI checked statically and world saving verified below |
+| 26404334 | `c5c9fe50c6398d2adedd98923c2d04bf9d9b4af64c1447ac167cdf8f874ff84f` | Player observation and world saving. Kick, ban and unban use the statically matched dispatcher. |
+| 26430253 | `f0d824be7fcd48ebfe2458ff5c28da26060c2074e3ec1fcac587e5a1d508aeb2` | 1.0.1.2: player observation, world saving, kick, ban and offline unban; direct static ABI inspection and inert PE tests. |
 
 The release profile inventory is [supported-builds.json](supported-builds.json).
 Adding a compiled profile is not publication or real-client acceptance: the
 independent release tool also requires the final DLL's moderation test receipt.
+On 26404334 and 26430253 the extension verifies the dispatcher entry and five additional
+loaded-code windows. If any of these six differ, the roster and save hooks
+keep their independent admission checks. The extension reports
+`moderation_supported: false` and rejects kick, ban and unban on the owner
+thread. The manager also suppresses player action bindings and offline unban.
 Both the on-disk digest and loaded PE/entry bytes must match. Unknown builds retain
 dump forwarding and do not install control hooks. No game binary is distributed.
 
@@ -215,12 +222,14 @@ independent of production and cannot authorize a real extension.
 
 ## Identity and native calls
 
-The native addresses differ between the two verified executable profiles:
+The native addresses are specific to each executable:
 
 | Build | `updatePlayers` | identity helper | `accountAction` | helper caller A | helper caller B |
 | --- | --- | --- | --- | --- | --- |
 | 25967645 | `0x7b33e0` | `0x9f54d0` | `0x79ba20` | `0x7b3aaf` | `0x7b489e` |
 | 25988414 | `0x7b34c0` | `0x9f5bc0` | `0x79bb00` | `0x7b3b8f` | `0x7b497e` |
+| 26083076 | `0x7b5800` | `0x9f7600` | `0x79de40` | `0x7b5ecf` | `0x7b6cbe` |
+| 26404334 | `0x7bed90` | `0xa01f50` | `0x7a6e50` | `0x7bf45f` | `0x7c02a3` |
 
 The transparent update observer enters the original `updatePlayers` after
 restoring its original registers, flags, stack and return address. The native
@@ -387,6 +396,63 @@ The existing verified `updatePlayers` observer supplies its owning `Server*` and
 owner thread. The exact executable hash and all 32 entry bytes must match before
 this save entry becomes available. Build `25988414` retains its separately
 verified moderation support but has no admitted save profile yet.
+
+### Build 26430253 / 1.0.1.2 (2026-11-05)
+
+The official public depot `2278521` manifest `8886672487109033979` was acquired
+with SteamCMD validation. [Hotfix 1.0.1.2](https://enshrouded.com/en-US/news/changelog-for-hotfix-5-v1012)
+identifies release SVN 1287369. Direct inspection of this executable confirms
+the existing event, identity-copy, immunity, slot and save-state contracts.
+The identity-copy entry moved to `0xa01f40`; its observer return sites remain
+`0x7bf45f` and `0x7c02a3`. The account dispatcher remains at `0x7a6e50`, but
+its disconnect and unban-queue callees moved to `0xa02c90` and `0xa0ea90`.
+The new profile pins the corresponding complete 32-byte windows separately.
+Unban still consumes the native account hash before online-player enumeration.
+
+The native profile, Rust installer allowlist and release inventory all include
+the new executable and retain the four earlier profiles. The
+[static record](../reference-fixtures/2026-11-05-native_control_build_26430253.json)
+records direct inspection of the new binary, not a full comparison with the
+unavailable 1.0.1.1 binary. The previous source rejected the new executable;
+the updated source passes inert admission and capability mutation checks.
+The MSVC native tests and source-registration consistency tests passed. No game
+process, real-client moderation, installer package or deployment was involved.
+
+### Build 26404334 (2026-11-04)
+
+The Steam public server reports Keen SVN 1285601, corresponding to
+[Hotfix 1.0.1.1](https://enshrouded.com/en-US/news/changelog-for-hotfix-4-v1011).
+This build uses a larger update stack frame. Its two identity lookup calls
+still provide the output buffer, manager and full handle. Their return RVAs
+are `0x7bf45f` and `0x7c02a3`. The exact executable, loaded PE, entry bytes
+and both call destinations must match. The local copy routine and its record
+copier have the same normalized instruction sequences as build 26083076.
+
+The native save helper at `0x7b9390` binds the request to the same context and
+sequence. The persistence check at `0x7c4b10` advances phase 5 to phase 6 on
+success. The result path retains the native failure bit and idle transition.
+The new stack operands and relocations have their own full 32-byte fingerprints.
+
+The first 26404334 candidate admitted world saving and player observation. On
+an isolated Windows host, two fresh non-administrator processes returned
+matching completed receipts and wrote their world files. A third loaded an
+independent copy of the second 42,833-byte world and reached Run with the same
+digest before any save request. All three reported complete empty rosters and
+exited with code 0 after Ctrl+C. A synthetic offline unban was rejected by the
+extension in that candidate. The exact artifact identities and before/after hashes are in the
+[runtime record](../reference-fixtures/2026-11-04-control_build_26404334.json).
+
+The moderation source subsequently bound the official handler at `0x7a6e50`.
+Its seven contiguous PE unwind regions contain matches for all 400 non-padding
+instructions of the preceding build. All 55 internal direct branches reach
+their corresponding destinations. The six added instructions write a
+diagnostic code on three array-capacity error paths. The engine still uses
+the full session handle, copied native account hash, immunity flags and
+separate disconnect reasons for kick and ban. Offline unban uses the supplied
+account hash and marks the native configuration dirty. See the
+[static moderation record](../reference-fixtures/2026-11-04-native_moderation_build_26404334.json)
+for the matched calls and loaded-code gates. This source revision has no new
+runtime or real-client moderation receipt.
 
 ### Build 26083076 compatibility (2026-10-21)
 

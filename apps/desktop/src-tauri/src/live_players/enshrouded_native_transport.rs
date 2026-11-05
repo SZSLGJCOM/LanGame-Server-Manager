@@ -143,6 +143,7 @@ fn read_reply(
         "dispatched" if reply.issue == "none" => Ok(true),
         "rejected" => Err(match reply.issue.as_str() {
             "native_target_immune" => "The native server protects this player from moderation.",
+            "unsupported_moderation_profile" => "Native moderation is unavailable for this Enshrouded build.",
             "request_expired" => "The native player selection expired. Refresh players before trying again.",
             "target_session_changed" | "snapshot_not_current" | "native_context_changed" => "The native player identity changed or is incomplete. Refresh players before trying again.",
             "request_queue_busy" => "The native server is already processing a moderation request.",
@@ -160,6 +161,9 @@ pub(super) fn execute(
 ) -> Result<(), String> {
     let _guards = open(context)?;
     let initial = packet(context)?;
+    if !initial.moderation_supported {
+        return Err("Native moderation is unavailable for this Enshrouded build.".into());
+    }
     let now = tick()?;
     let target = selected.unwrap_or(Target {
         run_id: initial.run_id.clone(),

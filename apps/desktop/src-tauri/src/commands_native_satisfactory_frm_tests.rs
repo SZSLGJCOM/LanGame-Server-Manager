@@ -9,7 +9,7 @@ fn frm_loading_evidence_requires_initialized_exact_native_versions_and_real_endp
         "[2026.10.27-00.00.01]LogSatisfactoryModLoader: Display: Satisfactory Mod Loader v.3.12.0+827 pre-initializing...",
         "LogSatisfactoryModLoader: Display: Initialization finished!",
         "LogSatisfactoryModLoader: Display: SML: 3.12.0",
-        "LogSatisfactoryModLoader: Display: FicsitRemoteMonitoring: 1.5.4",
+        "LogSatisfactoryModLoader: Display: FicsitRemoteMonitoring: 1.5.5",
         "LogHttpServer: Registered API Endpoint: getPlayer - Current number of endpoints registered: 42",
     ];
     let mut complete = LoadEvidence::default();
@@ -28,22 +28,24 @@ fn frm_loading_evidence_requires_initialized_exact_native_versions_and_real_endp
         }
         assert!(!incomplete.complete());
     }
-    let mut wrong = LoadEvidence::default();
-    for line in lines {
-        wrong.observe(&line.replace("1.5.4", "1.5.3"));
+    for wrong_version in ["1.5.4", "1.5.6"] {
+        let mut wrong = LoadEvidence::default();
+        for line in lines {
+            wrong.observe(&line.replace("1.5.5", wrong_version));
+        }
+        assert!(!wrong.complete());
     }
-    assert!(!wrong.complete());
     let mut files_only = LoadEvidence::default();
     for line in [
         "SML.uplugin version=3.12.0",
-        "FicsitRemoteMonitoring.uplugin version=1.5.4",
+        "FicsitRemoteMonitoring.uplugin version=1.5.5",
         "Installed /api/getPlayer",
     ] {
         files_only.observe(line);
     }
     assert!(!files_only.complete());
     assert!(!version("3.12.01", "3.12.0"));
-    assert!(!version("1.5.40", "1.5.4"));
+    assert!(!version("1.5.50", "1.5.5"));
 }
 
 #[test]

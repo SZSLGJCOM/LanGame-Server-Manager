@@ -28,6 +28,8 @@ mod managed_config_merge;
 pub(super) mod package_staging;
 #[path = "templates_materialize/projectzomboid_seed.rs"]
 mod projectzomboid_seed;
+#[path = "templates_materialize/seven_days_admin.rs"]
+mod seven_days_admin;
 pub(crate) use managed_config_merge::ManagedConfigMergePlan;
 pub(crate) use managed_config_merge::ManagedConfigMutation;
 use managed_config_merge::{
@@ -354,14 +356,11 @@ fn materialize_sevendaystodie_support_files(
         source,
     })?;
 
-    copy_required_module_support_file(
+    seven_days_admin::materialize(
         &context.config_dir.join(SEVENDAYSTODIE_SERVER_ADMIN_FILE),
         &context.saves_dir.join(SEVENDAYSTODIE_SERVER_ADMIN_FILE),
-        "sevendaystodie",
         files,
-    )?;
-
-    Ok(())
+    )
 }
 
 fn materialize_rust_support_files(
@@ -1045,7 +1044,7 @@ fn render_terraria_tmodloader_install_txt(settings: &Map<String, Value>) -> Stri
 fn render_terraria_tmodloader_enabled_json(
     settings: &Map<String, Value>,
 ) -> Result<String, StorageError> {
-    let names = parse_terraria_tmodloader_enabled_mod_names(settings);
+    let names: Vec<_> = app_core::terraria::enabled_mod_names(settings).collect();
     serde_json::to_string_pretty(&names)
         .map(|json| format!("{json}\n"))
         .map_err(|source| StorageError::ModuleSupportMaterialization {
@@ -1053,23 +1052,4 @@ fn render_terraria_tmodloader_enabled_json(
             path: PathBuf::from("tmodloader/Mods/enabled.json"),
             message: format!("failed to render enabled.json: {source}"),
         })
-}
-
-fn parse_terraria_tmodloader_enabled_mod_names(settings: &Map<String, Value>) -> Vec<String> {
-    let Some(raw) = lookup_setting_text(settings, TERRARIA_TMODLOADER_ENABLED_MOD_NAMES_KEY) else {
-        return Vec::new();
-    };
-
-    let mut seen = HashSet::new();
-    let mut names = Vec::new();
-    for line in raw.lines() {
-        let trimmed = line.trim();
-        if trimmed.is_empty() || trimmed.starts_with('#') || trimmed.starts_with("--") {
-            continue;
-        }
-        if seen.insert(trimmed.to_string()) {
-            names.push(trimmed.to_string());
-        }
-    }
-    names
 }

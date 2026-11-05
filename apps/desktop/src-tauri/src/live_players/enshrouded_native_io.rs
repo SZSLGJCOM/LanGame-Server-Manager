@@ -11,6 +11,8 @@ pub(crate) const BUNDLED_EXE_SHA256: &[&str] = &[
     EXE_SHA256,
     "b627639ce4a3f8c940fe90afa1d36ed59db3ff9ced24e935890eb7c99b04d5bf",
     "d7baa768eb00aa895d9f5a1cd8747ccf66858c7b542f50983092b2e3261588ee",
+    "c5c9fe50c6398d2adedd98923c2d04bf9d9b4af64c1447ac167cdf8f874ff84f",
+    "f0d824be7fcd48ebfe2458ff5c28da26060c2074e3ec1fcac587e5a1d508aeb2",
 ];
 pub(crate) const DIRECTORY: &str = ".langame-enshrouded-control";
 pub(crate) const OWNER: &str = ".langame-enshrouded-control-owner.json";

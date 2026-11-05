@@ -1,0 +1,103 @@
+{
+  "schema_version": 1,
+  "module_id": "satisfactory",
+  "verified_on": "2026-11-05",
+  "verification_timezone": "Asia/Shanghai",
+  "evidence_classification": "isolated_managed_native_https_world_save_restart_and_effective_options",
+  "status": "passed",
+  "package_identity": {
+    "steam_app_id": 1690800,
+    "public_build_id": "26281360",
+    "previous_public_build_id": "25782485",
+    "release": "1.2.5.0",
+    "changelist": 517554,
+    "release_source": "https://www.satisfactorygame.com/support/",
+    "public_metadata_observed_utc": "2026-11-05T02:34:59.3150147Z",
+    "acquisition": "Fresh anonymous Valve SteamCMD installation plus validate in an isolated directory. An initial file-lock failure was retained; one resume after process/file-lock inspection completed successfully.",
+    "steamcmd_exit_code": 0,
+    "state_flags": 4,
+    "update_result": 0,
+    "manifest_sha256": "0771b92a0f1c3ecb90ff4f4b2240f3474ad83be2767bf644553025a5e93c36e2",
+    "entry_point": "Engine/Binaries/Win64/FactoryServer-Win64-Shipping-Cmd.exe",
+    "entry_point_bytes": 229888,
+    "entry_point_sha256": "a50053966632a9e04818dd1b7f3d57ce2cc56a6fff7ae64e2fbb3ca73337630b",
+    "entry_point_product_version": "++FactoryGame+rel-main-multiplayer-patch-CL-517554",
+    "vanilla_source_bytes_copied": 15596044695
+  },
+  "initial_failed_attempt": {
+    "source_identity_sha256": "460f1df7b5d4a0bff605b4a94efcf503dca5e5a7262d9eb7fbb4cdb80816a0d2",
+    "test_executable_sha256": "f9e31574ef13bc04412e744401ed27ac9e9b3a81d531eb527c6ab55ba3ffa666",
+    "exit_code": 101,
+    "elapsed_seconds": 210.76,
+    "completed_utc": "2026-11-05T02:19:11.8498514Z",
+    "startup_and_https_world_creation_passed": true,
+    "manual_save_dispatched": false,
+    "reason": "The new world's navigation/static-mesh output displaced the startup-complete message from the 160-line health tail. The shared native log could not use the managed-log startup-head fallback. The production readiness gate rejected saving before the HTTPS mutation.",
+    "cleanup_game_exit_code": -1073741510,
+    "credential_absence_confirmed": true,
+    "stdout_sha256": "976129b2d9fe73d9b379c6aeb9aa33c993cc3a7b8df96c794721c74db087c5cd",
+    "stderr_sha256": "64e1170123cd0215c99d112ff76ab9a78e92e4c8933bd188c157a206ec247328"
+  },
+  "fix": {
+    "production_scope": "Satisfactory health now retains the existing startup-complete signal through the bounded native-log observer. Evidence remains bound to the run, session, OS process creation identity and log file identity. Current fatal output, unread suffixes, source read errors and changed process/file generations cannot inherit ready.",
+    "world_contract_unchanged": "The observed startup signal precedes CreateNewGame and is not repeated by that map load. No speculative LoadMap state machine was added. The production HTTPS SaveGame path still verifies an active loaded world, run ownership and native results.",
+    "regression_tests": 7,
+    "storage_runtime_tests": {"passed": 212, "failed": 0, "ignored": 1},
+    "desktop_satisfactory_tests": {"passed": 65, "failed": 0, "ignored": 3}
+  },
+  "vanilla_acceptance": {
+    "source_identity_sha256": "2120945be77465b0832796f05ec3d6ac3115cb8126733e203a84a688d1e21d96",
+    "test_executable_sha256": "e27d48a103c8341ebddbe2f7dc835caf8e1b50be6ca89d6dd2bf340c172f9eea",
+    "resource_files_matched_to_build_manifest": 218,
+    "test": "commands::tests::manual_runtime_tests::native_lifecycle_tests::native_manual_save",
+    "process_context": "Windows x64, ordinary interactive user, managed background console",
+    "binding": "Fixture defaults; not a loopback-only claim",
+    "program_update_policy": "pinned",
+    "exit_code": 0,
+    "elapsed_seconds": 323.39,
+    "completed_utc": "2026-11-05T02:44:57.1495845Z",
+    "cycles": ["initial", "restart"],
+    "native_world_loaded_each_cycle": true,
+    "save_receipts_confirmed": 2,
+    "save_publications_each_cycle": 1,
+    "save_retries": 0,
+    "restart_loaded_unique_existing_manual_save": true,
+    "exact_gameplay_checkpoint_content_verified": false,
+    "normal_game_exit_codes": [-1073741510, -1073741510],
+    "normal_console_exit_hex": "0xC000013A",
+    "crash_flags": [false, false],
+    "credential_absence_confirmed": true,
+    "owned_process_and_disposable_cleanup": "passed",
+    "stdout_sha256": "bfce88f5b0fd59376f358565b2bd2b1315d561d3c29c72f15ff706601ac85afb",
+    "stderr_sha256": "eb3d058a8be74ab1fae3e332fce5f9ce057e0ae53eb5c068edc644834a6eaa60"
+  },
+  "effective_options": {
+    "source": "Current owned authenticated HTTPS GetServerOptions.server_options after loading the fixture world in both cycles; pending_server_options is not accepted as effective state.",
+    "explicit_ini_overrides_verified_both_cycles": {
+      "FG.DSAutoPause": 1,
+      "FG.NetworkQuality": 2,
+      "FG.SendGameplayData": 0,
+      "FG.WeatherPreset": 0
+    },
+    "available_keys": [
+      "FG.AgreeToCrashUpload",
+      "FG.AutosaveInterval",
+      "FG.DSAutoPause",
+      "FG.DSAutoSaveOnDisconnect",
+      "FG.EnableSeasonalEvents",
+      "FG.NetworkQuality",
+      "FG.SendGameplayData",
+      "FG.ServerRestartTimeSlot",
+      "FG.WeatherPreset"
+    ],
+    "telemetry_id_key_returned": false,
+    "other_options_write_semantics_verified": false,
+    "notes": "The four existing integer-map overrides remain effective across restart. The other key names establish presence only. No alias between FG.AgreeToCrashUpload and CrashReportClient.bImplicitSend, or between FG.EnableSeasonalEvents and the launch flag, was inferred."
+  },
+  "limits": [
+    "This record covers the no-Mod run; FRM acceptance has separate evidence.",
+    "Generated empty world only; real clients, populated save migration, exact gameplay contents and all native world-rule combinations were not tested.",
+    "No desktop GUI, installer packaging, production Mod installation, or replacement of retained operator installations was performed.",
+    "The official crossplay release still supports dedicated servers only on PC."
+  ]
+}

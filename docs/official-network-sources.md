@@ -27,6 +27,7 @@ The news panel keeps successful responses for ten minutes under separate game/la
 | Minecraft server objects | `piston-data.mojang.com` and `launcher.mojang.com`; upstream SHA-1 and declared size are checked before publication |
 | Java prerequisite | Adoptium API, with the official Adoptium GitHub release API as metadata fallback for the same required Java major; Windows x64 HotSpot JRE GA identity, size and SHA-256 are mandatory. The ZIP still comes from the selected official GitHub release, not an independent China CDN |
 | Terraria and RimWorld Together server archives | The module's official release URL and bounded retries; RimWorld Together pins its release SHA-256 and byte size; no verified second independent official source |
+| Terraria mod server (tModLoader) | Hosts set to mainland China try GH-Proxy first. Other regions try GitHub Releases first. Each can fall back to the other. Both must match the size and SHA-256 of the same pinned release before extraction. GH-Proxy is an independent accelerator with global nodes. The required .NET runtime comes from Microsoft. [Upstream release](https://github.com/tModLoader/tModLoader/releases/tag/v2026.09.3.1) · [GH-Proxy documentation](https://gh-proxy.com/docs/github-accelerator) |
 | Modrinth and Thunderstore metadata and packages | The original provider APIs and their actual package URLs, with bounded retries; Modrinth verifies the metadata's byte size and SHA-512 (SHA-1 only when SHA-512 is absent); no verified alternate source |
 | Nexus Mods | Opens the official website in the system browser. In-app API downloads are unavailable; manually downloaded packages use the existing local-import workflow |
 | CurseForge slug resolution | `api.curse.tools`, an existing third-party integration; neither a CurseForge-operated API nor an official CDN, and no source substitution |
@@ -175,6 +176,7 @@ Before adding or changing a group, establish publisher ownership, verify the sam
 | Minecraft 服务器文件 | `piston-data.mojang.com` 与 `launcher.mojang.com`；发布前校验上游 SHA-1 和声明大小 |
 | Java 前置 | 优先 Adoptium API，同一所需 Java 主版本的官方 Adoptium GitHub 发行 API 作为元数据备用；必须匹配 Windows x64 HotSpot JRE 正式版身份、大小及 SHA-256。ZIP 仍来自所选官方 GitHub 发行，不是独立国内 CDN |
 | Terraria、RimWorld Together 服务端 | 官方发行地址与有限重试；RimWorld Together 固定发行包 SHA-256 与字节数；未确认第二个独立官方备用源 |
+| 泰拉瑞亚模组服务端（tModLoader） | 宿主地区设为中国大陆时优先使用 GH-Proxy，其他地区优先使用 GitHub Releases。两条线路可以互相回退，下载后必须与同一官方发行包的字节数和 SHA-256 一致才解压。GH-Proxy 是使用全球节点的第三方加速服务。所需的 .NET 运行时从微软下载。[官方发行版](https://github.com/tModLoader/tModLoader/releases/tag/v2026.09.3.1) · [GH-Proxy 说明](https://gh-proxy.com/docs/github-accelerator) |
 | Modrinth、Thunderstore 元数据与模组包 | 原提供方 API 及其返回的实际下载地址，采用有限重试；Modrinth 校验元数据声明的字节数与 SHA-512，仅缺少 SHA-512 时使用 SHA-1；未确认备用等价源 |
 | Nexus Mods | 通过系统浏览器打开官方网站。应用内 API 下载不可用；手动下载后的包沿用现有本地导入流程 |
 | CurseForge slug 解析 | 既有第三方集成 `api.curse.tools`；不是 CurseForge 运营的 API 或官方 CDN，不做换源 |

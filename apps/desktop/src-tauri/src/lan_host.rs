@@ -1158,6 +1158,15 @@ pub(crate) fn dispatch_command<'a>(
                 .await?,
             )
         }),
+        "preview_terraria_mod_world" => boxed_command(|| async move {
+            to_json(
+                commands::commands_terraria_world::preview_terraria_mod_world(
+                    app_handle.state::<DesktopState>(),
+                    arg(&args, "instanceId", "instance_id")?,
+                )
+                .await?,
+            )
+        }),
         "start_instance_process" => boxed_command(|| async move {
             to_json(
                 commands::start_instance_process(

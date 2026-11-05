@@ -758,6 +758,7 @@ export function parseGuidedSettingsSchema(
           required: requiredKeys.has(key),
           defaultValue: property.default,
           defaultSource,
+          inheritsExistingNativeValue: property["x-lsgm-default-source"] === "existing_native_configuration",
           preserveNativeWhenUnset,
           enumOptions: localizedEnumOptions.length > 0 ? localizedEnumOptions : undefined,
           suggestions: localizedSuggestionOptions.length > 0 ? localizedSuggestionOptions : undefined,
@@ -785,6 +786,8 @@ export function parseGuidedSettingsSchema(
       )
       : sections;
     const workspacePresentationFields = surface === "general" ? presentationFields : fields;
+    // External owners remain in the model for saved-settings classification;
+    // configuration navigation separately hides their sections and controls.
     const normalizedSections = appendMissingSections(visibleSections, workspacePresentationFields, settingsText);
 
     return {

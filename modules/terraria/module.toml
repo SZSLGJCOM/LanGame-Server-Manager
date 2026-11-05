@@ -128,7 +128,7 @@ saves_path_template = "{{paths.instance_root}}/saves"
 provider = "steam"
 label = "tModLoader Steam Workshop"
 url = "https://steamcommunity.com/app/1281930/workshop/"
-install_note = "Choose tModLoader in Host settings before using Workshop mods. LanGame downloads tModLoader Workshop items into this instance's tmodloader/steamapps cache and writes Mods/install.txt from the selected IDs. Vanilla TerrariaServer.exe does not load tModLoader mods."
+install_note = "Download Workshop items in Mods and enable the ones you want in My Mods. Enabling the first Mod prepares tModLoader automatically. The server uses it whenever any Mods are enabled."
 
 [mods.manual_staging]
 target_template = "{{paths.instance_root}}/tmodloader/steamapps/workshop/content/1281930"

@@ -21,11 +21,16 @@ const { parseGuidedSettingsSchema } = require("../src/views/settings/guided-sett
 const { buildConfiguredEntries, buildConfigurableEntries, buildEnabledRows } = require("../src/views/servers/mod-workbench-model.ts");
 const { buildDstModEnablementPlan, buildModSettingsApplyPlan, buildModSettingsRemovePlan } = require("../src/views/servers/mod-workbench-plans.ts");
 const { hasDstRawModOverrides } = require("../src/views/servers/mod-workbench-dst-policy.ts");
+const { ModSourceListEditors } = require("../src/views/servers/ModSourceListEditors.tsx");
+const { InstanceSettingsSaveProvider } = require("../src/views/settings/InstanceSettingsSaveContext.tsx");
+const { I18nContext } = require("../src/i18n-context.ts");
 const id = "1467214795", dependency = "3435352667";
 const context = { locale: "en-US", t: translate };
 const schema = fs.readFileSync(path.resolve(__dirname, "../../../modules/dontstarve/schema.json"), "utf8");
 const fields = parseGuidedSettingsSchema({ summary: { id: "dontstarve", name: "DST" }, schema_json: schema },
   context.locale, context.t).fields;
+const modFields = parseGuidedSettingsSchema({ summary: { id: "dontstarve", name: "DST" }, schema_json: schema },
+  context.locale, context.t, { surface: "mods" }).fields;
 
 test("four-shard Mod ownership includes Islands-only enablement and Volcano-only saved options", () => {
   const settings = { shard_layout: "island_adventures", islands_enabled_workshop_mod_ids: id,
@@ -76,7 +81,18 @@ test("settings expose layout and expert world files while four-shard Mod managem
   for (const shard of shards) {
     assert.equal(keys.has(`${shard}_enabled_workshop_mod_ids`), false);
     assert.equal(keys.has(`${shard}_mod_configuration_options`), false);
-    assert.ok(keys.has(`${shard}_modoverrides_lua`));
+    const rawKey = `${shard}_modoverrides_lua`;
+    assert.equal(keys.has(rawKey), false, rawKey);
+    const modField = modFields.find((field) => field.key === rawKey);
+    assert.equal(modField?.sectionId, "mods", rawKey);
+    assert.equal(modField?.presentation.owner, "mods", rawKey);
+    assert.equal(modField?.presentation.rendererId, "mod-workbench-source-list", rawKey);
+    assert.equal(modField?.presentation.behavior, "raw", rawKey);
+    assert.equal(modField?.control, "textarea", rawKey);
+    const worldField = fields.find((field) => field.key === `${shard}_worldgenoverride_lua`);
+    assert.equal(worldField?.sectionId, "advanced", shard);
+    assert.equal(worldField?.presentation.owner, "configuration", shard);
+    assert.equal(worldField?.presentation.behavior, "raw", shard);
   }
   for (const shard of ["islands", "volcano"]) {
     const field = fields.find((field) => field.key === `${shard}_worldgenoverride_lua`);
@@ -99,6 +115,22 @@ test("four-shard validation checks Islands, Volcano and required Caves without v
   }
   const inactive = { shard_layout: "standard", islands_mod_configuration_options: { [id]: { invalid: {} } } };
   assert.deepEqual(definition.getSettingsValidationIssues(inactive, context), []);
+});
+
+test("My Mods renders the raw Lua editor for every shard with its saved value", () => {
+  const settings = Object.fromEntries(shards.map((shard) => [`${shard}_modoverrides_lua`, `return { ${shard} = true }`]));
+  const markup = renderToStaticMarkup(React.createElement(I18nContext.Provider,
+    { value: { locale: context.locale, setLocale() {}, t: translate } },
+    React.createElement(InstanceSettingsSaveProvider, null, React.createElement(ModSourceListEditors, {
+      instanceId: "dst-four-shards", moduleDetails: { summary: { id: "dontstarve", name: "DST" }, schema_json: schema },
+      settings, disabled: false, readOnly: false, onSave: async () => { throw new Error("render only"); }
+    }))));
+  for (const shard of shards) {
+    const key = `${shard}_modoverrides_lua`;
+    assert.ok(markup.includes(`data-field-key="${key}"`), key);
+    assert.ok(markup.includes(settings[key]), key);
+  }
+  assert.equal((markup.match(/<textarea\b/g) ?? []).length, shards.length);
 });
 
 function panelHarness() {

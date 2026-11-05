@@ -24,6 +24,7 @@ pub(super) enum SessionKind {
     Windrose,
     Conan,
     Rust,
+    Satisfactory,
 }
 
 impl SessionKind {
@@ -40,13 +41,14 @@ impl SessionKind {
             Self::Windrose => ".windrose-session.json",
             Self::Conan => ".conan-startup.json",
             Self::Rust => ".rust-startup.json",
+            Self::Satisfactory => ".satisfactory-startup.json",
         }
     }
 
     fn valid(self, state: &Checkpoint) -> bool {
         if !matches!(
             self,
-            Self::Dragonwilds | Self::Nightingale | Self::Conan | Self::Rust
+            Self::Dragonwilds | Self::Nightingale | Self::Conan | Self::Rust | Self::Satisfactory
         ) && (state.native_process.is_some()
             || state.fatal.is_some()
             || !state.native_head.is_empty()
@@ -169,7 +171,7 @@ impl SessionKind {
                         .as_ref()
                         .is_none_or(|line| super::sonsoftheforest_health::event(line).is_some())
             }
-            Self::Nightingale | Self::Conan | Self::Rust => {
+            Self::Nightingale | Self::Conan | Self::Rust | Self::Satisfactory => {
                 let native_offsets_valid = if state.native_process.is_some() {
                     state.latest.is_some() == state.native_latest_end.is_some()
                         && state.fatal.is_some() == state.native_fatal_end.is_some()
@@ -272,7 +274,7 @@ impl SessionKind {
                     state.latest = Some(line.into());
                 }
             }
-            Self::Nightingale | Self::Conan | Self::Rust => {
+            Self::Nightingale | Self::Conan | Self::Rust | Self::Satisfactory => {
                 match self.native_transition_is_fatal(line) {
                     Some(true) => state.fatal = Some(line.into()),
                     Some(false) => state.latest = Some(line.into()),
@@ -292,11 +294,11 @@ impl SessionKind {
                 .map(|event| matches!(event, super::dragonwilds_health::Event::Fatal)),
             Self::Nightingale if super::nightingale_health::is_fatal(line) => Some(true),
             Self::Nightingale => super::nightingale_health::event(line).map(|_| false),
-            Self::Conan | Self::Rust => {
-                let module = if matches!(self, Self::Conan) {
-                    "conanexiles"
-                } else {
-                    "rust"
+            Self::Conan | Self::Rust | Self::Satisfactory => {
+                let module = match self {
+                    Self::Conan => "conanexiles",
+                    Self::Rust => "rust",
+                    _ => "satisfactory",
                 };
                 if !crate::runtime_fatal_log_lines(module, &[line.to_owned()]).is_empty() {
                     Some(true)
@@ -390,6 +392,29 @@ pub(super) fn observe_nightingale(
     };
     observe_with_process(
         SessionKind::Nightingale,
+        path,
+        run.run_id,
+        Some(process),
+        true,
+    )
+}
+
+/// CL 517554 emits its startup-complete marker before CreateNewGame. Later
+/// world loading can age it out of the UI tail without repeating the marker.
+/// Retain that existing startup fact, not a guessed world/session transition;
+/// SaveGame still checks the active world through the owned native HTTPS API.
+pub(super) fn observe_satisfactory(
+    path: &Path,
+    run: &app_core::ActiveInstanceRun,
+) -> io::Result<Vec<String>> {
+    if run.log_path.as_deref().map(Path::new) == Some(path) {
+        return observe_with_process(SessionKind::Satisfactory, path, run.run_id, None, false);
+    }
+    let Some(process) = super::health_evidence::dragonwilds_primary(run) else {
+        return Ok(Vec::new());
+    };
+    observe_with_process(
+        SessionKind::Satisfactory,
         path,
         run.run_id,
         Some(process),

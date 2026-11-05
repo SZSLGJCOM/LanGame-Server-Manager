@@ -31,7 +31,7 @@ jobs:
       - name: Verify tracker and signing contracts
         run: |
           python -B -m unittest scripts.tests.test_track_enshrouded_build
-          node --test scripts/tests/enshrouded_control_package.test.cjs
+          node --test scripts/tests/enshrouded_control_package.test.cjs scripts/tests/enshrouded_native_profiles.test.cjs
       - name: Download the official SteamCMD bootstrap
         shell: pwsh
         run: |

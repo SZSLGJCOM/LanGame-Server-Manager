@@ -9,7 +9,7 @@
 
 - Evidence: `best_effort_verified` at `2026-07-13` (build `buildid 24159508; server v91.8; depot 2430931 manifest 2381721962790820553`)
 - Sources: `admin_accounts`, `ark_official_server_configuration_2026_07_13`, `arksa_be_client_cfg`, `arksa_be_launcher_ini`, `arksa_be_server_cfg`, `arksa_be_text_locales`, `arksa_mods_user_data_json`, `arksa_mods_user_data_local`, `arksa_mods_user_data_shared`, `arksa_sentry_session`, `arksa_steam_settings`, `arksa_steam_settings_examples`, `arksurvivalascended_crashreport_ini`, `arsa_binaries_win64_ini`, `arsa_crashreport_client_crash_ini`, `arsa_crashreport_editor_ini`, `arsa_stagedbuild_shootergame`, `asa_server_patch_notes_v92_36`, `dynamic_config`, `exclusive_join_file`, `game_ini`, `game_user_settings`, `installed_config_boundary`, `launch_args`, `priority_join_file`, `steamcmd_anonymous_app_2430930`
-- Coverage: editable `262`, specialized `5`, derived `0`, generated `0`, excluded `315`
+- Coverage: editable `261`, specialized `6`, derived `0`, generated `0`, excluded `315`
 
 ### Settings
 

@@ -9,7 +9,7 @@
 
 - Evidence: `exhaustive_verified` at `2026-07-13` (build `buildid 21241282; depot 376031 manifest 6366771435093287465`)
 - Sources: `admin_steam_ids`, `ark_official_server_configuration_2026_07_13`, `arke_be_client_cfg`, `arke_be_launcher_ini`, `arke_be_server_cfg`, `arke_be_text_locales`, `arke_mods_user_data_json`, `arke_mods_user_data_local`, `arke_mods_user_data_shared`, `arke_sentry_session`, `arke_steam_settings`, `arke_steam_settings_examples`, `arke_steamworks_steambootstrapper`, `arksurvivalevolved_windowsserver_ini`, `dynamic_config`, `evolved_binaries_win64_ini`, `evolved_clean_source_input_ini`, `evolved_engine_config_bundle`, `evolved_game_config_json_bundle`, `evolved_game_default_ini_bundle`, `evolved_stagedbuild_shootergame`, `exclusive_join_file`, `game_ini`, `game_user_settings`, `installed_packaged_defaults`, `installed_roster_files`, `launch_args`, `priority_join_file`, `steamcmd_anonymous_app_376030`
-- Coverage: editable `406`, specialized `5`, derived `0`, generated `0`, excluded `137`
+- Coverage: editable `404`, specialized `7`, derived `0`, generated `0`, excluded `137`
 
 ### Settings
 

@@ -1672,6 +1672,12 @@ export async function invokeMock<T>(command: string, args?: Record<string, unkno
         safeguard_backup_path: safeguardBackup.backup_path
       } as T;
     }
+    case "preview_terraria_mod_world": {
+      const id = String(args?.instanceId ?? args?.instance_id ?? "");
+      if (ensureMockInstanceDetails(id).summary.module_id !== "terraria") throw new Error("Not a Terraria instance.");
+      // Development preview has no native Terraria world files.
+      return null as T;
+    }
     case "preview_dontstarve_world_start": {
       const instanceId = String(args?.instanceId ?? args?.instance_id ?? "srv-dst-1");
       return mockDstWorldStateStore.preview(ensureMockInstanceDetails(instanceId)) as T;
@@ -2345,6 +2351,8 @@ export async function invokeMock<T>(command: string, args?: Record<string, unkno
       const current = ensureMockInstanceDetails(instanceId);
       const expectedWorldStart = args?.expectedWorldStart ?? args?.expected_world_start;
       if (expectedWorldStart !== undefined && expectedWorldStart !== null) {
+        if (typeof expectedWorldStart === "object" && "create_terraria_world" in expectedWorldStart)
+          throw new Error("There is no conflicting Terraria world to replace in development preview.");
         mockDstWorldStateStore.validateConfirmation(current, expectedWorldStart);
       }
       const module = buildMockModuleDetails(current.summary.module_id);

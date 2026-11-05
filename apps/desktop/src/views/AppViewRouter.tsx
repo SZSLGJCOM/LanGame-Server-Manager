@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import type { WorldStartConfirmation } from "../api-terraria-world";
 import type { RuntimeActionOperation } from "../runtime-action-store";
 import { createDeferredModule } from "../deferred-module";
 import { useDeferredModule } from "../hooks/useDeferredModule";
@@ -16,7 +17,6 @@ import type {
   BootstrapResponse,
   CreateInstanceInput,
   DstWorldImportResult,
-  DstWorldStartPreview,
   ExecuteInstancePlayerActionInput,
   ExecuteInstancePlayerActionResult,
   InstanceBackupResult,
@@ -130,7 +130,7 @@ interface AppViewRouterProps {
   ) => Promise<InstanceRuntimeCommandResult | null>;
   onSuppressRuntimeWindows: (instanceId: string) => Promise<void>;
   onSelectInstance: (instanceId: string) => void;
-  onStartServer: (instanceId: string, expectedWorldStart?: DstWorldStartPreview, operation?: RuntimeActionOperation) => void | Promise<void>;
+  onStartServer: (instanceId: string, expectedWorldStart?: WorldStartConfirmation, operation?: RuntimeActionOperation) => void | Promise<void>;
   onStopServer: (instanceId: string, operation?: RuntimeActionOperation) => void | Promise<void>;
 }
 

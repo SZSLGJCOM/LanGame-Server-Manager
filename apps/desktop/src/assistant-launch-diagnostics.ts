@@ -17,6 +17,7 @@ const issueTitles: Record<string, [string, string]> = {
   launch_working_directory_incompatible: ["启动工作目录不受支持", "Launch working directory is unsupported"],
   launch_executable_missing: ["启动可执行文件缺失", "Launch executable is missing"],
   launch_preparation_required: ["启动时准备实例程序", "Instance executable prepared on launch"],
+  tmodloader_preparation_required: ["自动准备 tModLoader", "Preparing tModLoader automatically"],
   launch_required_file_missing: ["启动所需文件缺失", "Required launch file is missing"],
   port_binding_unavailable: ["启动端口不可用", "Launch port is unavailable"],
   bind_ip_invalid: ["绑定地址无效", "Bind address is invalid"],
@@ -109,7 +110,7 @@ export function buildAssistantLaunchIssues(input: LaunchInput, t?: TranslateFn):
   const checks = [...plan.validation_issues];
   const ignoreActivePortPreflight = assistantIgnoresActivePortPreflight(input);
   if (!plan.executable_exists && !checks.some((issue) =>
-    issue.code === "launch_executable_missing" || issue.code === "launch_preparation_required"
+    ["launch_executable_missing", "launch_preparation_required", "tmodloader_preparation_required"].includes(issue.code)
   )) {
     checks.push({ code: "launch_executable_missing", severity: "error", message: "", path: plan.executable_path });
   }

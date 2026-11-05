@@ -1,0 +1,43 @@
+{
+  "module_id": "corekeeper",
+  "steam_app_id": 1963720,
+  "steam_build_id": "26331994",
+  "game_version": "1.3.0.7",
+  "verified_on": "2026-11-04",
+  "acquisition": {
+    "source": "Valve anonymous SteamCMD public Windows package",
+    "state_flags": 4,
+    "target_build_id": "26331994",
+    "update_result": 0,
+    "size_on_disk": 485323820,
+    "game_depot": "1963721",
+    "game_manifest": "891527168971301926",
+    "redistributable_depot": "1004",
+    "redistributable_manifest": "7604377918839582995"
+  },
+  "native_files": {
+    "Pug.Other.dll": "74836f1660d8e3dd9f7893fecf7a10827dff7c92a73d76139ff6cb5c93544c23",
+    "PugMod.SDK.Runtime.dll": "ed2157a69174d6e85331d2744e3e3c9c43fa7e1e69be344aac1158c3f711ec5d",
+    "UnityEngine.CoreModule.dll": "d184eb633e67cd97d5a0eb0faf3a8f05bdfe17e56c3cef5595cf15c685030aa6",
+    "netstandard.dll": "6ae62e082dc494a2433984177f60ca4db5fae69b1f360a8b33754172b310b8c5",
+    "Unity.Entities.dll": "e4f03d5dcc4547f2730218fd128e918a26d24590f31b827d334c09a0de2e762a",
+    "Pug.ECS.Components.dll": "c2822ba48eec76430167963ddfd885eb2d5225cf5193850f1833583a27401d0f"
+  },
+  "comparison": {
+    "baseline": "25825323",
+    "changed_in_tuple": ["Pug.Other.dll"],
+    "method": "Read current ECMA-335 metadata and IL without loading the game: ECSManager.QueueNewServerSave returns Boolean and dispatches to SaveSystem.QueueNewSave on ServerWorld. SaveIsPending, WorldsAreLoaded, IsClosing, SerializeWorldDataCD.State, SerializeWorldSystem.LastWorldWrite and the native serialization handlers are present. The other five pinned dependency hashes match the prior release."
+  },
+  "native_probe": {
+    "environment": "PLAP Windows. The production save extension compiled against the new official SDK with Build-Control.ps1. The game ran under the operator's non-elevated token in isolated program and data directories using a loopback direct connection. Each process reached empty-world readiness and owned both expected UDP ports.",
+    "extension_sha256": "0d3b65c10ef9e40422e3f41e1fd9f12fb27b63ce79a34580d212ee40f174538e",
+    "cycles": [
+      {"world": "new", "status": "rejected", "issue": "world_not_ready", "normal_wm_close_exit": 0},
+      {"world": "initialized by the preceding normal shutdown", "status": "dispatched", "issue": "none", "normal_wm_close_exit": 0},
+      {"world": "exact pre-shutdown snapshot in an independent data directory", "loaded_by_native_serializer": true, "save_request_sent": false, "normal_wm_close_exit": 0}
+    ],
+    "snapshot_bytes": 44233,
+    "snapshot_sha256": "42a85d85a10c371b35189a8589a68b2c6d34ac4c3cc73c6cb8eb652d791fa9d4",
+    "scope": "The SHA was observed while the second process was running, matched the rotating backup after shutdown, and matched the file at readiness after the independent third process decompressed and loaded it. The formal receipt remains a native queue dispatch. These standalone runs do not establish populated-world or client gameplay behavior, or change the completion guarantee."
+  }
+}

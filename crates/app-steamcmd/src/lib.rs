@@ -116,7 +116,7 @@ pub use package_revision::{
     program_install_revision_move_paths, read_game_install_revision, read_program_install_revision,
 };
 /// Prepare versioned startup runtimes without replacing installed game files.
-pub use portable_runtime::{PortableRuntime, prepare_portable_runtime};
+pub use portable_runtime::{PortableRuntime, prepare_portable_runtime, prepare_tmodloader_runtime};
 pub use program_update_check::current_program_version;
 pub use retained_install_data::{
     RETAINED_INSTALL_DATA_MARKER, has_retained_install_data, mark_retained_install_data,

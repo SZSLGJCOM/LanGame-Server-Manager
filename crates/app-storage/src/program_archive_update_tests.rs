@@ -36,6 +36,35 @@ fn archive_fixture() -> (Fixture, PathBuf, PathBuf) {
 }
 
 #[test]
+fn rimworld_update_rejects_unredeemed_old_listings_even_with_the_same_executable_path() {
+    let (mut fixture, source, stage) = archive_fixture();
+    fixture.descriptor.summary.id = "rimworld".into();
+    fixture.record(&source);
+    fixture
+        .descriptor
+        .install
+        .as_mut()
+        .unwrap()
+        .download_integrity_windows
+        .as_mut()
+        .unwrap()
+        .sha256 = "2".repeat(64);
+    fixture.record(&stage);
+    let old_ledger = br#"{"Entries":[{"Owner":"seller","ThingLabel":"medicine"}]}"#;
+    put(&source, "Assets/Market.json", old_ledger);
+    let before = crate::test_file_snapshot::tree_snapshot(&source).unwrap();
+    assert!(!archive_program_is_current(&source, &fixture.descriptor, None).unwrap());
+    assert!(archive_program_is_current(&stage, &fixture.descriptor, None).unwrap());
+    let error =
+        merge_archive_program_update(&source, &stage, &fixture.descriptor, &[], None).unwrap_err();
+    assert!(error.to_string().contains("withdraw"), "{error}");
+    assert_eq!(
+        crate::test_file_snapshot::tree_snapshot(&source).unwrap(),
+        before
+    );
+}
+
+#[test]
 fn archive_update_from_old_manifest_preserves_data_and_program_identity() {
     let (fixture, source, stage) = archive_fixture();
     for (path, bytes) in [

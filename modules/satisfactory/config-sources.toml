@@ -1,6 +1,32 @@
 status = "best_effort_verified"
-last_verified = "2026-10-31"
-notes = "2026-10-31: public build 25782485 (1.2.4.1 / CL 513885) passed build10 two-instance native isolation: two distinct HTTPS worlds, four Confirmed save acknowledgements and normal stops, live-peer world/config/manual-save preservation, distinct credentials with cross-token rejection, each instance restarting its own checkpoint and final credential/disposable cleanup. Separately, build04 passed SML 3.12.0 / FRM 1.5.4 loading and complete non-stale empty getPlayer collection across two cycles. Mod staging remains fixture-only; real players, exact gameplay checkpoint contents, the full backup lifecycle and network updates were not tested by these runs. The failed first isolation attempt remains recorded separately. Historical runtime evidence: Installed Steam build 24656085 (CL 502094) was started and its HTTPS API exercised on 2026-09-08. -UserDir selects instance-owned INI files; process-scoped USERPROFILE, LOCALAPPDATA and APPDATA separately isolate the native server identity and saves. CreateNewGame requires bSkipOnboarding and GameModeSettings in NewGameData on this build. Claim, credentials and active-world selection remain game API state. Native save creation was verified without changing another server profile. The formal instance environment loaded and saved its world without changing the global server identities. SML 3.12.0 and FRM 1.5.3 loaded. The game HTTPS frm/getPlayer extension returned HTTP 404 bad_function, while the independently enabled FRM HTTP service returned HTTP 200 and a complete empty player array. Its native autostart and port options are persisted in the instance GameUserSettings.ini; client joins were not part of this probe."
+last_verified = "2026-11-05"
+notes = "2026-11-05: public build 26281360 (1.2.5.0 / CL 517554) passed isolated no-Mod HTTPS world creation, two confirmed saves, existing manual-save reload and normal stops after fixing health-tail aging. Four explicit native options, including disabled gameplay telemetry, read back after both starts. See native_world_save_build_26281360 for the retained failed attempt and scope. Separately, SML 3.12.0 / FRM 1.5.5 passed two native loading, authenticated-world, complete empty-roster and confirmed-save cycles with credential cleanup; staging remains fixture-only. Earlier evidence: 2026-10-31: public build 25782485 (1.2.4.1 / CL 513885) passed build10 two-instance native isolation: two distinct HTTPS worlds, four Confirmed save acknowledgements and normal stops, live-peer world/config/manual-save preservation, distinct credentials with cross-token rejection, each instance restarting its own checkpoint and final credential/disposable cleanup. Separately, build04 passed SML 3.12.0 / FRM 1.5.4 loading and complete non-stale empty getPlayer collection across two cycles. Mod staging remains fixture-only; real players, exact gameplay checkpoint contents, the full backup lifecycle and network updates were not tested by these runs. The failed first isolation attempt remains recorded separately. Historical runtime evidence: Installed Steam build 24656085 (CL 502094) was started and its HTTPS API exercised on 2026-09-08. -UserDir selects instance-owned INI files; process-scoped USERPROFILE, LOCALAPPDATA and APPDATA separately isolate the native server identity and saves. CreateNewGame requires bSkipOnboarding and GameModeSettings in NewGameData on this build. Claim, credentials and active-world selection remain game API state. Native save creation was verified without changing another server profile. The formal instance environment loaded and saved its world without changing the global server identities. SML 3.12.0 and FRM 1.5.3 loaded. The game HTTPS frm/getPlayer extension returned HTTP 404 bad_function, while the independently enabled FRM HTTP service returned HTTP 200 and a complete empty player array. Its native autostart and port options are persisted in the instance GameUserSettings.ini; client joins were not part of this probe."
+
+[[sources]]
+id = "native_frm_two_cycles_build_26281360"
+kind = "runtime_probe"
+path = "native-evidence/2026-11-05-build-26281360-frm-native.json"
+url = "https://github.com/porisius/FicsitRemoteMonitoring/releases/tag/1.5.5-529"
+authority = "isolated_managed_native_fixture_with_reviewed_official_mod_archives"
+description = "2026-11-05: public build 26281360 / CL 517554 passed two managed HTTPS world/save/restart cycles with SML 3.12.0 and FRM 1.5.5. All 277 staged archive members were hash-verified. Both current-run logs identify exact loaded versions; production getPlayer is Ready, complete and non-stale with zero players, independently matched to the native 2-byte [] response and an owned listener. Anonymous/invalid-token management reads were rejected in both cycles. Both saves were Confirmed and both stops were normal 0xC000013A with crash_flag=false; credential absence and final cleanup passed. Staging remains fixture-only; real players, exact gameplay contents, GUI and production Mod installation are not claimed."
+
+[[sources]]
+id = "native_world_save_build_26281360"
+kind = "runtime_probe"
+path = "native-evidence/2026-11-05-build-26281360-native.json"
+url = "https://www.satisfactorygame.com/support/"
+authority = "fresh_official_windows_server_and_isolated_managed_native_https_lifecycle"
+description = "2026-11-05: fresh public build 26281360 / CL 517554 (1.2.5.0) exposed a health-tail aging defect after CreateNewGame. The retained first attempt failed before SaveGame dispatch. After preserving current-process startup evidence through the bounded native-log observer, a fresh no-Mod fixture passed two confirmed saves, existing manual-save reload, two normal 0xC000013A console stops, credential absence and owned cleanup. Both cycles independently read effective FG.DSAutoPause=1, FG.NetworkQuality=2, FG.SendGameplayData=0 and FG.WeatherPreset=0 from GetServerOptions. The returned nine option names contain no Telemetry ID. Other option write semantics, real clients, exact gameplay contents, GUI and existing operator installations remain outside this evidence."
+
+[[exclusions]]
+source = "native_world_save_build_26281360"
+key = "FG.AgreeToCrashUpload"
+reason = "Observed as a current GetServerOptions key. Its INI representation and consent semantics were not verified, and it is not assumed to alias the existing CrashReportClient.bImplicitSend control. Preserve native state; do not add an unverified competing editor."
+
+[[exclusions]]
+source = "native_world_save_build_26281360"
+key = "FG.EnableSeasonalEvents"
+reason = "Observed as a current GetServerOptions key. Configuration already owns -DisableSeasonalEvents; the API value does not prove equivalent write or restart semantics, so no second editor is added."
 
 [[sources]]
 id = "native_two_instance_isolation_build_25782485"

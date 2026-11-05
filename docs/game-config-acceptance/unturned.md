@@ -9,7 +9,7 @@
 
 - Evidence: `best_effort_verified` at `2026-07-13` (build `SteamCMD app 1110390 build 24080174`)
 - Sources: `steamcmd_anonymous_app_1110390`, `official_server_configuration_docs`, `official_data_file_format_docs`, `official_game_server_login_token_docs`, `official_fake_ip_docs`, `current_gameplay_config_assembly`, `official_package_example_server_bat`, `official_package_server_helper_bat`, `commands_dat`, `config_txt`, `workshop_config_json`, `launch_args`, `runtime_console`, `scripting_assemblies`, `runtime_initialize_on_loads`, `battl_eye_text_cs`, `battl_eye_text_de`, `battl_eye_text_en`, `battl_eye_text_es`, `battl_eye_text_fr`, `battl_eye_text_it`, `battl_eye_text_ja`, `battl_eye_text_ko`, `battl_eye_text_nl`, `battl_eye_text_pl`, `battl_eye_text_pt`, `battl_eye_text_ru`, `battl_eye_text_tr`, `battl_eye_text_zh_tw`, `battl_eye_text_zh`, `mono_browscap_ini`, `mono_mconfig_xml`, `unturned_status_json`, `unturned_streamer_names_json`, `unturned_assembly_csharp_xml`, `unturned_sdg_runtime_xml`, `unturned_map_alpha_valley`, `unturned_map_destruction`, `unturned_map_germany`, `unturned_map_monolith`, `unturned_map_pei`, `unturned_map_russia`, `unturned_map_tutorial`, `unturned_map_washington`, `unturned_map_yukon`, `unturned_battl_eye_text_bundle`, `unturned_map_configs`, `unturned_mono_bundle`, `unturned_unity_xml_bundle`
-- Coverage: editable `33`, specialized `3`, derived `0`, generated `0`, excluded `5`
+- Coverage: editable `28`, specialized `8`, derived `0`, generated `0`, excluded `5`
 
 ### Settings
 

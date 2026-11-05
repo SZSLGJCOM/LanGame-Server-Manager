@@ -628,8 +628,10 @@ fn analyze_runtime_health_with_startup_evidence(
             ),
         };
     }
-    if matches!(module_id, "runescapedragonwilds" | "nightingale")
-        && matches!(status, InstanceStatus::Running | InstanceStatus::Starting)
+    if matches!(
+        module_id,
+        "runescapedragonwilds" | "nightingale" | "satisfactory"
+    ) && matches!(status, InstanceStatus::Running | InstanceStatus::Starting)
         && recent_log.read_error.is_none()
         && let Some(run) = active_run
         && let Some(path) = recent_log.source_path.as_deref()
@@ -645,6 +647,8 @@ fn analyze_runtime_health_with_startup_evidence(
         };
         let observed = if module_id == "nightingale" {
             console_health_evidence::observe_nightingale(Path::new(path), run)
+        } else if module_id == "satisfactory" {
+            console_health_evidence::observe_satisfactory(Path::new(path), run)
         } else {
             console_health_evidence::observe_dragonwilds(Path::new(path), run)
         };
@@ -2631,6 +2635,10 @@ mod theforest_health_tests;
 #[cfg(test)]
 #[path = "runtime_sonsoftheforest_health_tests.rs"]
 mod sonsoftheforest_health_tests;
+
+#[cfg(test)]
+#[path = "runtime_satisfactory_health_tests.rs"]
+mod satisfactory_health_tests;
 
 #[cfg(test)]
 mod player_query_tests {

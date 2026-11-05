@@ -74,6 +74,7 @@ const char* ValidateRequest(const Request& request, const ProcessIdentity& ident
     const Snapshot& current, std::uint64_t now) noexcept {
     if (std::strcmp(request.runId, identity.runId)) return "run_identity_mismatch";
     if (request.action == Action::SaveWorld) return "world_save_requires_native_context";
+    if (!current.moderationSupported) return "unsupported_moderation_profile";
     if (!request.accountId) return "invalid_account_identity";
     if (request.expiresAt < now || request.expiresAt - now > 15000) return "request_expired";
     if (!current.sequence || now < current.tickMs || now - current.tickMs > kFreshMs)
@@ -95,7 +96,9 @@ const char* ValidateRequest(const Request& request, const ProcessIdentity& ident
 std::string SerializeSnapshot(const ProcessIdentity& identity, const Snapshot& snapshot) {
     std::string out = "{" + IdentityJson(identity) + ",\"sequence\":\"" + std::to_string(snapshot.sequence)
         + "\",\"tick_ms\":\"" + std::to_string(snapshot.tickMs) + "\",\"complete\":"
-        + (snapshot.complete ? "true" : "false") + ",\"issue\":\"" + snapshot.issue + "\",\"players\":[";
+        + (snapshot.complete ? "true" : "false")
+        + (snapshot.moderationSupported ? "" : ",\"moderation_supported\":false")
+        + ",\"issue\":\"" + snapshot.issue + "\",\"players\":[";
     for (std::uint32_t i = 0; i < snapshot.count; ++i) {
         const auto& row = snapshot.players[i]; if (i) out += ',';
         out += "{\"session_handle\":" + std::to_string(row.sessionHandle)

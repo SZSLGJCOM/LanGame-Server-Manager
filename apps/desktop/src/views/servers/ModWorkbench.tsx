@@ -14,13 +14,12 @@ import {
   resolveManualModReferences,
   stageManualModFiles
 } from "../../api";
-import { describeError, isActiveJobStatus } from "../../app-state";
+import { describeError } from "../../app-state";
 import { formatDesktopError } from "../../desktop-error-message";
 import { DesktopFileDropError, droppedFilePaths, modDropEffect } from "../../desktop-file-drop";
 import type { InstanceArchiveDetails } from "../../storage-management-types";
 import { ShellIcon } from "../../components/ShellIcon";
 import { ActivityNotice } from "../../components/ActivityNotice";
-import { SingleFlightPoller } from "../../domain/single-flight-poller";
 import { useI18n, type LocaleCode } from "../../i18n";
 import type {
   InstanceDetails,
@@ -53,6 +52,8 @@ import { composeWorkshopLookups, rememberWorkshopPresentation, type WorkshopPres
 import { WorkshopDetailsRequests } from "./workshop-details-requests";
 import { buildWorkshopVerificationWarning } from "./workshop-warning";
 import { DstWorkshopConfiguration } from "./DstWorkshopConfiguration";
+import { ModSourceListEditors } from "./ModSourceListEditors";
+import { TerrariaEnabledNameImport } from "./TerrariaEnabledNameImport";
 import { ProjectZomboidMapOrderEditor, validateProjectZomboidMapOrder } from "./ProjectZomboidMapOrderEditor";
 import { WorkshopManifestPanel } from "./WorkshopManifestPanel";
 import { AsaModManifestPanel } from "./AsaModManifestPanel";
@@ -71,7 +72,8 @@ import { WorkshopCollectionRemovalDialog } from "./WorkshopCollectionRemovalDial
 import { useWorkshopCollectionRemoval } from "./useWorkshopCollectionRemoval";
 import {
   buildWorkshopModEnablementPlan, buildWorkshopDownloadOwnershipPlan,
-  buildProjectZomboidWorkshopRemovalPlan, readWorkshopControlStates, supportsWorkshopModEnablement, WorkshopControlError
+  buildProjectZomboidWorkshopRemovalPlan, buildTerrariaWorkshopRemovalPlan, buildTerrariaUnmappedNameDisablePlan, buildTerrariaEnabledNameAddPlan,
+  readWorkshopControlStates, supportsWorkshopModEnablement, WorkshopControlError, type WorkshopControlState
 } from "./mod-workbench-workshop-controls";
 import {
   buildPalworldWorkshopPlan, inventoryWorkshopIds, isRemovedWorkshopInventoryItem, palworldWorkshopStates,
@@ -85,6 +87,9 @@ import { ManualModInventoryList } from "./ManualModInventoryList";
 import { ManagedModDeleteDialog } from "./ManagedModDeleteDialog";
 import { useManagedManualMods } from "./useManagedManualMods";
 import { WorkshopStatus } from "./WorkshopStatus";
+import { WorkshopDownloadRows } from "./WorkshopDownloadRows";
+import { useWorkshopDownloadOperation } from "./useWorkshopDownloadOperation";
+import { activeWorkshopDownloadJob } from "./workshop-download-operations";
 import type { WorkshopManifestReview } from "./workshop-manifest";
 import { changedSettingKeys, mergeSettingPatch } from "./mod-settings-patch";
 import { ASA_MEMBERSHIP_KEYS, ASA_RAW_MOD_WARNING, AsaModControlError, canonicalAsaModId,
@@ -104,6 +109,7 @@ import {
   formatCompactCount,
   instanceBlocksModChanges,
   isUnsupportedWorkshopItem,
+  isCanonicalWorkshopModId,
   isClientOnlyDstWorkshopItem,
   isIncompleteWorkshopCollection,
   mergeTextList,
@@ -217,9 +223,11 @@ export function ModWorkbench(props: ModWorkbenchProps) {
   const managedCollections = useMemo(() => readManagedWorkshopCollections(settings, moduleId), [settings, moduleId]);
   const collectionMemberIds = useMemo(() => uniqueEntries(managedCollections.flatMap((collection) => collection.member_ids)), [managedCollections]);
   const managedCollectionIds = useMemo(() => new Set(managedCollections.map((entry) => entry.id)), [managedCollections]);
+  const [manualInventory, setManualInventory] = useState<ManualModInventoryResult | null>(null);
+  const instanceInventory = manualInventory?.instance_id === props.details.summary.id ? manualInventory : null;
   const configuredEntries = useMemo(
-    () => buildConfiguredEntries(moduleId, isArk ? arkProjection.settings : settings, props.moduleDetails, collectionMemberIds),
-    [moduleId, props.moduleDetails, settings, collectionMemberIds, isArk, arkProjection.settings]
+    () => buildConfiguredEntries(moduleId, isArk ? arkProjection.settings : settings, props.moduleDetails, collectionMemberIds, instanceInventory?.items),
+    [moduleId, props.moduleDetails, settings, collectionMemberIds, isArk, arkProjection.settings, instanceInventory]
   );
   const configurableEntries = useMemo(
     () => buildConfigurableEntries(moduleId, configuredEntries),
@@ -237,7 +245,10 @@ export function ModWorkbench(props: ModWorkbenchProps) {
   const [selectedBrowseWorkshopId, setSelectedBrowseWorkshopId] = useState<string | null>(null);
   const [detailPreview, setDetailPreview] = useState<{ locale: LocaleCode; item: SteamWorkshopLookupItem } | null>(null);
   const [detailHistory, setDetailHistory] = useState<string[]>([]);
-  const [installingWorkshopIds, setInstallingWorkshopIds] = useState<Set<string>>(() => new Set());
+  const downloadOperation = useWorkshopDownloadOperation(props.details.summary.id, readOnly);
+  const downloadState = readOnly ? "idle" : downloadOperation.state.status;
+  const installingWorkshopIds = useMemo(() => new Set(!readOnly && downloadState === "running" ? downloadOperation.state.ids : []),
+    [readOnly, downloadState, downloadOperation.state.ids]);
   const [retainedWorkshopIds, setRetainedWorkshopIds] = useState<string[]>([]);
   const [lookupCache, setLookupCache] = useState<Partial<Record<LocaleCode, Record<string, SteamWorkshopLookupItem>>>>({});
   const [presentationCache, setPresentationCache] = useState<Partial<Record<LocaleCode, WorkshopPresentationCache>>>({});
@@ -263,9 +274,8 @@ export function ModWorkbench(props: ModWorkbenchProps) {
   const [workshopInstallationResult, setWorkshopInstallationResult] = useState<SteamWorkshopInstallationSnapshot | null>(null);
   const [workshopInstallationError, setWorkshopInstallationError] = useState<string | null>(null);
   const [workshopInstallationLoading, setWorkshopInstallationLoading] = useState(false);
-  const [downloadState, setDownloadState] = useState<"idle" | "running" | "success" | "error">("idle");
-  const [downloadResult, setDownloadResult] = useState<SteamWorkshopDownloadResult | null>(null);
-  const [downloadError, setDownloadError] = useState<string | null>(null);
+  const [downloadAttemptError, setDownloadError] = useState<string | null>(null);
+  const downloadError = readOnly ? null : downloadAttemptError ?? downloadOperation.state.error;
   const [applyMessage, setApplyMessage] = useState<string | null>(null);
   const [scanNonce, setScanNonce] = useState(0);
   const [activeWorkbenchView, setActiveWorkbenchView] = useState<ModWorkbenchView>(readOnly ? "config" : "store");
@@ -286,10 +296,9 @@ export function ModWorkbench(props: ModWorkbenchProps) {
   const [manualStageState, setManualStageState] = useState<"idle" | "running" | "success" | "error">("idle");
   const [manualStageResult, setManualStageResult] = useState<ManualModStageResult | null>(null);
   const [manualStageError, setManualStageError] = useState<string | null>(null);
-  const [manualInventory, setManualInventory] = useState<ManualModInventoryResult | null>(null);
   const [manualInventoryError, setManualInventoryError] = useState<string | null>(null);
-  const workshopControlStates = useMemo(() => moduleId === "palworld" ? palworldWorkshopStates(settings, manualInventory)
-    : readWorkshopControlStates(moduleId, settings, pzSnapshot), [moduleId, settings, manualInventory, pzSnapshot]);
+  const workshopControlStates = useMemo<ReadonlyMap<string, WorkshopControlState>>(() => moduleId === "palworld" ? palworldWorkshopStates(settings, instanceInventory)
+    : readWorkshopControlStates(moduleId, settings, pzSnapshot, instanceInventory?.items), [moduleId, settings, instanceInventory, pzSnapshot]);
   const asaMembership = useMemo(() => readAsaModMembership(moduleId === "arksurvivalascended" ? arkProjection.settings : {}), [moduleId, arkProjection.settings]);
   const sharedAsaMembership = useMemo(() => readAsaModMembership(moduleId === "arksurvivalascended" ? settings : {}), [moduleId, settings]);
   const [manualReferenceInput, setManualReferenceInput] = useState("");
@@ -316,9 +325,10 @@ export function ModWorkbench(props: ModWorkbenchProps) {
   }, [nexusSource, nexusLocal, props.details.summary.id]);
   const modChangesBlockedRef = useRef(modChangesBlocked);
   const latestSettingsRef = useRef(settings);
-  const { mutationBusy, mutationError, setMutationError, runModMutation, launchModMutation } = useModWorkbenchMutations(
+  const { mutationBusy: localMutationBusy, mutationError, setMutationError, runModMutation, launchModMutation } = useModWorkbenchMutations(
     props.details.summary.id, moduleId, modChangesBlockedRef, latestSettingsRef, t, props.steamAccount?.isBusy
   );
+  const mutationBusy = localMutationBusy || downloadState === "running";
   const steamAccount = props.steamAccount;
   const managedManualMods = useManagedManualMods({
     instanceId: props.details.summary.id,
@@ -347,8 +357,8 @@ export function ModWorkbench(props: ModWorkbenchProps) {
   const workshopIds = useMemo(() => buildSteamLookupIds(configuredEntries, []), [configuredEntries]);
   const workshopIdsKey = workshopIds.join("\n");
   const workshopLookupIds = useMemo(
-    () => uniqueEntries([...workshopIds, ...retainedWorkshopIds, ...collectionLookupIdsKey.split("\n").filter(Boolean)]),
-    [retainedWorkshopIds, workshopIds, collectionLookupIdsKey]
+    () => uniqueEntries([...workshopIds, ...retainedWorkshopIds, ...(!readOnly ? downloadOperation.state.ids : []), ...collectionLookupIdsKey.split("\n").filter(Boolean)]),
+    [retainedWorkshopIds, workshopIds, collectionLookupIdsKey, readOnly, downloadOperation.state.ids]
   );
   const workshopLookupIdsKey = workshopLookupIds.join("\n");
   const deferredWorkshopLookupIdsKey = useDeferredValue(workshopLookupIdsKey);
@@ -359,8 +369,9 @@ export function ModWorkbench(props: ModWorkbenchProps) {
   const { result: browseResult, error: browseError, loading: browseLoading, retry: retryBrowse } =
     useSteamWorkshopBrowse(readOnly ? null : expectedAppId, browseQuery, browseSort, browsePage, browseKind);
   // Keep full lookups separate so a browse summary cannot erase collection children.
-  const lookupMap = useMemo(() => composeWorkshopLookups(browseResult?.items ?? [], resolvedLookupMap, presentations),
-    [browseResult, resolvedLookupMap, presentations]);
+  const lookupMap = useMemo(() => composeWorkshopLookups(browseResult?.items ?? [],
+    { ...(downloadOperation.state.locale === locale ? downloadOperation.state.items : {}), ...resolvedLookupMap }, presentations),
+    [browseResult, resolvedLookupMap, presentations, downloadOperation.state.items, downloadOperation.state.locale, locale]);
   const isManualEnablementModule = Boolean(manualEnablement && (!isSteamWorkshopModule || manualEnablement.id_strategy === "palworld_package_name"));
   const usesFileModManagement = Boolean(manualStaging && !manualEnablement && !isSteamWorkshopModule
     && moduleId !== "astroneer" && moduleId !== "satisfactory");
@@ -394,50 +405,18 @@ export function ModWorkbench(props: ModWorkbenchProps) {
     || arkProjection.error;
   const dstRawOverridesActive = moduleId === "dontstarve" && hasDstRawModOverrides(settings);
   const modEnablementDisabled = modMutationsDisabled || dstRawOverridesActive;
-  const [activeJob, setActiveJob] = useState<BackgroundJob | null>(null);
-
-  useEffect(() => {
-    if (readOnly || downloadState !== "running") {
-      setActiveJob(null);
-      return;
-    }
-
-    const instanceId = props.details.summary.id;
-    setActiveJob(null);
-    const poller = new SingleFlightPoller<BackgroundJob[], number>({
-      intervalMs: 350,
-      poll: readBackgroundJobs,
-      schedule: (callback, delayMs) => window.setTimeout(callback, delayMs),
-      cancel: (handle) => window.clearTimeout(handle),
-      onValue: (jobs) => {
-        const matched = jobs.find(
-          (job) =>
-            job.target_id === instanceId &&
-            (job.kind.toLowerCase() === "downloadworkshop" || job.kind.toLowerCase() === "download_workshop") &&
-            isActiveJobStatus(job.status)
-        ) ?? null;
-        setActiveJob(matched);
-      }
-    });
-    poller.start();
-    return () => {
-      poller.dispose();
-    };
-  }, [readOnly, downloadState, props.details.summary.id]);
-
   const activeWorkshopJob = useMemo(() => {
     if (readOnly) return null;
-    return activeJob ?? (props.jobs ?? []).find(
-      (job) =>
-        job.target_id === props.details.summary.id &&
-        (job.kind.toLowerCase() === "downloadworkshop" || job.kind.toLowerCase() === "download_workshop") &&
-        isActiveJobStatus(job.status)
-    ) ?? null;
-  }, [readOnly, activeJob, props.details.summary.id, props.jobs]);
+    return downloadState === "idle" ? activeWorkshopDownloadJob(props.jobs ?? [], props.details.summary.id) : downloadOperation.state.job;
+  }, [readOnly, downloadState, downloadOperation.state.job, props.details.summary.id, props.jobs]);
 
   const activeProgressPercent = typeof activeWorkshopJob?.progress_percent === "number" && Number.isFinite(activeWorkshopJob.progress_percent)
-    ? Math.round(activeWorkshopJob.progress_percent)
+    ? Math.max(0, Math.min(100, Math.round(activeWorkshopJob.progress_percent)))
     : null;
+
+  useEffect(() => {
+    if (!readOnly && (downloadState === "success" || downloadState === "error")) setScanNonce((current) => current + 1);
+  }, [readOnly, downloadState]);
 
   useEffect(() => {
     latestSettingsRef.current = settings;
@@ -736,6 +715,12 @@ export function ModWorkbench(props: ModWorkbenchProps) {
             .map((item) => canonicalAsaModId(item.inferred_id)).filter((id): id is string => id !== null));
           if (ids.length) await applyAsaModAction(ids, "restore-files");
         }
+        if (moduleId === "terraria") {
+          const ids = result.affected_root_names.filter(isCanonicalWorkshopModId);
+          if (!ids.length) throw new Error(t("servers.mods.terraria.folderIds"));
+          const latest = await readWritableInstanceState();
+          await persistSettings(buildWorkshopDownloadOwnershipPlan(moduleId, latest.settings, ids), latest.settings);
+        }
         startTransition(() => {
           setManualStageResult(result);
           setManualStageState("success");
@@ -943,8 +928,7 @@ export function ModWorkbench(props: ModWorkbenchProps) {
     try {
       reviewedCollections = collectInstalledWorkshopCollections(manifest?.review.ids ?? selectedIds, resolvedItems, expectedAppId);
     } catch (error) {
-      setDownloadError(describeError(error));
-      setDownloadState("error");
+      setDownloadError(t("servers.mods.installFailed", { error: formatDesktopError(t, error) }));
       return Promise.resolve(false);
     }
     const installedCollections = purpose === "prepare" ? [] : reviewedCollections;
@@ -958,15 +942,17 @@ export function ModWorkbench(props: ModWorkbenchProps) {
       return Promise.resolve(false);
     }
 
-    setInstallingWorkshopIds(new Set(uniqueEntries([...selectedIds, ...downloadableIds])));
+    const operationIds = uniqueEntries([...selectedIds, ...downloadableIds]);
+    const operation = downloadOperation.begin({ ids: operationIds, contentIds: downloadableIds, locale,
+      items: Object.fromEntries(operationIds.flatMap((id) => resolvedItems[id] ? [[id, resolvedItems[id]]] : [])) });
+    if (!operation) return Promise.resolve(false);
+    setDownloadError(null);
+    let enablementFailure: Error | null = null;
     return runModMutation("install", async () => {
       if (installedCollections.length) mergeManagedWorkshopCollections(latestSettingsRef.current, installedCollections);
       if (purpose === "enable" && moduleId === "dontstarve" && manifest?.enable !== false && hasDstRawModOverrides(latestSettingsRef.current)) {
         throw new Error(t("dst.settings.modStatus.rawOverrideWarning", undefined, DST_RAW_MOD_WARNING));
       }
-      setDownloadState("running");
-      setDownloadResult(null);
-      setDownloadError(null);
       setApplyMessage(null);
 
       // Recheck disk immediately before applying a reviewed list; its preview may be stale.
@@ -999,7 +985,10 @@ export function ModWorkbench(props: ModWorkbenchProps) {
       // A cache hit alone does not prove that the selected instance has its Mod files.
       if (usesSteamCmd && downloadableIds.length > 0) {
         const preparationIds = downloadableIds;
-        const download = (accountName?: string) => downloadSteamWorkshopItems(props.details.summary.id, preparationIds, true, accountName);
+        const download = async (accountName?: string) => {
+          operation.trackJobs(await readBackgroundJobs());
+          return downloadSteamWorkshopItems(props.details.summary.id, preparationIds, true, accountName);
+        };
         try {
           workshopDownload = await download(steamAccount?.loginAccount);
         } catch (error) {
@@ -1018,7 +1007,6 @@ export function ModWorkbench(props: ModWorkbenchProps) {
             "SteamCMD did not materialize Workshop items: {ids}"
           ));
         }
-        setDownloadResult(workshopDownload);
       }
 
       let nextSettings: SettingsObject | null = null;
@@ -1030,22 +1018,17 @@ export function ModWorkbench(props: ModWorkbenchProps) {
         nextSettings = null;
       } else if (manifest?.enable === false) {
         setRetainedWorkshopIds((current) => uniqueEntries([...current, ...selectedIds]));
-        if (moduleId === "terraria" || moduleId === "dontstarve") {
+        if (moduleId === "dontstarve") {
           const latestState = await readWritableInstanceState();
           latestSettingsRef.current = latestState.settings;
           settingsBase = latestState.settings;
           nextSettings = { ...latestState.settings };
-          const ownershipKey = moduleId === "dontstarve" ? "shared_workshop_mod_ids" : "tmodloader_workshop_item_ids";
-          nextSettings[ownershipKey] = moduleId === "dontstarve"
-            ? mergeWorkshopList(nextSettings, ownershipKey, downloadableIds).value
-            : mergeTextList(nextSettings, ownershipKey, downloadableIds, parseDelimitedEntries).value;
-          if (moduleId === "dontstarve") {
-            const restored = new Set(downloadableIds);
-            const removed = readDstRemovedWorkshopModIds(nextSettings).filter((id) => !restored.has(id));
-            if (removed.length) nextSettings.dst_removed_workshop_mod_ids = removed;
-            else delete nextSettings.dst_removed_workshop_mod_ids;
-          }
-        } else if (["projectzomboid", "arksurvivalevolved", "barotrauma", "conanexiles", "soulmask"].includes(moduleId)) {
+          nextSettings.shared_workshop_mod_ids = mergeWorkshopList(nextSettings, "shared_workshop_mod_ids", downloadableIds).value;
+          const restored = new Set(downloadableIds);
+          const removed = readDstRemovedWorkshopModIds(nextSettings).filter((id) => !restored.has(id));
+          if (removed.length) nextSettings.dst_removed_workshop_mod_ids = removed;
+          else delete nextSettings.dst_removed_workshop_mod_ids;
+        } else if (supportsWorkshopModEnablement(moduleId)) {
           const latestState = await readWritableInstanceState();
           settingsBase = latestState.settings;
           nextSettings = buildWorkshopDownloadOwnershipPlan(moduleId, settingsBase, downloadableIds);
@@ -1115,7 +1098,18 @@ export function ModWorkbench(props: ModWorkbenchProps) {
         nextSettings = latestApplyPlan.canApply && latestApplyPlan.nextSettings
           ? latestApplyPlan.nextSettings
           : null;
-        if (moduleId === "projectzomboid") {
+        if (moduleId === "terraria") {
+          const owned = buildWorkshopDownloadOwnershipPlan(moduleId, latestState.settings, downloadableIds);
+          nextSettings = owned;
+          try {
+            const inventory = await readManualModInventory(props.details.summary.id);
+            setManualInventory(inventory);
+            nextSettings = buildWorkshopModEnablementPlan(moduleId, owned, downloadableIds, true, null, inventory.items).nextSettings;
+          } catch (error) {
+            // Keep successfully downloaded items in My Mods even when enablement fails.
+            enablementFailure = workshopControlError(error);
+          }
+        } else if (moduleId === "projectzomboid") {
           const snapshot = await readProjectZomboidWorkshopModsSnapshot(props.details.summary.id, downloadableIds);
           setPzSnapshot(snapshot);
           const localById = new Map(snapshot.items.map((item) => [item.workshop_item_id, item]));
@@ -1134,7 +1128,6 @@ export function ModWorkbench(props: ModWorkbenchProps) {
         }
         installedCount = workshopDownload?.items.length ?? latestApplyPlan.addedIds.length;
         if (!usesSteamCmd && !nextSettings) {
-          setDownloadState("idle");
           setApplyMessage(t(latestApplyPlan.summaryKey, latestApplyPlan.params, latestApplyPlan.summaryFallback));
           return;
         }
@@ -1160,6 +1153,7 @@ export function ModWorkbench(props: ModWorkbenchProps) {
       if (nextSettings) {
         await persistSettings(nextSettings, settingsBase);
       }
+      if (enablementFailure) throw enablementFailure;
 
       const downloadOnly = purpose === "prepare" || manifest?.enable === false;
       const deployedToInstance = moduleId === "dontstarve" || Boolean(manualStaging);
@@ -1174,19 +1168,12 @@ export function ModWorkbench(props: ModWorkbenchProps) {
           ? "Deployed {count} Mod item(s) into this instance."
           : "Cached {count} Mod item(s) locally and configured this instance.";
       startTransition(() => {
-        setDownloadState("success");
         setApplyMessage(t(completionKey, { count: installedCount }, completionFallback));
-        setScanNonce((current) => current + 1);
       });
-    }).then(() => true).catch((error) => {
-      startTransition(() => {
-        setDownloadError(describeError(error));
-        setDownloadState("error");
-      });
-      setScanNonce((current) => current + 1);
+    }).then(() => { operation.succeed(); return true; }).catch((error) => {
+      operation.fail(t(error === enablementFailure ? "servers.mods.terraria.enableFailedAfterDownload" : "servers.mods.installFailed",
+        { error: formatDesktopError(t, error) }));
       return false;
-    }).finally(() => {
-      setInstallingWorkshopIds(new Set());
     });
   }
 
@@ -1207,8 +1194,16 @@ export function ModWorkbench(props: ModWorkbenchProps) {
         } catch (error) { throw workshopControlError(error); }
         return;
       }
-      if (moduleId === "terraria" && parseLineOrSemicolonEntries(latestState.settings.tmodloader_enabled_mod_names).length) {
-        throw new Error(t("servers.mods.collections.removalError.terraria-metadata"));
+      if (moduleId === "terraria") {
+        const inventory = await readManualModInventory(props.details.summary.id);
+        try {
+          const plan = buildTerrariaWorkshopRemovalPlan(latestState.settings, targetIds, inventory.items);
+          await persistSettings(plan.nextSettings, latestState.settings, undefined,
+            (current) => assertWorkshopControlBase(latestState.settings, current));
+          setManualInventory(inventory);
+          setApplyMessage(plan.retainedLocalIds.length ? t("servers.mods.collections.retainedLocalIds", { ids: plan.retainedLocalIds.join(", ") }) : null);
+        } catch (error) { throw workshopControlError(error); }
+        return;
       }
       if (moduleId === "arksurvivalevolved") {
         await persistSettings(applyArkSharedModAction(latestState.settings, moduleId, targetIds, "remove"), latestState.settings);
@@ -1237,6 +1232,19 @@ export function ModWorkbench(props: ModWorkbenchProps) {
         setApplyMessage(null);
         setScanNonce((current) => current + 1);
       });
+    });
+  }
+
+  function disableTerrariaName(name: string) {
+    launchModMutation("enablement", async () => {
+      const latest = await readWritableInstanceState();
+      const inventory = await readManualModInventory(props.details.summary.id);
+      try {
+        const plan = buildTerrariaUnmappedNameDisablePlan(latest.settings, name, inventory.items);
+        await persistSettings(plan.nextSettings, latest.settings, undefined,
+          (current) => assertWorkshopControlBase(latest.settings, current));
+        setManualInventory(inventory);
+      } catch (error) { throw workshopControlError(error); }
     });
   }
 
@@ -1414,6 +1422,7 @@ export function ModWorkbench(props: ModWorkbenchProps) {
       return;
     }
     if (moduleId === "arksurvivalascended") { handleAsaModAction(id, "remove"); return; }
+    if (row.entry.key === "terraria-unmapped-names") { disableTerrariaName(row.value); return; }
     if (isSteamWorkshopModule) {
       setRetainedWorkshopIds((current) => uniqueEntries([...current, id]));
     }
@@ -1589,25 +1598,28 @@ export function ModWorkbench(props: ModWorkbenchProps) {
     ),
     [configuredManualModIdSet, manualInventoryItems, manualEnablement, moduleId, manualInventory, settings, asaMembership]
   );
-  // Workshop inventory includes machine-wide caches; it is not proof of deployment into this instance.
+  const installingInventoryItems = useMemo(() => manualInventoryItems.filter((item) =>
+    inventoryWorkshopIds(item, manualInventory).some((id) => installingWorkshopIds.has(id))),
+  [manualInventoryItems, manualInventory, installingWorkshopIds]);
+  const installingInventoryPaths = useMemo(() => new Set(installingInventoryItems.map((item) => item.path)), [installingInventoryItems]);
+  const installingManualModIds = useMemo(() => new Set(installingInventoryItems.flatMap((item) =>
+    item.inferred_id ? [item.inferred_id.toLowerCase()] : [])), [installingInventoryItems]);
+  // Fresh inventory is authoritative; a past download result cannot prove files still exist.
+  // Workshop inventory includes machine-wide caches, not just this instance's deployment.
   const machineCachedSteamIdSet = useMemo(() => new Set(uniqueEntries([
     ...deployedWorkshopInventoryItems.map((item) => item.name),
     ...(workshopInstallationResult?.items ?? [])
       .filter((item) => item.installed)
       .map((item) => item.item_id),
-    ...(downloadResult?.items ?? [])
-      .filter((item) => item.expected_path_exists)
-      .map((item) => item.item_id),
     ...(pzSnapshot?.items ?? [])
       .filter((item) => ["installed", "installed_with_warnings"].includes(item.status))
       .map((item) => item.workshop_item_id)
-  ])), [deployedWorkshopInventoryItems, downloadResult, pzSnapshot, workshopInstallationResult]);
+  ])), [deployedWorkshopInventoryItems, pzSnapshot, workshopInstallationResult]);
   const inspectedMachineSteamIdSet = useMemo(() => new Set(uniqueEntries([
     ...deployedWorkshopInventoryItems.map((item) => item.name),
     ...(workshopInstallationResult?.items ?? []).map((item) => item.item_id),
-    ...(downloadResult?.items ?? []).map((item) => item.item_id),
     ...(pzSnapshot?.items ?? []).map((item) => item.workshop_item_id)
-  ])), [deployedWorkshopInventoryItems, downloadResult, pzSnapshot, workshopInstallationResult]);
+  ])), [deployedWorkshopInventoryItems, pzSnapshot, workshopInstallationResult]);
   const catalogItems = useMemo(
     () => browsedWorkshopItems.map((item) => lookupMap[item.id] ?? item)
       .filter((item) => !(item.status === "resolved" && item.item_kind === "item" &&
@@ -1666,6 +1678,16 @@ export function ModWorkbench(props: ModWorkbenchProps) {
     [unconfiguredInventoryItems, selectedInventoryPath]
   );
   const configuredEntryCount = enabledRows.length;
+  const pendingWorkshopIds = useMemo(() => {
+    if (readOnly || !["running", "error"].includes(downloadState)) return [];
+    const listedIds = new Set([
+      ...enabledRows.map((row) => row.id),
+      ...unconfiguredInventoryItems.flatMap((item) => inventoryWorkshopIds(item, manualInventory)),
+      ...manualInventoryItems.filter((item) => item.inferred_id && configuredManualModIdSet.has(item.inferred_id.toLowerCase()))
+        .flatMap((item) => inventoryWorkshopIds(item, manualInventory))
+    ]);
+    return downloadOperation.state.contentIds.filter((id) => !listedIds.has(id));
+  }, [readOnly, downloadState, downloadOperation.state.contentIds, enabledRows, unconfiguredInventoryItems, manualInventory, manualInventoryItems, configuredManualModIdSet]);
   const verificationWarning = buildWorkshopVerificationWarning(t, uniqueEntries([
     ...workshopLookupIds, ...catalogItems.map((item) => item.id), ...(selectedBrowseWorkshopId ? [selectedBrowseWorkshopId] : [])
   ]).map((id) => lookupMap[id]).filter((item): item is SteamWorkshopLookupItem => Boolean(item)),
@@ -1851,7 +1873,7 @@ export function ModWorkbench(props: ModWorkbenchProps) {
   }
 
   function renderModList() {
-    const hasRows = enabledRows.length > 0 ||
+    const hasRows = enabledRows.length > 0 || pendingWorkshopIds.length > 0 ||
       (showsManualInventory && unconfiguredInventoryItems.length > 0);
 
     if (!hasRows && showsManualInventory && !manualInventory) {
@@ -1873,6 +1895,8 @@ export function ModWorkbench(props: ModWorkbenchProps) {
 
     return (
       <div className="mw-entry-list">
+        <WorkshopDownloadRows ids={pendingWorkshopIds} lookup={lookupMap} progressPercent={activeProgressPercent}
+          error={downloadOperation.state.error} onOpen={(id) => { openWorkshopDetails(id); setActiveWorkbenchView("store"); }} />
         {enabledRows.map((row) => {
           const isActive = activeDetailSource === "enabled" && row.key === selectedEnabledRow?.key;
           const controlState = supportsWorkshopModEnablement(moduleId) && row.entry.kind === "steam-item"
@@ -1882,10 +1906,12 @@ export function ModWorkbench(props: ModWorkbenchProps) {
           const isDisabled = moduleId === "arksurvivalascended" ? !sharedAsaMembership.enabled.has(row.id)
             : controlState ? !controlState.enabled : row.entry.key === "dst-disabled";
           const id = formatEnabledRowDisplayId(row);
-          const lookup = lookupMap[row.id];
-          const title = lookup?.title ?? row.value ?? row.entry.label;
-          const lifecycle = lookup ? resolveWorkshopStoreItemState(lookup).lifecycleState
-            : moduleId === "dontstarve" ? "checking" : "enabled";
+          const lookup = row.entry.key === "terraria-unmapped-names" ? undefined : lookupMap[row.id];
+          const title = lookup?.title ?? controlState?.internalModName ?? row.value ?? row.entry.label;
+          const lifecycle = installingWorkshopIds.has(row.id) || (isManualEnablementModule && installingManualModIds.has(row.id.toLowerCase()))
+            ? "installing" : lookup ? resolveWorkshopStoreItemState(lookup).lifecycleState
+            : controlState ? (controlState.enabled ? "enabled" : controlState.canToggle ? "downloaded" : "needs-configuration")
+              : moduleId === "dontstarve" ? "checking" : "enabled";
           const isSortable = !readOnly && (moduleId !== "arksurvivalascended" || !asaRawFlagsActive) && canSortWorkbenchRow(row);
           const isDragging = draggedEnabledRow?.key === row.key;
           const isDropTarget = enabledDropTargetKey === row.key;
@@ -1915,8 +1941,8 @@ export function ModWorkbench(props: ModWorkbenchProps) {
                   <span className="mw-entry-row-title mw-entry-row-title--singleline">{title}</span>
                   {lookup?.description_excerpt ? <span className="mw-entry-row-excerpt">{lookup.description_excerpt}</span> : null}
                   <span className="mw-entry-row-status">
-                    {!readOnly ? <WorkshopStatus state={lifecycle} /> : null}
-                    <span className="mw-entry-id">{row.entry.label} / {id}</span>
+                    {!readOnly ? <WorkshopStatus state={lifecycle} progressPercent={activeProgressPercent} /> : null}
+                    <span className="mw-entry-id">{row.entry.key === "terraria-unmapped-names" ? t("servers.mods.terraria.internalName") : row.entry.label} / {id}</span>
                     {isArk ? <><span className="ark-mod-default-label">{sharedArkMember ? locale === "zh-CN" ? "共用默认" : "Shared defaults"
                       : locale === "zh-CN" ? "仅地图配置" : "Map configuration"}</span><span data-ark-mod-map-count>{arkMapCounts.counts.get(row.id) ?? 0}/{arkMapCounts.total}{locale === "zh-CN" ? " 地图" : " maps"}</span></> : null}
                   </span>
@@ -1930,12 +1956,14 @@ export function ModWorkbench(props: ModWorkbenchProps) {
                   aria-checked={controlState?.partiallyEnabled ? "mixed" : !isDisabled}
                   ref={(input) => { if (input) input.indeterminate = Boolean(controlState?.partiallyEnabled); }}
                   disabled={modEnablementDisabled || (controlState !== null && !controlState.canToggle)}
+                  title={moduleId === "terraria" && controlState && !controlState.canToggle ? t("servers.mods.terraria.unresolved") : undefined}
                   aria-label={(isArk ? locale === "zh-CN" ? "共用默认：" : "Shared defaults: " : "") + (isDisabled
                     ? t("servers.mods.configList.enable", { name: title }, "Enable {name}")
                     : t("servers.mods.configList.disable", { name: title }, "Disable {name}"))}
                   onChange={() => {
                     handleSelectEnabledRow(row.key);
                     if (moduleId === "arksurvivalascended") handleAsaModAction(id, isDisabled ? "enable" : "disable");
+                    else if (row.entry.key === "terraria-unmapped-names") disableTerrariaName(row.value);
                     else if (controlState) handleSetCollectionMembersEnabled([id], isDisabled);
                     else if (isDisabled) handleSetDstModsEnabled([id], true);
                     else handleDisableEnabledRow(row);
@@ -1944,7 +1972,7 @@ export function ModWorkbench(props: ModWorkbenchProps) {
                 <button
                   type="button"
                   className="mw-entry-remove-button"
-                  disabled={modEnablementDisabled || (moduleId === "terraria" && parseLineOrSemicolonEntries(settings.tmodloader_enabled_mod_names).length > 0)}
+                  disabled={modEnablementDisabled || controlState?.canRemove === false}
                   aria-label={t("servers.mods.configList.remove", { name: title }, "Remove {name} from this instance")}
                   title={t("servers.mods.removeFromInstance", undefined, "Remove from instance")}
                   onClick={() => {
@@ -1961,6 +1989,7 @@ export function ModWorkbench(props: ModWorkbenchProps) {
 
         {showsManualInventory ? <ManualModInventoryList
           items={unconfiguredInventoryItems}
+          installingPaths={installingInventoryPaths} progressPercent={activeProgressPercent}
           selectedPath={activeDetailSource === "inventory" ? selectedInventoryItem?.path ?? null : null}
           canEnable={isManualEnablementModule} disabled={modMutationsDisabled}
           onSelect={(path) => { setSelectedInventoryPath(path); setActiveDetailSource("inventory"); }}
@@ -2090,6 +2119,15 @@ export function ModWorkbench(props: ModWorkbenchProps) {
 
     const selectedEntry = selectedRow.entry;
     const selectedId = selectedRow.id;
+    if (moduleId === "terraria") {
+      const control = workshopControlStates.get(selectedId);
+      if (selectedEntry.key === "terraria-unmapped-names" || control?.internalModName) {
+        return <div className="mw-selected-config-panel">{renderInfoRows([
+          { label: t("servers.mods.terraria.internalName"), value: selectedEntry.key === "terraria-unmapped-names" ? selectedRow.value : control?.internalModName }
+        ])}</div>;
+      }
+      return <div className="mw-empty"><span>{t("servers.mods.terraria.unresolved")}</span></div>;
+    }
     const emptyConfigMessage = selectedEntry.kind === "steam-item" || selectedEntry.kind === "steam-collection"
       ? t("servers.mods.configPanel.downloadOnly", undefined, "This entry controls downloads or collection membership. Select an enabled mod row to edit per-mod settings.")
       : t("servers.mods.configPanel.noEditor", undefined, "The manager does not yet provide a configuration panel for this mod. See the configuration instructions provided by the mod author.");
@@ -2116,7 +2154,7 @@ export function ModWorkbench(props: ModWorkbenchProps) {
     }
     const key = error.code === "not-owned" ? "servers.mods.removeSummary.notConfigured"
       : error.code === "ownership-limit" ? "servers.mods.removeSummary.ownershipLimit"
-      : error.code === "local-metadata-missing" ? "servers.mods.controls.localMetadata"
+      : error.code === "local-metadata-missing" ? (moduleId === "terraria" ? "servers.mods.terraria.unresolved" : "servers.mods.controls.localMetadata")
       : `servers.mods.collections.removalError.${error.code === "invalid-settings" ? "invalid-records" : error.code}`;
     return new Error(t(key, { ids: error.ids.join(", ") }));
   }
@@ -2164,12 +2202,14 @@ export function ModWorkbench(props: ModWorkbenchProps) {
       try {
         const snapshot = moduleId === "projectzomboid" ? await readProjectZomboidWorkshopModsSnapshot(props.details.summary.id,
           uniqueEntries([...parseWorkshopIdList(latest.settings.workshop_items), ...ids])) : null;
+        const inventory = moduleId === "terraria" ? await readManualModInventory(props.details.summary.id) : null;
         const plan = moduleId === "palworld"
           ? buildPalworldWorkshopPlan(latest.settings, await readManualModInventory(props.details.summary.id), ids, enabled ? "enable" : "disable")
-          : buildWorkshopModEnablementPlan(moduleId, latest.settings, ids, enabled, snapshot);
+          : buildWorkshopModEnablementPlan(moduleId, latest.settings, ids, enabled, snapshot, inventory?.items);
         await persistSettings(plan.nextSettings, latest.settings, undefined,
           (current) => assertWorkshopControlBase(latest.settings, current));
         if (snapshot) setPzSnapshot(snapshot);
+        if (inventory) setManualInventory(inventory);
         setApplyMessage(plan.retainedLocalIds.length ? t("servers.mods.collections.retainedLocalIds", { ids: plan.retainedLocalIds.join(", ") }) : null);
         setScanNonce((current) => current + 1);
       } catch (error) { throw workshopControlError(error); }
@@ -2182,14 +2222,13 @@ export function ModWorkbench(props: ModWorkbenchProps) {
       return { added: Boolean(row), enabled: row?.entry.key === "dst-enabled", canToggle: Boolean(row), canRemove: Boolean(row) };
     }
     if (moduleId === "palworld" || supportsWorkshopModEnablement(moduleId)) {
-      const state = workshopControlStates.get(id) ?? { owned: false, enabled: false, partiallyEnabled: false, canToggle: false };
+      const state: WorkshopControlState = workshopControlStates.get(id) ?? { owned: false, enabled: false, partiallyEnabled: false, canToggle: false };
       return { added: state.owned, enabled: state.enabled, partiallyEnabled: state.partiallyEnabled,
-        canToggle: state.canToggle, canRemove: state.owned };
+        canToggle: state.canToggle, canRemove: state.canRemove ?? state.owned };
     }
     const added = collectionMemberAdded(id);
     return { added, enabled: false, canToggle: false,
-      canRemove: added && (moduleId === "squad" || moduleId === "unturned" ||
-        (moduleId === "terraria" && !parseLineOrSemicolonEntries(settings.tmodloader_enabled_mod_names).length)) };
+      canRemove: added && (moduleId === "squad" || moduleId === "unturned") };
   }
 
   function renderCollectionList(selectedMemberId: string | null) {
@@ -2236,7 +2275,7 @@ export function ModWorkbench(props: ModWorkbenchProps) {
       && collectionMemberAdded(selectedCollectionMember.modId)
       ? selectedCollectionMember.modId : null;
     const disabledCount = showsManualInventory ? unconfiguredInventoryItems.length : 0;
-    const modCount = configuredEntryCount + disabledCount;
+    const modCount = configuredEntryCount + disabledCount + pendingWorkshopIds.length;
     const empty = !manifestMode && (collectionsMode ? managedCollections.length === 0 : enabledRows.length === 0 && disabledCount === 0);
     const selectedName = collectionsMode ? selectedMemberId ? lookupMap[selectedMemberId]?.title ?? selectedMemberId : null : resolveActiveDetailSource() === "inventory"
       ? selectedInventoryItem?.name
@@ -2265,7 +2304,21 @@ export function ModWorkbench(props: ModWorkbenchProps) {
                 <ShellIcon name="folder" className="mw-btn-icon" />{t("servers.mods.openFolder", undefined, "Open Mod folder")}
               </button> : null}
             </div>}
-            <div className="mw-detail-panel">{manifestMode && moduleId === "arksurvivalascended" ? <AsaModManifestPanel
+            <div className="mw-detail-panel">
+            {!manifestMode && !collectionsMode ? <ModSourceListEditors key={`sources:${props.details.summary.id}`}
+              instanceId={props.details.summary.id} moduleDetails={props.moduleDetails} settings={settings} readOnly={readOnly}
+              disabled={modChangesBlocked || mutationBusy || Boolean(steamAccount?.busy)}
+              onSave={(next, expected, validateCurrent) => runModMutation("configuration", async () => {
+                await persistSettings(next, expected, undefined, validateCurrent);
+              })} /> : null}
+            {!manifestMode && !collectionsMode && moduleId === "terraria" && !readOnly ? <TerrariaEnabledNameImport
+              key={`terraria-names:${props.details.summary.id}`} disabled={modMutationsDisabled}
+              onAdd={(names) => runModMutation("enablement", async () => {
+                const latest = await readWritableInstanceState();
+                const plan = buildTerrariaEnabledNameAddPlan(latest.settings, names);
+                await persistSettings(plan.nextSettings, latest.settings);
+              })} /> : null}
+            {manifestMode && moduleId === "arksurvivalascended" ? <AsaModManifestPanel
               key={props.details.summary.id} instanceId={props.details.summary.id}
               currentIds={sharedAsaMembership.active} initialText={manifestDraft} onDraftChange={setManifestDraft}
               readOnly={readOnly}
@@ -2283,8 +2336,7 @@ export function ModWorkbench(props: ModWorkbenchProps) {
               readOnly={readOnly}
               targetNote={t(`servers.mods.manifest.target.${moduleId}`, undefined, "")}
               allowCachedInstall={Boolean(manualStaging)}
-              enablementNote={moduleId === "terraria" ? t("servers.mods.manifest.needsNames")
-                : moduleId === "squad" ? t("servers.mods.manifest.downloadOnly") : undefined}
+              enablementNote={moduleId === "squad" ? t("servers.mods.manifest.downloadOnly") : undefined}
               onApply={(review, enable) => handleInstallWorkshopItems(review.contentIds, { review, enable })}
             /> : collectionsMode ? renderCollectionList(selectedMemberId) : renderModList()}</div>
             {dropActive ? <div className="mw-dropzone-feedback" aria-hidden="true">
@@ -2763,7 +2815,7 @@ export function ModWorkbench(props: ModWorkbenchProps) {
               </ActivityNotice>
             ) : null}
             {pzError ? <ActivityNotice tone="error">{t("servers.mods.projectZomboidScanFailed", { error: pzError }, "Project Zomboid local scan failed: {error}")}</ActivityNotice> : null}
-            {downloadError ? <ActivityNotice tone="error">{t("servers.mods.installFailed", { error: formatDesktopError(t, downloadError) }, "Mod installation failed: {error}")}</ActivityNotice> : null}
+            {downloadError ? <ActivityNotice tone="error">{downloadError}</ActivityNotice> : null}
             {manualInventoryError ? <ActivityNotice tone="error">{manualInventoryError}</ActivityNotice> : null}
             {mutationError ? <ActivityNotice tone="error">{mutationError}</ActivityNotice> : null}
             {managedManualMods.error && !managedManualMods.review ? <ActivityNotice tone="error">{managedManualMods.error}</ActivityNotice> : null}

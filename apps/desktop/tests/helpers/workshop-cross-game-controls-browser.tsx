@@ -16,6 +16,9 @@ fixture.style.cssText = "height:100vh;padding:16px;box-sizing:border-box;display
 const root = createRoot(fixture);
 const X = "111111", Y = "222222", Z = "333333", O = "444444", A = "456789", B = "567890";
 const leaves = [X, Y, Z, O];
+const tmodNames: Record<string, string> = {
+  [X]: "CrystalTools", [Y]: "ForestStorage", [Z]: "MineRails", [O]: "SkyLanterns"
+};
 const games = ["projectzomboid", "palworld", "arksurvivalevolved", "barotrauma", "conanexiles", "soulmask", "unturned", "terraria", "squad"];
 const listFields: Record<string, string> = { projectzomboid: "workshop_items", palworld: "mod_package_names",
   arksurvivalevolved: "active_mod_ids", barotrauma: "mod_workshop_ids", conanexiles: "mod_workshop_ids",
@@ -103,6 +106,7 @@ function owned(id: string): boolean {
 function enabled(id: string): boolean {
   if (game === "projectzomboid") return values("mods").includes(id === X ? (pzFresh ? "FreshXOnly" : "XOnly")
     : id === Y ? "YOnly" : id === Z ? "ZOnly" : "OutsideOnly");
+  if (game === "terraria") return values("tmodloader_enabled_mod_names").includes(tmodNames[id]);
   return values(listFields[game]).includes(game === "palworld" ? `Package${id}` : id);
 }
 async function changedOnce(action: () => Promise<void>, ready: () => boolean, label: string) {
@@ -140,17 +144,18 @@ function prepare(template: InstanceDetails, moduleId: string) {
   stored = { ...template, summary: { ...template.summary, id: `fixture-cross-game-${game}`, module_id: game,
     status: "Stopped", active_process_count: 0 }, active_run: null, settings_json: JSON.stringify(initial) };
   details = structuredClone(stored); cached.clear(); leaves.forEach((id) => cached.add(id));
-  const target = `C:\\Fixture\\${game}\\Mods`;
+  const target = game === "terraria" ? `C:\\Fixture\\${game}\\tmodloader\\steamapps\\workshop\\content\\1281930` : `C:\\Fixture\\${game}\\Mods`;
   inventory = moduleDetails.mods?.manual_staging ? { instance_id: stored.summary.id, module_id: game, source_label: "Fixture",
     target_label: "Mods", target_path: target, target_exists: true, items: leaves.map((id) => ({ name: id,
       path: `${target}\\${id}`, item_type: "directory", file_count: 2, total_bytes: 8192,
-      inferred_id: game === "palworld" ? `Package${id}` : game === "squad" ? null : id })) } : null;
+      inferred_id: game === "palworld" ? `Package${id}` : game === "squad" ? null : id,
+      ...(game === "terraria" && id !== X ? { tmodloader_mod_name: tmodNames[id] } : {}) })) } : null;
 }
 async function runGame(template: InstanceDetails, moduleId: string) {
   prepare(template, moduleId);
   const originalOptions = JSON.stringify(settings().fixture_mod_options), originalCache = JSON.stringify([...cached]);
   const originalInventory = structuredClone(inventory), beforeWrites = writes.length, beforeDownloads = downloads.length;
-  const reversible = !["unturned", "terraria", "squad"].includes(game);
+  const reversible = !["unturned", "squad"].includes(game);
   await mount(); await myMods();
   await settle(() => myRows(X).length === 1 && myRows(Y).length === 1, "Collection leaf Mods must appear in My Mods");
   assert(myRows(A).length === 0, "Collection record is not duplicated as a leaf Mod");
@@ -166,6 +171,8 @@ async function runGame(template: InstanceDetails, moduleId: string) {
   }
   if (game === "terraria") {
     const configuredRuntime = settings();
+    assert(element<HTMLInputElement>(".mw-entry-enabled-toggle", myRows(X)[0]).disabled,
+      "My Mods disables the switch when this item's .tmod name is unknown");
     assert(element<HTMLButtonElement>(".mw-entry-remove-button", myRows(X)[0]).disabled && writes.length === beforeWrites,
       "Unknown tModLoader name ownership blocks Workshop removal without changing runtime names");
     await library(); await expand(A);
@@ -179,8 +186,21 @@ async function runGame(template: InstanceDetails, moduleId: string) {
     await changedOnce(() => click(button("Remove collection record only", review)), () => records().length === 1,
       "Terraria can remove only the collection record");
     assert(owned(X) && settings().tmodloader_enabled_mod_names === "IndependentRuntimeMod", "Record-only removal keeps all Terraria Mods and runtime names");
-    stored = { ...stored, settings_json: JSON.stringify({ ...configuredRuntime, tmodloader_enabled_mod_names: "" }) };
+    const resolved = inventory?.items.find((item) => item.name === X);
+    assert(resolved, "The Workshop item remains in this instance's inventory");
+    resolved.tmodloader_mod_name = tmodNames[X];
+    stored = { ...stored, settings_json: JSON.stringify({ ...configuredRuntime,
+      tmodloader_enabled_mod_names: ["IndependentRuntimeMod", ...leaves.map((id) => tmodNames[id])].join("\n") }) };
     await mount(); await myMods();
+    const mySwitch = () => element<HTMLInputElement>(".mw-entry-enabled-toggle", myRows(X)[0]);
+    await settle(() => myRows(X).length === 1 && mySwitch().checked && !mySwitch().disabled, "Resolved .tmod did not become actionable");
+    await changedOnce(() => click(mySwitch()), () => !enabled(X), "My Mods disables the .tmod name");
+    assert(!mySwitch().checked && owned(X) && enabled(Y) && values("tmodloader_enabled_mod_names").includes("IndependentRuntimeMod"),
+      "Disabling in My Mods keeps the download, other Workshop names and independently configured names");
+    await changedOnce(() => click(mySwitch()), () => enabled(X), "My Mods enables the same .tmod name");
+    assert(mySwitch().checked && downloads.length === beforeDownloads &&
+      !values("tmodloader_enabled_mod_names").some((name) => leaves.includes(name) || name.startsWith("Member ")),
+      "Enabling reuses the installed package and saves only internal names");
   }
   await library(); await expand(A); await expand(B);
   await settle(() => Boolean(member(X)?.querySelector(".mw-entry-remove-button")), "Added member removal must be available");
@@ -243,7 +263,9 @@ async function runGame(template: InstanceDetails, moduleId: string) {
     "Whole removal retains other collections, outside Mods, custom settings, options and cache");
   if (game === "projectzomboid") assert(values("mods").includes("SharedCore") && values("map_name").includes("SharedMap") &&
     values("map_name").includes("Muldraugh, KY"), "PZ removal preserves internal IDs needed by remaining Workshop items");
-  if (game === "terraria") assert(settings().tmodloader_enabled_mod_names === "", "Workshop ownership does not invent runtime Mod names");
+  if (game === "terraria") assert(!enabled(X) && enabled(Y) && enabled(Z) && enabled(O) &&
+    values("tmodloader_enabled_mod_names").includes("IndependentRuntimeMod"),
+    "Removal clears only the selected package's .tmod name and preserves other enabled names");
   if (game === "squad") assert(originalInventory?.items.length === 4 && inventory?.items.length === 3,
     "Squad removes only one deployed directory and preserves the other-instance inventory snapshot");
   await mount(); await myMods();
@@ -263,7 +285,8 @@ async function run() {
       downloads.push(ids);
       for (const id of ids) if (inventory && !inventory.items.some((item) => item.name === id)) inventory.items.push({ name: id,
         path: `${inventory.target_path}\\${id}`, item_type: "directory", file_count: 2, total_bytes: 8192,
-        inferred_id: game === "palworld" ? `Package${id}` : game === "squad" ? null : id });
+        inferred_id: game === "palworld" ? `Package${id}` : game === "squad" ? null : id,
+        ...(game === "terraria" ? { tmodloader_mod_name: tmodNames[id] } : {}) });
     }
   });
   mockWindows("cross-game-controls-fixture");

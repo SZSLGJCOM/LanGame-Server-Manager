@@ -522,8 +522,7 @@ pub(super) fn lookup_terraria_launch_token(
 }
 
 fn terraria_uses_tmodloader(context: &TemplateContext<'_>) -> bool {
-    lookup_json_text(context.settings, "server_runtime")
-        .is_some_and(|value| value.trim().eq_ignore_ascii_case("tmodloader"))
+    app_core::terraria::uses_tmodloader(context.settings)
 }
 
 fn terraria_tmodloader_root(context: &TemplateContext<'_>) -> PathBuf {
@@ -535,24 +534,61 @@ fn terraria_tmodloader_root(context: &TemplateContext<'_>) -> PathBuf {
 }
 
 fn terraria_tmodloader_runtime_dir(context: &TemplateContext<'_>) -> PathBuf {
-    if let Some(value) = lookup_json_text(context.settings, "tmodloader_runtime_dir") {
-        let trimmed = value.trim();
-        if !trimmed.is_empty() {
-            let configured = PathBuf::from(trimmed);
-            return if configured.is_absolute() {
-                configured
-            } else {
-                terraria_tmodloader_root(context).join(configured)
-            };
+    let instance_root = context.config_dir.parent().unwrap_or(context.config_dir);
+    app_core::terraria::installation(instance_root, context.settings)
+        .as_ref()
+        .to_owned()
+}
+
+const TML_BOOTSTRAP: &str = "./LaunchUtils/ScriptCaller.sh";
+
+fn terraria_tmodloader_entrypoint(runtime_dir: &Path) -> PathBuf {
+    let utilities = runtime_dir.join("LaunchUtils");
+    if !utilities.is_dir() && !runtime_dir.join("tModLoader.dll").is_file() {
+        // Classic Windows releases ship a standalone server. Operator-provided
+        // batch wrappers also predate the modern bootstrap layout.
+        for name in ["tModLoaderServer.exe", "start-tModLoaderServer.bat"] {
+            let entry = runtime_dir.join(name);
+            if entry.is_file() {
+                return entry;
+            }
         }
     }
-    terraria_tmodloader_root(context).join("runtime")
+    utilities.join("busybox64.exe")
+}
+
+pub(super) fn terraria_bootstrap_issues(
+    module_id: &str,
+    directory: &Path,
+    args: &[String],
+) -> Vec<LaunchValidationIssue> {
+    if module_id != "terraria"
+        || args.get(1).map(String::as_str) != Some(TML_BOOTSTRAP)
+        || !directory.is_dir()
+    {
+        return Vec::new();
+    }
+    [
+        TML_BOOTSTRAP,
+        "tModLoader.dll",
+        "tModLoader.runtimeconfig.json",
+    ]
+    .iter()
+    .map(|relative| directory.join(relative))
+    .filter(|path| !path.is_file())
+    .map(|path| LaunchValidationIssue {
+        code: String::from("launch_required_file_missing"),
+        severity: String::from("error"),
+        message: format!("The tModLoader installation is missing {}.", path.display()),
+        context: BTreeMap::new(),
+        path: Some(path.to_string_lossy().into_owned()),
+    })
+    .collect()
 }
 
 fn render_terraria_server_executable(context: &TemplateContext<'_>) -> String {
     if terraria_uses_tmodloader(context) {
-        return terraria_tmodloader_runtime_dir(context)
-            .join("start-tModLoaderServer.bat")
+        return terraria_tmodloader_entrypoint(&terraria_tmodloader_runtime_dir(context))
             .to_string_lossy()
             .into_owned();
     }
@@ -576,7 +612,15 @@ fn render_terraria_working_directory(context: &TemplateContext<'_>) -> String {
 fn render_terraria_launch_args(context: &TemplateContext<'_>) -> Vec<String> {
     let mut args = Vec::new();
     if terraria_uses_tmodloader(context) {
-        args.push(String::from("-nosteam"));
+        if terraria_tmodloader_entrypoint(&terraria_tmodloader_runtime_dir(context))
+            .ends_with("busybox64.exe")
+        {
+            // The upstream Windows batch file uses START to open another console.
+            // Its server wrapper consumes -nosteam and passes -server to this bootstrap.
+            args.extend(["bash", TML_BOOTSTRAP, "-server"].map(String::from));
+        } else {
+            args.push(String::from("-nosteam"));
+        }
     }
     args.push(String::from("-config"));
     args.push(
@@ -587,9 +631,13 @@ fn render_terraria_launch_args(context: &TemplateContext<'_>) -> Vec<String> {
             .into_owned(),
     );
     if terraria_uses_tmodloader(context) {
+        let root = terraria_tmodloader_root(context);
         args.push(String::from("-tmlsavedirectory"));
+        args.push(root.to_string_lossy().into_owned());
+        args.push(String::from("-steamworkshopfolder"));
         args.push(
-            terraria_tmodloader_root(context)
+            root.join("steamapps")
+                .join("workshop")
                 .to_string_lossy()
                 .into_owned(),
         );

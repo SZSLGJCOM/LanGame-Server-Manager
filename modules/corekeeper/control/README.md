@@ -19,11 +19,17 @@ This local extension requires `skipSafetyChecks` and
 These permissions apply only to this Mod. Harmony patching is disabled; no
 native method body, writer thread, filesystem call or other Mod is changed.
 
-Verified packages: Steam app 1963720, builds 25537714 and 25825323. Each build
+Verified packages: Steam app 1963720, builds 25537714, 25825323 and 26331994. Each build
 has a complete fingerprint tuple for `Pug.Other.dll`, `Pug.ECS.Components.dll`,
 `Unity.Entities.dll`, the SDK, Unity CoreModule and netstandard. Mixed tuples are
-rejected. The native save APIs and their IL were compared across both packages;
+rejected. The native save APIs and their IL were compared across builds 25537714 and 25825323;
 metadata tokens are not an integration dependency.
+
+In 1.3.0.7 only `Pug.Other.dll` changed within that tuple. On build 26331994 the
+production Mod rejected an empty world and dispatched a save after the game
+initialized the world. A third process decompressed and loaded the exact
+44,233-byte snapshot observed before shutdown.
+[Native save evidence](../reference-fixtures/2026-11-04-native_save_build_26331994.json)
 
 On the game's `IMod.Update` thread, the extension validates the current ECS
 manager, loaded server world, shutdown state and `SaveSystem.SaveIsPending`.

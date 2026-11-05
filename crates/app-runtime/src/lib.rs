@@ -756,6 +756,34 @@ pub fn build_launch_plan_with_override(
             path: Some(working_directory.to_string_lossy().into_owned()),
         });
     }
+    validation_issues.extend(launch_templates::terraria_bootstrap_issues(
+        &module.summary.id,
+        &working_directory,
+        &args,
+    ));
+    // First launch provisions this directory before spawning. Invalid custom
+    // paths and damaged existing installs must still be reported as errors.
+    if module.summary.id == "terraria"
+        && app_core::terraria::uses_tmodloader(&settings_value)
+        && matches!(app_core::terraria::installation(&instance_root, &settings_value),
+            app_core::terraria::TmodLoaderInstallation::Managed(path) if path == working_directory)
+        && fs::symlink_metadata(&working_directory)
+            .is_err_and(|error| error.kind() == std::io::ErrorKind::NotFound)
+    {
+        validation_issues.retain(|issue| {
+            !matches!(
+                issue.code.as_str(),
+                "working_directory_missing" | "launch_executable_missing"
+            )
+        });
+        validation_issues.push(LaunchValidationIssue {
+            code: "tmodloader_preparation_required".into(),
+            severity: "info".into(),
+            message: "tModLoader will be downloaded and prepared on first launch.".into(),
+            context: BTreeMap::new(),
+            path: Some(working_directory.to_string_lossy().into_owned()),
+        });
+    }
     if can_prepare_launch_executable(&module.summary.id, &context, &executable_path) {
         for issue in &mut validation_issues {
             if issue.code == "launch_executable_missing" {

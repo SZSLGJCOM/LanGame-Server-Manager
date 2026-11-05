@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "module_id": "enshrouded",
+  "verified_on": "2026-11-04",
+  "source": "https://enshrouded.com/en-US/news/changelog-for-hotfix-4-v1011",
+  "game": {
+    "release": "1.0.1.1",
+    "native_svn": 1285601,
+    "steam_app_id": 2278520,
+    "public_build_id": "26404334",
+    "windows_depot": 2278521,
+    "manifest": "7782830484557676320",
+    "executable_sha256": "c5c9fe50c6398d2adedd98923c2d04bf9d9b4af64c1447ac167cdf8f874ff84f",
+    "pe_timestamp": 1793700549,
+    "pe_image_size": 31318016
+  },
+  "native_profile": {
+    "reference_build": "26083076",
+    "update_rva": "0x7bed90",
+    "copy_rva": "0xa01f50",
+    "copy_return_rvas": ["0x7bf45f", "0x7c02a3"],
+    "save_rva": "0x7b9390",
+    "commit_check_window_rva": "0x7c4afc",
+    "result_window_rva": "0x7c2dae",
+    "native_phase_writes": [2, 3, 4, 5, 6, 0],
+    "moderation_dispatcher_admitted": false,
+    "inert_image_mutation_checks_passed_on_builds": ["26083076", "26404334"]
+  },
+  "isolated_runtime": {
+    "dll_sha256": "750155778efa6c50afef368624e721fb397663a331d4d7ec7bc706be6fbfea6c",
+    "elevated": false,
+    "fresh_runs": 3,
+    "complete_empty_rosters": 3,
+    "rejected_offline_unban_issue": "unsupported_moderation_profile",
+    "manual_saves": [
+      {
+        "receipt": "completed/none",
+        "prior_world_file_present": false,
+        "world_bytes": 42750,
+        "world_sha256": "126f1f05dc7483e670ff23f87f3f98b16666242c83004c50ff85177a6f3d4af8"
+      },
+      {
+        "receipt": "completed/none",
+        "before_sha256": "7b29e249d382b7f2ed80d7dc3e7685af21fb5ce738c0e7e2c33d7a8056c32253",
+        "world_bytes": 42833,
+        "world_sha256": "b314b0f8ff1b1714c30f4bfb35a7fcb1204215bdc044f6e099fdc4024edb85d1"
+      }
+    ],
+    "independent_world_copy_reached_run": true,
+    "reloaded_before_request_sha256": "b314b0f8ff1b1714c30f4bfb35a7fcb1204215bdc044f6e099fdc4024edb85d1",
+    "native_ctrl_c_exit_codes": [0, 0, 0],
+    "scope": "Synthetic, zero-player world. Live player identity, client content and moderation side effects were outside this run."
+  }
+}

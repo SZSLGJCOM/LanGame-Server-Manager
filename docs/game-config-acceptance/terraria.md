@@ -9,13 +9,13 @@
 
 - Evidence: `best_effort_verified` at `2026-07-13` (build `Official dedicated server 1.4.5.6`)
 - Sources: `official_dedicated_zip_1456`, `serverconfig`, `launch_args`, `banlist_file`, `runtime_console`, `tmodloader_dedicated_server_utils`, `tmodloader_steam_workshop`
-- Coverage: editable `38`, specialized `2`, derived `0`, generated `0`, excluded `9`
+- Coverage: editable `37`, specialized `3`, derived `0`, generated `0`, excluded `9`
 
 ### Settings
 
 ```json
 {
-  "server_runtime": "tmodloader",
+  "server_runtime": "vanilla",
   "tmodloader_enabled_mod_names": "CalamityMod\n模组Core\nCalamityMod\n# ignored",
   "tmodloader_runtime_dir": "custom-runtime",
   "world_name": "LanGame 世界"
@@ -39,15 +39,19 @@
   ],
   "launch": {
     "arguments": [
-      "-nosteam",
+      "bash",
+      "./LaunchUtils/ScriptCaller.sh",
+      "-server",
       "-config",
       "{{paths.config_dir}}\\serverconfig.txt",
       "-tmlsavedirectory",
       "{{paths.instance_root}}\\tmodloader",
+      "-steamworkshopfolder",
+      "{{paths.instance_root}}\\tmodloader\\steamapps\\workshop",
       "-ip",
       "0.0.0.0"
     ],
-    "executable_suffix": "tmodloader/custom-runtime/start-tModLoaderServer.bat"
+    "executable_suffix": "tmodloader/custom-runtime/LaunchUtils/busybox64.exe"
   }
 }
 ```

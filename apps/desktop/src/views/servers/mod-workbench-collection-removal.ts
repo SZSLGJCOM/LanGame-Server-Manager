@@ -2,8 +2,11 @@ import type { ManualModInventoryResult, ProjectZomboidWorkshopModsSnapshot } fro
 import { parseWorkshopIdList } from "../settings/guided-setting-values";
 import type { SettingsObject } from "../settings/settings-schema";
 import { hasDstRawModOverrides } from "./mod-workbench-dst-policy";
+import { readTerrariaOwnedWorkshopIds } from "./mod-workbench-model";
 import { buildModSettingsRemovePlan } from "./mod-workbench-plans";
-import { buildProjectZomboidWorkshopRemovalPlan, WorkshopControlError } from "./mod-workbench-workshop-controls";
+import {
+  buildProjectZomboidWorkshopRemovalPlan, buildTerrariaWorkshopRemovalPlan, WorkshopControlError
+} from "./mod-workbench-workshop-controls";
 import { buildPalworldWorkshopPlan, readRemovedWorkshopIds, WorkshopInventoryControlError } from "./mod-workbench-workshop-inventory";
 import {
   mergeManagedWorkshopCollections, readManagedWorkshopCollections, removeManagedWorkshopCollection,
@@ -99,6 +102,18 @@ export function buildWorkshopCollectionRemovalPlan(input: WorkshopCollectionRemo
           next = plan.nextSettings;
           retainedLocalIds = plan.retainedLocalIds;
         }
+      } else if (input.moduleId === "terraria") {
+        const ownership = input.settings.tmodloader_workshop_item_ids;
+        if (ownership !== undefined && typeof ownership !== "string") throw new CollectionRemovalError("invalid-records");
+        const configured = new Set(readTerrariaOwnedWorkshopIds(input.settings));
+        const owned = ids.filter((id) => configured.has(id));
+        if (owned.length) {
+          const inventory = input.manualInventory;
+          const items = inventory?.module_id === "terraria" && inventory.target_exists ? inventory.items : undefined;
+          const plan = buildTerrariaWorkshopRemovalPlan(next, owned, items);
+          next = plan.nextSettings;
+          retainedLocalIds = plan.retainedLocalIds;
+        }
       } else if (input.moduleId === "palworld") {
         const removed = new Set(readRemovedWorkshopIds(input.settings));
         const owned = ids.filter((id) => !removed.has(id));
@@ -108,13 +123,8 @@ export function buildWorkshopCollectionRemovalPlan(input: WorkshopCollectionRemo
           retainedLocalIds = plan.retainedLocalIds;
         }
       } else if (input.moduleId !== "squad") {
-        if (!["dontstarve", "unturned", "arksurvivalevolved", "barotrauma", "conanexiles", "soulmask", "terraria"].includes(input.moduleId)) {
+        if (!["dontstarve", "unturned", "arksurvivalevolved", "barotrauma", "conanexiles", "soulmask"].includes(input.moduleId)) {
           throw new CollectionRemovalError("unsupported-module");
-        }
-        if (input.moduleId === "terraria" && typeof input.settings.tmodloader_enabled_mod_names === "string" &&
-            input.settings.tmodloader_enabled_mod_names.split(/\r?\n/).some((line) => line.trim() && !/^(#|--)/.test(line.trim()))) {
-          // Inventory exposes Workshop directories, not the internal names stored in enabled.json.
-          throw new CollectionRemovalError("local-metadata-missing", ids);
         }
         const sourceOnly = next;
         const removal = buildModSettingsRemovePlan(input.moduleId, next, ids, {}, null, null, preview.memberIds);

@@ -16,8 +16,8 @@
     ]
   },
   "coverage": {
-    "editable": 38,
-    "specialized": 2,
+    "editable": 37,
+    "specialized": 3,
     "derived": 0,
     "generated": 0,
     "excluded": 9
@@ -39,7 +39,6 @@
       "serverconfig.lobby",
       "launch_args.terraria.runtime",
       "launch_args.tmodloader.runtime_dir",
-      "tmodloader_dedicated_server_utils.Mods/enabled.json",
       "serverconfig.language",
       "serverconfig.upnp",
       "serverconfig.npcstream",
@@ -65,6 +64,7 @@
     ],
     "specialized": [
       "banlist_file.banlist.txt",
+      "tmodloader_dedicated_server_utils.Mods/enabled.json",
       "tmodloader_dedicated_server_utils.Mods/install.txt"
     ],
     "derived": [],
@@ -83,7 +83,7 @@
   },
   "settings": {
     "world_name": "LanGame \u4e16\u754c",
-    "server_runtime": "tmodloader",
+    "server_runtime": "vanilla",
     "tmodloader_runtime_dir": "custom-runtime",
     "tmodloader_enabled_mod_names": "CalamityMod\n\u6a21\u7ec4Core\nCalamityMod\n# ignored"
   },
@@ -100,13 +100,17 @@
       }
     ],
     "launch": {
-      "executable_suffix": "tmodloader/custom-runtime/start-tModLoaderServer.bat",
+      "executable_suffix": "tmodloader/custom-runtime/LaunchUtils/busybox64.exe",
       "arguments": [
-        "-nosteam",
+        "bash",
+        "./LaunchUtils/ScriptCaller.sh",
+        "-server",
         "-config",
         "{{paths.config_dir}}\\serverconfig.txt",
         "-tmlsavedirectory",
         "{{paths.instance_root}}\\tmodloader",
+        "-steamworkshopfolder",
+        "{{paths.instance_root}}\\tmodloader\\steamapps\\workshop",
         "-ip",
         "0.0.0.0"
       ]

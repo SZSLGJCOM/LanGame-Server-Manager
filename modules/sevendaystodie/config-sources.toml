@@ -3,6 +3,13 @@ last_verified = "2026-10-31"
 notes = "Read-only review on 2026-10-31 of freshly validated public app 294420 build 26237934 confirms V3.4.0 (b9) from its managed assembly. All 68 packaged serverconfig.xml properties/defaults, the startup script and entry executable match build 26167630; the current template covers every property and adds only the instance-isolation UserDataFolder. Native SandboxCode version-A framing and the saveworld/sa command remain present. A separate managed backend lifecycle on build 26237934 passed four native-ready runs, four current-run Telnet save requests, normal exit-0 stops, 70-file backup restoration, archive interruption recovery and final cleanup. Save completion remains requested; no request-caused durable checkpoint, saved player progress or client acceptance is claimed. This verification date covers that package/configuration and lifecycle scope; the build 26167630 lifecycle and historical moderation evidence retain their original dates. Earlier build 25661908/V3.3.0 (b18) SandboxCode observations remain below. The V2.6 runtime-generated serveradmin.xml and build 24994542 blacklist-expiry observations remain separately dated below. Duration zero expires immediately; the online command explicitly bans for 10 years and records its confirmed native result. Blacklist removal sends the offline account unban command while running; arbitrary blacklist additions and edits remain restart-scoped."
 
 [[sources]]
+id = "native_admin_sections"
+kind = "runtime_probe"
+path = "native-evidence/2026-11-04-public-build-26310339.json"
+authority = "official_steamcmd_public_package_and_isolated_native_windows_server"
+description = "Public build 26310339 reports V3.4.0 (b10). Its 68 factory properties match b9 byte for byte. Two independent-process runs with the module configuration reached native world readiness, answered listplayers and saveworld, then shut down normally. The restart used the same stopped world. Native serveradmin.xml generated three web administration sections alongside the four manager-controlled rosters."
+
+[[sources]]
 id = "managed_public_b9_lifecycle_20261031"
 kind = "runtime_probe"
 path = "native-evidence/2026-10-31-managed-lifecycle-build-26237934.json"

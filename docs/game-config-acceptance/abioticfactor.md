@@ -120,7 +120,7 @@
 
 - Evidence: `best_effort_verified` at `2026-10-27` (build `Official developer 1.5.0.31459 documentation; deterministic output only, no native server or mod.io account run`)
 - Sources: `official_mod_launch_args`, `official_mod_support_1_5`
-- Coverage: editable `8`, specialized `0`, derived `0`, generated `0`, excluded `0`
+- Coverage: editable `2`, specialized `6`, derived `0`, generated `0`, excluded `0`
 
 ### Settings
 
@@ -198,7 +198,7 @@
 
 - Evidence: `best_effort_verified` at `2026-10-27` (build `Official developer 1.5.0.31459 documentation; deterministic output only, no native server or mod.io account run`)
 - Sources: `official_mod_launch_args`, `official_mod_support_1_5`
-- Coverage: editable `8`, specialized `0`, derived `0`, generated `0`, excluded `0`
+- Coverage: editable `2`, specialized `6`, derived `0`, generated `0`, excluded `0`
 
 ### Settings
 

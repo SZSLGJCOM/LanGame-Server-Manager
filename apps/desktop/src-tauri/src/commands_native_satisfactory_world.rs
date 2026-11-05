@@ -20,6 +20,8 @@ const API_READY_TIMEOUT: Duration = Duration::from_secs(90);
 
 #[path = "commands_native_satisfactory_isolation_api.rs"]
 pub(crate) mod isolation;
+#[path = "commands_native_satisfactory_options.rs"]
+mod options;
 
 fn native_api_still_loading(error: &str) -> bool {
     matches!(
@@ -229,12 +231,12 @@ impl NativeWorld {
         &self,
         state: &tauri::State<'_, DesktopState>,
         expected: &InstanceDetails,
-    ) -> Result<(), String> {
+    ) -> Result<SatisfactoryWorldSnapshot, String> {
         tokio::time::timeout(LOAD_TIMEOUT, async {
             loop {
                 match self.read(state, expected).await {
                     Ok(snapshot) => {
-                        if loaded_world(&snapshot, &self.instance_id, &self.session_name) { return Ok(()); }
+                        if loaded_world(&snapshot, &self.instance_id, &self.session_name) { return Ok(snapshot); }
                         if snapshot.is_game_running && snapshot.active_session_name != self.session_name {
                             return Err("Satisfactory loaded an unexpected fixture world.".into());
                         }
@@ -313,7 +315,14 @@ impl NativeWorld {
             .await?;
             self.accepted(&result)?;
         }
-        self.loaded(state, details).await?;
+        let loaded = self.loaded(state, details).await?;
+        let verified_options = options::verify(&loaded, &details.settings_json)?;
+        println!(
+            "NATIVE_SATISFACTORY_OPTIONS cycle={cycle} effective_overrides={} available_keys={} values_scope=modeled_nonsecret_options",
+            serde_json::to_string(&verified_options).map_err(|error| error.to_string())?,
+            serde_json::to_string(&loaded.server_options.keys().collect::<Vec<_>>())
+                .map_err(|error| error.to_string())?,
+        );
         if std::env::var("LANGAME_NATIVE_SATISFACTORY_FRM").as_deref() == Ok("true") {
             self.verify_https_authorization(state, details, cycle)
                 .await?;
@@ -490,7 +499,7 @@ mod tests {
             assert!(!native_api_still_loading(error));
         }
     }
-    fn snapshot() -> SatisfactoryWorldSnapshot {
+    pub(super) fn snapshot() -> SatisfactoryWorldSnapshot {
         serde_json::from_value(serde_json::json!({
             "instance_id":"fixture", "connection_status":"ready", "revision":"revision",
             "server_name":null, "active_session_name":"OwnedWorld", "auto_load_session_name":"",

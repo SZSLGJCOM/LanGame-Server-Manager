@@ -95,7 +95,7 @@ retained_paths = [
 provider = "nexus"
 label = "Abiotic Factor unofficial UE4SS mods"
 url = "https://www.nexusmods.com/abioticfactor"
-install_note = "This importer manages unofficial UE4SS Mods. Official mod.io Mods use the Official Mods section in Configuration. UE4SS and the native save extension are prepared only for verified game builds; unknown builds preserve operator Mods and disable the owned loader. Follow each unofficial Mod's compatibility and Content/Paks instructions."
+install_note = "Import unofficial UE4SS Mods here. Manage official mod.io Mods and their load order in My Mods under Mod lists and source files. UE4SS and the native save extension require a compatible game build. Follow each unofficial Mod's compatibility and Content/Paks instructions."
 
 [mods.manual_staging]
 target_template = "{{paths.install_root}}/AbioticFactor/Binaries/Win64/ue4ss/Mods"

@@ -3,6 +3,14 @@ last_verified = "2026-08-30"
 notes = "Core Keeper Dedicated Server app 1963720 public build 23543502 was installed and verified on 2026-07-13. A clean-data-path probe generated ServerConfig.json with maxNumberPlayers 100, networkSendRate 20, and seasonOverride -1; ARGUMENTS.txt defines world slots 0 through 29 and season value 0 as disabled. Community roster docs still cover Admins.json and PlayerBans.json. The direct-connection runtime probe remains applicable: anonymous Steam relay login can fail, while -port, -ip, and -password kept the server listening, so LanGame defaults new instances to direct mode. A sanitized 2026-08-30 A2S_INFO probe verified that LGSM allocated game port 27018 after UDP 27017 was occupied, the server answered on UDP query port 27019, and EDF advertised game port 27018."
 
 [[sources]]
+id = "native_save_26331994_20261104"
+kind = "runtime_probe"
+path = "reference-fixtures/2026-11-04-native_save_build_26331994.json"
+authority = "official_steam_package_and_isolated_native_extension"
+description = "In the 1.3.0.7 security patch, only Pug.Other.dll changed within the six-file save contract. Native IL inspection, SDK compilation and three limited-user runs covered empty-world rejection, initialized-world dispatch and exact pre-shutdown snapshot loading in a separate process. The patch disables sharing saves through Mods; ordinary local world saving remains available."
+url = "https://store.steampowered.com/news/app/1621690/view/689772763384121905"
+
+[[sources]]
 id = "managed_native_start_stop_20261031"
 kind = "runtime_probe"
 path = "reference-fixtures/2026-10-31-managed_native_start_stop.json"

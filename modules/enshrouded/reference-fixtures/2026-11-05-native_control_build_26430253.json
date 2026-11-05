@@ -1,0 +1,109 @@
+{
+  "schema": 1,
+  "module_id": "enshrouded",
+  "review_date": "2026-11-05",
+  "evidence_kind": "direct_static_executable_inspection_and_inert_profile_validation",
+  "release_source": "https://enshrouded.com/en-US/news/changelog-for-hotfix-5-v1012",
+  "target": {
+    "release": "1.0.1.2",
+    "release_notes_svn": 1287369,
+    "steam_app_id": 2278520,
+    "steam_build_id": "26430253",
+    "windows_depot": 2278521,
+    "manifest": "8886672487109033979",
+    "acquisition": "Valve-signed SteamCMD anonymous app_update 2278520 validate in an isolated directory; exit 0, StateFlags 4, UpdateResult 0, matching buildid and TargetBuildID.",
+    "executable_sha256": "f0d824be7fcd48ebfe2458ff5c28da26060c2074e3ec1fcac587e5a1d508aeb2",
+    "executable_bytes": 22786048,
+    "pe_timestamp": 1793791038,
+    "pe_image_size": 31318016,
+    "configuration_readme_sha256": "187bbb490ff1b9138bc46ede8655a769c42a690c9c4ee2ffae7a84cc529bf33d"
+  },
+  "dispatcher": {
+    "rva_range": [
+      "0x7a6e50",
+      "0x7a7558"
+    ],
+    "range_sha256": "2c589a2c7acb54a41ea5243101fd02ec65c0cb2ef93f7b336ffda32076b15709",
+    "contiguous_unwind_fragments": 7,
+    "nonpadding_instructions": 406,
+    "direct_native_caller_rvas": [
+      "0x7bcefe"
+    ],
+    "abi": "Windows x64: RCX = Server*, RDX = 24-byte event; u64 account hash at event + 8, u8 action at event + 0x14.",
+    "identity_check": "At 0x7a70d8 copy the complete native handle through 0xa01f40; require AL=0, copied account hash at output+0x20 equal event+8, and copied immunity at output+0x148 not equal to 1. Enumerate 16 native handles and preserve slot stride 0x148.",
+    "kick": "Action 0 branches at 0x7a7116 to 0x7a74b9. Reject slot protection bit 1; pass manager, native slot connection identifier and reason 0 to 0xa02c90 at 0x7a74d1.",
+    "ban": "Action 1 checks slot protection at 0x7a7125, finds or inserts the account in the native ban array, marks configuration dirty, then calls 0xa02c90 at 0x7a7488 with reason 1. The bridge does not replace native ban persistence.",
+    "unban": "Action 2 branches before online enumeration, passes event+8 to native queue entry 0xa0ea90 at 0x7a6e8c, removes the matching native ban record and marks configuration dirty. An online session is not required.",
+    "disconnect_queue": "0xa02c90..0xa02e1c enqueues event type 3 using the supplied connection identifier and reason byte.",
+    "unban_queue": "0xa0ea90..0xa0ec19 enqueues event type 4 using the supplied u64 account hash."
+  },
+  "observer": {
+    "update_rva": "0x7bed90",
+    "copy_rva": "0xa01f40",
+    "copy_return_rvas": [
+      "0x7bf45f",
+      "0x7c02a3"
+    ],
+    "enumerate_handles_rva_range": [
+      "0xa01fd0",
+      "0xa020b4"
+    ],
+    "copy_record_rva_range": [
+      "0x9f7a10",
+      "0x9f7aaa"
+    ],
+    "copy_abi": "RCX = output, RDX = manager, R8D = full handle; AL=0 on success, 0x1f on handle mismatch.",
+    "record_offsets": {
+      "handle": "0x0",
+      "platform": "0x10",
+      "platform_id": "0x18",
+      "native_account_hash": "0x20",
+      "name_pointer": "0x28",
+      "name_bytes": "0x30",
+      "immunity": "0x148"
+    }
+  },
+  "save": {
+    "entry_rva": "0x7b9390",
+    "commit_window_rva": "0x7c4afc",
+    "result_window_rva": "0x7c2dae",
+    "abi": "RCX = Server*. Existing context, world, shutdown, flags, phase and request-sequence offsets remain valid.",
+    "commit_call_rva": "0x7c4b10",
+    "commit_callee_rva": "0x73b750",
+    "phase_six_write_rva": "0x7c4b24",
+    "completion": "Native commit success (AL=0) advances phase 5 to 6; subsequent native progress returns to idle. Successful status clears pending, while exhausted error retries retain bit 8. The bridge still requires observing phase 6 before confirming idle."
+  },
+  "loaded_moderation_windows": [
+    {
+      "rva": "0x7a6e71",
+      "bytes32": "807a1402488bfa488b41104c8bf90f85cd0100004883c208488bc8e8ff7b2600"
+    },
+    {
+      "rva": "0x7a70dd",
+      "bytes32": "84c07516488b470848398580000000750980bda801000001751948ffc34981c6"
+    },
+    {
+      "rva": "0x7a7110",
+      "bytes32": "0fb64f1485c90f849d03000083f9010f857003000041848ef00100000f856303"
+    },
+    {
+      "rva": "0x7a7472",
+      "bytes32": "498b4f1041b00141c687a818000001418b96e4010000e803b825004c8bac2430"
+    },
+    {
+      "rva": "0x7a74b9",
+      "bytes32": "41f686f00100000175d2418b96e40100004533c0498b4f10e8bab72500ebbd4c"
+    }
+  ],
+  "validation": {
+    "prior_source_new_executable_rejected": true,
+    "updated_inert_pe_profile_and_capability_mutations_passed": true,
+    "msvc_native_suite_passed": true,
+    "registration_consistency_tests_passed": 4,
+    "game_process_started": false,
+    "real_player_actions_tested": false,
+    "installer_packaged": false,
+    "deployed": false
+  },
+  "scope": "Source adaptation. Direct instruction/control-flow inspection of the exact new executable, not a full two-binary comparison: the previous 1.0.1.1 executable was unavailable. Inert tests load non-executable memory and do not execute game code. Native compilation/tests use isolated output. No changes to existing game installations, configurations or saves."
+}

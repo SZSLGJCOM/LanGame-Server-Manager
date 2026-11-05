@@ -685,6 +685,27 @@
   flex-wrap: nowrap;
 }
 
+.inline-confirm-action.server-list-card-new-world .inline-confirm-review .inline-confirm-submit {
+  background: var(--accent);
+  color: var(--theme-accent-contrast);
+  border-color: var(--accent);
+}
+
+/* Keep both filenames and one set of actions visible on narrow instance cards. */
+.server-list-card-overlay:has(.server-list-card-new-world) {
+  grid-template-rows: minmax(0, 1fr) auto;
+}
+.server-list-card-overlay:has(.server-list-card-new-world) .server-list-card-footer {
+  display: block;
+}
+.server-list-card-overlay:has(.server-list-card-new-world) .server-list-card-footer > :not(.server-list-card-copy) {
+  display: none;
+}
+.server-list-card-new-world .inline-confirm-buttons > button {
+  padding-inline: 8px;
+  white-space: nowrap;
+}
+
 .server-list-card .server-list-card-icon-action,
 .server-list-card .server-list-card-primary-action {
   display: inline-flex;

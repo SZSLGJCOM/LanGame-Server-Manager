@@ -44,8 +44,8 @@ const UNTURNED_SECTIONS: GuidedSettingsSection[] = [
   },
   {
     id: "advanced",
-    title: "Host & Workshop",
-    description: "Current Config.txt controls and Workshop downloads tied to this ServerID folder."
+    title: "Host configuration",
+    description: "Config.txt controls and launch arguments for this ServerID."
   },
   { id: "items", title: "Items and loot", description: "World rules applied to every player." },
   { id: "vehicles", title: "Vehicles", description: "World rules applied to every player." },
@@ -156,20 +156,6 @@ const UNTURNED_GROUP_SPECS: Record<string, UnturnedFieldGroupSpec[]> = {
         "log_gameplay_config",
         "gameplay_config_no_generated_comments",
         "gameplay_config_no_empty_values"
-      ]
-    },
-    {
-      id: "workshop",
-      title: "Workshop downloads",
-      description: "Workshop File IDs materialize into WorkshopDownloadConfig.json for this ServerID.",
-      layoutClass: "unturned-workshop",
-      keys: [
-        "workshop_file_ids",
-        "workshop_ignore_children_file_ids",
-        "workshop_query_cache_max_age_seconds",
-        "workshop_max_query_retries",
-        "workshop_use_cached_downloads",
-        "workshop_monitor_updates"
       ]
     },
     {

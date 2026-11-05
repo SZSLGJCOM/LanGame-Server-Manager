@@ -31,6 +31,7 @@ pub mod dragonwilds_world;
 pub use dragonwilds_bans::{DragonwildsBanEntry, DragonwildsBanRoster};
 pub mod dst_shards;
 pub mod satisfactory_world;
+pub mod terraria;
 pub mod scum_custom_zones;
 mod system_snapshot;
 pub mod valheim_world;

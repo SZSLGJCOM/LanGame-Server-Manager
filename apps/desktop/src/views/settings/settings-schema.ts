@@ -100,6 +100,7 @@ export interface GuidedSettingsField extends ConfigurationPresentationField {
   required: boolean;
   defaultValue?: unknown;
   defaultSource?: GuidedDefaultSource;
+  inheritsExistingNativeValue?: boolean;
   preserveNativeWhenUnset?: boolean;
   enumOptions?: GuidedEnumOption[];
   suggestions?: GuidedEnumOption[];

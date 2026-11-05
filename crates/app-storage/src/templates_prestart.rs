@@ -10,6 +10,7 @@ mod barotrauma;
 pub(crate) async fn apply_module_prestart_support(
     context: &ModuleSupportMaterializationContext<'_>,
     settings_lock: &InstanceSettingsLock,
+    descriptor: Option<&app_modules::ModuleDescriptor>,
 ) -> Result<(), StorageError> {
     if context.instance_running {
         return Err(StorageError::ModuleSupportMaterialization {
@@ -20,6 +21,29 @@ pub(crate) async fn apply_module_prestart_support(
     }
     if context.module_id == "rimworld" {
         super::rimworld::validate_before_start(context)?;
+        let root = context.install_root.to_owned();
+        let requested_feature = [
+            ("action_market_use_global_server", "The cross-server market"),
+            ("action_rollback_is_enabled", "Player save rollback"),
+        ]
+        .into_iter()
+        .find_map(|(key, name)| {
+            (context.settings.get(key).and_then(Value::as_bool) == Some(true)).then_some(name)
+        });
+        let descriptor = descriptor.cloned();
+        settings_lock
+            .spawn_blocking(move || {
+                super::rimworld::validate_release_before_start(
+                    &root,
+                    descriptor.as_ref(),
+                    requested_feature,
+                )
+            })
+            .await
+            .map_err(|error| StorageError::BlockingTaskFailed {
+                operation: "checking RimWorld release compatibility",
+                message: error.to_string(),
+            })??;
     }
     if context.module_id == "projectzomboid" {
         super::projectzomboid_policy::validate_before_start(context.settings)?;

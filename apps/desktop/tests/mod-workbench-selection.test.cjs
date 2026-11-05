@@ -17,6 +17,7 @@ const workshopControls = require("../src/views/servers/mod-workbench-workshop-co
 const workshopInventory = require("../src/views/servers/mod-workbench-workshop-inventory.ts");
 const { ManualModInventoryList } = require("../src/views/servers/ManualModInventoryList.tsx");
 const { WorkshopStatus } = require("../src/views/servers/WorkshopStatus.tsx");
+const { WorkshopDownloadRows } = require("../src/views/servers/WorkshopDownloadRows.tsx");
 const { I18nContext } = require("../src/i18n-context.ts");
 const translation = { locale: "en-US", setLocale() {}, t: (key, _params, fallback) => fallback ?? key };
 
@@ -134,7 +135,9 @@ function renderList(overrides = {}) {
     activeDetailSource: "enabled", selectedEnabledRow: configuredRows[0], lookupMap: {},
     draggedEnabledRow: null, enabledDropTargetKey: null,
     modEnablementDisabled: false, modMutationsDisabled: false,
-    ShellIcon: () => null, SteamWorkshopPreview: () => null, WorkshopStatus, ManualModInventoryList,
+    ShellIcon: () => null, SteamWorkshopPreview: () => null, WorkshopStatus, ManualModInventoryList, WorkshopDownloadRows,
+    pendingWorkshopIds: [], installingWorkshopIds: new Set(), activeProgressPercent: null, downloadOperation: { state: { error: null } },
+    installingManualModIds: new Set(), installingInventoryPaths: new Set(),
     t: translation.t,
     canReorderEnabledRow, canToggleModEnabledRow,
     handleSelectEnabledRow: (key) => actions.push(["select", key]),
@@ -263,6 +266,29 @@ test("staged manual rows remain unchecked, cannot drag, and enable only their se
     });
     assert.equal(elements(locked.tree).find((node) => node.type === "input").props.disabled, true);
   }
+});
+
+test("existing manual Workshop files show installation progress without adding duplicate rows", () => {
+  const { tree } = renderList({
+    enabledRows: [], isManualEnablementModule: true, showsManualInventory: true,
+    unconfiguredInventoryItems: [stagedManualItem], installingInventoryPaths: new Set([stagedManualItem.path]),
+    activeProgressPercent: 63, modMutationsDisabled: true
+  });
+  assert.deepEqual(rowKeys(tree), [stagedManualItem.path]);
+  const status = elements(tree).find((node) => node.type === WorkshopStatus);
+  assert.equal(status.props.state, "installing");
+  assert.equal(status.props.progressPercent, 63);
+  assert.equal(elements(tree).find((node) => node.type === "input").props.disabled, true);
+});
+
+test("configured package names share the progress of their Workshop source", () => {
+  const { tree } = renderList({
+    isManualEnablementModule: true, installingManualModIds: new Set([configuredRows[0].id.toLowerCase()]),
+    activeProgressPercent: 63, modMutationsDisabled: true, modEnablementDisabled: true
+  });
+  const status = elements(tree).find((node) => node.type === WorkshopStatus && node.props.state === "installing");
+  assert.equal(status.props.progressPercent, 63);
+  assert.deepEqual(rowKeys(tree), configuredRows.map((row) => row.key));
 });
 
 test("pointer sorting starts only for an unlocked, sortable row with the primary button", () => {

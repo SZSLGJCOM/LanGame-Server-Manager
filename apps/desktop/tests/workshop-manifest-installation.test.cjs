@@ -14,16 +14,21 @@ const plans = require("../src/views/servers/mod-workbench-plans.ts");
 const enablement = require("../src/views/servers/steam-workshop-enablement-plan.ts");
 const dstPolicy = require("../src/views/servers/mod-workbench-dst-policy.ts");
 const collections = require("../src/views/servers/mod-workbench-collections.ts");
+const controls = require("../src/views/servers/mod-workbench-workshop-controls.ts");
+const { formatDesktopError } = require("../src/desktop-error-message.ts");
+const { EN_US_EXTRA_MESSAGES } = require("../src/i18n-messages-en-extra.ts");
 const { requiresSteamWorkshopAccount } = require("../src/views/servers/steam-workshop-access-error.ts");
-const { restoreRemovedWorkshopIds } = require("../src/views/servers/mod-workbench-workshop-inventory.ts");
+const { restoreRemovedWorkshopIds, WorkshopInventoryControlError } = require("../src/views/servers/mod-workbench-workshop-inventory.ts");
+const { WorkshopDownloadOperations } = require("../src/views/servers/workshop-download-operations.ts");
 const filename = path.resolve(__dirname, "../src/views/servers/ModWorkbench.tsx");
 const source = fs.readFileSync(filename, "utf8");
-let handler;
+let handler, controlError;
 visitSyntax(parseSource(source, filename), (node) => {
   if (ts.isFunctionDeclaration(node) && node.name?.text === "handleInstallWorkshopItems") handler = sourceText(source, node);
+  if (ts.isFunctionDeclaration(node) && node.name?.text === "workshopControlError") controlError = sourceText(source, node);
 });
-assert.ok(handler);
-const script = transpileTypeScript(`${handler}\nexports.run = handleInstallWorkshopItems;`, filename);
+assert.ok(handler && controlError);
+const script = transpileTypeScript(`${controlError}\n${handler}\nexports.run = handleInstallWorkshopItems;`, filename);
 
 function harness(moduleId, settings, installedIds = [], options = {}) {
   const appId = { dontstarve: 322330, projectzomboid: 108600, palworld: 1623730, terraria: 1281930 }[moduleId];
@@ -32,20 +37,31 @@ function harness(moduleId, settings, installedIds = [], options = {}) {
   const review = { ids, items, contentIds: ids, installedIds, missingIds: ids.filter(id => !installedIds.includes(id)), issues: [], searchedRoots: [] };
   const calls = { downloads: [], saves: [], errors: [], messages: [], inventory: 0 };
   const installed = new Set(installedIds);
+  const deployed = new Set();
+  const tmodNames = { "111111": "CrystalTools", "222222": "ForestStorage" };
   const latestSettingsRef = { current: structuredClone(settings) };
+  const downloads = new WorkshopDownloadOperations();
+  downloads.subscribe(() => {
+    const error = downloads.snapshot("fixture-instance").error;
+    if (error && calls.errors.at(-1) !== error) calls.errors.push(error);
+  });
   const exports = {};
   const context = {
-    ...model, ...plans, ...enablement, ...dstPolicy, ...collections, restoreRemovedWorkshopIds, exports, Set, Map, Error,
+    ...model, ...plans, ...enablement, ...dstPolicy, ...collections, ...controls, restoreRemovedWorkshopIds,
+    WorkshopInventoryControlError, formatDesktopError, exports, Set, Map, Error,
     moduleId, settings, latestSettingsRef, expectedAppId: appId, steamAccount: undefined, requiresSteamWorkshopAccount,
+    locale: "en-US", downloadOperation: { begin: (request) => downloads.begin("fixture-instance", request) },
     workflow: { steamDownloadMode: "steamcmd-cache" },
     modMutationsDisabled: false, modWorkflowUnsupported: false,
     lookupMap: items, props: { details: { summary: { id: "fixture-instance" } } },
-    manualEnablement: moduleId === "palworld" ? { id_strategy: "palworld_package_name", setting_key: "mod_package_names" } : null,
+    manualEnablement: moduleId === "palworld" ? { id_strategy: "palworld_package_name", setting_key: "mod_package_names" }
+      : moduleId === "terraria" ? { id_strategy: "folder_name", setting_key: "tmodloader_workshop_item_ids" } : null,
     manualStaging: ["palworld", "terraria"].includes(moduleId) ? {} : null,
-    t: (key, params, fallback) => (fallback ?? key).replace(/\{(\w+)\}/g, (_, name) => String(params?.[name] ?? "")),
+    t: (key, params, fallback) => (fallback ?? EN_US_EXTRA_MESSAGES[key] ?? key).replace(/\{(\w+)\}/g, (_, name) => String(params?.[name] ?? "")),
     describeError: error => error.message,
     startTransition: callback => callback(),
     runModMutation: async (_kind, operation) => operation(),
+    readBackgroundJobs: async () => [],
     canInstallWorkshopItems: () => true,
     readWritableInstanceState: async () => ({ settings: structuredClone(latestSettingsRef.current) }),
     persistSettings: async value => { calls.saves.push(structuredClone(value)); latestSettingsRef.current = value; },
@@ -58,13 +74,18 @@ function harness(moduleId, settings, installedIds = [], options = {}) {
       options.onDownloadStarted?.();
       if (options.downloadBarrier) await options.downloadBarrier;
       if (options.failDownload) throw new Error("download failed");
-      requested.forEach(id => installed.add(id));
+      for (const id of requested) {
+        installed.add(id);
+        if (id !== options.incompleteId) deployed.add(id);
+      }
       return { items: requested.map(item_id => ({ item_id, expected_path_exists: options.incompleteId !== item_id })) };
     },
-    readManualModInventory: async () => ({ items: ids.map(id => ({ name: id, path: `fixture/Mods/Workshop/${id}`, inferred_id: `Package${id}`, item_type: "folder" })) }),
+    readManualModInventory: async () => ({ items: moduleId === "terraria"
+      ? [...deployed].map(id => ({ name: id, path: `fixture/tmodloader/steamapps/workshop/content/1281930/${id}`,
+        item_type: "directory", inferred_id: id, ...(id === options.unresolvedId ? {} : { tmodloader_mod_name: tmodNames[id] }) }))
+      : ids.map(id => ({ name: id, path: `fixture/Mods/Workshop/${id}`, inferred_id: `Package${id}`, item_type: "folder" })) }),
     readProjectZomboidWorkshopModsSnapshot: async () => ({ workshop_root: "fixture", workshop_root_exists: true, items: ids.map(id => ({ workshop_item_id: id, mods: options.missingMetadata ? [] : [{ mod_id: `Mod${id}`, map_ids: [`Map${id}`] }] })) }),
     setDownloadError: value => { if (value) calls.errors.push(value); },
-    setInstallingWorkshopIds() {}, setDownloadState() {}, setDownloadResult() {},
     setApplyMessage: value => { if (value) calls.messages.push(value); },
     setWorkshopInstallationResult() {}, setResolvedLookupMap() {}, setManualInventory() {}, setManualInventoryError() {},
     setRetainedWorkshopIds() {}, setPzSnapshot() {}, setSelectedWorkshopIds() {}, setScanNonce() {}
@@ -139,7 +160,7 @@ test("cached DST enablement waits for deployment and does not save after deploym
   deployment.resolve();
   assert.equal(await result, false);
   assert.deepEqual(state.calls.saves, []);
-  assert.deepEqual(state.calls.errors, ["download failed"]);
+  assert.deepEqual(state.calls.errors, ["Mod installation failed: download failed"]);
 });
 
 test("cached Palworld packages still deploy and enable their PackageNames", async () => {
@@ -149,13 +170,39 @@ test("cached Palworld packages still deploy and enable their PackageNames", asyn
   assert.equal(state.calls.saves[0].mod_package_names, "Existing\nPackage111111\nPackage222222");
 });
 
-test("tModLoader download lists preserve internal enabled names and the selected runtime", async () => {
-  const state = harness("terraria", { server_runtime: "tmodloader", tmodloader_workshop_item_ids: "999999", tmodloader_enabled_mod_names: "PreservedMod" }, ["111111", "222222"]);
+test("tModLoader lists keep download ownership separate from enabled .tmod names", async () => {
+  const settings = { server_runtime: "tmodloader", tmodloader_workshop_item_ids: "999999", tmodloader_enabled_mod_names: "PreservedMod" };
+  const state = harness("terraria", settings, ["111111", "222222"]);
   assert.equal(await state.run(false), true);
   assert.equal(state.calls.downloads.length, 1, "cached files still need instance deployment");
-  assert.equal(state.calls.saves[0].tmodloader_workshop_item_ids, "999999\n111111\n222222");
-  assert.equal(state.calls.saves[0].tmodloader_enabled_mod_names, "PreservedMod");
-  assert.equal(state.calls.saves[0].server_runtime, "tmodloader");
+  const owned = { ...settings, tmodloader_workshop_item_ids: "999999\n111111\n222222" };
+  assert.deepEqual(state.calls.saves, [owned]);
+
+  const enable = harness("terraria", settings, ["111111", "222222"]);
+  assert.equal(await enable.run(true), true);
+  assert.deepEqual(enable.calls.downloads, [{ ids: ["111111", "222222"], missingOnly: true }]);
+  assert.deepEqual(enable.calls.saves, [{ ...owned, tmodloader_enabled_mod_names: "PreservedMod\nCrystalTools\nForestStorage" }]);
+
+  const unresolved = harness("terraria", settings, [], { unresolvedId: "222222" });
+  assert.equal(await unresolved.run(true), false);
+  assert.deepEqual(unresolved.calls.downloads, [{ ids: ["111111", "222222"], missingOnly: true }]);
+  assert.deepEqual(unresolved.calls.saves, [owned], "both successfully downloaded items remain owned and neither is enabled");
+  assert.match(unresolved.calls.errors[0], /downloaded and added to My Mods.*could not be enabled.*unique Mod name/i);
+});
+
+test("enabling the first Terraria Mods never pins the unmodded runtime preference", async () => {
+  for (const settings of [{}, { server_runtime: "vanilla" }]) {
+    const state = harness("terraria", settings);
+    assert.equal(await state.runDirect(), true);
+    const [enabled] = state.calls.saves;
+    assert.deepEqual(enabled, {
+      ...settings, tmodloader_workshop_item_ids: "111111\n222222", tmodloader_enabled_mod_names: "CrystalTools\nForestStorage"
+    });
+    const items = [{ inferred_id: "111111", tmodloader_mod_name: "CrystalTools" },
+      { inferred_id: "222222", tmodloader_mod_name: "ForestStorage" }];
+    const disabled = controls.buildWorkshopModEnablementPlan("terraria", enabled, ["111111", "222222"], false, null, items).nextSettings;
+    assert.deepEqual(disabled, { ...enabled, tmodloader_enabled_mod_names: "" });
+  }
 });
 
 test("PZ enables resolved internal Mod and map IDs together with WorkshopItems", async () => {
@@ -200,7 +247,8 @@ test("a mixed DST collection deploys and records only server Mods, without nativ
     assert.equal(await blocked.runDirect(), false);
     assert.deepEqual(blocked.calls.downloads, []);
     assert.deepEqual(blocked.calls.saves, []);
-    if (blocked.calls.errors.length) assert.equal(JSON.parse(blocked.calls.errors[0]).reason, reason);
+    if (reason === "wrong-game") assert.deepEqual(blocked.calls.errors,
+      ["Mod installation failed: Workshop item 1365141672 belongs to another game."]);
     else assert.deepEqual(blocked.calls.messages, ["This collection contains nested or unresolved entries. Add the individual Mods instead."]);
   }
 });

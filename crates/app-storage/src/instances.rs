@@ -1978,7 +1978,8 @@ async fn materialize_instance_configuration_transaction(
                 instance_running: instance_running || active_run.is_some(),
                 ..support_context
             };
-            apply_module_prestart_support(&prestart_context, settings_lock).await?;
+            apply_module_prestart_support(&prestart_context, settings_lock, descriptor.as_ref())
+                .await?;
         }
 
         Ok(InstanceDetails {

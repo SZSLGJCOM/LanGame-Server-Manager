@@ -150,6 +150,7 @@ extern "C" void ControlCaptureUpdate(std::uintptr_t server) noexcept {
     const auto owner = InterlockedCompareExchange(&g_ownerThread, thread, 0);
     if (owner && owner != thread) g_cache.degraded = true;
     g_latest = Capture(g_cache, server, GetTickCount64(), ReadCurrentMemory, nullptr);
+    g_latest.moderationSupported = g_profile.accountAction != nullptr;
     if (g_sequence == UINT64_MAX) { g_cache.degraded = true; g_latest.complete = false; g_latest.issue = "sequence_exhausted"; }
     else g_latest.sequence = ++g_sequence;
     g_worldSaveLatest = CaptureWorldSave(g_worldSaveCache, server, g_profile.saveWorld != nullptr,

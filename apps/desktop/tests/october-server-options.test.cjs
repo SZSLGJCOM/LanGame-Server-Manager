@@ -123,7 +123,7 @@ test("RimWorld image URLs share HTTP(S) validation and distinguish clear from un
   assert.ok(issuesFor(schema, field.key, `https://images.example.test/${"x".repeat(2048)}`).length);
   assert.deepEqual(writeGuidedFieldValue({}, field, ""), { server_image_url: "" });
   const manifest = fs.readFileSync(path.join(root, "modules/rimworld/module.toml"), "utf8");
-  assert.match(manifest, /26\.10\.20\.1/);
+  assert.match(manifest, /releases\/download\/26\.11\.2\.1\/Server-win-x64\.zip/);
   assert.match(manifest, /1\.7 unstable/);
 });
 

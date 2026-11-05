@@ -8,6 +8,7 @@ const WORKSPACE_ROOT = path.resolve(DESKTOP_ROOT, "../..");
 const MODULES_ROOT = path.join(WORKSPACE_ROOT, "modules");
 const OUTPUT_DIR = path.join(DESKTOP_ROOT, "src", "i18n", "games");
 const SETTINGS_REGISTRY_PATH = path.join(DESKTOP_ROOT, "src", "views", "settings", "module-registry.ts");
+const MOD_WORKSPACE_SECTIONS = require("../src/views/settings/mod-workspace-sections.json");
 const CATALOG_CHUNK_SIZE = 2500;
 const ARK_FIELD_DESCRIPTIONS = require(path.join(WORKSPACE_ROOT, "scripts", "ark_field_descriptions.json"));
 const DST_SHARD_FIELD_COPY = {
@@ -827,7 +828,8 @@ function addSchemaEntries(enCatalog, zhCatalog, moduleInfo, schema) {
       }
     }
 
-    if (typeof property["x-lsgm-section"] === "string" && property["x-lsgm-section"].trim()) {
+    if (!Object.hasOwn(MOD_WORKSPACE_SECTIONS[moduleInfo.id] ?? {}, fieldKey)
+      && typeof property["x-lsgm-section"] === "string" && property["x-lsgm-section"].trim()) {
       sectionIds.add(property["x-lsgm-section"].trim());
     }
   }
@@ -1009,7 +1011,9 @@ function addRuntimeSettingsEntries(enCatalog, zhCatalog, modules, schemasByModul
 
     for (const section of sections) {
       const sectionFields = fields.filter((field) => field.sectionId === section.id);
-      definition.buildFieldGroups?.(section.id, sectionFields, "zh-CN", t);
+      // Other workspaces render these fields themselves, so they cannot create Settings groups.
+      const groupedFields = sectionFields.filter((field) => definition.fieldPresentationOverrides?.[field.key]?.owner !== "mods");
+      definition.buildFieldGroups?.(section.id, groupedFields, "zh-CN", t);
 
       for (const field of sectionFields) {
         definition.getFieldCopy?.(field.key, t, "zh-CN");
@@ -1081,6 +1085,8 @@ function writeCatalog(fileName, exportName, catalog) {
 
 function mergeModuleCatalog(existing, generated, moduleIds) {
   const prefixes = moduleIds.flatMap((id) => [`settings.schema.${id}.`, `${id}.settings.`]);
+  // The DST settings workspace owns this prefix in addition to the module ID.
+  if (moduleIds.includes("dontstarve")) prefixes.push("dst.settings.");
   return {
     ...Object.fromEntries(Object.entries(existing).filter(([key]) => !prefixes.some((prefix) => key.startsWith(prefix)))),
     ...generated
@@ -1179,13 +1185,13 @@ function main() {
 
   addRuntimeSettingsEntries(enCatalog, zhCatalog, modules, schemasByModuleId);
 
+  enCatalog = schemaFallbacks(enCatalog, "en-us", "EN_US_SCHEMA_GENERATED_MESSAGES");
+  zhCatalog = schemaFallbacks(zhCatalog, "zh-cn", "ZH_CN_SCHEMA_GENERATED_MESSAGES");
+
   if (requestedModules.size) {
     enCatalog = mergeModuleCatalog(readGeneratedCatalog("schema-generated.en"), enCatalog, [...requestedModules]);
     zhCatalog = mergeModuleCatalog(readGeneratedCatalog("schema-generated.zh-cn"), zhCatalog, [...requestedModules]);
   }
-
-  enCatalog = schemaFallbacks(enCatalog, "en-us", "EN_US_SCHEMA_GENERATED_MESSAGES");
-  zhCatalog = schemaFallbacks(zhCatalog, "zh-cn", "ZH_CN_SCHEMA_GENERATED_MESSAGES");
 
   writeCatalog("schema-generated.en.ts", "EN_US_SCHEMA_GENERATED_MESSAGES", enCatalog);
   writeCatalog("schema-generated.zh-cn.ts", "ZH_CN_SCHEMA_GENERATED_MESSAGES", zhCatalog);

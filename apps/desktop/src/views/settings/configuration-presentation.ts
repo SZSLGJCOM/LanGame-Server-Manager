@@ -165,7 +165,10 @@ function validatePresentation(
   definition: SettingsModuleDefinition,
   property: SchemaProperty
 ): void {
-  if (!sectionIds.has(presentation.sectionId)) {
+  const isModWorkspaceSection = presentation.sectionId === "mods" && presentation.owner === "mods"
+    && presentation.state === "specialized" && property["x-lsgm-section"] === "mods";
+  // The Mods workspace has its own fields and renderer contract, outside the Settings navigation graph.
+  if (!sectionIds.has(presentation.sectionId) && !isModWorkspaceSection) {
     throw new Error(`${moduleId}.${fieldKey} references unknown section ${presentation.sectionId}`);
   }
   if (presentation.state === "editable" && !isScalarProperty(property)) {

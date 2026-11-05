@@ -2,7 +2,8 @@ use std::collections::{HashMap, HashSet};
 
 use app_core::{
     ModulePlayerListSource, RuntimeLivePlayerEntry, RuntimeLivePlayerIdentifier,
-    RuntimeLivePlayerSnapshot, RuntimeLivePlayerStatus, RuntimePlayerIdentityKind,
+    RuntimeLivePlayerIssue, RuntimeLivePlayerIssueCode, RuntimeLivePlayerSnapshot,
+    RuntimeLivePlayerStatus, RuntimePlayerIdentityKind,
 };
 use serde::Deserialize;
 
@@ -19,8 +20,14 @@ pub(super) struct Packet {
     pub sequence: String,
     pub tick_ms: String,
     pub complete: bool,
+    #[serde(default = "previous_profile_supports_moderation")]
+    pub moderation_supported: bool,
     pub issue: String,
     pub players: Vec<Player>,
+}
+
+fn previous_profile_supports_moderation() -> bool {
+    true
 }
 
 #[derive(Debug, Deserialize)]
@@ -131,7 +138,7 @@ pub(super) fn project(
             account: decimal(&player.account_id)?,
         }
         .encode();
-        let actions = if player.moderation_immune {
+        let actions = if !packet.moderation_supported || player.moderation_immune {
             Vec::new()
         } else {
             vec!["kick_player".to_owned(), "ban_player".to_owned()]
@@ -178,7 +185,12 @@ pub(super) fn project(
             current_players: Some(entries.len()),
             max_players: None,
             entries,
-            issue: None,
+            issue: (!packet.moderation_supported).then(|| RuntimeLivePlayerIssue {
+                code: RuntimeLivePlayerIssueCode::ModerationUnavailable,
+                summary: "The native extension can list players but does not support live moderation on this server build.".into(),
+                setting_keys: Vec::new(),
+                extension_status: None,
+            }),
         },
         private_action_bindings: bindings,
         collected_at: observed_at,

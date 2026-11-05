@@ -1,4 +1,5 @@
 import { useRef, useState, type Dispatch, type SetStateAction } from "react";
+import type { WorldStartConfirmation } from "../api-terraria-world";
 import {
   applyInstancePlayerAccessMutation,
   archiveInstance,
@@ -42,7 +43,6 @@ import type {
   BindAddressCandidate,
   BootstrapResponse,
   CreateInstanceInput,
-  DstWorldStartPreview,
   ExecuteInstancePlayerActionInput,
   ExecuteInstancePlayerActionResult,
   InstanceBackupRestoreResult,
@@ -328,7 +328,7 @@ export function useInstanceActions(options: InstanceActionOptions) {
     }
   }
 
-  async function handleStartServer(instanceId: string, expectedWorldStart?: DstWorldStartPreview, operation?: RuntimeActionOperation) {
+  async function handleStartServer(instanceId: string, expectedWorldStart?: WorldStartConfirmation, operation?: RuntimeActionOperation) {
     if (operation && !operation.isCurrent()) return false;
     options.setActivity(message("activity.startingServer", { id: instanceId }));
     let result: StartInstanceResult;
@@ -352,6 +352,15 @@ export function useInstanceActions(options: InstanceActionOptions) {
         return false;
       }
       const errorMessage = describeError(error);
+      // The approved new slot may already have been saved before a later
+      // download or launch failed. Refresh it without discarding the real error.
+      if (expectedWorldStart && "create_terraria_world" in expectedWorldStart) {
+        try { await options.reloadBootstrap(); }
+        catch (refreshError) {
+          void logFrontendEvent("warn", "instance.start.refresh_failed", describeError(refreshError), { instanceId }).catch(() => undefined);
+        }
+        if (operation && !operation.isCurrent()) return false;
+      }
       options.setActivity({ ...serverStartFailureMessage(error), tone: "error" });
       void logFrontendEvent("error", "instance.start.frontend_failed", errorMessage, { instanceId }).catch(
         () => undefined

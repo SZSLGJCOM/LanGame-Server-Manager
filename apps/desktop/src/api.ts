@@ -1,5 +1,6 @@
 import { Channel, invoke, isTauri } from "@tauri-apps/api/core";
 import { readPreferredLocale } from "./locale-preference";
+import type { WorldStartConfirmation } from "./api-terraria-world";
 import { canUseLocalDesktopApi, invokeOrMock, shouldUseLanApi } from "./api-transport";
 import { storageManagementRequests } from "./storage-management-requests";
 import { parseInstanceArkMapAvailability } from "./ark-map-availability";
@@ -376,7 +377,7 @@ export const openExternalUrl = async (url: string) => {
   await invokeOrMock<void>("open_external_url", { url: target.href });
 };
 export const openLocalPath = (path: string) => invokeOrMock<void>("open_local_path", { path });
-export const startInstance = async (instanceId: string, expectedWorldStart: DstWorldStartPreview | null = null, startupAttemptId?: string) => {
+export const startInstance = async (instanceId: string, expectedWorldStart: WorldStartConfirmation | null = null, startupAttemptId?: string) => {
   return await invokeOrMock<StartInstanceResult>("start_instance_process", {
     instanceId, expectedWorldStart, ...(startupAttemptId === undefined ? {} : { startupAttemptId })
   });

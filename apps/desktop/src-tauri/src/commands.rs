@@ -132,6 +132,8 @@ pub(crate) mod commands_dst_map;
 pub(crate) mod commands_dst_regeneration;
 #[path = "commands_dst_world_state.rs"]
 pub(crate) mod commands_dst_world_state;
+#[path = "commands_terraria_world.rs"]
+pub(crate) mod commands_terraria_world;
 #[path = "commands_maintenance_schedule.rs"]
 pub(crate) mod commands_maintenance_schedule;
 #[path = "commands_native_save.rs"]
@@ -870,6 +872,8 @@ pub struct ManualModInventoryItem {
     pub path: String,
     pub item_type: String,
     pub inferred_id: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub tmodloader_mod_name: Option<String>,
     pub file_count: usize,
     pub total_bytes: u64,
     pub modified_unix_ms: Option<u128>,

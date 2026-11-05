@@ -2,7 +2,6 @@ import type { TranslateFn } from "../../../i18n";
 import type { SettingsModuleDefinition, SettingsModuleFieldGroup } from "../module-types";
 import type { GuidedFieldCopy, GuidedSettingsField, GuidedSettingsSection } from "../settings-schema";
 import { validateAbioticModField } from "./abioticfactor-mods";
-import { AbioticOfficialModSource } from "./AbioticOfficialModSource";
 
 const STEAM64_PATTERN = /^\d{17}$/;
 const NATIVE_LAUNCH_VALUE_KEYS = new Set(["server_name", "world_save_name", "server_password", "admin_password"]);
@@ -59,12 +58,6 @@ function groupFields(
 
 function buildAbioticSections(t: TranslateFn): GuidedSettingsSection[] {
   return [
-    {
-      id: "official-mods",
-      title: t("abiotic.settings.sections.officialMods", undefined, "Official Mods"),
-      description: t("abiotic.settings.sections.officialModsDescription", undefined,
-        "Configure official mod.io Mods. The native server downloads them at startup; unofficial UE4SS Mods keep their existing Mods workspace.")
-    },
     {
       id: "network",
       title: t("abiotic.settings.sections.network", undefined, "Network"),
@@ -144,31 +137,13 @@ function buildAbioticFieldGroups(
   const fieldsByKey = new Map(fields.map((field) => [field.key, field]));
 
   const groupSpecs: Record<string, Array<Omit<SettingsModuleFieldGroup, "fields"> & { keys: string[] }>> = {
-    "official-mods": [
-      {
-        id: "official-mod-list",
-        title: t("abiotic.settings.groups.officialMods", undefined, "Official Mod selection"),
-        description: t("abiotic.settings.groups.officialModsDescription", undefined,
-          "Find numeric IDs on mod.io, then save their load order. Downloads and dependency resolution run in the game at the next startup."),
-        layoutClass: "advanced-launch",
-        keys: ["mod_ids", "modio_token", "allow_local_only_mods"]
-      },
-      {
-        id: "official-mod-loading",
-        title: t("abiotic.settings.groups.officialModLoading", undefined, "Download and local packages"),
-        description: t("abiotic.settings.groups.officialModLoadingDescription", undefined,
-          "Directories belong to this instance. Predownloaded native Mod packages and unofficial UE4SS payloads use separate locations."),
-        layoutClass: "advanced-launch",
-        keys: ["mods_directory", "mod_install_timeout_seconds", "override_mod_warnings", "sideload_mods", "sideload_mods_path"]
-      }
-    ],
     access: [
       {
         id: "credentials",
         title: t("abiotic.settings.groups.joinAndAdminLanes", undefined, "Administration"),
         description: t("abiotic.settings.groups.joinPasswordAdminPasswordAndSteamModeratorIDsShouldBeTreatedAsSeparateAccessLane", undefined, "Administrator credentials and platform admission rules."),
         layoutClass: "network-credentials",
-        keys: ["admin_password", "moderator_steam_ids", "platform_limited"]
+        keys: ["admin_password", "moderator_steam_ids", "platform_limited", "allow_local_only_mods", "modio_token"]
       }
     ],
     network: [
@@ -349,14 +324,6 @@ export const abioticFactorSettingsDefinition: SettingsModuleDefinition = {
   fieldPresentationOverrides: {
     mod_ids: { behavior: "multiline" },
     modio_token: { behavior: "secret", resourceUrl: "https://mod.io/me/access#tokens" }
-  },
-  specializedRenderers: {
-    "abiotic-official-mod-source": {
-      kind: "module-addon",
-      placement: "before-fields",
-      sectionId: "official-mods",
-      Renderer: AbioticOfficialModSource
-    }
   },
   getSections: buildAbioticSections,
   buildFieldGroups(sectionId, fields, _locale, t) {

@@ -15,7 +15,7 @@ for (const viewport of [{ width: 1560, height: 900 }, { width: 960, height: 600 
     assert.equal(report.status, "passed", report.error);
     assert.deepEqual(report.games.map((entry) => entry.module), games);
     for (const entry of report.games) {
-      assert.equal(entry.reversible, !["unturned", "terraria", "squad"].includes(entry.module));
+      assert.equal(entry.reversible, !["unturned", "squad"].includes(entry.module));
       for (const flag of ["single_remove_repair", "protected_whole_removal", "leaf_visibility_and_remount"]) assert.equal(entry[flag], true, `${entry.module}: ${flag}`);
     }
     assert.deepEqual(report.browser_errors, []);

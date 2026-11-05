@@ -9,7 +9,8 @@ for (const extension of [".ts", ".tsx"]) {
 const { buildConfiguredEntries, buildEnabledRows, canReorderEnabledRow, canToggleModEnabledRow } = require("../src/views/servers/mod-workbench-model.ts");
 const { buildModSettingsApplyPlan, buildModSettingsRemovePlan } = require("../src/views/servers/mod-workbench-plans.ts");
 const { WorkshopControlError, readWorkshopControlState, readWorkshopControlStates, readOwnedWorkshopModIds, supportsWorkshopModEnablement,
-  buildWorkshopModEnablementPlan, buildWorkshopDownloadOwnershipPlan, buildProjectZomboidWorkshopRemovalPlan
+  buildWorkshopModEnablementPlan, buildWorkshopDownloadOwnershipPlan, buildProjectZomboidWorkshopRemovalPlan,
+  buildTerrariaWorkshopRemovalPlan, buildTerrariaUnmappedNameDisablePlan, buildTerrariaEnabledNameAddPlan
 } = require("../src/views/servers/mod-workbench-workshop-controls.ts");
 const X = "2000001", Y = "2000002", Z = "2000003";
 const details = (key) => ({ workshop: { provider: "steam" }, mods: { enablement: { setting_key: key, setting_label: "Mods" } } });
@@ -155,16 +156,91 @@ test("PZ rejects incomplete, failed or ambiguous metadata for any configured own
 });
 
 test("unsupported workflows and unknown ownership cannot gain artificial toggles", () => {
-  for (const moduleId of ["unturned", "terraria", "squad", "rimworld", "palworld", "dontstarve"]) {
+  for (const moduleId of ["unturned", "squad", "rimworld", "palworld", "dontstarve"]) {
     assert.equal(supportsWorkshopModEnablement(moduleId), false);
     assert.equal(state(moduleId, {}, X).canToggle, false);
     assert.throws(() => buildWorkshopModEnablementPlan(moduleId, {}, [X], true), failsWith("unsupported-module"));
   }
-  for (const moduleId of ["projectzomboid", "arksurvivalevolved", "barotrauma", "conanexiles", "soulmask"]) {
+  for (const moduleId of ["projectzomboid", "arksurvivalevolved", "barotrauma", "conanexiles", "soulmask", "terraria"]) {
     assert.throws(() => buildWorkshopModEnablementPlan(moduleId, { steam_workshop_collections: [{ id: "9000001", title: "Source only", member_ids: [X] }] }, [X], true), failsWith("not-owned"));
     assert.throws(() => buildWorkshopDownloadOwnershipPlan(moduleId, {}, ["0000001"]), failsWith("invalid-selection"));
     assert.throws(() => buildWorkshopDownloadOwnershipPlan(moduleId, {}, ["18446744073709551616"]), failsWith("invalid-selection"));
   }
+});
+
+const tmodItem = (inferred_id, tmodloader_mod_name) => ({
+  inferred_id, tmodloader_mod_name, name: "Workshop display title", path: "C:/instance/" + X
+});
+
+test("Terraria keeps downloads, runtime and case-sensitive native names independent with a partial inventory", () => {
+  const source = { server_runtime: "vanilla", tmodloader_workshop_item_ids: X,
+    tmodloader_enabled_mod_names: "# header\r\nCalamityMod\r\n\r\n别的模组\r\ncalamitymod\r\n", unrelated: true };
+  const downloaded = buildWorkshopDownloadOwnershipPlan("terraria", source, [X, Y]);
+  assert.deepEqual(downloaded, { ...source, tmodloader_workshop_item_ids: X + "\n" + Y });
+  const formatted = { ...source, tmodloader_workshop_item_ids: "# keep\r\n" + X + "\r\n" };
+  assert.deepEqual(buildWorkshopDownloadOwnershipPlan("terraria", formatted, [X]), formatted);
+  const scan = [tmodItem(X, "CalamityMod"), tmodItem("workshop-" + Y, "Wrong"), tmodItem(Z, "别的模组")];
+  const states = readWorkshopControlStates("terraria", downloaded, null, scan);
+  assert.deepEqual(states.get(X), { owned: true, enabled: true, partiallyEnabled: false, canToggle: true,
+    canRemove: true, internalModName: "CalamityMod" });
+  assert.deepEqual(states.get(Y), { owned: true, enabled: false, partiallyEnabled: false, canToggle: false, canRemove: false });
+  assert.equal(states.has(Z), false);
+  const rows = buildEnabledRows(buildConfiguredEntries("terraria", downloaded, details("tmodloader_workshop_item_ids"), [Z], scan));
+  assert.deepEqual(rows.map((row) => [row.entry.key, row.value]), [
+    ["terraria-tmodloader_workshop_item_ids", X], ["terraria-tmodloader_workshop_item_ids", Y],
+    ["terraria-unmapped-names", "别的模组"], ["terraria-unmapped-names", "calamitymod"]
+  ]);
+  assert.ok(rows.every((row) => canToggleModEnabledRow(row, "terraria", false)));
+  assert.equal(canReorderEnabledRow(rows[2]), false);
+  const disabled = buildWorkshopModEnablementPlan("terraria", downloaded, [X], false, null, scan).nextSettings;
+  assert.deepEqual(disabled, { ...downloaded, tmodloader_enabled_mod_names: "# header\r\n\r\n别的模组\r\ncalamitymod\r\n" });
+  const restored = buildWorkshopModEnablementPlan("terraria", disabled, [X], true, null, scan).nextSettings;
+  assert.equal(restored.tmodloader_enabled_mod_names, disabled.tmodloader_enabled_mod_names + "CalamityMod\r\n");
+  assert.throws(() => buildWorkshopModEnablementPlan("terraria", disabled, [X, Y], true, null, scan),
+    (error) => failsWith("local-metadata-missing")(error) && error.ids.length === 1 && error.ids[0] === Y);
+  assert.throws(() => buildTerrariaWorkshopRemovalPlan(disabled, [Y], scan), failsWith("local-metadata-missing"));
+  assert.throws(() => buildTerrariaUnmappedNameDisablePlan(downloaded, "CalamityMod", scan), failsWith("invalid-selection"));
+});
+
+test("Terraria preserves shared enabled names, exposes raw-name correction and refuses contradictory package identity", () => {
+  const source = { tmodloader_workshop_item_ids: [X, Y, Z].join("\n"), tmodloader_enabled_mod_names: "Shared\nOther" };
+  const shared = [tmodItem(X, "Shared"), tmodItem(Y, "Shared")];
+  const detail = readWorkshopControlState("terraria", source, X, null, shared);
+  assert.equal(detail.enabled, true);
+  assert.equal(detail.canToggle, false);
+  assert.equal(detail.canRemove, true);
+  assert.throws(() => buildWorkshopModEnablementPlan("terraria", source, [X], false, null, shared), failsWith("local-metadata-missing"));
+  const oneRemoved = buildTerrariaWorkshopRemovalPlan(source, [X], shared);
+  assert.deepEqual(oneRemoved.nextSettings, { ...source, tmodloader_workshop_item_ids: Y + "\n" + Z });
+  assert.deepEqual(oneRemoved.retainedLocalIds, ["Shared"]);
+  assert.equal(buildTerrariaWorkshopRemovalPlan(source, [X, Y], shared).nextSettings.tmodloader_enabled_mod_names, "Other");
+  assert.deepEqual(buildTerrariaUnmappedNameDisablePlan(source, "Shared", shared).nextSettings, { ...source, tmodloader_enabled_mod_names: "Other" });
+
+  const conflicting = [...shared, tmodItem(Y, "Different")];
+  assert.equal(readWorkshopControlState("terraria", source, Y, null, conflicting).canRemove, false);
+  assert.throws(() => buildTerrariaWorkshopRemovalPlan(source, [Y], conflicting), failsWith("local-metadata-missing"));
+  assert.deepEqual(buildTerrariaWorkshopRemovalPlan(source, [X], conflicting).retainedLocalIds, ["Shared"]);
+  const empty = { tmodloader_workshop_item_ids: X };
+  assert.deepEqual(buildTerrariaWorkshopRemovalPlan(empty, [X]).nextSettings, { tmodloader_workshop_item_ids: "" });
+});
+
+test("Terraria manually adds exact valid internal names and removes historical names without rewriting unrelated text", () => {
+  const source = { tmodloader_enabled_mod_names: "  # 保存此注释  \r\nOld.Name\r\n -- 保留\r\n\r\n  未知模组  \r\nOld.Name\r\n" };
+  const added = buildTerrariaEnabledNameAddPlan(source, ["未知模组", "更多模组", "Case", "case", "Case"]).nextSettings;
+  assert.equal(added.tmodloader_enabled_mod_names, source.tmodloader_enabled_mod_names + "更多模组\r\nCase\r\ncase\r\n");
+  assert.deepEqual(buildTerrariaUnmappedNameDisablePlan(added, "Old.Name").nextSettings, {
+    tmodloader_enabled_mod_names: "  # 保存此注释  \r\n -- 保留\r\n\r\n  未知模组  \r\n更多模组\r\nCase\r\ncase\r\n"
+  });
+  const delimited = { tmodloader_enabled_mod_names: "Alpha;Beta,Gamma\nActual" };
+  assert.throws(() => buildTerrariaUnmappedNameDisablePlan(delimited, "Alpha"), failsWith("invalid-selection"));
+  assert.equal(buildTerrariaUnmappedNameDisablePlan(delimited, "Alpha;Beta,Gamma").nextSettings.tmodloader_enabled_mod_names, "Actual");
+  const unicode = { tmodloader_enabled_mod_names: "\uFEFFName\n\u0085Name\n" };
+  assert.deepEqual(buildEnabledRows(buildConfiguredEntries("terraria", unicode)).map((row) => row.value), ["\uFEFFName", "Name"]);
+  assert.equal(buildTerrariaUnmappedNameDisablePlan(unicode, "\uFEFFName").nextSettings.tmodloader_enabled_mod_names, "\u0085Name\n");
+  for (const invalid of ["#comment", "--comment", "new\nline", "one/part", "Dot.Name", "tErRaRiA", "A\u0080B"]) {
+    assert.throws(() => buildTerrariaEnabledNameAddPlan(source, [invalid]), failsWith("invalid-selection"));
+  }
+  assert.throws(() => buildTerrariaEnabledNameAddPlan({ tmodloader_enabled_mod_names: [] }, ["Good"]), failsWith("invalid-settings"));
 });
 
 test("disabled ownership validates canonical records and refuses overflow atomically", () => {

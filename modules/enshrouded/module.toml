@@ -33,8 +33,8 @@ port_names = ["query"]
 [player_management]
 status = "runtime_actions"
 planned_surface = "instance-owned enshrouded_native file_ipc identity and moderation; persistent enshrouded_server.json roster"
-reason = "The fingerprinted native extension captures the server's own copied player identities and dispatches moderation on its server thread, preserving native protection. Ban and unban require canonical bannedAccounts readback; kick and ban require confirmed departure. Unknown builds or unavailable extensions retain read-only query/log names."
-verification = "Read the file_ipc player list through the enshrouded_native command surface, verify executable identity, native-copy generation and protected targets, then test ban, rejected reconnect and unban recovery with a disposable account. Confirm canonical bannedAccounts in enshrouded_server.json; native function return alone is not confirmation."
+reason = "Enshrouded 1.0.1.2 (build 26430253) supports native player observation, immediate world saving and player management. Kick and ban target a current, non-immune session. Unban uses the selected native account ID from the ban list, including when that player is offline."
+verification = "Build 26430253 was inspected directly from the official Steam server executable. Its kick, ban, offline unban, identity-copy and save paths were checked against the bridge contract; inert PE admission, capability rejection and native control tests passed. Player disconnects, ban enforcement and reconnection after unban were not exercised on this build."
 
 [runtime.shutdown]
 grace_period_ms = 15000

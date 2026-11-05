@@ -1,0 +1,40 @@
+{
+  "fixture_version": 1,
+  "module_id": "sevendaystodie",
+  "evidence": {
+    "status": "best_effort_verified",
+    "verified_at": "2026-11-04",
+    "build": "Official app 294420 build 26310339 generated seven top-level serveradmin.xml sections. The Web access contents here are synthetic.",
+    "source_ids": ["native_admin_sections"]
+  },
+  "coverage": {"editable": 0, "specialized": 0, "derived": 0, "generated": 0, "excluded": 0},
+  "classifications": {
+    "editable": [],
+    "specialized": [],
+    "derived": [],
+    "generated": [],
+    "excluded": []
+  },
+  "settings": {
+    "blacklist_entries": [{"platform": "Steam", "userid": "76561198000000001"}]
+  },
+  "initial": {
+    "files": [{
+      "root": "saves",
+      "path": "serveradmin.xml",
+      "content": "<adminTools><users/><blacklist/><apitokens><token name=\"fixture\" /></apitokens><webmodules/><webusers/></adminTools>"
+    }]
+  },
+  "expected": {
+    "files": [{
+      "root": "saves",
+      "path": "serveradmin.xml",
+      "format": "xml",
+      "fragments": [
+        "<apitokens><token name=\"fixture\" /></apitokens><webmodules/><webusers/>",
+        "<blacklisted platform=\"Steam\" userid=\"76561198000000001\""
+      ]
+    }],
+    "launch": {"executable_suffix": null, "arguments": []}
+  }
+}

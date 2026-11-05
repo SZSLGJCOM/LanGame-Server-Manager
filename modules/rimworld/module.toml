@@ -6,12 +6,12 @@ supported_platforms = ["windows"]
 
 [install]
 shared_game_dir = "rimworld"
-download_url_windows = "https://github.com/RimWorld-Together/Rimworld-Together/releases/download/26.10.20.1_%281%29/Server-win-x64.zip"
+download_url_windows = "https://github.com/RimWorld-Together/Rimworld-Together/releases/download/26.11.2.1/Server-win-x64.zip"
 verification_path = "RTServer.exe"
 
 [install.download_integrity_windows]
-sha256 = "ebffcd587bac87405d8d5f2e671d8fce0d5db3a0872a3d14699395ece512790d"
-size = 31766123
+sha256 = "87bbf4e0fa3f37cf87a7f579bbd486040314d024311fb20086c638ea0a4accb7"
+size = 31763053
 
 [process]
 executable = "RTServer.exe"
@@ -21,7 +21,7 @@ args_template = [
 working_directory_template = "{{paths.install_root}}"
 window_policy = "background"
 host_surface = "managed_terminal"
-host_notes = "RimWorld Together 26.10.20.1 (1) targets RimWorld 1.7 unstable and requires the matching Together client mod 3005289691; RimWorld 1.6 requires the upstream 1.6 release. This community server is maintained separately from RimWorld. LanGame renders ServerConfig.json and a SHA256 PasswordConfig.json while preserving existing passwords when unset. Retired whitelist files remain untouched."
+host_notes = "RimWorld Together 26.11.2.1 targets RimWorld 1.7 unstable and requires the matching Together client mod and Harmony. Market settings select the local market or the upstream cross-server marketplace. Players on RimWorld 1.6 need Together 26.10.15.1."
 
 [[default_ports]]
 name = "game"
@@ -37,7 +37,7 @@ supports_collections = false
 provider = "steam"
 label = "Steam Workshop"
 url = "https://steamcommunity.com/sharedfiles/filedetails/?id=3005289691"
-install_note = "This server release targets RimWorld 1.7 unstable. Players need the matching RimWorld Together client mod, Steam Workshop item 3005289691, plus its current dependencies. RimWorld 1.6 requires the upstream 1.6 release. The community server is installed from the RimWorld Together maintainers' unmodified GitHub release archive."
+install_note = "Install the unmodified 26.11.2.1 community server from the maintainers' GitHub release. Players need RimWorld 1.7 unstable, Together 26.11.2.1 (Workshop 3005289691) and Harmony (2009463077). Together 26.10.15.1 is the final release for RimWorld 1.6."
 
 [runtime.player_query]
 protocol = "none"
@@ -166,8 +166,8 @@ command = "backup"
 wait_after_ms = 2500
 
 [[runtime.shutdown.commands]]
-transport = "console_ctrl_c"
-command = "CTRL_C"
+transport = "stdin"
+command = "quit"
 wait_after_ms = 8000
 
 # Server-win-x64.zip contains RTServer.exe; these roots are generated at runtime.
@@ -180,7 +180,7 @@ retained_paths = ["Configs"]
 status = "runtime_actions"
 planned_surface = "managed_terminal_console_and_json_rosters"
 reason = "RimWorld Together RTServer.exe accepts list, banlist, kick, ban, pardon, op, and deop through managed stdin. Server passwords control admission; historical whitelist files are retained without exposing obsolete commands."
-verification = "Release 26.10.20.1 (1) archive integrity, executable layout, configuration paths, password object and existing console commands were checked against the official package and tagged source. No latest-package game process or player-join test is claimed. Validate managed stdin and password admission with matching client/server builds before claiming runtime verification."
+verification = "The official 26.11.2.1 archive contains RTServer.exe. Tagged source retains list, deeplist, forcesave and the moderation commands. Client authentication, settlement saves and completed marketplace trades require matching game clients."
 
 [[runtime.port_roles]]
 role = "player"

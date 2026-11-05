@@ -1,6 +1,53 @@
 status = "best_effort_verified"
-last_verified = "2026-10-25"
-notes = "Official release 26.10.20.1 (1) package integrity and tagged server-source changes were verified on 2026-10-23. The executable, configuration and save paths, password object and existing console commands remain compatible. New ServerImageURL is optional and IPBans.json is stored under the already retained Assets root. The official archive contains a self-contained RTServer.exe targeting .NET 10. The 117-field semantic inventory remains dated to the 26.8.31.1 review below; this update does not relabel that historical evidence or claim a player-join test. Retired whitelist settings/files remain preserved and formerly restricted instances require a password before starting."
+last_verified = "2026-11-04"
+notes = "RimWorld Together 26.11.2.1 targets RimWorld 1.7 unstable. The pinned Windows release, client package, native market configuration and previous local ledger format were reviewed on 2026-11-04. The official server was started with both market selections. A two-player protocol test completed a local sale and collected the payment once. The earlier field inventory retains its original dates and scope."
+
+[[sources]]
+id = "release_26_11_2_1"
+kind = "release"
+path = "https://github.com/RimWorld-Together/Rimworld-Together/releases/tag/26.11.2.1"
+authority = "upstream_release_and_verified_archives"
+description = "Published 2026-11-02T13:19:47Z as a full release. The Windows x64 server ZIP is 31763053 bytes with SHA256 87bbf4e0fa3f37cf87a7f579bbd486040314d024311fb20086c638ea0a4accb7. Its only executable is RTServer.exe, 75272529 bytes, SHA256 1eb52be49d7b3fdd430295b56cc8cc47692bcf552b14d06466d029de068fbc6e. The matching client asset 3005289691.zip has SHA256 ef4a3392e87af31624aa0958814535486319c5d03f61640f41b0081fc8f0258b and provides Current assemblies for RimWorld 1.7. About.xml declares Harmony 2009463077."
+
+[[sources]]
+id = "market_26_11_2_1"
+kind = "config_file"
+path = "Configs/Actions/Market.json"
+url = "https://github.com/RimWorld-Together/Rimworld-Together/blob/26.11.2.1/Source/Server/Core/Program.cs"
+authority = "tagged_server_source_and_verified_client_shared_assemblies"
+description = "ACT_Market.UseGlobalServer defaults to true. GlobalDataManager sends the action configuration to players. RTClient PM_Market routes requests to the local RTServer when false and GlobalMarketManager connects the client to the public service on TCP 7790 when true. IsEnabled gates the in-game market button. Local price, cooldown and listing settings belong to the local server. The old Assets/Market.json stores usernames and display labels. The new Assets/Market directory stores one JSON file per identifier, with OwnerHash and ThingDefName."
+
+[[items]]
+source = "market_26_11_2_1"
+key = "Configs/Actions/Market.json#UseGlobalServer"
+schema_key = "action_market_use_global_server"
+surface = "config_file"
+
+[[sources]]
+id = "rollback_26_11_2_1"
+kind = "config_file"
+path = "Configs/Actions/Rollback.json"
+url = "https://github.com/RimWorld-Together/Rimworld-Together/releases/tag/26.11.2.1"
+authority = "tagged_server_source_and_verified_client_shared_assemblies"
+description = "RTServer loads ACT_Rollback and sends it through GlobalDataManager. The matching RTClient InterfaceDrawer checks IsEnabled before offering to load the player's last local save. The native default is true. Two non-admin protocol clients received false from the official server after the setting was disabled."
+
+[[items]]
+source = "rollback_26_11_2_1"
+key = "Configs/Actions/Rollback.json#IsEnabled"
+schema_key = "action_rollback_is_enabled"
+surface = "config_file"
+
+[[exclusions]]
+source = "rollback_26_11_2_1"
+key = "Configs/Actions/Rollback.json#Cooldown"
+reason = "26.11.2.1 persists this value. The tagged client checks IsEnabled and calls its local save loader without applying a cooldown."
+
+[[sources]]
+id = "local_market_runtime_20261104"
+kind = "runtime_probe"
+path = "reference-fixtures/2026-11-04-local_market_runtime.json"
+authority = "official_server_and_matching_protocol_clients_on_isolated_loopback"
+description = "The official binary started in both modes on the isolated test host, responded to getversion and list, backed up the selected configuration and exited through stdin quit. Two ordinary players using official 26.11.2.1 network and shared assemblies logged in on the local market and completed a sale and a single payment collection."
 
 [[sources]]
 id = "official_latest_release_recheck_20261031"

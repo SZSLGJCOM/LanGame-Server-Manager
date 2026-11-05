@@ -356,9 +356,9 @@ DERIVED_TOKEN_SETTING_COVERAGE: dict[tuple[str, str], set[str]] = {
     ("satisfactory", "insecure_local_api_flag"): {"allow_insecure_local_api"},
     ("soulmask", "default_server_permissions_arg"): {"extra_launch_args"},
     ("soulmask", "workshop_mods_arg"): {"mod_workshop_ids"},
-    ("terraria", "launch_args"): {"server_runtime", "tmodloader_runtime_dir"},
-    ("terraria", "server_executable"): {"server_runtime", "tmodloader_runtime_dir"},
-    ("terraria", "working_directory"): {"server_runtime", "tmodloader_runtime_dir"},
+    ("terraria", "launch_args"): {"server_runtime", "tmodloader_runtime_dir", "tmodloader_enabled_mod_names"},
+    ("terraria", "server_executable"): {"server_runtime", "tmodloader_runtime_dir", "tmodloader_enabled_mod_names"},
+    ("terraria", "working_directory"): {"server_runtime", "tmodloader_runtime_dir", "tmodloader_enabled_mod_names"},
     ("scum", "admin_steam_ids_lines"): {"admin_steam_ids"},
     ("scum", "server_settings_ini"): {
         "server_general",
@@ -499,7 +499,6 @@ MATERIALIZATION_RUST_FUNCTION_COVERAGE = {
     ),
     "terraria": (
         ("render_terraria_tmodloader_install_txt", ()),
-        ("parse_terraria_tmodloader_enabled_mod_names", ()),
     ),
     "windrose": (("render_world_description", ()),),
 }

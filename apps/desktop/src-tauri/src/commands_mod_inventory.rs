@@ -1,6 +1,9 @@
 use super::*;
 use std::time::Instant;
 
+#[path = "commands_mod_inventory_tmodloader.rs"]
+mod tmodloader;
+
 const MAX_INVENTORY_ENTRIES: usize = 50_000;
 const MAX_INVENTORY_DEPTH: usize = 32;
 const INVENTORY_TIMEOUT: Duration = Duration::from_secs(10);
@@ -123,7 +126,12 @@ pub(in crate::commands) fn read_inventory(
         }
     };
     let mut items = if target_exists {
-        read_manual_mod_inventory_items(target.id_strategy.as_deref(), &target.target_path)?
+        read_items_with_budget(
+            target.id_strategy.as_deref(),
+            &target.target_path,
+            &mut InventoryBudget::default(),
+            target.module_id == "terraria",
+        )?
     } else {
         Vec::new()
     };
@@ -143,13 +151,19 @@ pub(in crate::commands) fn read_manual_mod_inventory_items(
     id_strategy: Option<&str>,
     target_path: &Path,
 ) -> Result<Vec<ManualModInventoryItem>, String> {
-    read_items_with_budget(id_strategy, target_path, &mut InventoryBudget::default())
+    read_items_with_budget(
+        id_strategy,
+        target_path,
+        &mut InventoryBudget::default(),
+        false,
+    )
 }
 
 fn read_items_with_budget(
     id_strategy: Option<&str>,
     target_path: &Path,
     budget: &mut InventoryBudget,
+    read_tmodloader_names: bool,
 ) -> Result<Vec<ManualModInventoryItem>, String> {
     validate_root_chain(target_path)?;
     let entries = fs::read_dir(target_path).map_err(|error| {
@@ -183,14 +197,20 @@ fn read_items_with_budget(
         {
             continue;
         }
-        let stats = path_stats(&path, budget)?;
         let name = path
             .file_name()
             .unwrap_or_default()
             .to_string_lossy()
             .into_owned();
+        let mut tmod_names = (read_tmodloader_names
+            && metadata.is_dir()
+            && matches!(name.as_bytes().first(), Some(b'1'..=b'9'))
+            && name.parse::<u64>().is_ok())
+        .then(tmodloader::PackageNames::default);
+        let stats = path_stats(&path, budget, tmod_names.as_mut())?;
         items.push(ManualModInventoryItem {
             inferred_id: infer_manual_mod_inventory_id_from_path(id_strategy, &name, &path),
+            tmodloader_mod_name: tmod_names.and_then(tmodloader::PackageNames::unique),
             name,
             path: path.to_string_lossy().into_owned(),
             item_type: if metadata.is_dir() {
@@ -217,16 +237,24 @@ pub(in crate::commands) fn manual_mod_path_stats(
     path: &Path,
 ) -> Result<DirectoryCopyStats, String> {
     validate_root_chain(path)?;
-    path_stats(path, &mut InventoryBudget::default())
+    path_stats(path, &mut InventoryBudget::default(), None)
 }
 
-fn path_stats(path: &Path, budget: &mut InventoryBudget) -> Result<DirectoryCopyStats, String> {
+fn path_stats(
+    path: &Path,
+    budget: &mut InventoryBudget,
+    mut tmod_names: Option<&mut tmodloader::PackageNames>,
+) -> Result<DirectoryCopyStats, String> {
     let mut stats = DirectoryCopyStats::default();
     let mut pending = vec![(path.to_path_buf(), 0usize)];
     while let Some((current, depth)) = pending.pop() {
         budget.check(&current, depth)?;
         let metadata = plain_metadata(&current)?;
         if metadata.is_file() {
+            if let Some(names) = tmod_names.as_deref_mut() {
+                names.inspect(&current)?;
+                budget.check(&current, depth)?;
+            }
             stats.file_count = stats
                 .file_count
                 .checked_add(1)
@@ -274,7 +302,7 @@ mod tests {
                 ..Default::default()
             },
         ] {
-            assert!(read_items_with_budget(None, &root, &mut budget).is_err());
+            assert!(read_items_with_budget(None, &root, &mut budget, false).is_err());
         }
         let inventory = read_manual_mod_inventory_items(None, &root).unwrap();
         assert_eq!(inventory.len(), 1);

@@ -286,7 +286,7 @@ export const ZH_CN_UI_MESSAGES: MessageCatalog = {
   "activity.uninstallingSteamCmd": "正在卸载 SteamCMD...",
   "activity.steamCmdUninstallFailed": "卸载 SteamCMD 失败：{message}",
   "servers.mods.applySummary.soulmask": "将添加创意工坊 ID，用于 Soulmask 的 -mod 启动参数。",
-  "servers.mods.applySummary.terraria": "将 tModLoader 创意工坊 ID 写入此实例的 Mods/install.txt。",
+  "servers.mods.applySummary.terraria": "将所选工坊模组加入当前实例，并在 tModLoader 中启用。",
   "servers.mods.lookupStatus.resolved": "已获取详情",
   "servers.mods.lookupStatus.notFound": "未找到公开详情",
   "windrose.settings.difficulty.easy": "简单",
