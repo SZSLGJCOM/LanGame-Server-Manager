@@ -47,11 +47,12 @@ test("generated npm license inventory matches every locked production package", 
 
 test("hls.js attribution and derived-work terms are preserved verbatim", () => {
   const output = fs.readFileSync(outputPath, "utf8");
+  const hlsVersion = JSON.parse(fs.readFileSync(lockPath, "utf8")).packages["node_modules/hls.js"].version;
   const upstreamLicense = normalizeLicenseText(
     fs.readFileSync(path.join(desktopRoot, "node_modules", "hls.js", "LICENSE"), "utf8")
   );
 
-  assert.match(output, /^Package \/ 软件包: hls\.js@1\.7\.3$/mu);
+  assert.ok(output.split("\n").includes(`Package / 软件包: hls.js@${hlsVersion}`));
   assert.ok(output.includes(upstreamLicense));
   assert.match(output, /Copyright \(c\) 2017 Dailymotion/);
   assert.match(output, /Copyright \(c\) 2013-2015 Brightcove/);

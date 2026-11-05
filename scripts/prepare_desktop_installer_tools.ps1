@@ -7,7 +7,7 @@ if ($env:OS -ne 'Windows_NT' -or [string]::IsNullOrWhiteSpace($env:RUNNER_TEMP))
     throw 'Installer tools require a Windows runner with RUNNER_TEMP.'
 }
 $package = Get-Content -LiteralPath (Join-Path $PSScriptRoot '../apps/desktop/package.json') -Raw | ConvertFrom-Json
-if ($package.devDependencies.'@tauri-apps/cli' -cne '2.12.3') {
+if ($package.devDependencies.'@tauri-apps/cli' -cne '2.12.4') {
     throw 'Review the installer tool pins when changing the Tauri CLI version.'
 }
 $runnerTemp = [IO.Path]::GetFullPath($env:RUNNER_TEMP).TrimEnd('\')
@@ -17,8 +17,8 @@ if (-not $output.StartsWith($runnerTemp + '\', [StringComparison]::OrdinalIgnore
     throw 'Installer tools need a new directory beneath RUNNER_TEMP.'
 }
 
-# Tool versions and SHA1 pins: tauri-cli-v2.12.3/crates/tauri-bundler/src/bundle/windows/nsis/mod.rs
-# https://github.com/tauri-apps/tauri/blob/tauri-cli-v2.12.3/crates/tauri-bundler/src/bundle/windows/nsis/mod.rs
+# Tool versions and SHA1 pins: tauri-cli-v2.12.4/crates/tauri-bundler/src/bundle/windows/nsis/mod.rs
+# https://github.com/tauri-apps/tauri/blob/tauri-cli-v2.12.4/crates/tauri-bundler/src/bundle/windows/nsis/mod.rs
 # SHA256 digests and sizes are also pinned from the corresponding official GitHub release assets.
 $downloads = @(
     @{

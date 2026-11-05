@@ -151,7 +151,7 @@ async function waitForFixtureReport({ session, url, result, exited, timeoutMs })
 async function prepareFixtureServer(server, fixturePath, compilationErrors) {
   await server.listen();
   if (server.config.experimental.bundledDev) {
-    // Locked Vite 8.3.4 resolves this hook after either output or a build error.
+    // Bundled Vite resolves this hook after either output or a build error.
     // Both checks are necessary: a resolved initial build does not imply success.
     const bundled = server.environments.client.bundledDev;
     assert.equal(typeof bundled?.waitForInitialBuildFinish, "function", "Vite bundled-dev readiness hook changed");
@@ -161,7 +161,7 @@ async function prepareFixtureServer(server, fixturePath, compilationErrors) {
     const address = server.httpServer?.address();
     assert.ok(address && typeof address !== "string" && Number.isSafeInteger(address.port)
       && address.port > 0 && address.port <= 65535, "Bundled fixture must have a bound TCP port");
-    // Locked Vite 8.3.4 generates its static client before port:0 is bound.
+    // Bundled Vite generates its static client before port:0 is bound.
     // Regenerate its fallback address with the actual port; a failed initial
     // WebSocket must never fall back to :0 and then send through an unset socket.
     assert.equal(typeof bundled.storeStaticFiles, "function", "Vite bundled-dev client generation hook changed");
@@ -175,8 +175,8 @@ async function prepareFixtureServer(server, fixturePath, compilationErrors) {
   const scripts = [...transformed.matchAll(/<script\b[^>]*\bsrc\s*=\s*["']([^"']+)["'][^>]*>/gi)];
   assert.ok(scripts.length > 0, "Fixture HTML must declare its entry scripts");
   const client = server.environments.client;
-  // This shape is checked against the locked Vite 8.3.4 implementation. Its
-  // public idle promise is one-shot, so it cannot certify subsequent warmups.
+  // Vite's public idle promise is one-shot, so it cannot certify subsequent
+  // warmups; check request ownership before inspecting pending transforms.
   assert.ok(client._pendingRequests instanceof Map, "Vite request ownership changed");
   const entryUrls = [];
   for (const [, src] of scripts) {
