@@ -29,6 +29,8 @@ mod documents;
 mod mods;
 #[path = "storage_migration_metadata_preflight.rs"]
 mod preflight;
+#[path = "storage_migration_metadata_startup.rs"]
+mod startup;
 
 const MAX_JSON_BYTES: u64 = 64 * 1024 * 1024;
 const MAX_PLAN_BYTES: usize = 256 * 1024 * 1024;

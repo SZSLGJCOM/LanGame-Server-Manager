@@ -100,6 +100,7 @@ pub(super) fn instance(
     projection(&runtime, logical_root, moves, copied, plan)?;
     program(&runtime, module, moves, copied, plan)?;
     backups(root, logical_root, id, moves, copied, plan)?;
+    startup::prepare(root, logical_root, id, moves, copied, plan)?;
     console::prepare(&root.join("logs/managed-console"), moves, copied, plan)
 }
 

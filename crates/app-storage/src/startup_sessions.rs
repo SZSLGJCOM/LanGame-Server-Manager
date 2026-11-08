@@ -15,7 +15,7 @@ mod native_source;
 pub use native_source::NativeStartupSource;
 
 const RECEIPT_NAME: &str = "startup-session.json";
-const MAX_RECEIPT_BYTES: u64 = 512 * 1024;
+pub(crate) const MAX_RECEIPT_BYTES: u64 = 512 * 1024;
 static RECEIPTS: Mutex<()> = Mutex::new(());
 
 #[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
@@ -104,6 +104,11 @@ fn read_stored(root: &Path) -> io::Result<Option<StoredSession>> {
         return Err(invalid("Startup session receipt exceeds its limit"));
     }
     let stored: StoredSession = serde_json::from_reader(file)?;
+    validate_stored(&stored, root)?;
+    Ok(Some(stored))
+}
+
+fn validate_stored(stored: &StoredSession, root: &Path) -> io::Result<()> {
     let expected = expected_log(root, stored.receipt.started_at_unix_ms);
     if stored.format != 1
         || stored.receipt.attempt_id.is_empty()
@@ -115,8 +120,24 @@ fn read_stored(root: &Path) -> io::Result<Option<StoredSession>> {
             "Startup session receipt has an invalid identity or owned path",
         ));
     }
-    reject_links(&expected)?;
-    Ok(Some(stored))
+    reject_links(&expected)
+}
+
+/// Archived receipts retain their logical instance root until restoration.
+pub(crate) fn parse_for_relocation(
+    bytes: &[u8],
+    logical_root: &Path,
+    instance_id: &str,
+) -> io::Result<StartupSessionReceipt> {
+    if bytes.len() as u64 > MAX_RECEIPT_BYTES {
+        return Err(invalid("Startup session receipt exceeds its limit"));
+    }
+    let stored: StoredSession = serde_json::from_slice(bytes)?;
+    validate_stored(&stored, logical_root)?;
+    if stored.instance_id != instance_id {
+        return Err(invalid("Startup receipt belongs to another instance"));
+    }
+    Ok(stored.receipt)
 }
 
 fn save(root: &Path, stored: &StoredSession) -> io::Result<()> {
