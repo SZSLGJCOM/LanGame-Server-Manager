@@ -215,8 +215,24 @@ fn external_program(
             external.binding_bytes = patch.after.len() as u64;
         }
     }
+    let retained_root = remap_path(&source_root, moves)?;
+    let retained_patches: BTreeMap<_, _> = plan
+        .files
+        .iter()
+        .enumerate()
+        .filter_map(|(index, patch)| {
+            patch
+                .path
+                .strip_prefix(&retained_root)
+                .ok()
+                .map(|relative| (relative.to_owned(), index))
+        })
+        .collect();
     for (index, (relative, file)) in external.files.iter_mut().enumerate() {
-        if !is_path_marker(relative) {
+        let retained_patch = retained_patches
+            .get(Path::new(relative))
+            .map(|index| &plan.files[*index]);
+        if retained_patch.is_none() && !is_path_marker(relative) {
             continue;
         }
         if !file.stored {
@@ -235,15 +251,27 @@ fn external_program(
                 "Archived management metadata differs from its protected snapshot.",
             ));
         }
-        rewrite_captured_marker(
-            &mut value,
-            relative,
-            &source_root,
-            module,
-            &slot,
-            moves,
-            copied,
-        )?;
+        if let Some(patch) = retained_patch {
+            // Retained metadata and its archived copy share one content identity.
+            // Reuse the validated rewrite, including invalidated file-stamp caches.
+            if before != patch.before {
+                return Err(invalid(
+                    &source_root.join(relative),
+                    "Retained program metadata differs from its archived snapshot.",
+                ));
+            }
+            value = serde_json::from_slice(&patch.after)?;
+        } else {
+            rewrite_captured_marker(
+                &mut value,
+                relative,
+                &source_root,
+                module,
+                &slot,
+                moves,
+                copied,
+            )?;
+        }
         add_json_patch(&slot, &before, &value, moves, copied, plan)?;
         if copied {
             let target = remap_path(&slot, moves)?;
