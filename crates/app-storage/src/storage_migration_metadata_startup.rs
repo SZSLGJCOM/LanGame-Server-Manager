@@ -48,7 +48,14 @@ fn rebind_native_source(
     copied: bool,
 ) -> Result<NativeStartupSource, StorageError> {
     let logical_path = Path::new(&source.source_path);
-    let target = remap_path(logical_path, moves)?;
+    let mapped = remap_stored_path(logical_path, moves)?;
+    // Native readers use persisted instance paths, including configured aliases.
+    // Keep the same spelling as those rows, and retain unmoved paths unchanged.
+    let target = if same_path(logical_path, &mapped)? {
+        logical_path.to_owned()
+    } else {
+        mapped
+    };
     let mut rebound = source.clone();
     rebound.source_path = target.to_string_lossy().into_owned();
     if !copied {

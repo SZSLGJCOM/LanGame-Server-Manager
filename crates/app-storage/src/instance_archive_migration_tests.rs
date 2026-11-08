@@ -221,13 +221,7 @@ async fn external_archive_migration_preserves_metadata_and_accepts_next_startup(
             let path = restored
                 .join("logs")
                 .join(format!("{}.log", source.process_key));
-            assert_eq!(
-                Path::new(&source.source_path),
-                fs::canonicalize(&restored)
-                    .unwrap()
-                    .join("logs")
-                    .join(format!("{}.log", source.process_key)),
-            );
+            assert_eq!(Path::new(&source.source_path), path);
             if source.process_key == "missing" {
                 assert!(!path.exists());
             } else {
