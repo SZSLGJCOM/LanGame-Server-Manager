@@ -128,9 +128,10 @@ pub(super) async fn save<R: tauri::Runtime>(
     .await?;
     let deadline = Instant::now() + Duration::from_secs(90);
     let world = loop {
-        let current = world_file(running)?;
-        if current.is_some() && current != before {
-            break current.unwrap();
+        if let Some(current) = world_file(running)?
+            && before.as_ref() != Some(&current)
+        {
+            break current;
         }
         if Instant::now() >= deadline {
             return Err("ARK save request did not change its primary .ark world".into());
