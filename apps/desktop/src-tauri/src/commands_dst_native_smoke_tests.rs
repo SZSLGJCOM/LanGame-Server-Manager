@@ -192,10 +192,7 @@ async fn smoke_dst_native_world_generation_save_and_reload()
         .current_version
         .ok_or("Missing official Steam build ID")?;
     println!("NATIVE_PACKAGE_BUILD={build_id}");
-    save_app_settings(settings)?;
-    let storage = bootstrap_storage()?;
-    let desktop = DesktopState::default();
-    desktop.app_state.write().unwrap().settings = storage.settings.clone();
+    let (storage, desktop) = super::native_storage_fixture::prepare(settings)?;
     let app = tauri::test::mock_builder()
         .manage(desktop)
         .build(tauri::test::mock_context(tauri::test::noop_assets()))

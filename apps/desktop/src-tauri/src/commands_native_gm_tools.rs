@@ -4,6 +4,8 @@ use std::io::{Read, Seek, SeekFrom};
 
 #[path = "commands_native_ark_creatures.rs"]
 mod ark_creatures;
+#[path = "commands_native_ark_persistence.rs"]
+mod ark_persistence;
 #[path = "commands_native_gm_dst.rs"]
 mod dst;
 
@@ -24,8 +26,11 @@ pub(super) async fn verify<R: tauri::Runtime>(
     running: &InstanceDetails,
     cycle: &str,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    if cycle != "initial" || std::env::var("LANGAME_NATIVE_GM_TOOLS").as_deref() != Ok("true") {
+    if std::env::var("LANGAME_NATIVE_GM_TOOLS").as_deref() != Ok("true") {
         return Ok(());
+    }
+    if cycle != "initial" {
+        return ark_persistence::verify_restart(runtime, running, cycle).await;
     }
     let source = PathBuf::from(
         std::env::var_os("LANGAME_NATIVE_GM_COMMANDS_FILE")

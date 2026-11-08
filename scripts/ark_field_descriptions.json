@@ -1,8 +1,32 @@
 {
   "arksurvivalascended": {
+    "num_gachas_per_tribe_for_penalty": {
+      "en": "Deployed Gacha count above which a tribe receives the feeding interval penalty. Use -1 to disable the limit. The v97 published value is 100. Leave blank to omit the managed override.",
+      "zh-CN": "部落已放出的嘎查超过此数量时，延长其进食间隔。设为 -1 可禁用限制。v97 公布值为 100；留空不设置覆盖值。"
+    },
+    "gachas_over_tribe_limit_penalty": {
+      "en": "Feeding interval multiplier for tribes above the deployed Gacha limit. The v97 published value is 3. Leave blank to omit the managed override.",
+      "zh-CN": "部落已放出的嘎查超过数量上限时使用的进食间隔倍率。v97 公布值为 3；留空不设置覆盖值。"
+    },
+    "limit_replicators_per_saddle": {
+      "en": "Tek Replicator placement limit per platform saddle. Use 0 to prevent placement or -1 for unlimited. The v97 published value is 1. Leave blank to omit the managed override.",
+      "zh-CN": "每个平台鞍允许放置的泰克复制器数量。设为 0 禁止放置，-1 不限数量。v97 公布值为 1；留空不设置覆盖值。"
+    },
+    "limit_cloning_chambers_range": {
+      "en": "Native range value used with the nearby cloning chamber limit. The v97 published value is 10000. No conversion to meters is applied. Leave blank to omit the managed override.",
+      "zh-CN": "统计同一部落附近克隆仓数量时使用的原生范围值。v97 公布值为 10000，不换算为米；留空不设置覆盖值。"
+    },
+    "limit_cloning_chambers_in_range_num": {
+      "en": "Tribe cloning chamber limit within the configured range. Use 0 to prevent placement or -1 for unlimited. The v97 published value is 10. Leave blank to omit the managed override.",
+      "zh-CN": "设定范围内同一部落允许放置的克隆仓数量。设为 0 禁止放置，-1 不限数量。v97 公布值为 10；留空不设置覆盖值。"
+    },
+    "limit_cloning_chambers_in_tribe_num": {
+      "en": "Total deployed cloning chamber limit per tribe. Use -1 for unlimited. The v97 published value is 50. Leave blank to omit the managed override.",
+      "zh-CN": "每个部落已放置的克隆仓总数上限。设为 -1 不限数量。v97 公布值为 50；留空不设置覆盖值。"
+    },
     "additional_maps": {
-      "en": "Run more maps from this installation. Each enabled map has its own CMD, ports and saved world; all maps share this instance's configuration, mods and cluster transfers.",
-      "zh-CN": "从同一套服务端程序运行更多地图。每张启用的地图都有独立 CMD、端口和存档；所有地图共用此实例的配置、模组和跨服传输数据。"
+      "en": "Run more maps from this installation. Each enabled map has its own CMD, ports and saved world; maps share server settings and cluster transfers, with shared Mod defaults and optional per-map Mod overrides.",
+      "zh-CN": "从同一套服务端程序运行更多地图。每张启用的地图都有独立 CMD、端口和存档；各地图共用服务器设置和跨服传输数据，MOD 默认共用，也可针对当前 MOD 多选生效地图。"
     },
     "admin_list_url": {
       "en": "Loads administrator account IDs from a web resource in place of AllowedCheaterAccountIDs.txt. UpdateAllowedCheatersInterval controls how often the server checks that resource.",
@@ -695,8 +719,8 @@
   },
   "arksurvivalevolved": {
     "additional_maps": {
-      "en": "Run more maps from this installation. Each enabled map has its own CMD, ports and saved world; all maps share this instance's configuration, mods and cluster transfers.",
-      "zh-CN": "从同一套服务端程序运行更多地图。每张启用的地图都有独立 CMD、端口和存档；所有地图共用此实例的配置、模组和跨服传输数据。"
+      "en": "Run more maps from this installation. Each enabled map has its own CMD, ports and saved world; maps share server settings and cluster transfers, with shared Mod defaults and optional per-map Mod overrides.",
+      "zh-CN": "从同一套服务端程序运行更多地图。每张启用的地图都有独立 CMD、端口和存档；各地图共用服务器设置和跨服传输数据，MOD 默认共用，也可针对当前 MOD 多选生效地图。"
     },
     "adjustable_mutagen_spawn_delay_multiplier": {
       "en": "Changes the wait between Mutagen spawn attempts. Higher multipliers make attempts less frequent; dedicated servers use an eight-hour interval before this multiplier is applied.",

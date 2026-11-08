@@ -1,7 +1,7 @@
 # Fixed ARK tool dependencies
 
 [`dependencies.json`](dependencies.json) is the authoritative runtime download
-inventory for ASE ArkApi 3.56 and ASA AsaApi 2.03. Each archive has a fixed byte
+inventory for ASE ArkApi 3.56 and ASA AsaApi 2.1. Each archive has a fixed byte
 length, SHA-256, official upstream URL, domestic mirror URL and upstream SDK
 license at an immutable source commit. The runtime and publisher share the
 32 MiB per-archive limit. Updating a package requires reviewing its identity,
@@ -9,7 +9,7 @@ license inputs and installer compatibility together.
 
 The mirror uses the existing `SZSLGJCOM/LanGame-Server-Manager-Releases`
 repository and the dedicated
-`ark-tools-dependencies-ase-3.56-asa-2.03` release. This release remains `pre`;
+`ark-tools-dependencies-ase-3.56-asa-2.1` release. This release remains `pre`;
 it does not change the desktop release's status or update pointer. A URL in the
 inventory is not evidence that an attachment has been published: the publisher's
 successful receipt requires a complete anonymous download and matching hash.

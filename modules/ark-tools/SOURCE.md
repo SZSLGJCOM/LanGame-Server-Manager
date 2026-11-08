@@ -14,8 +14,8 @@ the separately reviewed instance installer, rather than embedded in this code.
 | Input | Fixed source | Archive SHA-256 |
 | --- | --- | --- |
 | ASE SDK 3.56 | [AseApi 9459cb3941c2e62d4144cbb8294fe6c4c772d564](https://github.com/ArkServerApi/AseApi/tree/9459cb3941c2e62d4144cbb8294fe6c4c772d564) | `500cc0e0d46e75e3c67374a81914fe318ee1f88db8bca0c291f2e8a72ede3def` |
-| ASA SDK 2.03 | [AsaApi 86bd3b21d1e940fe837af6511f945944977bb9ca](https://github.com/ArkServerApi/AsaApi/tree/86bd3b21d1e940fe837af6511f945944977bb9ca) | `01b21af8a98265b273bc1fb3b264f2bfdff0e603a1f6bb7cc1616fbf0d27ee30` |
-| ASA import library | [AsaApi 2.03 release, AsaApi_2.03.zip](https://github.com/ArkServerApi/AsaApi/releases/tag/2.03) | `ac72fb29436198ac062cd273e1c496b1ef4e6ffddeec08243d11d9b35e8b8ae3` |
+| ASA SDK 2.1 | [AsaApi 08eef96decb0c626ff5f187dca18a98603b41a46](https://github.com/ArkServerApi/AsaApi/tree/08eef96decb0c626ff5f187dca18a98603b41a46) | `724e67648f73d003fdded2e17a3dbe420a27d285b666692daa43bf5f06c57e81` |
+| ASA import library | [AsaApi 2.1 release, AsaApi_2.1.zip](https://github.com/ArkServerApi/AsaApi/releases/tag/2.1) | `58d626b34c85e08e85d3dc076f1f18420150752802e1d227bed370182c84f3b6` |
 | ASA version proxy export stubs | [AsaApiLoader 4e04dc8982e1473920278f199638b29dc511d539](https://github.com/ArkServerApi/AsaApiLoader/tree/4e04dc8982e1473920278f199638b29dc511d539) | `dd3c6ac17d2bdc9d072ca01c8e86f9451e6de909c2bf901bb5b2c63cb939e833` |
 
 The exact archive URLs are in `scripts/build_ark_tools.ps1`. ASA's public
@@ -24,6 +24,14 @@ fmt 4.1.0. The script exposes that same bundled version at the expected include
 path; it does not introduce another fmt version. SDK third-party header notices
 remain intact in the build cache. The notices shipped with the plugin include
 the incorporated JSON, spdlog, and fmt copyrights and licenses.
+
+ASA's UE 5.8.3 update requires the 2.1 SDK, import library and framework together.
+The SDK resolves `APrimalWorldSettings` through the new `AsaApi::ResolveClass`
+export and supplies the updated native `SpawnDino` and `TameDino` signatures.
+Reusing a plugin compiled against 2.03 leaves those old symbol lookups in place,
+even after downloading the executable's new cache. The plugin metadata therefore
+requires API 2.1. The executable-bound cache format and generation selection are
+unchanged between these two upstream versions.
 
 Build prerequisites are Windows x64, Visual Studio C++ Build Tools with MSVC
 C++20 and a Windows 10 or later SDK. The script discovers these through

@@ -52,6 +52,12 @@ test("program creation translation preserves Unicode paths and unknown diagnosti
 });
 
 const fixtures = [
+  ["curseforge_reference_failed", { reason: "cancelled" }, /已取消.*没有添加 Mod/, /cancelled.*No mods were added/],
+  ["curseforge_reference_failed", { reason: "timeout" }, /超时.*Project ID.*desktop-ui/, /Timed out.*Project ID.*desktop-ui/],
+  ["curseforge_reference_failed", { reason: "invalid_page" }, /无法确认.*Project ID/, /Could not confirm.*Project ID/],
+  ["curseforge_reference_failed", { reason: "busy" }, /正在识别另一个/, /Another CurseForge page/],
+  ["curseforge_reference_failed", { reason: "browser_unavailable" }, /无法加载或读取识别区/, /Could not load or read.*recognition area/],
+  ["curseforge_reference_failed", { reason: "desktop_required" }, /桌面端.*Project ID/, /desktop manager.*Project ID/],
   ["steam_workshop_browse_unrecognized_response", {}, /Steam.*工坊结果不完整或无法识别/, /Steam returned incomplete or unrecognized/],
   ["steam_workshop_details_unrecognized_response", {}, /未能读取 Steam 对应该语言的条目详情/, /Steam did not return recognizable item details in the selected language/],
   ["steam_workshop_browse_unsupported_sort", { browse_kind: "collection", sort: "subscribers" }, /合集不支持按订阅数排序/, /collections do not support sorting by subscriber count/],

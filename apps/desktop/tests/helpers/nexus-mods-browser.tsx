@@ -25,6 +25,7 @@ let details: InstanceDetails, epoch = 0, archived = false, installed = false;
 let localImports = 0, inventoryReads = 0;
 const openedLinks: string[] = [], commands: string[] = [];
 const moduleDetails = buildMockModuleDetails("sevendaystodie");
+const successSelector = ".shell-activity-bar .shell-activity-notice.is-success";
 function check(condition: unknown, label: string): asserts condition { if (!condition) throw new Error(`${label}: ${fixture.textContent}`); checks.push(label); }
 function element<T extends HTMLElement = HTMLElement>(selector: string): T {
   const node = document.querySelector<T>(selector); check(node, `Found ${selector}`); return node;
@@ -117,10 +118,23 @@ async function run() {
   check(openedLinks.length === 1, "Nexus website opens from the Store");
   const reads = inventoryReads;
   await dropFile();
-  await settle(() => localImports === 1 && inventoryReads > reads && Boolean(fixture.querySelector(".mw-manual-success-bar")),
+  await settle(() => localImports === 1 && inventoryReads > reads && Boolean(fixture.querySelector(successSelector)),
     "Local import did not refresh inventory and display its result");
+  const successShownAt = performance.now();
+  check(element(successSelector).textContent?.includes("2 files installed")
+    && !fixture.querySelector(".mw-manual-success-bar,.mw-manual-feedback .mw-chip--on"),
+    "Local installation reports its actual file count only in the activity bar");
   await tab("My Mods"); header();
   await settle(() => fixture.textContent?.includes("FixtureNexusMod") === true, "Imported local Mod did not appear in My Mods");
+  const installedInventory = JSON.stringify(inventory());
+  await act(async () => { await new Promise((resolve) => setTimeout(resolve, 4200)); });
+  check(Boolean(fixture.querySelector(successSelector)), "Local installation success stays visible before five seconds");
+  await settle(() => !fixture.querySelector(successSelector), "Local installation success did not disappear after five seconds");
+  const successAutoDismissMs = performance.now() - successShownAt;
+  check(successAutoDismissMs >= 4800 && successAutoDismissMs < 6500, "Local installation success expires after five real seconds");
+  check(JSON.stringify(inventory()) === installedInventory && localImports === 1
+    && [...fixture.querySelectorAll(".mw-entry-row-title")].some((node) => node.textContent === "FixtureNexusMod"),
+    "Automatic notice expiry preserves the installed inventory without another import");
   check(details.settings_json === "{}", "Local file management does not create Nexus credentials or references in settings");
   for (const options of [{ running: true }, { archived: true }]) {
     await mount(options); header();
@@ -148,8 +162,17 @@ async function run() {
   try {
     await mount(); header();
     await dropFile();
-    await settle(() => localImports === 2 && Boolean(fixture.querySelector(".mw-manual-success-bar")), "LAN local import did not complete");
-    check(fixture.textContent?.includes("files installed"), "LAN keeps local file installation feedback");
+    await settle(() => localImports === 2 && Boolean(fixture.querySelector(successSelector)), "LAN local import did not complete");
+    check(element(successSelector).textContent?.includes("files installed"), "LAN keeps local file installation feedback in the activity bar");
+    await tab("My Mods");
+    await settle(() => fixture.textContent?.includes("FixtureNexusMod") === true, "LAN installation inventory did not render");
+    const beforeDismiss = JSON.stringify(inventory());
+    await click(`${successSelector} .shell-activity-notice-close`);
+    await settle(() => !fixture.querySelector(successSelector), "The success notice did not close manually");
+    await tab("Store"); await tab("My Mods");
+    check(!fixture.querySelector(successSelector) && JSON.stringify(inventory()) === beforeDismiss && localImports === 2
+      && [...fixture.querySelectorAll(".mw-entry-row-title")].some((node) => node.textContent === "FixtureNexusMod"),
+      "Manual dismissal survives a workspace tab change without removing installed files or importing again");
   } finally {
     window.fetch = originalFetch; sessionStorage.removeItem("langameLanToken"); Object.assign(window, { isTauri: true });
   }
@@ -157,7 +180,8 @@ async function run() {
   check(commands.every((command) => !command.startsWith("nexus_") && !command.includes("nexus_mod")),
     "Desktop and LAN workflows issue no Nexus API operations");
   check(errors.length === 0, "Nexus browser has no console or uncaught errors");
-  return { status: "passed", checks, local_imports: localImports,
+  return { status: "passed", checks, local_imports: localImports, success_auto_dismiss_ms: Math.round(successAutoDismissMs),
+    success_manual_dismiss: true, inventory_retained_after_feedback: true,
     nexus_api_calls: commands.filter((command) => command.startsWith("nexus_") || command.includes("nexus_mod")).length,
     browser_errors: errors, viewport: { width: innerWidth, height: innerHeight } };
 }

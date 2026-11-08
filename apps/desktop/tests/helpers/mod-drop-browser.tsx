@@ -85,7 +85,7 @@ async function run() {
     }
     const args = payload as { instanceId: string; references: string[]; sourcePaths: string[]; thunderstoreVersionPolicy?: string };
     if (command === "read_manual_mod_inventory") inventoryReads++;
-    if (["stage_manual_mod_files", "install_manual_mod_references", "resolve_manual_mod_references"].includes(command)) {
+    if (["stage_manual_mod_files", "install_manual_mod_references", "resolve_manual_mod_references", "resolve_curseforge_browser_references"].includes(command)) {
       check(args.instanceId === details.summary.id, "Drop mutation stays scoped to its current instance");
       if (command === "stage_manual_mod_files") {
         check(args.sourcePaths?.length === expectedSourcePaths.length &&
@@ -94,7 +94,9 @@ async function run() {
         stages++; return stageResult();
       }
       references++; lastReferences = args.references; lastVersionPolicy = args.thunderstoreVersionPolicy;
-      check(command !== "resolve_manual_mod_references" || !Object.hasOwn(args, "thunderstoreVersionPolicy"),
+      if (command.startsWith("resolve_")) check(command === (moduleDetails.summary.id === "arksurvivalascended"
+        ? "resolve_curseforge_browser_references" : "resolve_manual_mod_references"), "ASA uses the desktop browser resolver");
+      check(!command.startsWith("resolve_") || !Object.hasOwn(args, "thunderstoreVersionPolicy"),
         "Non-Thunderstore reference resolution has no Thunderstore version policy");
       if (referenceFailure) {
         const message = referenceFailure; referenceFailure = null;
@@ -287,11 +289,17 @@ async function run() {
         await drop(filesOnly, false, "link");
         check(stages + references + saves === writesBefore, "Move-only, none and link-only Files make no mutation");
         if (id === "arksurvivalascended") {
+          const settingsBeforeCancel = details.settings_json, savesBeforeCancel = saves;
+          referenceFailure = JSON.stringify({ code: "curseforge_reference_failed", reason: "cancelled", message: "Cancelled" });
+          await drop(link, true, "link", "link");
+          await settle(() => Boolean(fixture.textContent?.includes("No mods were added")));
+          check(saves === savesBeforeCancel && details.settings_json === settingsBeforeCancel,
+            "Closing CurseForge verification never saves or adds a Mod");
           const normalDetails = details;
           details = { ...details, settings_json: JSON.stringify({ custom_launch_flags: "-mods=424242" }) };
           await mount();
           await drop(link, false, "link"); await drop(fileDrop, false);
-          check(stages + references + saves === writesBefore, "Raw Mod flags keep both reference and file drops locked");
+          check(stages + references + saves === writesBefore + 1, "Raw Mod flags keep both reference and file drops locked");
           details = normalDetails; await mount();
         }
       }

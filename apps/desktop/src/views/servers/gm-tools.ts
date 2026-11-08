@@ -4,7 +4,7 @@ import { GM_TOOL_MODULES } from "./gm-tool-capability";
 export { moduleHasGmTools } from "./gm-tool-capability";
 export { getDstPrefabOptions, searchDstPrefabOptions } from "./gm-tools-dst";
 import {
-  ARK_GM_CREATURE_OPTIONS,
+  getArkGmCreatureCatalogOptions,
   searchArkGmCreatureOptions as searchArkGmCreatureCatalogOptions,
   type ArkGmCreatureOption
 } from "./ark-gm-creature-catalog";
@@ -109,7 +109,6 @@ const ARK_REMOTE_ADMIN_OPTIONS: RuntimeCommandDispatchOptions = {
   throwOnError: true
 };
 
-const ARK_CREATURE_OPTIONS: GmToolFieldOption[] = ARK_GM_CREATURE_OPTIONS;
 const ARK_ITEM_BLUEPRINT_OPTIONS: GmToolFieldOption[] = ARK_GM_ITEM_OPTIONS;
 const ARK_ITEM_NUMERIC_OPTIONS: GmToolFieldOption[] = ARK_GM_NUMERIC_ITEM_OPTIONS;
 const ARK_DEFAULT_ITEM_BLUEPRINT =
@@ -287,12 +286,12 @@ const BUILDERS: Record<string, GmCommandBuilder> = {
   ,...DST_GM_BUILDERS
 };
 
-export function getArkGmCreatureOptions(): ArkGmCreatureOption[] {
-  return ARK_GM_CREATURE_OPTIONS;
+export function getArkGmCreatureOptions(moduleId?: string | null): ArkGmCreatureOption[] {
+  return getArkGmCreatureCatalogOptions(moduleId);
 }
 
-export function searchArkGmCreatureOptions(query: string, limit = 80): ArkGmCreatureOption[] {
-  return searchArkGmCreatureCatalogOptions(query, limit);
+export function searchArkGmCreatureOptions(query: string, limit = 80, moduleId?: string | null): ArkGmCreatureOption[] {
+  return searchArkGmCreatureCatalogOptions(query, limit, moduleId);
 }
 
 export function getArkGmItemOptions(): ArkGmItemOption[] {
@@ -333,7 +332,7 @@ export function buildArkCreatureOptions(
 ): GmToolFieldOption[] {
   const normalized = normalizeModuleId(moduleId);
   const enabledModIds = new Set(parseArkEnabledModIds(normalized, settingsJson));
-  const options = [...ARK_CREATURE_OPTIONS];
+  const options: GmToolFieldOption[] = [...getArkGmCreatureOptions(normalized)];
   const seen = new Set(options.map((option) => option.value.toLowerCase()));
   for (const entry of customCreatures) {
     const classId = String(entry.classId ?? "").trim();

@@ -46,7 +46,7 @@ fn manifest() -> Result<&'static Manifest, String> {
             .map_err(|error| format!("Invalid bundled ARK dependency manifest: {error}"))?;
             if manifest.schema_version != 1
                 || manifest.mirror_repository != "SZSLGJCOM/LanGame-Server-Manager-Releases"
-                || manifest.mirror_tag != "ark-tools-dependencies-ase-3.56-asa-2.03"
+                || manifest.mirror_tag != "ark-tools-dependencies-ase-3.56-asa-2.1"
                 || manifest.packages.len() != 2
             {
                 return Err("Invalid bundled ARK dependency publication identity".into());

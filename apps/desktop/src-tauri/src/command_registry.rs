@@ -43,6 +43,11 @@ macro_rules! register_commands {
         }
 
         pub(crate) fn invoke_handler(invoke: tauri::ipc::Invoke<tauri::Wry>) -> bool {
+            // Public pages have no application-command authority, including runtime forwarding.
+            if crate::curseforge_browser::is_browser_window(invoke.message.webview_ref().label()) {
+                invoke.resolver.reject("Public project pages cannot invoke application commands");
+                return true;
+            }
             #[cfg(windows)]
             if !matches!(find(invoke.message.command()), Some(Command { execution: Execution::Desktop, .. })) {
                 crate::runtime_service::forward(invoke);
@@ -115,6 +120,10 @@ register_commands! {
     (manage_manual_mod, [crate::commands::commands_file_mods], Runtime, Allowed, Owned),
     (read_instance_ark_map_availability, [crate::commands::commands_ark_map_availability], Runtime, Allowed, Bounded),
     (resolve_manual_mod_references, [crate::commands], Runtime, Allowed, Bounded),
+    (resolve_curseforge_browser_references, [crate::curseforge_browser], Desktop, Denied, Bounded),
+    (open_curseforge_browser_host, [crate::curseforge_browser::host], Desktop, Denied, Bounded),
+    (update_curseforge_browser_host, [crate::curseforge_browser::host], Desktop, Denied, Bounded),
+    (close_curseforge_browser_host, [crate::curseforge_browser::host], Desktop, Denied, Bounded),
     (preview_instance_launch, [crate::commands::commands_runtime_lifecycle], Runtime, Allowed, Bounded),
     (start_instance_process, [crate::commands::commands_runtime_lifecycle], Runtime, Allowed, Owned),
     (stop_instance_process, [crate::commands::commands_runtime_lifecycle], Runtime, Allowed, Bounded),

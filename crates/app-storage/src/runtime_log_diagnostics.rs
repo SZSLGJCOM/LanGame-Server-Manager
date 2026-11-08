@@ -5,17 +5,20 @@ pub fn runtime_fatal_log_lines(module_id: &str, lines: &[String]) -> Vec<String>
     let mut completed_retry = false;
     let mut failures = Vec::new();
     for line in lines.iter().rev() {
-        if is_dst && let Some(body) = native_dst_log_body(line) {
-            if body == "Generation complete, injecting world entities." {
-                generation_completed = true;
-                completed_retry = false;
-            } else if body.starts_with("An error occured during world gen we will retry!") {
-                completed_retry = generation_completed;
-            } else if completed_retry && is_missing_required_prefab(body) {
-                // DST returns nil for this failed generation attempt, then tries
-                // a new map. Only a later retry and completed map clear it;
-                // listener output and readiness acknowledgements do not.
-                continue;
+        if is_dst {
+            match dst_generation_event(line) {
+                Some(DstGenerationEvent::Complete) => {
+                    generation_completed = true;
+                    completed_retry = false;
+                }
+                Some(DstGenerationEvent::Retry) => completed_retry = generation_completed,
+                Some(DstGenerationEvent::MissingPrefab) if completed_retry => {
+                    // DST returns nil for this failed generation attempt, then tries
+                    // a new map. Only a later retry and completed map clear it;
+                    // listener output and readiness acknowledgements do not.
+                    continue;
+                }
+                _ => {}
             }
         }
         let normalized = line.to_ascii_lowercase();
@@ -37,7 +40,27 @@ pub fn runtime_fatal_log_lines(module_id: &str, lines: &[String]) -> Vec<String>
     failures
 }
 
-fn native_dst_log_body(line: &str) -> Option<&str> {
+#[derive(Clone, Copy)]
+pub(crate) enum DstGenerationEvent {
+    MissingPrefab,
+    Retry,
+    Complete,
+}
+
+pub(crate) fn dst_generation_event(line: &str) -> Option<DstGenerationEvent> {
+    let body = native_dst_log_body(line)?;
+    if body == "Generation complete, injecting world entities." {
+        Some(DstGenerationEvent::Complete)
+    } else if body.starts_with("An error occured during world gen we will retry!") {
+        Some(DstGenerationEvent::Retry)
+    } else if is_missing_required_prefab(body) {
+        Some(DstGenerationEvent::MissingPrefab)
+    } else {
+        None
+    }
+}
+
+pub(crate) fn native_dst_log_body(line: &str) -> Option<&str> {
     let line = line.trim();
     let Some(timestamped) = line.strip_prefix('[') else {
         return Some(line);

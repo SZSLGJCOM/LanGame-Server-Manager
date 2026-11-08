@@ -31,6 +31,9 @@ let moduleDetails: ModuleDetails;
 let inventory: ManualModInventoryResult;
 let epoch = 0;
 let inventoryReads = 0;
+let successAutoDismissMs = 0, warningPersistenceMs = 0, manualDismisses = 0;
+const successSelector = ".shell-activity-bar .shell-activity-notice.is-success";
+const warningSelector = ".shell-activity-bar .shell-activity-notice.is-warning";
 let gate: { promise: Promise<void>; release: () => void } | null = null;
 addEventListener("error", (event) => errors.push(event.message));
 addEventListener("unhandledrejection", (event) => errors.push(String(event.reason)));
@@ -126,10 +129,32 @@ async function exercise(moduleId: string) {
   await settle(() => row("ExamplePlugin")?.querySelector<HTMLInputElement>("input")?.checked === false,
     "Disabled inventory persisted in the response");
   assert(inventoryReads > readsBefore, `${moduleId}: successful operation refreshes inventory`);
+  await settle(() => Boolean(fixture.querySelector(successSelector)), "Managed success appears in the activity bar");
+  assert(!fixture.querySelector(".mw-manual-success-bar,.mw-manual-feedback .mw-chip--on"),
+    `${moduleId}: managed success leaves no permanent green strip`);
+  if (moduleId === "valheim") {
+    const shownAt = performance.now(), beforeExpiry = JSON.stringify(inventory), requestCount = requests.length;
+    await act(async () => { await new Promise((resolve) => setTimeout(resolve, 4200)); });
+    assert(Boolean(fixture.querySelector(successSelector)), "Managed success remains visible before its five-second expiry");
+    await settle(() => !fixture.querySelector(successSelector), "Managed success did not expire after five seconds");
+    successAutoDismissMs = performance.now() - shownAt;
+    assert(successAutoDismissMs >= 4800 && successAutoDismissMs < 6500, "Managed success expires after five real seconds");
+    assert(JSON.stringify(inventory) === beforeExpiry && requests.length === requestCount
+      && row("ExamplePlugin")?.querySelector<HTMLInputElement>("input")?.checked === false,
+      "Managed success expiry preserves disabled inventory and dispatches no mutation");
+  }
   await mount(); await myMods();
   assert(row("ExamplePlugin")?.querySelector<HTMLInputElement>("input")?.checked === false, `${moduleId}: disabled state survives remount`);
   await click(row("ExamplePlugin")!.querySelector<HTMLInputElement>("input")!);
   await settle(() => row("ExamplePlugin")?.querySelector<HTMLInputElement>("input")?.checked === true, "Mod re-enabled");
+  await settle(() => Boolean(fixture.querySelector(successSelector)), "Re-enabled state publishes a success notice");
+  const beforeDismiss = JSON.stringify(inventory), requestCount = requests.length;
+  await click(element(`${successSelector} .shell-activity-notice-close`));
+  await settle(() => !fixture.querySelector(successSelector), "Managed success did not close manually");
+  assert(JSON.stringify(inventory) === beforeDismiss && requests.length === requestCount
+    && row("ExamplePlugin")?.querySelector<HTMLInputElement>("input")?.checked === true,
+    `${moduleId}: dismissing managed success keeps enabled inventory and dispatches no mutation`);
+  manualDismisses += 1;
 
   const adoption = row(importedName)!.querySelector<HTMLButtonElement>(".mw-managed-adopt")!;
   const adoptionBounds = adoption.getBoundingClientRect();
@@ -170,6 +195,19 @@ async function exercise(moduleId: string) {
   await act(async () => { gate!.release(); }); gate = null;
   await settle(() => !row("ExamplePlugin") && !fixture.querySelector(".mw-managed-delete-dialog"), "Deletion completed");
   assert(fixture.textContent?.includes("fixture://preserved-mods"), `${moduleId}: result reports the preserved directory`);
+  const warning = element(warningSelector);
+  assert(warning.textContent?.includes("User configuration and changed files were retained."),
+    `${moduleId}: deletion retains its actual warning in the activity bar`);
+  if (moduleId === "valheim") {
+    const shownAt = performance.now(), beforeWait = JSON.stringify(inventory), requestCount = requests.length;
+    await act(async () => { await new Promise((resolve) => setTimeout(resolve, 5200)); });
+    warningPersistenceMs = performance.now() - shownAt;
+    assert(warningPersistenceMs >= 5000 && warning.isConnected && fixture.querySelector(warningSelector) === warning,
+      "Warnings survive the five-second success lifetime and any previous success timer");
+    assert(JSON.stringify(inventory) === beforeWait && requests.length === requestCount
+      && !row("ExamplePlugin") && Boolean(row("SharedLibrary")),
+      "Retained warnings preserve the deletion result and remaining dependency inventory");
+  }
   const open = [...fixture.querySelectorAll<HTMLButtonElement>("button")].find((node) => /Open preserved files|打开保留文件/.test(node.textContent ?? ""));
   assert(open, `${moduleId}: preserved directory has an open action`); await click(open);
   assert(openedPaths.at(-1) === "fixture://preserved-mods", `${moduleId}: preserved path reaches the native open command`);
@@ -268,6 +306,8 @@ async function run() {
     "Management workspace has no viewport overflow");
   assert(errors.length === 0, "Browser console and uncaught errors remain empty");
   return { status: "passed", checks, requests, opened_paths: openedPaths, browser_errors: errors, locale: chinese ? "zh-CN" : "en-US",
+    success_auto_dismiss_ms: Math.round(successAutoDismissMs), warning_persistence_ms: Math.round(warningPersistenceMs),
+    success_manual_dismisses: manualDismisses,
     viewport: { width: innerWidth, height: innerHeight }, evidence_scope: "Real browser with simulated IPC; no backend or real filesystem changes" };
 }
 let watchdog: ReturnType<typeof setTimeout>;

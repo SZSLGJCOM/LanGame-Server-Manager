@@ -95,6 +95,7 @@ import { changedSettingKeys, mergeSettingPatch } from "./mod-settings-patch";
 import { ASA_MEMBERSHIP_KEYS, ASA_RAW_MOD_WARNING, AsaModControlError, canonicalAsaModId,
   buildAsaActiveListPlan, hasAsaRawModFlags, parseAsaModIds, readAsaModMembership, type AsaModAction } from "./mod-workbench-asa";
 import { referenceCandidatesFromText } from "./mod-reference-parser";
+import { useCurseForgeReferenceBrowser } from "./CurseForgeReferenceBrowser";
 import { MOD_WORKFLOW_CATALOG, modWorkbenchAvailability, type ModWorkflowCatalogEntry } from "./mod-workbench-capability";
 import {
   buildConfiguredEntries,
@@ -296,6 +297,11 @@ export function ModWorkbench(props: ModWorkbenchProps) {
   const [manualStageState, setManualStageState] = useState<"idle" | "running" | "success" | "error">("idle");
   const [manualStageResult, setManualStageResult] = useState<ManualModStageResult | null>(null);
   const [manualStageError, setManualStageError] = useState<string | null>(null);
+  useEffect(() => {
+    if (!manualStageResult) return;
+    const timer = window.setTimeout(() => setManualStageResult(null), 5000);
+    return () => window.clearTimeout(timer);
+  }, [manualStageResult]);
   const [manualInventoryError, setManualInventoryError] = useState<string | null>(null);
   const workshopControlStates = useMemo<ReadonlyMap<string, WorkshopControlState>>(() => moduleId === "palworld" ? palworldWorkshopStates(settings, instanceInventory)
     : readWorkshopControlStates(moduleId, settings, pzSnapshot, instanceInventory?.items), [moduleId, settings, instanceInventory, pzSnapshot]);
@@ -307,6 +313,12 @@ export function ModWorkbench(props: ModWorkbenchProps) {
   const [manualReferenceState, setManualReferenceState] = useState<"idle" | "running" | "success" | "error">("idle");
   const [manualReferenceResult, setManualReferenceResult] = useState<ManualModReferenceResolveResult | null>(null);
   const [manualReferenceError, setManualReferenceError] = useState<string | null>(null);
+  const curseforgeBrowser = useCurseForgeReferenceBrowser(props.details.summary.id, `${moduleId}:${activeWorkbenchView}:${manifestMode}`);
+  useEffect(() => {
+    if (!manualReferenceResult) return;
+    const timer = window.setTimeout(() => setManualReferenceResult(null), 5000);
+    return () => window.clearTimeout(timer);
+  }, [manualReferenceResult]);
   const [nexusAccount, setNexusAccount] = useState<NexusAccountStatus | null>(null);
   const [nexusCredentialsOpen, setNexusCredentialsOpen] = useState(false);
   const [nexusReview, setNexusReview] = useState<{ references: string[]; reviews: NexusModReview[]; input: string } | null>(null);
@@ -432,7 +444,7 @@ export function ModWorkbench(props: ModWorkbenchProps) {
     }
     const timer = window.setTimeout(() => {
       setApplyMessage(null);
-    }, 4500);
+    }, 5000);
     return () => window.clearTimeout(timer);
   }, [applyMessage]);
 
@@ -1487,11 +1499,14 @@ export function ModWorkbench(props: ModWorkbenchProps) {
           return;
         }
 
-        const result = await resolveManualModReferences(props.details.summary.id, cleanReferences);
+        const result = moduleId === "arksurvivalascended" ? await curseforgeBrowser.resolve(cleanReferences)
+          : await resolveManualModReferences(props.details.summary.id, cleanReferences, moduleId);
         if (moduleId === "arksurvivalascended") {
           await applyAsaModAction(result.resolved_ids, "add");
           startTransition(() => {
             setManualReferenceState("success"); setManualReferenceResult(result); setManualReferenceInput("");
+            const failures = result.items.filter((item) => item.status === "failed" && item.message);
+            if (failures.length) setManualReferenceError(failures.map((item) => formatDesktopError(t, item.message)).join("\n"));
           });
           return;
         }
@@ -1533,7 +1548,7 @@ export function ModWorkbench(props: ModWorkbenchProps) {
         }
       });
     }
-  }, [canInstallSiteReferences, manualEnablement, manualSourceProvider, thunderstoreVersionPolicy, moduleId, props.details.summary.id, runModMutation, t, instanceSettings, arkProjection.error, nexusSource, locale, manualReferenceInput]);
+  }, [canInstallSiteReferences, manualEnablement, manualSourceProvider, thunderstoreVersionPolicy, moduleId, props.details.summary.id, runModMutation, t, instanceSettings, arkProjection.error, nexusSource, locale, manualReferenceInput, curseforgeBrowser.resolve]);
 
   async function handleInstallNexusFiles(selected: Record<number, string>) {
     const review = nexusReview, generation = nexusGeneration.current;
@@ -2344,6 +2359,7 @@ export function ModWorkbench(props: ModWorkbenchProps) {
                 <strong>{manualDropReferenceActive ? t("servers.mods.referenceDropTitle", { source: manualSourceLabel }, "Drop {source} links or IDs here")
                   : t("servers.mods.manualDropTitle", undefined, "Drop downloaded mods here")}</strong>
             </div> : null}
+            {curseforgeBrowser.view}
           </div>
           {!manifestMode && !empty ? <div className="mw-detail-config-col" role="region" aria-label={selectedName ? `${settingsLabel}: ${selectedName}` : settingsLabel}>
             <div className="mw-detail-config-panel">
@@ -2732,13 +2748,16 @@ export function ModWorkbench(props: ModWorkbenchProps) {
     return <div className="mw-manual-feedback">
       {nexusLocalNote}
       {manualStageState === "running" ? <ActivityNotice>{t("servers.mods.manualDropRunning", undefined, "Installing...")}</ActivityNotice> : null}
-      {manualReferenceState === "running" && manualStageState !== "running" ? <ActivityNotice>{t("servers.mods.referenceResolving", undefined, "Resolving...")}</ActivityNotice> : null}
-      {manualStageResult ? <div className="mw-manual-success-bar"><span className="mw-chip mw-chip--on">
+      {manualReferenceState === "running" && manualStageState !== "running" ? <ActivityNotice action={curseforgeBrowser.pending
+        ? <button type="button" className="mw-ghost-btn" onClick={curseforgeBrowser.cancel}>{t("common.cancel", undefined, "Cancel")}</button> : undefined}>
+        {moduleId === "arksurvivalascended" ? t("servers.mods.curseforgeBrowser.adding") : t("servers.mods.referenceResolving", undefined, "Resolving...")}
+      </ActivityNotice> : null}
+      {manualStageResult ? <ActivityNotice tone="success" onDismiss={() => setManualStageResult(null)}>
         {t("servers.mods.manualDropSuccess", { count: manualStageResult.copied_file_count, target: manualStageResult.target_label }, "{count} files installed to {target}")}
-      </span></div> : null}
-      {manualReferenceResult ? <span className="mw-chip mw-chip--on">
+      </ActivityNotice> : null}
+      {manualReferenceResult ? <ActivityNotice tone="success" onDismiss={() => setManualReferenceResult(null)}>
         {t("servers.mods.referenceResolved", { count: manualReferenceResult.resolved_ids.length }, "{count} ID(s) ready")}
-      </span> : null}
+      </ActivityNotice> : null}
       {manualReferenceError ? <ActivityNotice tone="error">{manualReferenceError}</ActivityNotice> : null}
       {manualStageError ? <ActivityNotice tone="error">{manualStageError}</ActivityNotice> : null}
     </div>;
@@ -2759,7 +2778,7 @@ export function ModWorkbench(props: ModWorkbenchProps) {
         <div className="mw-dropzone-copy">
           <strong className="mw-dropzone-title">
             {manualStageState === "running" ? t("servers.mods.manualDropRunning", undefined, "Installing...")
-              : manualReferenceState === "running" ? t("servers.mods.referenceResolving", undefined, "Resolving...")
+              : manualReferenceState === "running" && moduleId !== "arksurvivalascended" ? t("servers.mods.referenceResolving", undefined, "Resolving...")
               : t("servers.mods.manualDropTitle", undefined, "Drop downloaded mods here")}
           </strong>
           <span>{t("servers.mods.manualDropTarget", { target: manualStaging.target_label }, "Installs to {target}")}</span>
@@ -2769,6 +2788,7 @@ export function ModWorkbench(props: ModWorkbenchProps) {
           <strong>{manualDropReferenceActive ? t("servers.mods.referenceDropTitle", { source: manualSourceLabel }, "Drop {source} links or IDs here")
             : t("servers.mods.manualDropTitle", undefined, "Drop downloaded mods here")}</strong>
         </div> : null}
+        {curseforgeBrowser.view}
       </div> : null}
       {renderManualImportFeedback()}
     </div>;
@@ -2821,6 +2841,7 @@ export function ModWorkbench(props: ModWorkbenchProps) {
             {managedManualMods.error && !managedManualMods.review ? <ActivityNotice tone="error">{managedManualMods.error}</ActivityNotice> : null}
             {managedManualMods.result ? <ActivityNotice
               tone={managedManualMods.result.value.warnings.length ? "warning" : "success"}
+              onDismiss={managedManualMods.dismissResult}
               action={managedManualMods.result.value.preserved_path ? <button type="button" className="mw-ghost-btn"
                 onClick={() => {
                   const path = managedManualMods.result?.value.preserved_path;

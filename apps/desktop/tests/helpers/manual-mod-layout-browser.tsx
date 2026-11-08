@@ -26,6 +26,7 @@ const errors: string[] = [];
 const failures: string[] = [];
 const checks: string[] = [];
 const measurements: Record<string, unknown>[] = [];
+const successSelector = ".shell-activity-bar .shell-activity-notice.is-success";
 addEventListener("error", (event) => errors.push(event.message));
 addEventListener("unhandledrejection", (event) => errors.push(String(event.reason)));
 const originalError = console.error;
@@ -160,6 +161,8 @@ function layout(state: string, hasReferences: boolean, view: "store" | "my-mods"
   const dropBounds = drop.getBoundingClientRect();
   const listBounds = view === "my-mods" ? element(".mw-detail-layout").getBoundingClientRect() : null;
   const label = `${moduleDetails.summary.id}/${state}`;
+  check(!fixture.querySelector(".mw-manual-success-bar,.mw-manual-feedback .mw-chip--on"),
+    `${label}: installation feedback leaves no permanent green strip in the workspace`);
   headerLayout(state, hasReferences);
   check(!fixture.querySelector(".mw-install-help-button, .mw-install-help-dialog, .mw-install-note"), `${label}: installation notes and their entry are absent`);
   if (view === "store") {
@@ -292,6 +295,7 @@ async function run() {
   await act(prepareBrowserLocaleCatalogs);
   details = await readInstanceDetails("srv-dst-terminal-error");
   mockWindows("manual-layout-fixture");
+  let curseforgeHost: string | null = null, hostSequence = 0;
   mockIPC(async (command, args) => {
     switch (command) {
       case "read_manual_mod_inventory":
@@ -301,9 +305,24 @@ async function run() {
           target_path: "fixture://manual-mods/target", target_exists: installed, items: installed ? [{ name: "FixtureMod", path: "fixture://manual-mods/target/FixtureMod",
             item_type: "directory", inferred_id: null, file_count: 3, total_bytes: 4096 }] : [] };
       case "read_instance_details_from_storage": return structuredClone(details);
-      case "resolve_manual_mod_references":
+      case "open_curseforge_browser_host":
+        assert(moduleDetails.summary.id === "arksurvivalascended" && curseforgeHost === null,
+          "Only ASA webpage recognition opens one embedded fixture host");
+        curseforgeHost = "manual-layout-curseforge-" + ++hostSequence;
+        return curseforgeHost;
+      case "update_curseforge_browser_host":
+      case "close_curseforge_browser_host":
+        assert(args && typeof args === "object" && "sessionId" in args && args.sessionId === curseforgeHost,
+          "Embedded host updates and cleanup address their own session");
+        if (command === "close_curseforge_browser_host") curseforgeHost = null;
+        return;
+      case "resolve_curseforge_browser_references":
         assert(moduleDetails.summary.id === "arksurvivalascended" && args && typeof args === "object" && "references" in args
           && Array.isArray(args.references) && args.references.length === 1, "ASA reference resolution uses its existing provider contract");
+        if (args.references[0].startsWith("https://www.curseforge.com/ark-survival-ascended/mods/")) {
+          assert(curseforgeHost !== null && "browserSession" in args && args.browserSession === curseforgeHost,
+            "ASA webpage input resolves through its embedded host");
+        }
         referenceResolves += 1;
         return { instance_id: details.summary.id, module_id: details.summary.module_id, source_label: "CurseForge",
           setting_key: "mod_ids_csv", setting_label: "Mod IDs", items: [], resolved_ids: [referenceResolves === 1 ? "928708" : "939713"] };
@@ -346,7 +365,7 @@ async function run() {
   await act(async () => { window.dispatchEvent(new DragEvent("dragend")); });
   check(!fixture.querySelector(".mw-dropzone-feedback"), "Cancelling a drag removes temporary store feedback");
   await dropFiles();
-  await settle(() => Boolean(fixture.querySelector(".mw-manual-success-bar")), "File installation result did not render");
+  await settle(() => Boolean(fixture.querySelector(successSelector)), "File installation result did not render in the activity bar");
   layout("installed", false);
   await selectView("My Mods");
   await settle(() => fixture.textContent?.includes("FixtureMod") === true, "The imported file did not appear after switching to My Mods");
@@ -357,17 +376,17 @@ async function run() {
   await render("minecraft");
   layout("empty", false);
   await dropFiles();
-  await settle(() => Boolean(fixture.querySelector(".mw-manual-success-bar")), "Minecraft file installation result did not render");
+  await settle(() => Boolean(fixture.querySelector(successSelector)), "Minecraft file installation result did not render in the activity bar");
   layout("installed", false);
   await render("minecraft");
   nextStageError = "Fixture installation rejected";
   await dropFiles();
   await settle(() => fixture.textContent?.includes("Fixture installation rejected") === true, "Installation failure feedback did not render");
-  check(Boolean(fixture.querySelector(".mw-manual-feedback")) && !fixture.querySelector(".mw-manual-success-bar"),
+  check(Boolean(fixture.querySelector(".mw-manual-feedback")) && !fixture.querySelector(successSelector),
     "A rejected store installation preserves error feedback without reporting success");
   layout("installation-error", false);
   await dropFiles();
-  await settle(() => Boolean(fixture.querySelector(".mw-manual-success-bar")), "The independent store could not retry after installation failure");
+  await settle(() => Boolean(fixture.querySelector(successSelector)), "The independent store could not retry after installation failure");
   layout("installation-recovered", false);
 
   await render("valheim");
@@ -375,7 +394,7 @@ async function run() {
   await act(async () => { element<HTMLButtonElement>(".mw-source-open-btn").click(); });
   check(sourceOpens === 1, "The existing community source action remains connected");
   await inputReference();
-  await settle(() => Boolean(fixture.querySelector(".mw-manual-success-bar")), "Thunderstore installation result did not render");
+  await settle(() => Boolean(fixture.querySelector(successSelector)), "Thunderstore installation result did not render in the activity bar");
   layout("reference-installed", true);
   await render("valheim");
   let finishStage!: (value: ManualModStageResult) => void;
@@ -390,7 +409,7 @@ async function run() {
   check(writes === busyWrites && !fixture.querySelector(".mw-dropzone-feedback"), "A busy store rejects a concurrent file drop without showing a false drop invitation");
   await act(async () => { stageGate!.resolve(stageResult()); });
   stageGate = null;
-  await settle(() => Boolean(fixture.querySelector(".mw-manual-success-bar")), "Pending installation did not finish");
+  await settle(() => Boolean(fixture.querySelector(successSelector)), "Pending installation did not finish");
   layout("installed", true);
 
   await render("arksurvivalascended");
@@ -425,7 +444,7 @@ async function run() {
     "Thunderstore My Mods retains its existing reference input and typed link");
   const beforeInstallClick = writes;
   await inputReference(undefined, "click");
-  await settle(() => writes === beforeInstallClick + 1 && Boolean(fixture.querySelector(".mw-manual-success-bar")), "Thunderstore Install click did not use the existing installation action");
+  await settle(() => writes === beforeInstallClick + 1 && Boolean(fixture.querySelector(successSelector)), "Thunderstore Install click did not use the existing installation action");
   layout("reference-click-installed-my-mods", true, "my-mods");
 
   await render("vrising", { longNote: true });
@@ -495,6 +514,7 @@ async function run() {
   if (innerWidth < 1000) { await selectView("My Mods"); layout("final-retained-my-mods-header", true, "my-mods"); }
   else layout("final-retained-store-header", true);
   await reviewPolicyHelp();
+  check(curseforgeHost === null, "Completed webpage recognition releases its embedded fixture host");
   check(errors.length === 0, "Browser console and uncaught errors remain empty");
   // Report a completed fixture so the runner captures evidence before the Node
   // test evaluates the separately collected geometry failures.

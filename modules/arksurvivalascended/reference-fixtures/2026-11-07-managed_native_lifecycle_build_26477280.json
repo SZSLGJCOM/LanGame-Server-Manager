@@ -1,0 +1,275 @@
+{
+  "schema_version": 1,
+  "module_id": "arksurvivalascended",
+  "evidence_classification": "isolated_managed_backend_native_package_lifecycle",
+  "verified_on": "2026-11-07",
+  "verification_timezone": "Asia/Shanghai",
+  "status": "passed_with_scope_limits",
+  "source_identity_sha256": "20b153d95410c907851f8c37ae53df9597536163e1e5f392289adf067dabd070",
+  "source_manifest_sha256": "492317027e4d8be9f629262a9213655f94bc205c5c4ce544eb846ed9ff0e93ec",
+  "source_file_count": 4490,
+  "test_binary_sha256": "06e7252637b7b916cd480f523b4ebd021b79b20874c0944c314567f07747791f",
+  "build_provenance": {
+    "build_receipt_sha256": "3b41c14c37c71323baf1b6026724c1dde183eed49caeda1f8242494c8380b2e5",
+    "runtime_source_proof_sha256": "baf92e36f0be6ad14ec25b3627e4891b18c0c5180547ceb3541a9d99fccc2da8",
+    "actual_invocation_receipt_sha256": "e7785d0ea4d5641d97192832454b8d164503b5b59e17b9d96467c7f24768effe",
+    "actual_entry_point": "invoke-task-cargo.ps1",
+    "actual_entry_point_sha256": "3ed87587c3b62d026d90eee052dda4cc725d77cdc8fbff891a65b54989d8bb01",
+    "canonical_entry_point_sha256": "a49fe85bfed0b558354bc5a605e84b5a2f9a30c251c2bc57ff4ddc51503223b2",
+    "central_policy_sha256": "2458b598bac668890f72d2cb39e4e1b06a8c34920667e10ed0f2bc354960c9a6",
+    "minimum_build_memory_bytes": 12884901888,
+    "host_reserve_bytes": 8589934592,
+    "maximum_compiler_jobs": 1,
+    "shared_queue_and_target_pool_preserved": true,
+    "global_policy_modified": false,
+    "receipt_interpretation": "The snapshot build receipt names the canonical entry point. The separate actual-invocation receipt establishes that this build used the approved task wrapper and the listed resource limits."
+  },
+  "package": {
+    "steam_app_id": 2430930,
+    "steam_build_id": "26477280",
+    "native_fixture_acquisition": "existing_local_package_copied_into_disposable_independent_instance",
+    "copied_payload_bytes": 12314762895,
+    "executable": {
+      "relative_path": "ShooterGame/Binaries/Win64/ArkAscendedServer.exe",
+      "size_bytes": 215539304,
+      "sha256": "8cd7d552c22c7fac118e798e891d6167efc0045bc1f31d6bf19d9a557a73d579"
+    },
+    "separate_official_acquisition": {
+      "operation": "SteamCMD app_update 2430930 validate",
+      "completed_utc": "2026-11-07T03:50:35.0245506Z",
+      "state_flags": 4,
+      "update_result": 0,
+      "appmanifest_sha256": "6be0444a6f54a50ef57572858b56080e9bbeadabdb6a3cc7e002b103725f58e1",
+      "acquisition_receipt_sha256": "2e00abdf11c07fb9c6751a5d01bcd44d7d4ee37b5af26698824e816f9a2da804"
+    }
+  },
+  "test": {
+    "selector": "commands::tests::manual_runtime_tests::native_lifecycle_tests::native_package_lifecycle",
+    "started_utc": "2026-11-07T06:42:46Z",
+    "completed_utc": "2026-11-07T06:55:19Z",
+    "duration_seconds": 752.05,
+    "exit_code": 0,
+    "exactly_one_test_passed": true,
+    "tests_passed": 1,
+    "tests_failed": 0,
+    "settings": {
+      "program_update": {
+        "policy": "pinned"
+      },
+      "num_gachas_per_tribe_for_penalty": -1,
+      "gachas_over_tribe_limit_penalty": 2,
+      "limit_replicators_per_saddle": 0,
+      "limit_cloning_chambers_range": 7500,
+      "limit_cloning_chambers_in_range_num": -1,
+      "limit_cloning_chambers_in_tribe_num": 45
+    },
+    "flags": {
+      "LANGAME_NATIVE_MANUAL_SAVE": "true",
+      "LANGAME_NATIVE_MANUAL_SAVE_RESTART": "true"
+    },
+    "optional_extension_enabled": false,
+    "firewall_policy": "non_elevated"
+  },
+  "observed_phases": [
+    {
+      "phase": "package_copy",
+      "outcome": "passed",
+      "acquisition": "existing_local_package",
+      "source_provenance_in_native_receipt": "unverified"
+    },
+    {
+      "phase": "instance_created",
+      "program_mode": "Independent",
+      "preparation": "isolated_copy",
+      "library": "preserved",
+      "ownership": "verified"
+    },
+    {
+      "phase": "archive_with_library",
+      "program_storage": "full",
+      "omitted_bytes": 0,
+      "library": "preserved"
+    },
+    {
+      "phase": "permanent_delete",
+      "library": "installed",
+      "peer": "preserved",
+      "owned_files": "removed"
+    },
+    {
+      "phase": "initial_cycle",
+      "prestart_update": "pinned",
+      "native_ready": "passed",
+      "processes": 1,
+      "startup_elapsed_ms": 179953,
+      "exit_code": 0,
+      "crash_flag": false,
+      "active_run": "none"
+    },
+    {
+      "phase": "restart_cycle",
+      "prestart_update": "pinned",
+      "native_ready": "passed",
+      "processes": 1,
+      "startup_elapsed_ms": 118501,
+      "exit_code": 0,
+      "crash_flag": false,
+      "active_run": "none"
+    },
+    {
+      "phase": "restarted",
+      "persisted_readback": "verified",
+      "fresh_run": "verified"
+    },
+    {
+      "phase": "backup_restore",
+      "outcome": "passed",
+      "restored_files": 17,
+      "safeguard": "verified",
+      "program_config": "preserved"
+    },
+    {
+      "phase": "after_restore_cycle",
+      "prestart_update": "pinned",
+      "native_ready": "passed",
+      "processes": 1,
+      "startup_elapsed_ms": 120248,
+      "exit_code": 0,
+      "crash_flag": false,
+      "active_run": "none"
+    },
+    {
+      "phase": "program_maintenance",
+      "outcome": "not_tested",
+      "reason": "network_update_not_selected"
+    },
+    {
+      "phase": "stopped",
+      "save_observation": "generated"
+    },
+    {
+      "phase": "library_uninstall",
+      "outcome": "library_only_instance_program_unchanged",
+      "program_entries": "preserved",
+      "saves_preserved": 19,
+      "native_config_files_preserved": 2
+    },
+    {
+      "phase": "archived",
+      "archive": "verified"
+    },
+    {
+      "phase": "archive_recovery_begin"
+    },
+    {
+      "phase": "archive_restore_interrupted",
+      "simulation": "deferred_commit_failure",
+      "journal": "restoring",
+      "instance_row": "absent",
+      "config_saves_program_bytes": "preserved"
+    },
+    {
+      "phase": "archive_restored"
+    },
+    {
+      "phase": "archive_readback",
+      "state": "stopped",
+      "ownership": "verified",
+      "interrupted_commit": "recovered",
+      "config_saves_program_bytes": "preserved"
+    },
+    {
+      "phase": "after_archive_restore_cycle",
+      "prestart_update": "pinned",
+      "native_ready": "passed",
+      "processes": 1,
+      "startup_elapsed_ms": 118486,
+      "exit_code": 0,
+      "crash_flag": false,
+      "active_run": "none"
+    },
+    {
+      "phase": "instance_deleted",
+      "program": "independent_program_removed",
+      "library_record": "preserved",
+      "cleanup": "verified"
+    },
+    {
+      "phase": "library_final_uninstall",
+      "unused_programs": "removed",
+      "retained_data_paths": 0
+    },
+    {
+      "phase": "complete",
+      "cleanup": "passed",
+      "creation_scope": "storage",
+      "acquisition": "existing_local_package",
+      "gui": "not_tested"
+    }
+  ],
+  "save_and_stop_observations": {
+    "formal_manual_save_receipts": 4,
+    "emitted_manual_save_cycle_labels": [
+      "initial",
+      "restart",
+      "other",
+      "other"
+    ],
+    "attempted_once_per_receipt": true,
+    "retried": false,
+    "receipt_instance_run_session_matches": true,
+    "managed_generations_alive": true,
+    "route": "declared_network_transport_current_run",
+    "response_present": true,
+    "response_bytes_per_receipt": 47,
+    "write_confirmation_pending": false,
+    "save_completion": "requested",
+    "durable_write": "not_assessed",
+    "exact_checkpoint_restart_readback": "not_assessed",
+    "stopped_new_world_ark_file_observed": true,
+    "separate_native_save_begin_and_complete_log_markers_observed": true,
+    "stop_saveworld_acknowledgements": 4,
+    "stop_doexit_acknowledgements": 4,
+    "distinct_closing_by_request_log_markers": 4,
+    "interpretation": "Native save files, save-complete log markers, byte-preserving backup/archive restoration and fresh managed readiness are separate observations. They do not promote a requested save receipt to a durable checkpoint or prove exact saved gameplay content."
+  },
+  "diagnostic_limits": {
+    "native_log_message": "Steam Subsystem initialized: FAILED",
+    "distinct_startup_occurrences": 4,
+    "windows_firewall_operation_or_cleanup_timeout_warning_observed": true,
+    "public_server_discovery": "not_verified",
+    "external_client_connectivity": "not_verified"
+  },
+  "cleanup": {
+    "test_reported": "passed",
+    "post_test_read_only_checked_utc": "2026-11-07T06:58:25.9899397Z",
+    "matching_task_owned_asa_processes": 0,
+    "remaining_task_fixture_directories": 0
+  },
+  "artifacts": [
+    {
+      "name": "arksurvivalascended-native.json",
+      "size_bytes": 1165,
+      "sha256": "1de31c45dc48273e3f3a33a1a003d25f88033ca7273ada0bf453d16b46a27cf1"
+    },
+    {
+      "name": "arksurvivalascended-native.stdout",
+      "size_bytes": 6981,
+      "sha256": "ba4dd12f4c8b80a05f8ec283300eef5f25adb3b00761523ce9f278235627078c"
+    },
+    {
+      "name": "arksurvivalascended-native.stderr",
+      "size_bytes": 178061,
+      "sha256": "60d2e8314ce917927a5b123bcdab9ef4fe0e78239558d6eea732a3704744d36a"
+    }
+  ],
+  "scope_limits": [
+    "This is an isolated fresh-world backend lifecycle with four managed runs: initial, restart, after backup restoration, and after archive restoration. Existing populated worlds, client joins, GUI behavior, multiplayer gameplay and migration were not tested.",
+    "The six v97 overrides were supplied during native startup and managed configuration preservation. Their gameplay effects, native defaults, enforcement thresholds and cloning-range unit conversion were not measured.",
+    "Both backup restoration and interrupted archive restoration actually ran and passed; program network update/repair was explicitly not selected.",
+    "All four managed game processes exited with code 0 and crash_flag=false. This does not erase the recorded Steam initialization and firewall warnings or establish public discovery/external connectivity.",
+    "The native fixture copied an existing local package; its separate official acquisition receipt supplies the package provenance. No in-place update or migration of an existing user instance was performed.",
+    "The optional AsaApi/GM/Enigmasaur attempt is recorded separately and did not pass. Historical static preflight evidence retains its original scope.",
+    "The source and binary identities name the immutable build used for this run. Adding this evidence afterward does not change that tested source identity or renew the module's historical settings last_verified."
+  ]
+}

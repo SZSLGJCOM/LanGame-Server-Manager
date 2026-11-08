@@ -1,0 +1,193 @@
+{
+  "schema_version": 1,
+  "module_id": "soulmask",
+  "evidence_classification": "isolated_managed_backend_native_full_lifecycle",
+  "verified_on": "2026-11-07",
+  "verification_timezone": "Asia/Shanghai",
+  "status": "passed",
+  "steam_app_id": 3017310,
+  "steam_build_id": "26480169",
+  "package": {
+    "acquisition": "fresh official anonymous SteamCMD public app_update validate, independently verified",
+    "completed_utc": "2026-11-07T03:57:28.3547693Z",
+    "state_flags": 4,
+    "update_result": 0,
+    "copied_source_bytes": 5885769111,
+    "files": {
+      "steamapps/appmanifest_3017310.acf": {
+        "bytes": 1016,
+        "sha256": "511bd85aacb81623e51ed08a78324777baafb7886aec1f4be84b4b5742c6cff7"
+      },
+      "WS/Binaries/Win64/WSServer-Win64-Shipping.exe": {
+        "bytes": 53235040,
+        "sha256": "955fa0855b7c756695ba530681d21807e985688ca4aa10fcf7a6493dfc69ec68"
+      },
+      "WS/Config/GameplaySettings/GameXishuConfig_Template.json": {
+        "bytes": 592068,
+        "sha256": "c9f9128fe1df1608c18a7873f9bf9c5a50877fc3393fc7a439f91b0ae02cd00c"
+      },
+      "WS/Config/GameplaySettings/GameXishu_Template.json": {
+        "bytes": 27036,
+        "sha256": "687d3351fd0706583348decc95cdb9f07b4ad0e8d5e07ac89a62918cf5fe9768"
+      }
+    },
+    "provenance_boundary": "The lifecycle selector labels copied source provenance unverified and does not exercise network acquisition. The separate completed acquisition receipt and matching package hashes identify this official package.",
+    "related_static_evidence": "native-evidence/2026-11-07-public-build-26480169-static.json"
+  },
+  "build": {
+    "source_identity_sha256": "20b153d95410c907851f8c37ae53df9597536163e1e5f392289adf067dabd070",
+    "source_manifest_sha256": "492317027e4d8be9f629262a9213655f94bc205c5c4ce544eb846ed9ff0e93ec",
+    "source_file_count": 4490,
+    "test_binary_sha256": "06e7252637b7b916cd480f523b4ebd021b79b20874c0944c314567f07747791f",
+    "test_binary_bytes": 207506432,
+    "captured_utc": "2026-11-07T05:54:47.3271853Z",
+    "cargo_command": "test",
+    "cargo_arguments": [
+      "-p",
+      "langame-desktop",
+      "--bin",
+      "langame-desktop",
+      "--features",
+      "custom-protocol",
+      "--locked",
+      "--no-run"
+    ],
+    "actual_entry_point": "task-scoped approved Cargo wrapper; local path omitted",
+    "actual_entry_point_sha256": "3ed87587c3b62d026d90eee052dda4cc725d77cdc8fbff891a65b54989d8bb01",
+    "actual_invocation_started_utc": "2026-11-07T05:47:15.4061625Z",
+    "resource_override": {
+      "minimum_build_memory_bytes": 12884901888,
+      "maximum_compiler_jobs": 1,
+      "host_reserve_bytes": 8589934592,
+      "shared_queue_and_target_pool_preserved": true,
+      "global_policy_modified": false
+    },
+    "resource_binding": "Frozen modules and migrations selected through the isolated storage fixture; source proof matches the build receipt."
+  },
+  "test": {
+    "selector": "commands::tests::manual_runtime_tests::native_lifecycle_tests::native_package_lifecycle",
+    "arguments": [
+      "--exact",
+      "--ignored",
+      "--nocapture",
+      "--test-threads=1"
+    ],
+    "started_utc": "2026-11-07T06:23:50Z",
+    "completed_utc": "2026-11-07T06:42:46Z",
+    "duration_seconds": 1135.97,
+    "exit_code": 0,
+    "tests_passed": 1,
+    "tests_failed": 0,
+    "settings": {
+      "program_update": {
+        "policy": "pinned"
+      }
+    },
+    "flags": {
+      "LANGAME_NATIVE_MANUAL_SAVE": "true",
+      "LANGAME_NATIVE_MANUAL_SAVE_RESTART": "true"
+    },
+    "platform": "Windows x86_64",
+    "elevated": false,
+    "program_mode": "Independent",
+    "creation_scope": "storage",
+    "acquisition_scope": "existing_local_package"
+  },
+  "observations": {
+    "cycles": [
+      "initial",
+      "restart",
+      "after_restore",
+      "after_archive_restore"
+    ],
+    "native_ready_cycles": 4,
+    "normal_process_exit_codes": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "crash_flags": [
+      false,
+      false,
+      false,
+      false
+    ],
+    "active_run_after_each_stop": "none",
+    "restart": "persisted configuration readback and fresh run verified",
+    "manual_save": {
+      "receipts": 4,
+      "attempts_per_cycle": 1,
+      "retried": false,
+      "route": "managed_process_generation",
+      "completion": "requested",
+      "response_present": true,
+      "response_bytes_each": 85,
+      "instance_run_session_correlation": true,
+      "managed_generations_alive": true,
+      "durable_write": "not_assessed",
+      "request_caused_checkpoint": "not_assessed",
+      "exact_checkpoint_readback_requested": false
+    },
+    "save_observation_after_stop": "generated",
+    "backup_restore": {
+      "status": "passed",
+      "restored_files": 25,
+      "safeguard": "verified",
+      "program_and_configuration": "preserved",
+      "following_native_cycle": "passed",
+      "independently_observed_file_scope": {
+        "observed_utc": "2026-11-07T06:36:13.9166992Z",
+        "scope": "completed manual backup used for restore; metadata and hashes only",
+        "file_count": 25,
+        "categories": {
+          "Config/WindowsServer/*.ini": 18,
+          "Config/CrashReportClient/*/CrashReportClient.ini": 2,
+          "GameplaySettings/GameXishu.json": 1,
+          "Logs/*.log": 2,
+          "currentmodinfo": 1,
+          "Worlds/Dedicated/Level01_Main/world.db": 1
+        },
+        "world_database": {
+          "relative_path": "Worlds/Dedicated/Level01_Main/world.db",
+          "bytes": 39477248,
+          "sha256": "335d874192d2241806347e01f760d90e512e323499d54349bf915d600af3adbb"
+        },
+        "pre_restore_safeguard_file_count": 26,
+        "limitation": "This new isolated no-client world contains a nonempty native database. Its presence and backup restoration do not establish populated player state, migration of an existing user world, or causal durable persistence of a Requested manual-save command."
+      }
+    },
+    "library_uninstall": {
+      "outcome": "library_only_instance_program_unchanged",
+      "program_entries": "preserved",
+      "saved_inventory_entries_preserved": 27,
+      "retained_native_configuration_entries": 0
+    },
+    "archive_recovery": {
+      "archive": "verified",
+      "interruption": "deferred commit failure with restoring journal and absent instance row",
+      "configuration_saves_and_program_inventory": "preserved",
+      "recovery": "stopped ownership readback verified",
+      "following_native_cycle": "passed"
+    },
+    "final_instance_delete": "independent program removed; library record preserved; cleanup verified",
+    "final_library_uninstall": "unused programs removed; retained data paths zero",
+    "owned_fixture_cleanup": "passed; success path asserts fixture directory absent"
+  },
+  "artifacts": {
+    "soulmask-native.stdout": {
+      "bytes": 6459,
+      "sha256": "a0db518cced39d02493298731fd38f7da3289a21f875c39f2ad76cbdd488eb2a"
+    },
+    "soulmask-native.stderr": {
+      "bytes": 72894,
+      "sha256": "339e2b51b87ea72c4c3c4f0a1a0fa5ddf822bd79353315d477e56ee703f69e72"
+    }
+  },
+  "scope_limits": [
+    "Requested save receipts prove the correlated managed dispatch, not causal durable persistence or exact manual-saved content reload.",
+    "Backup and archive comparisons use the harness file inventory, byte lengths and content fingerprints; package, build and log identities use SHA256.",
+    "No network program update/validate, general RCON administration, live-client gameplay, populated player behavior, existing-user-world migration or GUI acceptance was selected.",
+    "The public evidence omits local paths, hostnames, instance identifiers, credentials, connection codes and raw native log excerpts."
+  ]
+}

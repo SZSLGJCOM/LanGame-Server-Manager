@@ -1078,7 +1078,8 @@ test("Rust anonymous package validate records generated cfg ownership boundary",
   const ledger = read(path.join(rustRoot, "config-sources.toml"));
   const schema = JSON.parse(read(path.join(rustRoot, "schema.json")));
   const defaults = JSON.parse(read(path.join(rustRoot, "config-fixtures/2026-09-28-facepunch_september_2026.json")));
-  const optIn = JSON.parse(read(path.join(rustRoot, "config-fixtures/2026-09-28-native_september_configuration_build_25129933.json")));
+  const optIn = JSON.parse(read(path.join(rustRoot, "reference-fixtures/2026-09-28-native_september_configuration_build_25129933.json")));
+  const november = JSON.parse(read(path.join(rustRoot, "config-fixtures/2026-11-07-facepunch_november_2026.json")));
 
   assert.match(ledger, /last_verified = "2026-09-28"/);
   assert.match(ledger, /steam_public_build_24090743/);
@@ -1103,7 +1104,11 @@ test("Rust anonymous package validate records generated cfg ownership boundary",
   assert.match(ledger, /No game code was executed/);
   assert.equal(schema.properties.upkeep_group_max_multiplier.default, 3);
   assert.equal(schema.properties.upkeep_lock_min_users.default, 2);
-  assert.equal(schema.properties.use_new_navmesh.default, false);
+  assert.equal(schema.properties.use_new_navmesh.default, true);
+  assert.equal(schema.properties.use_new_navmesh["x-lsgm-source-key"], "-useOldNavmesh");
+  assert.equal(november.settings.use_new_navmesh, false);
+  assert.equal(november.expected.launch.arguments.filter((argument) => argument === "-useOldNavmesh").length, 1);
+  assert.ok(!november.expected.launch.arguments.includes("-useNewNavmesh"));
   assert.ok(!defaults.expected.launch.arguments.includes("-useNewNavmesh"));
   assert.equal(optIn.settings.use_new_navmesh, true);
   assert.equal(optIn.expected.launch.arguments.filter((argument) => argument === "-useNewNavmesh").length, 1);

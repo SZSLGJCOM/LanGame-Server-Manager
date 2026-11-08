@@ -79,11 +79,11 @@ const ASE: Profile = Profile {
 const ASA: Profile = Profile {
     module_id: "arksurvivalascended",
     executable: "ArkAscendedServer.exe",
-    version: "AsaApi 2.03",
+    version: "AsaApi 2.1",
     payload: &[
         (
             "ArkApi/AsaApi.dll",
-            "7d12ff5fd238c4094da863d99651f3b54d7ffde1752eaa7cc263222cb7cd09d5",
+            "d46af90afab50d36679f8ea4c8b7c1b2e6057ec4ad44963f00244ed8f3969a62",
         ),
         (
             "ArkApi/pdbignores.txt",

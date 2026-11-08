@@ -77,8 +77,7 @@ mod sons_backup_probe;
 mod sons_world_fixture;
 #[path = "commands_native_squad_probe.rs"]
 mod squad_probe;
-#[path = "commands_native_storage_fixture.rs"]
-mod storage_fixture;
+use crate::commands::tests::native_storage_fixture as storage_fixture;
 #[path = "commands_native_theforest_probe.rs"]
 mod theforest_probe;
 
@@ -417,6 +416,13 @@ async fn native_game_tools() -> Result<(), Box<dyn std::error::Error>> {
     }
     let descriptors = discover_modules(workspace_root().join("modules"))?;
     for (module_id, source) in catalog::from_env(&descriptors)? {
+        if std::env::var("LANGAME_NATIVE_ARK_PERSISTENCE").as_deref() == Ok("true")
+            && (module_id != "arksurvivalascended"
+                || std::env::var("LANGAME_NATIVE_ARK_CREATURES").as_deref() != Ok("true")
+                || std::env::var("LANGAME_NATIVE_MANUAL_SAVE").as_deref() == Ok("true"))
+        {
+            return Err("ARK persistence requires the ASA creature probe without the separate manual-save mode".into());
+        }
         let started = Instant::now();
         println!("NATIVE_GM_CATALOG module={module_id} phase=begin");
         Box::pin(run_native_package(
@@ -811,6 +817,33 @@ async fn run_native_package(
         // weakens the separate archive/restore/uninstall lifecycle acceptance.
         let first_run =
             Box::pin(runtime.run_cycle(&details, "initial", observation_seconds)).await?;
+        if std::env::var("LANGAME_NATIVE_ARK_PERSISTENCE").as_deref() == Ok("true") {
+            let reloaded = read_instance_details(&storage.paths, &id).await?;
+            let second_run = Box::pin(runtime.run_cycle(&reloaded, "restart", 0)).await?;
+            if first_run == second_run {
+                return Err("ARK creature persistence reused its previous managed run".into());
+            }
+            let overview = app_storage::read_instance_runtime_overview(&storage.paths, &id).await?;
+            for run_id in [first_run, second_run] {
+                let completed = overview
+                    .recent_runs
+                    .iter()
+                    .find(|run| run.run_id == run_id)
+                    .ok_or("ARK persistence lost a stopped run's history")?;
+                if completed.crash_flag
+                    || completed.processes.is_empty()
+                    || completed
+                        .processes
+                        .iter()
+                        .any(|process| process.crash_flag || process.exit_code != Some(0))
+                {
+                    return Err("ARK persistence requires two normal exits with code zero".into());
+                }
+            }
+            println!(
+                "NATIVE_ARK_PERSISTENCE module={module_id} phase=complete fresh_managed_run=true normal_stop=true"
+            );
+        }
         if std::env::var("LANGAME_NATIVE_MANUAL_SAVE_RESTART").as_deref() == Ok("true") {
             if std::env::var("LANGAME_NATIVE_MANUAL_SAVE").as_deref() != Ok("true") {
                 return Err("manual save restart requires the declared save probe".into());

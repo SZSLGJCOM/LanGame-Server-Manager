@@ -6,6 +6,9 @@ mod ark_shutdown_observation;
 #[path = "commands_native_astroneer_public_ip.rs"]
 pub(super) mod astroneer_public_ip;
 
+#[path = "commands_native_rust_configuration.rs"]
+mod rust_configuration;
+
 pub(super) struct NativeRuntime<'a, 's, R: tauri::Runtime> {
     pub app: &'a tauri::AppHandle<R>,
     pub state: &'a tauri::State<'s, DesktopState>,
@@ -184,6 +187,19 @@ impl<R: tauri::Runtime> NativeRuntime<'_, '_, R> {
                 "isolated"
             }
         );
+        if let Err(error) = Box::pin(rust_configuration::verify(self, &running, cycle)).await {
+            print_native_failure(
+                "rust_configuration_readback",
+                &error.to_string(),
+                &[],
+                settings,
+                &package.root,
+            );
+            return Err(
+                "native Rust configuration readback failed; redacted diagnostics printed above"
+                    .into(),
+            );
+        }
         let sons_backup_snapshot;
         if std::env::var("LANGAME_NATIVE_MANUAL_SAVE").as_deref() == Ok("true") {
             let prepared: Result<(), Box<dyn std::error::Error>> = async {

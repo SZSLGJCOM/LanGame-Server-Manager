@@ -1,4 +1,4 @@
-//! AsaApi 2.03 executable-bound cache format and publication. Cache maps are
+//! AsaApi 2.1 executable-bound cache format and publication. Cache maps are
 //! streamed and validated before the small selection metadata is replaced.
 use super::*;
 use std::collections::HashSet;

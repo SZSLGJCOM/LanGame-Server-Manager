@@ -228,6 +228,19 @@ pub(crate) const ARK_ASA_PATCH_GUS_SERVER_SETTINGS: &[ArkIniSetting] = &[
     ("UseAstraeosTraversalBuff", "use_astraeos_traversal_buff", false, false, false),
 ];
 
+// These optional additions must not enter the blanket native ownership inventory.
+// Actual output/history claims configured keys while preserving existing native
+// values for instances that have never selected an override.
+#[rustfmt::skip]
+pub(crate) const ARK_ASA_OPTIONAL_GAME_INI: &[ArkIniSetting] = &[
+    ("NumGachasPerTribeForPenalty", "num_gachas_per_tribe_for_penalty", false, false, false),
+    ("GachasOverTribeLimitPenalty", "gachas_over_tribe_limit_penalty", false, false, false),
+    ("LimitReplicatorsPerSaddle", "limit_replicators_per_saddle", false, false, false),
+    ("LimitCloningChambersRange", "limit_cloning_chambers_range", false, false, false),
+    ("LimitCloningChambersInRangeNum", "limit_cloning_chambers_in_range_num", false, false, false),
+    ("LimitCloningChambersInTribeNum", "limit_cloning_chambers_in_tribe_num", false, false, false),
+];
+
 #[rustfmt::skip]
 pub(crate) const ARK_ASA_ADVANCED_GAME_INI: &[ArkIniSetting] = &[
     ("SupplyCrateLootQualityMultiplier", "supply_crate_loot_quality_multiplier", false, false, false),

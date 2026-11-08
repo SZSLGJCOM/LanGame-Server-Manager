@@ -377,8 +377,7 @@ fn retain_local_exit_owner(app: &tauri::AppHandle, deadline_tick_ms: u64, error:
 }
 
 fn hide_exiting_interface(app: &tauri::AppHandle) {
-    use tauri::Manager;
-    if let Some(window) = app.get_webview_window("main") {
+    if let Some(window) = crate::curseforge_browser::main_window(app) {
         let _ = window.hide();
     }
     let _ = app.remove_tray_by_id("main");

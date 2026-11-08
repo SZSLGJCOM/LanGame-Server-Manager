@@ -404,10 +404,25 @@ pub(crate) fn websocket_rcon_exec(
     password: &str,
     command: &str,
 ) -> Result<String, String> {
+    // Keep the attempt occupied until the stream is dropped. Rust limits both
+    // active connections and new attempts, including successful connections.
+    let _attempt = websocket_admission::admit(endpoint)?;
     let mut stream = DeadlineTcpStream::connect(endpoint, Duration::from_secs(3))
         .map_err(|error| format!("failed to connect to WebSocket RCON `{endpoint}`: {error}"))?;
 
-    websocket_rcon_handshake(&mut stream, endpoint, password)?;
+    websocket_rcon_exchange(&mut stream, endpoint, password, command)
+}
+
+#[path = "runtime_transport_websocket_admission.rs"]
+mod websocket_admission;
+
+fn websocket_rcon_exchange(
+    stream: &mut DeadlineTcpStream,
+    endpoint: &str,
+    password: &str,
+    command: &str,
+) -> Result<String, String> {
+    websocket_rcon_handshake(stream, endpoint, password)?;
 
     const REQUEST_ID: i64 = 14003;
     let request = json!({
@@ -416,10 +431,10 @@ pub(crate) fn websocket_rcon_exec(
         "Name": "LanGame",
     })
     .to_string();
-    websocket_write_frame(&mut stream, 0x1, request.as_bytes())?;
+    websocket_write_frame(stream, 0x1, request.as_bytes())?;
 
     for _ in 0..8 {
-        let response_text = websocket_read_text_message(&mut stream)?;
+        let response_text = websocket_read_text_message(stream)?;
         let Ok(response_json) = serde_json::from_str::<Value>(&response_text) else {
             continue;
         };

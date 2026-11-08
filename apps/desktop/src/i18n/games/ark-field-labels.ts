@@ -197,6 +197,12 @@ const ASE_LABELS: Record<string, string> = {
 };
 
 const ASA_LABELS: Record<string, string> = {
+  num_gachas_per_tribe_for_penalty: "触发进食惩罚的部落嘎查数量上限",
+  gachas_over_tribe_limit_penalty: "嘎查超限进食间隔倍率",
+  limit_replicators_per_saddle: "每个平台鞍的泰克复制器上限",
+  limit_cloning_chambers_range: "克隆仓计数范围（原生数值）",
+  limit_cloning_chambers_in_range_num: "部落范围内克隆仓数量上限",
+  limit_cloning_chambers_in_tribe_num: "部落克隆仓总数上限",
   always_tick_dedicated_skeletal_meshes: "持续更新服务端骨骼网格",
   do_custom_cosmetic_validation: "校验自定义外观模组",
   disable_custom_cosmetics: "禁用自定义外观模组",

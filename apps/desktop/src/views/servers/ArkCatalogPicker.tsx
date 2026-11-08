@@ -6,16 +6,16 @@ import { getArkGmCreatureOptions, getArkGmItemOptions, getArkGmNumericItemOption
 import "./ark-catalog-picker.css";
 
 export type ArkCatalogKind = "blueprint" | "number" | "creature";
-interface Props { kind: ArkCatalogKind; query: string; value: string; onQueryChange: (query: string) => void; onPick: (value: string) => void }
+interface Props { kind: ArkCatalogKind; moduleId?: string; query: string; value: string; onQueryChange: (query: string) => void; onPick: (value: string) => void }
 const ROW_HEIGHT = 26;
 
 /** The map rail owns the available height; only the rows that fit are paged in. */
-export function ArkCatalogPicker({ kind, query, value, onQueryChange, onPick }: Props) {
+export function ArkCatalogPicker({ kind, moduleId, query, value, onQueryChange, onPick }: Props) {
   const { locale } = useI18n();
   const text = (zh: string, en: string) => selectLocaleText(locale, zh, en);
   const container = useRef<HTMLDivElement>(null);
   const [pageSize, setPageSize] = useState(6);
-  const [page, setPage] = useState({ query, kind, index: 0 });
+  const [page, setPage] = useState({ query, kind, moduleId, index: 0 });
   useLayoutEffect(() => {
     const node = container.current;
     if (!node) return;
@@ -29,7 +29,7 @@ export function ArkCatalogPicker({ kind, query, value, onQueryChange, onPick }: 
     return () => observer.disconnect();
   }, []);
   const results = useMemo(() => {
-    if (kind === "creature") return searchArkGmCreatureOptions(query, getArkGmCreatureOptions().length).map(option => ({
+    if (kind === "creature") return searchArkGmCreatureOptions(query, getArkGmCreatureOptions(moduleId).length, moduleId).map(option => ({
       key: option.value, value: option.value, name: localizeArkCatalogName(option, locale), code: option.value, category: localizeArkCatalogCategory(option, locale)
     }));
     const options = kind === "number" ? searchArkGmNumericItemOptions(query, getArkGmNumericItemOptions().length)
@@ -41,11 +41,11 @@ export function ArkCatalogPicker({ kind, query, value, onQueryChange, onPick }: 
       code: kind === "number" ? `#${option.itemId}` : option.gfiCode,
       category: localizeArkCatalogCategory(option, locale)
     }));
-  }, [kind, query, locale]);
+  }, [kind, moduleId, query, locale]);
   const pageCount = Math.max(1, Math.ceil(results.length / pageSize));
-  const index = Math.min(page.query === query && page.kind === kind ? page.index : 0, pageCount - 1);
+  const index = Math.min(page.query === query && page.kind === kind && page.moduleId === moduleId ? page.index : 0, pageCount - 1);
   const selected = results.find(option => option.value === value);
-  const go = (next: number) => setPage({ query, kind, index: next });
+  const go = (next: number) => setPage({ query, kind, moduleId, index: next });
   const placeholder = kind === "creature" ? text("查找生物名称或类名", "Search creature names or classes")
     : kind === "number" ? text("查找物品名称或编号", "Search item names or numbers")
     : text("查找物品、GFI 或蓝图", "Search items, GFI, or blueprints");

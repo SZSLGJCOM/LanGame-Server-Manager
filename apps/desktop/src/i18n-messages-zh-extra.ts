@@ -1,6 +1,15 @@
 import type { MessageCatalog } from "./i18n-config";
 
 export const ZH_CN_EXTRA_MESSAGES: MessageCatalog = {
+  "errors.curseforgeReference.cancelled": "已取消网页识别，本次没有添加 Mod。",
+  "errors.curseforgeReference.timeout": "等待 CurseForge 页面或网页验证超时。请重试并在识别区内完成验证，也可粘贴页面 Details 中的 Project ID。详情见 desktop-ui 日志。",
+  "errors.curseforgeReference.invalid_page": "无法确认该页面的 ASA Project ID。请拖入对应 Mod 的官方项目页面，或粘贴 Details 中的 Project ID。详情见 desktop-ui 日志。",
+  "errors.curseforgeReference.busy": "正在识别另一个 CurseForge 页面，请先完成或取消识别。",
+  "errors.curseforgeReference.browser_unavailable": "无法加载或读取识别区中的 CurseForge 网页，请重试。详情见 desktop-ui 日志。",
+  "servers.mods.curseforgeBrowser.adding": "正在添加 Mod…",
+  "servers.mods.curseforgeBrowser.verification": "请完成下方网页验证，完成后会自动继续添加。",
+  "servers.mods.curseforgeBrowser.page": "CurseForge 网页识别区",
+  "errors.curseforgeReference.desktop_required": "请在管理器桌面端拖入 CurseForge 网页，或在此粘贴页面 Details 中的 Project ID。",
   "activity.serverStartManualSaveUnavailable": "服务器正在运行，手动保存暂不可用：{id}",
   "activity.serverStartGracefulStopUnavailable": "服务器正在运行，管理器正常停服暂不可用：{id}",
   "runtime.startWarning.gracefulStopUnavailable": "{name}：管理器正常停服暂不可用。",

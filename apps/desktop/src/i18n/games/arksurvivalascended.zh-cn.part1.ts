@@ -8,6 +8,8 @@ export const ZH_CN_ARK_SURVIVAL_ASCENDED_MESSAGES_PART_1: MessageCatalog = {
   "ark.settings.groups.crafting.item-rules.title": "物品保存与属性",
   "ark.settings.groups.limits.tame-levels.title": "驯养生物等级与单位限制",
   "ark.settings.groups.limits.generators.title": "发电机数量限制",
+  "ark.settings.groups.limits.gacha.title": "嘎查进食惩罚",
+  "ark.settings.groups.limits.cloning.title": "克隆仓数量限制",
   "ark.settings.groups.loot.lifetime.title": "尸体与掉落物保留时间",
   "ark.settings.groups.rates.hexagon-economy.title": "六角币奖励与价格",
   "ark.settings.groups.breeding.rules.title": "繁殖限制",

@@ -100,7 +100,7 @@ async function run() {
       if (pending) await pending;
       if (failSave) { failSave = false; throw new Error("Fixture CAS rejected a stale settings revision"); }
     }
-    if (command === "resolve_manual_mod_references") {
+    if (command === "resolve_curseforge_browser_references") {
       const args = payload as { instanceId: string; references: string[] };
       assert(args.instanceId === stored.summary.id, "Reference resolution is scoped to the ASA instance");
       return { instance_id: stored.summary.id, module_id: stored.summary.module_id, source_label: "CurseForge", setting_key: "mod_ids_csv",

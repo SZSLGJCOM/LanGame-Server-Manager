@@ -2905,6 +2905,76 @@
       "x-lsgm-source-key": "/script/shootergame.shootergamemode.LimitGeneratorsRange",
       "x-lsgm-source-surface": "config_file"
     },
+    "num_gachas_per_tribe_for_penalty": {
+      "type": "integer",
+      "minimum": -1,
+      "title": "Gachas per tribe before feeding penalty",
+      "description": "Deployed Gacha count above which a tribe receives the feeding interval penalty. Use -1 to disable the limit. The v97 published value is 100. Leave blank to omit the managed override.",
+      "x-lsgm-section": "limits",
+      "x-lsgm-order": 1109.1,
+      "x-lsgm-default-source": "existing_native_configuration",
+      "x-lsgm-source": "asa_server_patch_notes_v97",
+      "x-lsgm-source-key": "/script/shootergame.shootergamemode.NumGachasPerTribeForPenalty",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "gachas_over_tribe_limit_penalty": {
+      "type": "number",
+      "title": "Gacha feeding interval penalty multiplier",
+      "description": "Feeding interval multiplier for tribes above the deployed Gacha limit. The v97 published value is 3. Leave blank to omit the managed override.",
+      "x-lsgm-section": "limits",
+      "x-lsgm-order": 1109.2,
+      "x-lsgm-default-source": "existing_native_configuration",
+      "x-lsgm-source": "asa_server_patch_notes_v97",
+      "x-lsgm-source-key": "/script/shootergame.shootergamemode.GachasOverTribeLimitPenalty",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "limit_replicators_per_saddle": {
+      "type": "integer",
+      "minimum": -1,
+      "title": "Tek Replicators per platform saddle",
+      "description": "Tek Replicator placement limit per platform saddle. Use 0 to prevent placement or -1 for unlimited. The v97 published value is 1. Leave blank to omit the managed override.",
+      "x-lsgm-section": "building",
+      "x-lsgm-order": 453.6,
+      "x-lsgm-default-source": "existing_native_configuration",
+      "x-lsgm-source": "asa_server_patch_notes_v97",
+      "x-lsgm-source-key": "/script/shootergame.shootergamemode.LimitReplicatorsPerSaddle",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "limit_cloning_chambers_range": {
+      "type": "number",
+      "title": "Cloning chamber counting range (native value)",
+      "description": "Native range value used with the nearby cloning chamber limit. The v97 published value is 10000. No conversion to meters is applied. Leave blank to omit the managed override.",
+      "x-lsgm-section": "limits",
+      "x-lsgm-order": 1109.3,
+      "x-lsgm-default-source": "existing_native_configuration",
+      "x-lsgm-source": "asa_server_patch_notes_v97",
+      "x-lsgm-source-key": "/script/shootergame.shootergamemode.LimitCloningChambersRange",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "limit_cloning_chambers_in_range_num": {
+      "type": "integer",
+      "minimum": -1,
+      "title": "Nearby cloning chambers per tribe",
+      "description": "Tribe cloning chamber limit within the configured range. Use 0 to prevent placement or -1 for unlimited. The v97 published value is 10. Leave blank to omit the managed override.",
+      "x-lsgm-section": "limits",
+      "x-lsgm-order": 1109.4,
+      "x-lsgm-default-source": "existing_native_configuration",
+      "x-lsgm-source": "asa_server_patch_notes_v97",
+      "x-lsgm-source-key": "/script/shootergame.shootergamemode.LimitCloningChambersInRangeNum",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "limit_cloning_chambers_in_tribe_num": {
+      "type": "integer",
+      "minimum": -1,
+      "title": "Total cloning chambers per tribe",
+      "description": "Total deployed cloning chamber limit per tribe. Use -1 for unlimited. The v97 published value is 50. Leave blank to omit the managed override.",
+      "x-lsgm-section": "limits",
+      "x-lsgm-order": 1109.5,
+      "x-lsgm-default-source": "existing_native_configuration",
+      "x-lsgm-source": "asa_server_patch_notes_v97",
+      "x-lsgm-source-key": "/script/shootergame.shootergamemode.LimitCloningChambersInTribeNum",
+      "x-lsgm-source-surface": "config_file"
+    },
     "generic_xpmultiplier": {
       "type": "number",
       "title": "GenericXPMultiplier",

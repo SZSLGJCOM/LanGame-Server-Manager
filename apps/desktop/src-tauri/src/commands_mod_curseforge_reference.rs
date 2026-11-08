@@ -2,14 +2,14 @@
 //! a download filename, a third-party API, or an arbitrary URL's query string.
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub(in crate::commands) struct CurseForgeReference {
-    pub(in crate::commands) project_id: Option<String>,
-    pub(in crate::commands) game_slug: Option<String>,
-    pub(in crate::commands) mod_slug: Option<String>,
-    pub(in crate::commands) file_id: Option<String>,
+pub(crate) struct CurseForgeReference {
+    pub(crate) project_id: Option<String>,
+    pub(crate) game_slug: Option<String>,
+    pub(crate) mod_slug: Option<String>,
+    pub(crate) file_id: Option<String>,
 }
 
-pub(in crate::commands) fn parse_reference(reference: &str) -> Option<CurseForgeReference> {
+pub(crate) fn parse_reference(reference: &str) -> Option<CurseForgeReference> {
     let reference = reference.trim();
     if reference.len() > 2048 {
         return None;
@@ -27,9 +27,8 @@ pub(in crate::commands) fn parse_reference(reference: &str) -> Option<CurseForge
     }
 
     let url = reqwest::Url::parse(reference).ok()?;
-    // These URLs provide an identity only; they are never fetched. Legacy HTTP
-    // bookmarks therefore retain their meaning while metadata uses its own
-    // authenticated, fixed HTTPS API endpoint.
+    // Input URLs provide an identity only. The browser resolver constructs its
+    // own canonical HTTPS project URL, stripping file tails and query strings.
     if !matches!(url.scheme(), "http" | "https")
         || !url.username().is_empty()
         || url.password().is_some()
@@ -102,6 +101,7 @@ pub(in crate::commands) fn project_id_from_reference(reference: &str) -> Option<
     parse_reference(reference)?.project_id
 }
 
+#[cfg(test)]
 pub(in crate::commands) fn mod_slug_from_reference(reference: &str) -> Option<String> {
     parse_reference(reference)?.mod_slug
 }

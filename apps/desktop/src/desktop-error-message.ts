@@ -44,6 +44,11 @@ export function formatDesktopError(t: TranslateFn, error: unknown): string {
   const installError = formatSteamCmdError(t, value);
   if (installError !== null) return installError;
   switch (value.code) {
+    case "curseforge_reference_failed":
+      if (typeof value.reason === "string" && ["cancelled", "timeout", "invalid_page", "busy", "browser_unavailable", "desktop_required"].includes(value.reason)) {
+        return t(`errors.curseforgeReference.${value.reason}`);
+      }
+      break;
     case "windows_firewall_setup_failed":
       return formatWindowsFirewallError(t, value) ?? original;
     case "asa_curseforge_startup_failed":

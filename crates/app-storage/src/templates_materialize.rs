@@ -59,6 +59,8 @@ mod palworld;
 #[cfg(test)]
 #[path = "templates_materialize/palworld_tests.rs"]
 mod palworld_tests;
+#[path = "templates_materialize/rust.rs"]
+mod rust;
 #[path = "templates_materialize/satisfactory.rs"]
 mod satisfactory;
 #[path = "templates_materialize/unturned.rs"]
@@ -378,11 +380,14 @@ fn materialize_rust_support_files(
         .join(context.instance_id);
     let target_config_root = target_identity_root.join("cfg");
 
-    for file_name in [
-        RUST_SERVER_CFG_FILE,
-        RUST_USERS_CFG_FILE,
-        RUST_BANS_CFG_FILE,
-    ] {
+    rust::materialize_server_configuration(
+        &context.config_dir.join(RUST_SERVER_CFG_FILE),
+        &target_config_root.join(RUST_SERVER_CFG_FILE),
+        context.settings,
+        files,
+    )?;
+
+    for file_name in [RUST_USERS_CFG_FILE, RUST_BANS_CFG_FILE] {
         copy_required_module_support_file(
             &context.config_dir.join(file_name),
             &target_config_root.join(file_name),

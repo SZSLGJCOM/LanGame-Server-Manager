@@ -7,6 +7,10 @@ fn desktop_execution_and_lan_access_are_independent() {
         "app_exit_status",
         "check_app_update",
         "install_app_update",
+        "resolve_curseforge_browser_references",
+        "open_curseforge_browser_host",
+        "update_curseforge_browser_host",
+        "close_curseforge_browser_host",
     ] {
         let command = find(name).unwrap();
         assert_eq!(command.execution, Execution::Desktop, "{name}");

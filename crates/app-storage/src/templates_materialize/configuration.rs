@@ -143,6 +143,7 @@ fn write_pending_configuration_with_native_snapshot(
             snapshot.verify_unchanged(context.instance_id)?;
         }
         ark_ini::capture_previous_ownership(context, config_path, &mut files)?;
+        rust::capture_previous_ownership(context, config_path, &mut files)?;
         if !context.instance_running {
             if let Some(snapshot) = native_permissions {
                 snapshot.verify_unchanged(context.instance_id)?;

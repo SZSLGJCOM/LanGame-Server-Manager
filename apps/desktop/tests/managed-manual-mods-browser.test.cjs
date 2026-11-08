@@ -19,6 +19,9 @@ for (const viewport of [{ width: 1560, height: 900 }, { width: 960, height: 600 
     if (output) await fs.writeFile(path.join(output, `${name}.json`), JSON.stringify(report, null, 2));
     assert.equal(report.status, "passed", report.error);
     assert.deepEqual(report.browser_errors, []);
+    assert.ok(report.success_auto_dismiss_ms >= 4800 && report.success_auto_dismiss_ms < 6500);
+    assert.ok(report.warning_persistence_ms >= 5000);
+    assert.equal(report.success_manual_dismisses, 3);
     assert.equal(report.browser_exited, true);
     assert.equal(report.browser_processes_remaining, 0);
     assert.equal(report.scratch_removed, true);

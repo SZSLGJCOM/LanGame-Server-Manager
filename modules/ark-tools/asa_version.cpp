@@ -196,7 +196,7 @@ std::string CacheDirectory(const std::string& text, const std::string& executabl
 }
 
 void ValidateMap(Input input, std::size_t value_size) {
-    // This is the pinned AsaApi 2.03 Cache.h x64 serialization, also validated by
+    // This is the pinned AsaApi 2.1 Cache.h x64 serialization, also validated by
     // ark_tools_symbol_cache.rs before publication. Do not infer ABI compatibility.
     static_assert(sizeof(std::size_t) == 8);
     Reader reader(input.path);

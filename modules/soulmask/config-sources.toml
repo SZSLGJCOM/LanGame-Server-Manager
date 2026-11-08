@@ -3,6 +3,20 @@ last_verified = "2026-10-31"
 notes = "2026-10-31 isolated build04 native full lifecycle passed against fresh public build 26241597: four A2S_INFO readiness checks, native Echo SaveWorld 1 Requested receipts, normal SaveAndExit stops, backup/restore, library uninstall preservation, interrupted archive recovery and owned cleanup. This does not establish exact manual-saved content, general RCON/player behavior or network update compatibility. Historical configuration evidence: SteamCMD anonymous app_update 3017310 validate completed against the validated package on 2026-07-13. The public manifest reports buildid 24123420 and SizeOnDisk 5692879739. LanGame crosswalks Soulmask launch arguments, the RCON runtime command surface, and all 276 keys in the installed GameXishu gameplay templates. The current package adds NewYingHuoTimeLenMul, JianDuiRuQinKaiGuan, and ReleaseControlStatusCDRatio and changes the four tenacity-damage defaults to 0.5 plus ZuRenDirectCunQu to 1. The GameXishu materializer writes one managed GameXishu.json profile under WS/Saved/GameplaySettings before launch. A 2026-09-28 static comparison of installed build 25117179 found six additional gameplay coefficients, bringing each profile to 282 keys; their defaults and ranges come from the matching native metadata. This comparison does not establish the latest public Steam build or a native launch result."
 
 [[sources]]
+id = "native_lifecycle_public_build_26480169"
+kind = "runtime_probe"
+path = "native-evidence/2026-11-07-public-build-26480169-native.json"
+authority = "official_steamcmd_public_package_and_frozen_managed_backend_full_lifecycle"
+description = "2026-11-07: freshly validated app 3017310 build 26480169 passed the complete isolated backend lifecycle in 1135.97 seconds: four native readiness cycles, four correlated 85-byte Requested save receipts and four normal exit-zero stops; declared-save-root restoration of 25 files with safeguard and program/config preservation; 27 entries preserved during library uninstall; deferred archive-commit recovery and restored startup; final owned cleanup. A read-only inventory of the completed 25-file backup confirms configuration, logs and a nonempty 39,477,248-byte Worlds/Dedicated/Level01_Main/world.db from this new no-client fixture. This proves the stated file restoration scope, not existing-world/player migration, exact manual-save checkpoint reload or causal durability of a Requested receipt. Package, source, test binary, actual task wrapper and log identities are recorded. Network update/validate, general RCON, live clients and GUI were not tested."
+
+[[sources]]
+id = "public_game_xishu_build_26480169_static"
+kind = "documentation"
+path = "native-evidence/2026-11-07-public-build-26480169-static.json"
+authority = "isolated_official_package_read_only_identity_hash_and_json_comparison"
+description = "2026-11-07: freshly validated app 3017310 build 26480169 retains the exact 137-file GameXishu template inventory and both canonical template hashes recorded for build 26241597. Profiles 0, 1 and 2 each retain 282 keys, with unchanged native defaults and metadata and no missing schema keys. Shared schema defaults match profiles 0 and 2 after float32 normalization; the five existing profile-1 preset differences remain unchanged. No schema or defaults were changed. This static source does not renew Echo/RCON, saves, shutdown, restart or recovery evidence."
+
+[[sources]]
 id = "native_lifecycle_public_build_26241597"
 kind = "install_probe"
 path = "native-evidence/2026-10-31-public-build-26241597-native.json"

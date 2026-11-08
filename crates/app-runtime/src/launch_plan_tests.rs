@@ -281,6 +281,7 @@ fn rust_launch_flags_expand_with_explicit_security_opt_out() {
             args_template: vec![
                 String::from("-batchmode"),
                 String::from("{{rust.world_configfile_args}}"),
+                String::from("{{rust.use_new_navmesh_flag}}"),
                 String::from("{{rust.insecure_flag}}"),
                 String::from("{{rust.custom_launch_flags}}"),
                 String::from("+server.identity"),
@@ -368,6 +369,29 @@ fn rust_launch_flags_expand_with_explicit_security_opt_out() {
             expected_count
         );
         assert!(!plan.args.iter().any(|arg| arg.contains("server.secure")));
+    }
+
+    for (value, expected_old_count) in [
+        (serde_json::json!(true), 0),
+        (serde_json::json!(false), 1),
+        (serde_json::Value::Null, 0),
+        (serde_json::json!("false"), 0),
+    ] {
+        let mut explicit_instance = instance.clone();
+        let mut values: serde_json::Value =
+            serde_json::from_str(&instance.settings_json).expect("settings");
+        values["use_new_navmesh"] = value;
+        explicit_instance.settings_json = values.to_string();
+        let plan = build_launch_plan_with_override(&settings, &module, &explicit_instance, None)
+            .expect("build launch plan with explicit navigation setting");
+        assert_eq!(
+            plan.args
+                .iter()
+                .filter(|arg| *arg == "-useOldNavmesh")
+                .count(),
+            expected_old_count
+        );
+        assert!(!plan.args.iter().any(|arg| arg == "-useNewNavmesh"));
     }
 }
 

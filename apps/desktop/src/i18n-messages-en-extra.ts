@@ -1,4 +1,13 @@
 export const EN_US_EXTRA_MESSAGES = {
+  "errors.curseforgeReference.cancelled": "Page recognition was cancelled. No mods were added by this request.",
+  "errors.curseforgeReference.timeout": "Timed out waiting for the CurseForge page or verification. Retry and complete verification in the recognition area, or paste the Project ID from Details. See the desktop-ui log.",
+  "errors.curseforgeReference.invalid_page": "Could not confirm this page's ASA Project ID. Drop the official mod project page or paste its Project ID from Details. See the desktop-ui log.",
+  "errors.curseforgeReference.busy": "Another CurseForge page is being resolved. Complete or cancel recognition first.",
+  "errors.curseforgeReference.browser_unavailable": "Could not load or read the CurseForge page in the recognition area. Please retry. See the desktop-ui log.",
+  "servers.mods.curseforgeBrowser.adding": "Adding mods…",
+  "servers.mods.curseforgeBrowser.verification": "Complete the website verification below to continue adding mods.",
+  "servers.mods.curseforgeBrowser.page": "CurseForge page recognition area",
+  "errors.curseforgeReference.desktop_required": "Drop CurseForge pages in the desktop manager, or paste the Project ID from the page's Details here.",
   "activity.serverStartManualSaveUnavailable": "Server is running; manual saving is unavailable: {id}",
   "activity.serverStartGracefulStopUnavailable": "Server is running; normal shutdown is unavailable in the manager: {id}",
   "runtime.startWarning.gracefulStopUnavailable": "{name}: normal shutdown is unavailable in the manager.",

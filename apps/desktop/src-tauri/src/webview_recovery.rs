@@ -98,7 +98,7 @@ impl Recovery {
 /// Installs exactly one owned worker. Native callbacks only update state and wake it.
 #[cfg(windows)]
 pub(crate) fn install(app: &tauri::AppHandle, config: RecoveryConfig) -> Result<(), String> {
-    if config.window.label != "main" || app.get_webview_window("main").is_none() {
+    if config.window.label != "main" || crate::curseforge_browser::main_window(app).is_none() {
         return Err("WebView recovery requires the existing main window".into());
     }
     let recovery = Arc::new(Recovery {
@@ -138,9 +138,7 @@ pub(crate) fn install(app: &tauri::AppHandle, config: RecoveryConfig) -> Result<
 #[cfg(windows)]
 impl Recovery {
     async fn observe(self: &Arc<Self>, app: &tauri::AppHandle) -> Result<(), String> {
-        let window = app
-            .get_webview_window("main")
-            .ok_or("Main window is missing")?;
+        let window = crate::curseforge_browser::main_window(app).ok_or("Main window is missing")?;
         let generation = self.lock().snapshot.generation;
         let weak = Arc::downgrade(self);
         native::attach(

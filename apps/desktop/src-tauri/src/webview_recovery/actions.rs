@@ -50,7 +50,7 @@ pub(super) fn show_paused(app: &tauri::AppHandle) {
     {
         eprintln!("update recovery tray status: {error}");
     }
-    if let Some(window) = app.get_webview_window("main")
+    if let Some(window) = crate::curseforge_browser::main_window(app)
         && let Err(error) = window.set_title("LanGame — 界面恢复已暂停，请点击托盘重试")
     {
         eprintln!("update recovery window status: {error}");
@@ -73,9 +73,8 @@ pub(super) async fn recover(
     ensure_active(recovery, app)?;
     let previous_loads = match action {
         Action::Reload => {
-            let window = app
-                .get_webview_window("main")
-                .ok_or("Main window is missing")?;
+            let window =
+                crate::curseforge_browser::main_window(app).ok_or("Main window is missing")?;
             let generation = recovery.lock().snapshot.generation;
             native_navigation::reload(&window, generation).await?;
             None
@@ -100,7 +99,7 @@ pub(super) async fn recover(
         tray.set_tooltip(Some("LanGame Server Manager"))
             .map_err(|error| format!("restore tray status: {error}"))?;
     }
-    if let Some(window) = app.get_webview_window("main") {
+    if let Some(window) = crate::curseforge_browser::main_window(app) {
         window
             .set_title(&recovery.config.window.title)
             .map_err(|error| format!("restore window title: {error}"))?;
@@ -116,7 +115,7 @@ async fn recreate(recovery: &Arc<Recovery>, app: &tauri::AppHandle) -> Result<u6
         state.snapshot.observer_ready = false;
         generation
     };
-    if let Some(window) = app.get_webview_window("main") {
+    if let Some(window) = crate::curseforge_browser::main_window(app) {
         if let Err(error) = native::detach(&window, old_generation).await {
             // Browser exit can invalidate COM before unregistration. Local delivery
             // is disabled by detach even then; destruction must still proceed.
@@ -133,7 +132,7 @@ async fn recreate(recovery: &Arc<Recovery>, app: &tauri::AppHandle) -> Result<u6
             .map_err(|error| format!("destroy failed WebView: {error}"))?;
     }
     let deadline = tokio::time::Instant::now() + OPERATION_TIMEOUT;
-    while app.get_webview_window("main").is_some() {
+    while crate::curseforge_browser::main_window(app).is_some() {
         ensure_active(recovery, app)?;
         if tokio::time::Instant::now() >= deadline {
             return Err("WebView destruction exceeded 15 seconds".into());
@@ -170,7 +169,7 @@ impl Drop for PendingCreation {
         if let Err(error) = self.app.run_on_main_thread(move || {
             if created.swap(false, Ordering::AcqRel)
                 && owner.lock().snapshot.generation == generation
-                && let Some(window) = app.get_webview_window("main")
+                && let Some(window) = crate::curseforge_browser::main_window(&app)
                 && let Err(error) = window.destroy()
             {
                 eprintln!("destroy abandoned WebView creation: {error}");
@@ -216,8 +215,11 @@ async fn create_window(recovery: &Arc<Recovery>, app: &tauri::AppHandle) -> Resu
                 builder
                     .visible(false)
                     .on_page_load(move |webview, payload| {
-                        if matches!(payload.event(), tauri::webview::PageLoadEvent::Finished) {
-                            if let Some(window) = webview.app_handle().get_webview_window("main")
+                        if webview.label() == "main"
+                            && matches!(payload.event(), tauri::webview::PageLoadEvent::Finished)
+                        {
+                            if let Some(window) =
+                                crate::curseforge_browser::main_window(webview.app_handle())
                                 && let Err(error) = crate::webview_drop::install(&window)
                             {
                                 eprintln!(

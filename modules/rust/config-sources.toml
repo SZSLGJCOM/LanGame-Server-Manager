@@ -1,6 +1,71 @@
 status = "best_effort_verified"
-last_verified = "2026-09-28"
-notes = "The 2026-07-13 source audit observed public build 24090743 and cached build 23476634. Facepunch's Creating a Server and Rust+ documentation expose the command-line, server.cfg, query, RCON, and app.port surfaces modeled here. The 2026-09-20 lifecycle fixture uses the locally updated package build 25129933, separately recorded below; it is not a fresh-download or current-public-branch claim. LanGame-owned server/<instance-id>/cfg materialization remains the config boundary."
+last_verified = "2026-11-07"
+notes = "The November review identifies isolated app 258550 build 26498655 and verifies the current navigation flag plus four optional performance controls. After correcting WebRCON connection admission, the production lifecycle passed four start/save/quit cycles with same-run native value readback, backup restore and interrupted archive recovery; detailed scope and exit-code evidence are recorded below. The formal manual-save receipt remains Requested. The lifecycle does not test a fresh download, client join or performance. Earlier July public build 24090743/cached build 23476634 and September local build 25129933 observations remain historical evidence. LanGame-owned server/<instance-id>/cfg materialization remains the config boundary."
+
+[[sources]]
+id = "native_webrcon_admission_build_26498655"
+kind = "documentation"
+path = "reference-fixtures/2026-11-07-webrcon-connection-admission.json"
+authority = "identified_native_package_il_and_isolated_failure_analysis"
+description = "2026-11-07: identified Fleck/Facepunch.Rcon/Assembly-CSharp assemblies establish a five-new-connections-per-IP window that expires strictly after five seconds using UtcNow. Authentication success and closing a connection do not clear an unexpired attempt window; rejection closes TCP before HTTP upgrade. The initial lifecycle accepted four queries and a manual save, then failed during the shutdown save handshake, consistent with the sixth-attempt limit. Its 0xC000013A exit was test cleanup, not a spontaneous game crash or a passing normal stop. Production admission now shares endpoint slots across commands, retains failed/in-flight attempts, waits only before connecting, and never replays a command. The bounded admission budget is 5100ms plus the unchanged 8000ms wire total/3000ms idle limits. DLL, original-log and corrected-source hashes are retained in the fixture; post-fix execution is recorded separately."
+
+[[sources]]
+id = "native_lifecycle_build_26498655"
+kind = "runtime_probe"
+path = "reference-fixtures/2026-11-07-native-build-26498655-lifecycle.json"
+authority = "isolated_production_lifecycle_and_same_run_rcon_readback"
+description = "2026-11-07: frozen native test binary/source identity and raw output hashes are recorded in the fixture. The test passed in 407.30s (runner 407.34s, harness exit 0), covering initial start, restart, a 32-file backup restore and interrupted archive recovery followed by native reload, then isolated cleanup. Each of four cycles read back net.position_lod=2, net.position_lod_players=1, server.batchpackets=false and server.useplayerupdatejobs=3 through production WebRCON; each manual save was attempted once and returned Requested, without claiming exact checkpoint-content verification. All four native game exits were -1: native logs show shutdown reason quit, and verified Rust/System IL shows quit calls its own Process.Kill, which passes -1 to TerminateProcess. LanGame's normal-stop path requires complete process-tree exit before finalization and does not force a fallback stop. New RustNav generation and later saved-navmesh loading were observed. Twelve WebSocket-focused unit tests, including all six admission regressions, passed on this binary. Source RCON, the legacy navigation branch, client gameplay, network program update and performance remain outside this run."
+
+[[sources]]
+id = "facepunch_november_2026"
+kind = "documentation"
+path = "https://rust.facepunch.com/news/printed_and_polished"
+authority = "facepunch_official_november_2026_release_notes"
+description = "Published 2026-11-05, reviewed 2026-11-07. The new navigation mesh is the default and the old implementation is selected with -useOldNavmesh until its planned removal in the next patch. The existing use_new_navmesh setting keeps saved choices: false selects the old implementation, true or unset uses the new default. Its schema default is now true so an unset UI control accurately shows the new implementation; stored false values remain unchanged. The publisher documents net.position_lod and net.position_lod_players modes 0/1/2, with an initial limited official-server rollout. The four optional performance controls do not inject defaults. This source is documentation evidence; native package and runtime checks are recorded separately."
+
+[[items]]
+source = "facepunch_november_2026"
+key = "-useOldNavmesh"
+schema_key = "use_new_navmesh"
+surface = "launch_arg"
+
+[[items]]
+source = "native_november_build_26498655"
+key = "net.position_lod"
+schema_key = "network_position_lod"
+surface = "materializer"
+
+[[items]]
+source = "native_november_build_26498655"
+key = "net.position_lod_players"
+schema_key = "network_position_lod_players"
+surface = "materializer"
+
+[[items]]
+source = "native_november_build_26498655"
+key = "server.batchpackets"
+schema_key = "batch_packets"
+surface = "materializer"
+
+[[items]]
+source = "native_november_build_26498655"
+key = "server.useplayerupdatejobs"
+schema_key = "player_update_jobs"
+surface = "materializer"
+
+[[sources]]
+id = "native_november_build_26498655"
+kind = "documentation"
+path = "<validated-install-root>/RustDedicated_Data/Managed/Assembly-CSharp.dll"
+authority = "fresh_isolated_rust_dedicated_server_build_26498655_read_only_il"
+description = "2026-11-07: fresh isolated app 258550 build 26498655 on Windows; Assembly-CSharp.dll SHA256 6BD5748D015A0FEA49F920B81FF6594036096A2A36F6A8F902E26FC18FF5039E. Bootstrap.Init_Tier0 IL_0106 reads only -useOldNavmesh and stores the switch directly in ConVar.AI.useUnityNavmesh; no -useNewNavmesh parser remains in this assembly. Console registration and static initializers establish net.position_lod Int32 default 0, net.position_lod_players Int32 default 0, server.useplayerupdatejobs Int32 default 4, and server.batchpackets Boolean delegating to Network.Server.BatchPackets whose initializer sets true. The player-update help declares supported modes 3-4; its setter converts to Int32 without clamping. The UI offers only those documented modes and the official 0/1/2 LOD modes. All four registrations leave Saved false. ConVar.Server.writecfg saves only saved server-admin commands to cfg/serverauto.cfg, leaving server.cfg intact. ConsoleSystem.Index registers these four unique bare names in Server.GlobalDict; Arg.BuildCommand enables the case-insensitive fallback only for unqualified names. Both canonical and bare forms are preserved, without treating explicit global.* as aliases. No defaults are injected. Unset controls preserve existing server.cfg directives for these four keys, including values previously written by the manager; clearing an override does not reset the native value. Explicit structured values retain the existing server_cfg_extra order and precedence. This is static package evidence, not a game-start, client-join or performance result."
+
+[[sources]]
+id = "rust_optional_override_ownership"
+kind = "documentation"
+path = "../../crates/app-storage/src/templates_materialize/rust.rs"
+authority = "manager_rust_server_cfg_ownership_contract"
+description = "The four optional performance controls preserve unmanaged native assignments when unset. A Rust-only ownership record tracks the last published server_cfg_extra assignment occurrences for these controls, so clearing raw overrides removes them while clearing structured overrides retains native values. Previous raw ownership is captured before instance.json changes, including saves made while running, and advances transactionally with server.cfg. Matching occurrences from the end keeps an identical earlier structured assignment and preserves operator-edited native values. Canonical and unique bare aliases are equivalent for assignment detection; a command without arguments is a query and neither replaces nor claims a native assignment."
 
 [[sources]]
 id = "unity_player_stdout_6000_3"
@@ -656,6 +721,13 @@ kind = "documentation"
 path = "https://rust.facepunch.com/news/breach-and-clear"
 authority = "Facepunch Rust September 2026 release notes"
 description = "Published 2026-09-03, checked 2026-09-28. Documents group-size upkeep scaling and the optional -useNewNavmesh server startup switch. The default remains the old navigation mesh in the inspected build; this is not a claim about a future hotfix."
+
+[[sources]]
+id = "historical_september_navmesh_fixture"
+kind = "documentation"
+path = "reference-fixtures/2026-09-28-native_september_configuration_build_25129933.json"
+authority = "retained_historical_native_configuration_fixture"
+description = "The September opt-in fixture is retained unchanged as historical evidence. The November current-output fixture now checks the same nondefault upkeep values and the current -useOldNavmesh opt-out contract; the September artifact is no longer executed as a current launch expectation."
 
 [[sources]]
 id = "native_september_configuration_build_25129933"

@@ -27,6 +27,10 @@ pub(super) async fn verify<R: tauri::Runtime>(
     if !status.connected {
         return Err(format!("Native ARK extension handshake failed: {:?}", status.issue).into());
     }
+    println!(
+        "NATIVE_ARK_CREATURE module={} phase=handshake_verified evidence=native_protocol",
+        running.summary.module_id
+    );
     crate::commands::commands_ark_map::read_ark_map(
         runtime.state.clone(),
         crate::commands::commands_ark_map::MapInput {
@@ -35,7 +39,8 @@ pub(super) async fn verify<R: tauri::Runtime>(
             run_id,
         },
     )
-    .await?;
+    .await
+    .map_err(|error| format!("Native ARK map snapshot failed: {error}"))?;
     println!(
         "NATIVE_ARK_MAP module={} phase=snapshot_validated evidence=native_world",
         running.summary.module_id
@@ -122,9 +127,50 @@ pub(super) async fn verify<R: tauri::Runtime>(
         rex.creature.id1,
         rex.creature.id2
     );
+    let mut retained = vec![result.creature, rex.creature];
+    if running.summary.module_id == "arksurvivalascended" {
+        // v97's official UFS manifest lists this Chameleon asset alongside
+        // DinoSpawnEntriesEnigmasaur. Verify the generated class in the game,
+        // including a non-default level and wild state, before claiming support.
+        let enigmasaur = tools::spawn_ark_creature(
+            runtime.state.clone(),
+            request(
+                "/Game/ASA/Dinos/Chameleon/Chameleon_Character_BP.Chameleon_Character_BP_C",
+                73,
+                false,
+                0,
+            ),
+        )
+        .await?;
+        if enigmasaur.creature.level != 73
+            || enigmasaur.creature.class_name != "Chameleon_Character_BP_C"
+            || enigmasaur.creature.tamed
+        {
+            return Err(format!(
+                "Native Enigmasaur readback differs: class={} level={} tamed={}",
+                enigmasaur.creature.class_name,
+                enigmasaur.creature.level,
+                enigmasaur.creature.tamed
+            )
+            .into());
+        }
+        println!(
+            "NATIVE_ARK_CREATURE module={} phase=enigmasaur_readback class={} level={} wild=true id1={} id2={} x={} y={} z={} evidence=native_entity",
+            running.summary.module_id,
+            enigmasaur.creature.class_name,
+            enigmasaur.creature.level,
+            enigmasaur.creature.id1,
+            enigmasaur.creature.id2,
+            enigmasaur.creature.x,
+            enigmasaur.creature.y,
+            enigmasaur.creature.z
+        );
+        retained.push(enigmasaur.creature);
+    }
     println!(
         "NATIVE_ARK_CREATURE module={} phase=complete duplicate=one_entity unknown_class=rejected missing_owner=rejected tamed_live_player=not_available",
         running.summary.module_id
     );
+    super::ark_persistence::save(runtime, running, retained).await?;
     Ok(())
 }

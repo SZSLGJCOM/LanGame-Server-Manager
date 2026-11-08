@@ -1086,7 +1086,7 @@ button.mw-store-detail-metric {
 
 .mw-source-open-btn { flex-shrink: 0; }
 .mw-manual-feedback { display: grid; gap: 8px; }
-.mw-manual-success-bar { display: flex; align-items: center; gap: 10px; }
+.mw-manual-feedback:empty { display: none; }
 
 .mw-manual-pane > .mw-dropzone {
   display: flex;
@@ -1106,12 +1106,26 @@ button.mw-store-detail-metric {
 }
 
 .mw-dropzone-icon { width: 36px; height: 36px; opacity: 0.6; flex-shrink: 0; }
+.mw-reference-browser {
+  position: absolute;
+  inset: 1px;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  background: var(--panel);
+  color: var(--shell-text);
+  text-align: start;
+}
+.mw-reference-browser-toolbar { display: flex; align-items: center; gap: 12px; padding: 10px 12px; }
+.mw-reference-browser-toolbar > span { display: flex; align-items: center; gap: 8px; flex: 1; font-size: var(--text-secondary); }
+.mw-reference-browser-toolbar > button { flex-shrink: 0; }
+.mw-reference-browser-page { flex: 1; min-height: 0; margin: 0 8px 8px; background: #fff; }
 .mw-dropzone-copy { display: grid; gap: 8px; font-size: var(--text-secondary); overflow-wrap: anywhere; }
 .mw-dropzone-title { color: var(--shell-text); font-size: var(--text-body); font-weight: var(--font-weight-semibold); }
 .mw-manual-pane > .mw-manual-feedback { flex-shrink: 0; margin: 0 14px 14px; overflow-wrap: anywhere; }
 
 .mw-manual-pane > .mw-dropzone,
-.mw-detail-list-col.mw-dropzone {
+.mw-detail-list-col {
   position: relative;
   transition: background 160ms ease, outline-color 160ms ease;
 }

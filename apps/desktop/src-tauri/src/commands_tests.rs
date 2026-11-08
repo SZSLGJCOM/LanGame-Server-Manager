@@ -816,6 +816,8 @@ mod instance_deletion_tests;
 mod manual_runtime_tests;
 #[path = "commands_mod_reference_tests.rs"]
 mod mod_reference_tests;
+#[path = "commands_native_storage_fixture.rs"]
+mod native_storage_fixture;
 #[path = "commands_player_action_dispatch_tests.rs"]
 mod player_action_dispatch_tests;
 #[path = "commands_romestead_runtime_tests.rs"]

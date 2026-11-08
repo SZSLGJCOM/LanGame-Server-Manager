@@ -1094,6 +1094,20 @@ export const ARK_GM_CREATURE_OPTIONS: ArkGmCreatureOption[] = ARK_GM_CREATURE_TU
   category: "Official"
 }));
 
+// Official v97 package identity: see the 2026-11-07 Enigmasaur asset fixture.
+// Keep new ASA-only entries out of the legacy shared edition catalog.
+const ASA_CREATURE_ADDITIONS: ArkGmCreatureOption[] = [{
+  value: "Chameleon_Character_BP_C",
+  label: "Enigmasaur / Official / Chameleon_Character_BP_C",
+  name: "Enigmasaur",
+  category: "Official"
+}];
+const ASA_CREATURE_OPTIONS = [...ARK_GM_CREATURE_OPTIONS, ...ASA_CREATURE_ADDITIONS];
+
+export function getArkGmCreatureCatalogOptions(moduleId?: string | null): ArkGmCreatureOption[] {
+  return moduleId === "arksurvivalascended" ? ASA_CREATURE_OPTIONS : ARK_GM_CREATURE_OPTIONS;
+}
+
 type ArkGmCreatureSearchEntry = {
   option: ArkGmCreatureOption;
   text: string;
@@ -1105,9 +1119,10 @@ type ArkGmCreatureSearchEntry = {
 };
 
 let creatureSearchIndex: ArkGmCreatureSearchEntry[] | undefined;
+let asaCreatureSearchIndex: ArkGmCreatureSearchEntry[] | undefined;
 
-function buildArkGmCreatureSearchIndex(): ArkGmCreatureSearchEntry[] {
-  return ARK_GM_CREATURE_OPTIONS.map((option, order) => {
+function buildArkGmCreatureSearchIndex(options: ArkGmCreatureOption[], offset = 0): ArkGmCreatureSearchEntry[] {
+  return options.map((option, order) => {
     const aliases = arkCatalogSearchAliases(option);
     const [localizedName = "", ...localizedCategory] = aliases.split(" ");
     return {
@@ -1117,18 +1132,23 @@ function buildArkGmCreatureSearchIndex(): ArkGmCreatureSearchEntry[] {
       localizedName: normalizeArkGmCreatureSearchText(localizedName),
       localizedCategory: normalizeArkGmCreatureSearchText(localizedCategory.join(" ")),
       value: normalizeArkGmCreatureSearchText(option.value),
-      order
+      order: order + offset
     };
   });
 }
 
-export function searchArkGmCreatureOptions(query: string, limit = 80): ArkGmCreatureOption[] {
+export function searchArkGmCreatureOptions(query: string, limit = 80, moduleId?: string | null): ArkGmCreatureOption[] {
   const normalized = normalizeArkGmCreatureSearchText(query);
   if (!normalized) {
-    return ARK_GM_CREATURE_OPTIONS.slice(0, limit);
+    return getArkGmCreatureCatalogOptions(moduleId).slice(0, limit);
   }
-  creatureSearchIndex ??= buildArkGmCreatureSearchIndex();
-  return creatureSearchIndex
+  creatureSearchIndex ??= buildArkGmCreatureSearchIndex(ARK_GM_CREATURE_OPTIONS);
+  let index = creatureSearchIndex;
+  if (moduleId === "arksurvivalascended") {
+    asaCreatureSearchIndex ??= buildArkGmCreatureSearchIndex(ASA_CREATURE_ADDITIONS, ARK_GM_CREATURE_OPTIONS.length);
+    index = [...index, ...asaCreatureSearchIndex];
+  }
+  return index
     .map((entry) => ({ entry, score: scoreArkGmCreatureMatch(entry, normalized) }))
     .filter((match) => Number.isFinite(match.score))
     .sort((left, right) => left.score - right.score || left.entry.order - right.entry.order)

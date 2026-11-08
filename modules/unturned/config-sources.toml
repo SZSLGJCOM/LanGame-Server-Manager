@@ -3,6 +3,20 @@ last_verified = "2026-09-28"
 notes = "The historical anonymous app_update 1110390 validate probe recorded buildid 24080174, TargetBuildID 24080174, SizeOnDisk 1860413320, and depots 1004/1110391/1110393/1110394. The recorded 2026-09-28 first-party 3.26.3.12 source and installed build 25107012 identify 282 native fields in Config.txt dictionary blocks: 274 settings are covered, six scheduled shutdown/update controls remain maintenance-owned, and two obsolete fields are not serialized. This corrects the earlier metadata-only interpretation of dotted property paths: Browser/Server/Players are native DAT dictionaries, not literal dotted keys. Unset values retain unowned native values; clearing an unchanged managed override releases it to native difficulty/map defaults. Unknown fields/comments and externally changed released values are retained."
 
 [[sources]]
+id = "native_lifecycle_public_build_26491864"
+kind = "runtime_probe"
+path = "reference-fixtures/2026-11-07-managed_lifecycle_build_26491864.json"
+authority = "official_steamcmd_public_package_and_frozen_managed_backend_full_lifecycle"
+description = "2026-11-07: freshly validated app 1110390 build 26491864 / game 3.26.3.14 passed the complete isolated backend lifecycle in 583.1 seconds: four native readiness cycles, four correlated Requested save receipts and four normal exit-zero stops; 23-file backup restore with safeguard and program/config preservation; library uninstall preservation; deferred archive-commit recovery and restored startup; final owned cleanup. Package, frozen source, test binary and full log hashes are recorded. Actual build provenance uses the approved task-scoped Cargo wrapper with unchanged global policy. Requested does not prove causal durable persistence or exact manual-saved content reload. Network update/validate, live clients, populated players and GUI were not tested."
+
+[[sources]]
+id = "public_configuration_build_26491864_static"
+kind = "documentation"
+path = "reference-fixtures/2026-11-07-public-build-26491864-static.json"
+authority = "isolated_official_package_static_managed_metadata_and_schema_comparison"
+description = "2026-11-07: freshly validated app 1110390 build 26491864 identifies 3.26.3.14 through packaged Status.json and the native version formatter. Read-only Assembly-CSharp metadata retains 282 configuration fields across 13 categories: 274 existing controls and eight existing exclusions, with no unmapped fields or native-type metadata mismatches. Max_Packets_Per_Second and Chat_Always_Use_Rich_Text remain NonSerialized. This inventory does not execute constructors, assess native defaults or serialization, or renew console, save, restart or client evidence."
+
+[[sources]]
 id = "managed_native_manual_save_20261031"
 kind = "runtime_probe"
 path = "reference-fixtures/2026-10-31-managed_native_manual_save.json"

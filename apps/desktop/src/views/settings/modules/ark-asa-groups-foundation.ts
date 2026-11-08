@@ -211,6 +211,7 @@ export const ARK_ASA_FOUNDATION_GROUPS: Record<string, ArkGroupSpec[]> = {
         "disable_structure_decay_pve",
         "override_structure_platform_prevention",
         "prevent_template_on_saddle",
+        "limit_replicators_per_saddle",
         "needs_power_to_activate_aquatic_compartments",
         "b_ignore_structures_prevention_volumes"
       ]
@@ -302,6 +303,24 @@ export const ARK_ASA_FOUNDATION_GROUPS: Record<string, ArkGroupSpec[]> = {
       keys: [
         "limit_generators_num",
         "limit_generators_range"
+      ]
+    },
+    {
+      id: "gacha",
+      titleKey: "ark.settings.groups.limits.gacha.title",
+      fallbackTitle: "Gacha feeding penalty",
+      layoutClass: "ark-limits-gacha",
+      keys: ["num_gachas_per_tribe_for_penalty", "gachas_over_tribe_limit_penalty"]
+    },
+    {
+      id: "cloning",
+      titleKey: "ark.settings.groups.limits.cloning.title",
+      fallbackTitle: "Cloning chamber limits",
+      layoutClass: "ark-limits-cloning",
+      keys: [
+        "limit_cloning_chambers_range",
+        "limit_cloning_chambers_in_range_num",
+        "limit_cloning_chambers_in_tribe_num"
       ]
     }
   ],

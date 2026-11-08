@@ -1282,7 +1282,7 @@ pub(super) fn normalize_manual_mod_source_paths(
     Ok(normalized)
 }
 
-pub(super) fn normalize_manual_mod_references(
+pub(crate) fn normalize_manual_mod_references(
     references: Vec<String>,
 ) -> Result<Vec<String>, String> {
     let mut seen = HashSet::new();
@@ -1893,7 +1893,7 @@ fn extract_last_digit_run(value: &str) -> Option<String> {
 }
 
 pub(super) async fn resolve_curseforge_project_reference(
-    client: &reqwest::Client,
+    _client: &reqwest::Client,
     enablement: &app_core::ModuleModEnablementSpec,
     reference: &str,
 ) -> Result<(String, Option<String>), String> {
@@ -1910,39 +1910,14 @@ pub(super) async fn resolve_curseforge_project_reference(
     if let Some(id) = extract_curseforge_project_id_from_reference(reference) {
         return Ok((id, None));
     }
-    let game_id = enablement
-        .reference_game_id
-        .ok_or_else(|| String::from("module does not declare a CurseForge game id"))?;
-    let slug = extract_curseforge_mod_slug(reference)
-        .ok_or_else(|| String::from("CurseForge link did not include a project id or mod slug"))?;
-    let url = format!("https://api.curse.tools/v1/cf/mods/search?gameId={game_id}&slug={slug}");
-    let request = client
-        .get(url)
-        .build()
-        .map_err(|error| format!("failed to prepare CurseForge mod link request: {error}"))?;
-    let response = app_network::read_public_bytes(
-        client,
-        request,
-        Duration::from_secs(12),
-        4 * 1024 * 1024,
-        app_network::SourcePreference::InternationalFirst,
-    )
-    .await
-    .map_err(|error| format!("failed to resolve CurseForge mod link: {error}"))?;
-    let body = serde_json::from_slice::<CurseToolsSearchResponse>(&response.bytes)
-        .map_err(|error| format!("failed to read CurseForge mod metadata: {error}"))?;
-    let item = body
-        .data
-        .into_iter()
-        .next()
-        .ok_or_else(|| format!("no CurseForge mod matched `{slug}`"))?;
-    Ok((item.id.to_string(), item.name))
+    Err(crate::curseforge_browser::browser_error("desktop_required"))
 }
 
 pub(super) fn extract_curseforge_project_id_from_reference(reference: &str) -> Option<String> {
     super::mod_curseforge_reference::project_id_from_reference(reference)
 }
 
+#[cfg(test)]
 pub(super) fn extract_curseforge_mod_slug(reference: &str) -> Option<String> {
     super::mod_curseforge_reference::mod_slug_from_reference(reference)
 }

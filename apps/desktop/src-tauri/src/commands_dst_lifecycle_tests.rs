@@ -363,6 +363,41 @@ impl Drop for Fixture {
 }
 
 #[tokio::test]
+async fn dst_save_readiness_uses_the_native_start_barrier_without_server_ready_text() {
+    for loaded in [false, true] {
+        let mut fixture = Fixture::new("normal").await;
+        if loaded {
+            fixture.ready().await.unwrap();
+        }
+        fixture.register().await;
+        let details = read_instance_details(&fixture.storage.paths, &fixture.details.summary.id)
+            .await
+            .unwrap();
+        let readiness = crate::commands::commands_world_save::readiness::snapshot(
+            &fixture.state,
+            &fixture.storage.paths,
+            &details.summary.id,
+        )
+        .await
+        .unwrap()
+        .unwrap();
+        assert_eq!(readiness.world_ready, Some(loaded));
+        let admission = crate::commands::commands_world_save::readiness::require_ready(
+            &fixture.state,
+            &fixture.storage.paths,
+            &details,
+        )
+        .await;
+        assert_eq!(admission.is_ok(), loaded, "{admission:?}");
+        for process in &details.active_run.as_ref().unwrap().processes {
+            let log = fs::read_to_string(process.log_path.as_ref().unwrap()).unwrap();
+            assert!(!log.contains("Server ready"));
+            assert!(!log.lines().any(|line| line.trim() == "c_save()"));
+        }
+    }
+}
+
+#[tokio::test]
 async fn dst_immediate_save_uses_one_stock_master_command_without_observers_or_shutdown() {
     for island in [false, true] {
         let mut fixture = Fixture::new_with_layout("normal", island).await;

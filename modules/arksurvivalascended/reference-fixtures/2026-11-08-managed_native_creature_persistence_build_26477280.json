@@ -1,0 +1,201 @@
+{
+  "schema_version": 1,
+  "module_id": "arksurvivalascended",
+  "evidence_classification": "isolated_managed_backend_native_creature_persistence",
+  "verified_on": "2026-11-08",
+  "verification_timezone": "Asia/Shanghai",
+  "status": "passed",
+  "package": {
+    "steam_app_id": 2430930,
+    "steam_build_id": "26477280",
+    "native_version_banner": "97.5",
+    "executable_sha256": "8cd7d552c22c7fac118e798e891d6167efc0045bc1f31d6bf19d9a557a73d579",
+    "framework": "AsaApi 2.1",
+    "minimum_api_version": 2.1
+  },
+  "build": {
+    "exit_code": 0,
+    "source_identity_sha256": "9e1e5f4aa3354e4a8d1a91def685652a3e7e6706a2cacc819478c4f1c05e13ce",
+    "source_manifest_sha256": "f799d53c0c3cc676fed2e6597a9a84cca8a44e2f8211e5e07563265fef1bed73",
+    "source_files_verified": 4514,
+    "test_binary_sha256": "0e24ff85460fbbe3db817e4d27c5dc1049a62ef9ff2dce36e6d5a0115e607595"
+  },
+  "test": {
+    "selector": "commands::tests::manual_runtime_tests::native_lifecycle_tests::native_game_tools",
+    "started_utc": "2026-11-08T03:30:23Z",
+    "completed_utc": "2026-11-08T03:37:22Z",
+    "duration_seconds": 418.54,
+    "exit_code": 0,
+    "tests_passed": 1,
+    "tests_failed": 0,
+    "settings": {
+      "dino_resistance_multiplier": 0,
+      "dino_damage_multiplier": 0,
+      "program_update": {
+        "policy": "pinned"
+      },
+      "num_gachas_per_tribe_for_penalty": -1,
+      "gachas_over_tribe_limit_penalty": 2,
+      "limit_replicators_per_saddle": 0,
+      "limit_cloning_chambers_range": 7500,
+      "limit_cloning_chambers_in_range_num": -1,
+      "limit_cloning_chambers_in_tribe_num": 45
+    },
+    "assertions": {
+      "oneTestPassed": true,
+      "extensionHandshake": true,
+      "extensionInstalled": true,
+      "mapSnapshotValidated": true,
+      "enigmasaurReadback": true,
+      "creatureContractComplete": true,
+      "gmCatalogPassed": true,
+      "primaryWorldWritten": true,
+      "threePersistedCreatures": true,
+      "persistenceComplete": true,
+      "twoNormalStops": true
+    },
+    "initial_run_id": 1,
+    "restarted_run_id": 2,
+    "native_markers": [
+      "NATIVE_GM_CATALOG module=arksurvivalascended phase=begin",
+      "NATIVE_LIFECYCLE module=arksurvivalascended phase=package_copy bytes=12314762895 elapsed_ms=17753 acquisition=existing_local_package creation_scope=storage source_provenance=unverified",
+      "NATIVE_LIFECYCLE module=arksurvivalascended phase=instance_created elapsed_ms=21687 program_mode=Independent preparation=isolated_copy library=preserved ownership=verified effective_root=fixture/n-ae041c6b5e75ecc1\\runtime creation_scope=storage",
+      "NATIVE_ARK_CREATURE module=arksurvivalascended phase=extension_installed isolated=true",
+      "NATIVE_LIFECYCLE module=arksurvivalascended phase=prestart_update cycle=initial events=pinned persisted_evidence=verified download_bytes=not_measured",
+      "NATIVE_LIFECYCLE module=arksurvivalascended phase=started cycle=initial processes=1 bind=default firewall=non_elevated_policy elapsed_ms=173498",
+      "NATIVE_LIFECYCLE module=arksurvivalascended phase=native_ready cycle=initial declared_probes=passed variant=isolated",
+      "NATIVE_GM module=arksurvivalascended phase=rcon_endpoint ownership=verified",
+      "NATIVE_GM module=arksurvivalascended phase=read_only_rcon_preflight elapsed_ms=156 outcome=passed",
+      "NATIVE_GM module=arksurvivalascended tool=ark_set_time phase=begin",
+      "NATIVE_GM module=arksurvivalascended tool=ark_set_time outcome=passed evidence=native_rcon_response_no_client_world_observation",
+      "NATIVE_GM module=arksurvivalascended tool=ark_destroy_wild_dinos phase=begin",
+      "NATIVE_GM module=arksurvivalascended tool=ark_destroy_wild_dinos outcome=passed evidence=native_rcon_response_no_client_world_observation",
+      "NATIVE_ARK_CREATURE module=arksurvivalascended phase=handshake_verified evidence=native_protocol",
+      "NATIVE_ARK_MAP module=arksurvivalascended phase=snapshot_validated evidence=native_world",
+      "NATIVE_ARK_CREATURE module=arksurvivalascended phase=spawn_readback class=Dodo_Character_BP_C level=37 id1=434881529 id2=139161559 x=0 y=0 z=10000 evidence=native_entity",
+      "NATIVE_ARK_CREATURE module=arksurvivalascended phase=default_creature class=Rex_Character_BP_C level=150 id1=448206822 id2=430021980 evidence=native_entity",
+      "NATIVE_ARK_CREATURE module=arksurvivalascended phase=enigmasaur_readback class=Chameleon_Character_BP_C level=73 wild=true id1=272702727 id2=2479066 x=0 y=0 z=10000 evidence=native_entity",
+      "NATIVE_ARK_CREATURE module=arksurvivalascended phase=complete duplicate=one_entity unknown_class=rejected missing_owner=rejected tamed_live_player=not_available",
+      "NATIVE_ARK_PERSISTENCE module=arksurvivalascended phase=primary_world_written creatures=3 bytes=16506880 sha256=8f4c72c768a8a57cc6eaf8e0ad1e03a088e6a5098e9c9383514f9f230e08fbb3 save_receipt=Some(Requested) content_readback=pending_restart",
+      "NATIVE_STOP_RESULT module=arksurvivalascended cycle=initial run_id=1 process=main exit_code=Some(0) crash_flag=false status=stopped",
+      "NATIVE_LIFECYCLE module=arksurvivalascended phase=cycle_stopped cycle=initial run_id=1 active_run=none",
+      "NATIVE_LIFECYCLE module=arksurvivalascended phase=prestart_update cycle=restart events=pinned persisted_evidence=verified download_bytes=not_measured",
+      "NATIVE_LIFECYCLE module=arksurvivalascended phase=started cycle=restart processes=1 bind=default firewall=non_elevated_policy elapsed_ms=131907",
+      "NATIVE_LIFECYCLE module=arksurvivalascended phase=native_ready cycle=restart declared_probes=passed variant=isolated",
+      "NATIVE_ARK_PERSISTENCE module=arksurvivalascended phase=restart_readback class=Dodo_Character_BP_C level=37 tamed=false team=1 id1=434881529 id2=139161559 evidence=native_entity spawn_replayed=false",
+      "NATIVE_ARK_PERSISTENCE module=arksurvivalascended phase=restart_readback class=Rex_Character_BP_C level=150 tamed=false team=7 id1=448206822 id2=430021980 evidence=native_entity spawn_replayed=false",
+      "NATIVE_ARK_PERSISTENCE module=arksurvivalascended phase=restart_readback class=Chameleon_Character_BP_C level=73 tamed=false team=5 id1=272702727 id2=2479066 evidence=native_entity spawn_replayed=false",
+      "NATIVE_STOP_RESULT module=arksurvivalascended cycle=restart run_id=2 process=main exit_code=Some(0) crash_flag=false status=stopped",
+      "NATIVE_LIFECYCLE module=arksurvivalascended phase=cycle_stopped cycle=restart run_id=2 active_run=none",
+      "NATIVE_ARK_PERSISTENCE module=arksurvivalascended phase=complete fresh_managed_run=true normal_stop=true",
+      "NATIVE_LIFECYCLE module=arksurvivalascended phase=complete scope=production_start_stop cleanup=passed gui=not_tested",
+      "NATIVE_GM_CATALOG module=arksurvivalascended phase=passed elapsed_ms=414874"
+    ]
+  },
+  "creatures_reloaded": [
+    {
+      "class_name": "Dodo_Character_BP_C",
+      "level": 37,
+      "wild": true,
+      "team": 1,
+      "id1": 434881529,
+      "id2": 139161559,
+      "spawn_replayed": false
+    },
+    {
+      "class_name": "Rex_Character_BP_C",
+      "level": 150,
+      "wild": true,
+      "team": 7,
+      "id1": 448206822,
+      "id2": 430021980,
+      "spawn_replayed": false
+    },
+    {
+      "class_name": "Chameleon_Character_BP_C",
+      "level": 73,
+      "wild": true,
+      "team": 5,
+      "id1": 272702727,
+      "id2": 2479066,
+      "spawn_replayed": false
+    }
+  ],
+  "world_save": {
+    "map": "TheIsland_WP",
+    "save_receipt": "requested",
+    "first_observed_primary_change": {
+      "bytes": 16506880,
+      "sha256": "8f4c72c768a8a57cc6eaf8e0ad1e03a088e6a5098e9c9383514f9f230e08fbb3",
+      "scope": "observed primary change following the save request, not a durable completion receipt"
+    },
+    "after_first_normal_stop": {
+      "bytes": 18587648,
+      "sha256": "6e9ff4bed953110c3dd1ffa6eb1f41e0616a8c6319983905c9e7fb7c61713b90",
+      "stable_during_copy": true,
+      "retained": true
+    },
+    "durable_entity_evidence": "original native DinoID1/DinoID2 read back in a new managed run; no Spawn or DestroyWildDinos on restart"
+  },
+  "data_protection": {
+    "instances": 9,
+    "files": 40998,
+    "bytes": 37990848608,
+    "backup_database_integrity": "ok",
+    "checked_utc": "2026-11-08T03:38:52Z",
+    "files_changed": 0,
+    "backup_retained": true,
+    "remaining_owned_native_processes": 0,
+    "remaining_scheduled_tasks": 0
+  },
+  "artifacts": [
+    {
+      "name": "native-result.json",
+      "bytes": 1525,
+      "sha256": "ec171e7293da46be177b0ede615e1fce46b9d345f4f692e9369943a471c01b93"
+    },
+    {
+      "name": "asa-gm-native.stdout",
+      "bytes": 4658,
+      "sha256": "7335e9e50a878759b3489c0bd3b5cbaf03c28ef48ef29c4ba1e68ed83589dca7"
+    },
+    {
+      "name": "asa-gm-native.stderr",
+      "bytes": 57919,
+      "sha256": "f1fe1f1adf1fbcb29f520a2a10560f643a0d8a13fbfa5e8b957e1bb1fc08dc44"
+    },
+    {
+      "name": "installed-payload.json",
+      "bytes": 1441,
+      "sha256": "2d7ba8f781efd104d6304bdc515e2efba9affe70d9fd206a75668a717242d484"
+    },
+    {
+      "name": "ark-creature-persistence.json",
+      "bytes": 908,
+      "sha256": "4aa148a36fdb64581982c8d72ed3a3d1f77b02ad3d7ecb89ac3244ff27fbf788"
+    },
+    {
+      "name": "world-inventory.json",
+      "bytes": 311,
+      "sha256": "ff8964ba11b04cd85fd64c050ec5c223eab7beefc05a3726e763c2611fe78c5e"
+    },
+    {
+      "name": "protected-after.json",
+      "bytes": 100,
+      "sha256": "034253ce31f1c32ef6abbba4bcbc1e8574ccd164c61c05eacaf20099649c0822"
+    },
+    {
+      "name": "final-cleanup.json",
+      "bytes": 981,
+      "sha256": "13a64b7d52912a0d9db69af9714b9d3fd0b82b7c7f95cd108c753de5e6e4c4ac"
+    }
+  ],
+  "scope_limits": [
+    "Fresh isolated world, no migration of existing populated saves.",
+    "Only the three recorded wild creatures were tested; online-player taming was deferred at the user's request and tamed-creature persistence was not exercised.",
+    "Dino damage and resistance multipliers were zero in this controlled fixture; this does not verify their gameplay defaults.",
+    "Persistence was tested across a normal save/stop/restart, not an abrupt crash or power loss.",
+    "No desktop release or dependency mirror publication was performed during this follow-up; the prior AsaApi 2.1 mirror remains the referenced dependency release.",
+    "The module's historical settings/default last_verified date is unchanged."
+  ]
+}

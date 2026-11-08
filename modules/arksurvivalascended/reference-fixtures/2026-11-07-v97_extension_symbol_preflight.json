@@ -1,0 +1,164 @@
+{
+  "schema_version": 1,
+  "module_id": "arksurvivalascended",
+  "evidence_classification": "read_only_extension_prerequisite_preflight",
+  "reviewed_on": "2026-11-07",
+  "verification_timezone": "Asia/Shanghai",
+  "status": "blocked_upstream",
+  "steam_app_id": 2430930,
+  "steam_build_id": "26477280",
+  "executable": {
+    "relative_path": "ShooterGame/Binaries/Win64/ArkAscendedServer.exe",
+    "sha256": "8cd7d552c22c7fac118e798e891d6167efc0045bc1f31d6bf19d9a557a73d579"
+  },
+  "upstream_api_release": {
+    "metadata_url": "https://api.github.com/repos/ArkServerApi/AsaApi/releases/latest",
+    "release_url": "https://github.com/ArkServerApi/AsaApi/releases/tag/2.03",
+    "tag": "2.03",
+    "draft": false,
+    "prerelease": false,
+    "published_at_utc": "2026-07-29T16:29:05Z",
+    "asset_name": "AsaApi_2.03.zip",
+    "asset_size_bytes": 28800286,
+    "matches_current_manager_dependency_pin": true
+  },
+  "matching_symbol_requests": {
+    "url_pattern": "https://{provider}/cache/{executable_sha256}.zip",
+    "user_agent": "LanGame-Server-Manager/ARK-Symbols",
+    "production_source": "apps/desktop/src-tauri/src/ark_tools_symbols.rs",
+    "production_max_archive_bytes": 805306368,
+    "providers": [
+      {
+        "provider": "cdn.pelayori.com",
+        "head_status": 404,
+        "get_status": 404,
+        "content_length_bytes": 392,
+        "get_error_code": "NoSuchKey"
+      },
+      {
+        "provider": "cdn.shadowhunter.co.za",
+        "head_status": 404,
+        "get_status": 404,
+        "content_length_bytes": 392,
+        "get_error_code": "NoSuchKey"
+      },
+      {
+        "provider": "cdn.shadowhunter-systems.co.za",
+        "head_status": 404,
+        "get_status": 404,
+        "content_length_bytes": 392,
+        "get_error_code": "NoSuchKey"
+      }
+    ],
+    "archive_downloaded": false,
+    "archive_format_and_symbol_keys_checked": false
+  },
+  "historical_control": {
+    "method": "HEAD",
+    "provider": "cdn.pelayori.com",
+    "executable_sha256": "9bbd9bfefb732ede1294aa15da941f7198b1570c272e5deca8909e9a1ce3374b",
+    "same_url_pattern": true,
+    "status": 200,
+    "content_length_bytes": 17382972,
+    "archive_downloaded_or_reused": false
+  },
+  "latest_read_only_recheck": {
+    "started_utc": "2026-11-07T07:58:57.4193731Z",
+    "completed_utc": "2026-11-07T07:59:01.5554083Z",
+    "executable_identity_rechecked_and_unchanged": true,
+    "user_agent": "LanGame-Server-Manager/ARK-Symbols",
+    "methods": ["HEAD", "GET"],
+    "get_range": "bytes=0-4095",
+    "get_body_limit_bytes": 4096,
+    "providers": [
+      {
+        "provider": "cdn.pelayori.com",
+        "head_status": 404,
+        "get_status": 404,
+        "content_length_bytes": 392,
+        "get_body_bytes_read": 392,
+        "get_error_code": "NoSuchKey",
+        "get_body_sha256": "4f3a432d4e3d62f9c78a3c0f8c69c482121682d89faee314c2014d2cabef8dfa"
+      },
+      {
+        "provider": "cdn.shadowhunter.co.za",
+        "head_status": 404,
+        "get_status": 404,
+        "content_length_bytes": 392,
+        "get_body_bytes_read": 392,
+        "get_error_code": "NoSuchKey",
+        "get_body_sha256": "4859597fb4b7378567b0c2a6e3b6d1b5d81707e076bd6c0cea2a0ed0a840bc8a"
+      },
+      {
+        "provider": "cdn.shadowhunter-systems.co.za",
+        "head_status": 404,
+        "get_status": 404,
+        "content_length_bytes": 392,
+        "get_body_bytes_read": 392,
+        "get_error_code": "NoSuchKey",
+        "get_body_sha256": "79d9f422a4f82fd65aed6eee576737163ce0fd418e045e9348b7c392b3af9885"
+      }
+    ],
+    "archive_downloaded": false,
+    "historical_cache_requested": false,
+    "production_installer_or_native_test_repeated": false,
+    "report_artifact": "asa-symbols-recheck-20261107T075857Z.json"
+  },
+  "separate_native_evidence": {
+    "normal_server_start_at_initial_preflight": "pending_native_verification",
+    "normal_server_lifecycle": {
+      "fixture": "2026-11-07-managed_native_lifecycle_build_26477280.json",
+      "completed_utc": "2026-11-07T06:55:19Z",
+      "exit_code": 0,
+      "exactly_one_test_passed": true,
+      "scope": "four_managed_cycles_without_optional_extension_with_recorded_limits"
+    },
+    "production_game_tools_attempt": {
+      "fixture": "2026-11-07-managed_native_game_tools_build_26477280.json",
+      "completed_utc": "2026-11-07T06:56:21Z",
+      "exit_code": 101,
+      "exactly_one_test_passed": false,
+      "outcome": "actual_matching_symbol_prepare_failed_with_three_http_404_responses"
+    },
+    "interpretation": "These are independent native reports added after the initial preflight. Neither the initial HTTP preflight nor the later read-only recheck executed a game or the production installer."
+  },
+  "artifacts": [
+    {
+      "name": "symbols-v97-head.json",
+      "sha256": "ee4cac66d21dd9ecc40a8a8b08cceb9760141c63a3d13645fde8b7b9215e6da5",
+      "report_last_written_utc": "2026-11-07T04:05:25.4733877Z"
+    },
+    {
+      "name": "symbols-v97-get.json",
+      "sha256": "6c7361e5ca4c148ab40fed4eec37fa64d63c3b2864b8f42daf19749e4b616317",
+      "report_last_written_utc": "2026-11-07T04:06:37.8904461Z"
+    },
+    {
+      "name": "symbols-historical-control.json",
+      "sha256": "e17a7295011d7a653cdf1834d8fed04267cb947258058318f789e62d434518de",
+      "report_last_written_utc": "2026-11-07T04:07:03.0000750Z"
+    },
+    {
+      "name": "asa-symbols-recheck-20261107T075857Z.json",
+      "size_bytes": 5911,
+      "sha256": "9703c82059b18a5fd249121d830f49b953efdfe317b43af7437773ea774b2bdb",
+      "requests_completed_utc": "2026-11-07T07:59:01.5554083Z"
+    }
+  ],
+  "conclusion": {
+    "matching_symbol_cache": "unavailable_from_all_declared_providers_at_review",
+    "native_extension_and_gm_acceptance": "blocked_by_missing_upstream_prerequisite",
+    "enigmasaur_native_spawn_readback": "blocked_by_missing_upstream_prerequisite",
+    "normal_server_start_without_extension": "passed_in_separate_native_lifecycle_evidence",
+    "normal_server_lifecycle_fixture": "2026-11-07-managed_native_lifecycle_build_26477280.json",
+    "asa_api_engine_layout_compatibility": "not_established"
+  },
+  "scope_limits": [
+    "HTTP responses and official release metadata only; this preflight did not execute the production installer, install an extension, modify the game package, or start a server.",
+    "No matching archive was available, so its cache serialization, required symbol keys, and UE5.8 runtime compatibility could not be inspected.",
+    "The historical 200 response is a same-path availability control and does not establish compatibility of historical offsets with this executable.",
+    "The optional extension blocker does not establish failure of ordinary server startup or RCON. Separate current-build native lifecycle acceptance passed without the extension; its fixture retains Steam initialization, firewall, save-checkpoint and client-connectivity limits.",
+    "The Enigmasaur asset identity fixture remains static evidence, not successful native spawning or client-observed behavior.",
+    "Provider availability can change after this dated observation. Historical native acceptance and module last_verified are not renewed."
+  ]
+}

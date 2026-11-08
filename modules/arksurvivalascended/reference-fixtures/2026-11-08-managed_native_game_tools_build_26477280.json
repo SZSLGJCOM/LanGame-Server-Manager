@@ -1,0 +1,258 @@
+{
+  "schema_version": 1,
+  "module_id": "arksurvivalascended",
+  "evidence_classification": "isolated_managed_backend_native_game_tools",
+  "attempted_on": "2026-11-08",
+  "verification_timezone": "Asia/Shanghai",
+  "status": "passed",
+  "package": {
+    "steam_app_id": 2430930,
+    "steam_build_id": "26477280",
+    "native_version_banner": "97.5",
+    "executable_sha256": "8cd7d552c22c7fac118e798e891d6167efc0045bc1f31d6bf19d9a557a73d579",
+    "copied_payload_bytes": 12314762895
+  },
+  "framework": {
+    "version": "AsaApi 2.1",
+    "release_url": "https://github.com/ArkServerApi/AsaApi/releases/tag/2.1",
+    "published_utc": "2026-11-08T02:23:08Z",
+    "source_commit": "08eef96decb0c626ff5f187dca18a98603b41a46",
+    "runtime_archive_sha256": "58d626b34c85e08e85d3dc076f1f18420150752802e1d227bed370182c84f3b6",
+    "sdk_archive_sha256": "724e67648f73d003fdded2e17a3dbe420a27d285b666692daa43bf5f06c57e81",
+    "installed_files": [
+      {
+        "path": "ArkApi/AsaApi.dll",
+        "bytes": 7335424,
+        "sha256": "d46af90afab50d36679f8ea4c8b7c1b2e6057ec4ad44963f00244ed8f3969a62"
+      },
+      {
+        "path": "version.dll",
+        "bytes": 421888,
+        "sha256": "cc7b650f00509b763d4935841e7feb16d06062c9e7c7aa79ef2bf4e14ce54454"
+      },
+      {
+        "path": "ArkApi/Plugins/LgsmArkTools/LgsmArkTools.dll",
+        "bytes": 139264,
+        "sha256": "d6bea5743d4e379b4efe7bd9a848f4c0b75bb938e3d7dd59bcba2cac4f7f7026"
+      },
+      {
+        "path": "ArkApi/Plugins/LgsmArkTools/PluginInfo.json",
+        "bytes": 204,
+        "sha256": "f325fc163912f772f89d5f58c476ee156c3805838f5b79a8ab45ce8d27bd4f96"
+      }
+    ],
+    "minimum_api_version": 2.1,
+    "matching_cache": {
+      "executable_sha256": "8cd7d552c22c7fac118e798e891d6167efc0045bc1f31d6bf19d9a557a73d579",
+      "metadata_version": 1,
+      "generation_selected": true,
+      "provider": "https://cdn.pelayori.com/cache/",
+      "archive_sha256": "40bbeda36aef053a6a8b8c9c2707074e842fa9426b2552ffa2e1c2b735459bfa",
+      "archive_bytes": 23137972,
+      "format_unchanged_from_2_03": true
+    }
+  },
+  "build": {
+    "cargo_command": "test",
+    "cargo_arguments": [
+      "-p",
+      "langame-desktop",
+      "--bin",
+      "langame-desktop",
+      "--features",
+      "custom-protocol",
+      "--locked",
+      "--no-run"
+    ],
+    "exit_code": 0,
+    "source_identity_sha256": "945f367f5d74e58e1a173e86dbbffc5e4e714d25247f59b359dd40a292b55816",
+    "source_manifest_sha256": "0dbffe79df12d2cb3614553f4f4091c910a2e8e8437a33318ab274857f17e674",
+    "source_files_verified": 4512,
+    "test_binary_sha256": "3b6aff6d505e6e8cff903e9a574048729b9fd094d93d7ca6d2e27a5ca1f77ed2",
+    "test_binary_bytes": 207773696,
+    "actual_entry_point": "task-scoped invoke-task-cargo.ps1",
+    "entry_point_sha256": "3ed87587c3b62d026d90eee052dda4cc725d77cdc8fbff891a65b54989d8bb01",
+    "task_only_resource_override": {
+      "minimum_build_memory_gib": 12,
+      "maximum_compiler_jobs": 1,
+      "host_reserve_gib": 8,
+      "global_policy_modified": false
+    },
+    "gm_commands_sha256": "4b4148623e8bb40a52a1bb7bdffc5b552d97cee493f054dc9fe381553c1e562a"
+  },
+  "test": {
+    "selector": "commands::tests::manual_runtime_tests::native_lifecycle_tests::native_game_tools",
+    "started_utc": "2026-11-08T02:46:30Z",
+    "completed_utc": "2026-11-08T02:50:50Z",
+    "duration_seconds": 259.17,
+    "exit_code": 0,
+    "tests_passed": 1,
+    "tests_failed": 0,
+    "settings": {
+      "program_update": {
+        "policy": "pinned"
+      },
+      "num_gachas_per_tribe_for_penalty": -1,
+      "gachas_over_tribe_limit_penalty": 2,
+      "limit_replicators_per_saddle": 0,
+      "limit_cloning_chambers_range": 7500,
+      "limit_cloning_chambers_in_range_num": -1,
+      "limit_cloning_chambers_in_tribe_num": 45
+    },
+    "assertions": {
+      "oneTestPassed": true,
+      "extensionHandshake": true,
+      "extensionInstalled": true,
+      "mapSnapshotValidated": true,
+      "enigmasaurReadback": true,
+      "creatureContractComplete": true,
+      "gmCatalogPassed": true
+    },
+    "native_markers": [
+      "NATIVE_GM_CATALOG module=arksurvivalascended phase=begin",
+      "NATIVE_LIFECYCLE module=arksurvivalascended phase=package_copy bytes=12314762895 elapsed_ms=17441 acquisition=existing_local_package creation_scope=storage source_provenance=unverified",
+      "NATIVE_LIFECYCLE module=arksurvivalascended phase=instance_created elapsed_ms=23551 program_mode=Independent preparation=isolated_copy library=preserved ownership=verified effective_root=fixture/n-a1d2e28163bb88ae\\runtime creation_scope=storage",
+      "NATIVE_ARK_CREATURE module=arksurvivalascended phase=extension_installed isolated=true",
+      "NATIVE_LIFECYCLE module=arksurvivalascended phase=prestart_update cycle=initial events=pinned persisted_evidence=verified download_bytes=not_measured",
+      "NATIVE_LIFECYCLE module=arksurvivalascended phase=started cycle=initial processes=1 bind=default firewall=non_elevated_policy elapsed_ms=172201",
+      "NATIVE_LIFECYCLE module=arksurvivalascended phase=native_ready cycle=initial declared_probes=passed variant=isolated",
+      "NATIVE_GM module=arksurvivalascended phase=rcon_endpoint ownership=verified",
+      "NATIVE_GM module=arksurvivalascended phase=read_only_rcon_preflight elapsed_ms=122 outcome=passed",
+      "NATIVE_GM module=arksurvivalascended tool=ark_set_time phase=begin",
+      "NATIVE_GM module=arksurvivalascended tool=ark_set_time outcome=passed evidence=native_rcon_response_no_client_world_observation",
+      "NATIVE_GM module=arksurvivalascended tool=ark_destroy_wild_dinos phase=begin",
+      "NATIVE_GM module=arksurvivalascended tool=ark_destroy_wild_dinos outcome=passed evidence=native_rcon_response_no_client_world_observation",
+      "NATIVE_ARK_CREATURE module=arksurvivalascended phase=handshake_verified evidence=native_protocol",
+      "NATIVE_ARK_MAP module=arksurvivalascended phase=snapshot_validated evidence=native_world",
+      "NATIVE_ARK_CREATURE module=arksurvivalascended phase=spawn_readback class=Dodo_Character_BP_C level=37 id1=253109015 id2=209101771 x=0 y=0 z=10000 evidence=native_entity",
+      "NATIVE_ARK_CREATURE module=arksurvivalascended phase=default_creature class=Rex_Character_BP_C level=150 id1=189342286 id2=430901290 evidence=native_entity",
+      "NATIVE_ARK_CREATURE module=arksurvivalascended phase=enigmasaur_readback class=Chameleon_Character_BP_C level=73 wild=true id1=160596859 id2=191698155 x=0 y=0 z=10000 evidence=native_entity",
+      "NATIVE_ARK_CREATURE module=arksurvivalascended phase=complete duplicate=one_entity unknown_class=rejected missing_owner=rejected tamed_live_player=not_available",
+      "NATIVE_STOP_RESULT module=arksurvivalascended cycle=initial run_id=1 process=main exit_code=Some(0) crash_flag=false status=stopped",
+      "NATIVE_LIFECYCLE module=arksurvivalascended phase=cycle_stopped cycle=initial run_id=1 active_run=none",
+      "NATIVE_LIFECYCLE module=arksurvivalascended phase=complete scope=production_start_stop cleanup=passed gui=not_tested",
+      "NATIVE_GM_CATALOG module=arksurvivalascended phase=passed elapsed_ms=255467"
+    ]
+  },
+  "enigmasaur": {
+    "blueprint": "/Game/ASA/Dinos/Chameleon/Chameleon_Character_BP.Chameleon_Character_BP_C",
+    "class_name": "Chameleon_Character_BP_C",
+    "level": 73,
+    "wild": true,
+    "entity_id": [
+      160596859,
+      191698155
+    ],
+    "coordinates": {
+      "x": 0,
+      "y": 0,
+      "z": 10000
+    },
+    "evidence": "native spawned entity readback"
+  },
+  "regression": {
+    "ark_extension_unit_tests": {
+      "passed": 69,
+      "failed": 0,
+      "exit_code": 0
+    },
+    "dependency_publisher_tests": {
+      "passed": 14,
+      "failed": 0,
+      "exit_code": 0
+    }
+  },
+  "prior_same_build_attempts": [
+    {
+      "framework": "AsaApi 2.03",
+      "started_utc": "2026-11-08T02:13:44Z",
+      "exit_code": 101,
+      "extension_installed": true,
+      "map_snapshot": false,
+      "enigmasaur_reached": false,
+      "failure": "RCON packet read timeout after status handshake, before map snapshot validation; phase is inferred from the frozen test source error path",
+      "report_sha256": "d0d70f3061bdef804e2a87bee8321bd7af5e4335b74bbc0d2ae84d5d2fe26147"
+    },
+    {
+      "framework": "AsaApi 2.03",
+      "started_utc": "2026-11-08T02:21:48Z",
+      "exit_code": 101,
+      "extension_installed": true,
+      "map_snapshot": false,
+      "enigmasaur_reached": false,
+      "failure": "RCON packet read timeout after status handshake, before map snapshot validation; phase is inferred from the frozen test source error path",
+      "report_sha256": "df35b97346d28573c7d275acdff84ed23124c6091bd0d1bb97f29bdbc1a4174d"
+    }
+  ],
+  "domestic_mirror": {
+    "repository": "SZSLGJCOM/LanGame-Server-Manager-Releases",
+    "tag": "ark-tools-dependencies-ase-3.56-asa-2.1",
+    "release_status": "pre",
+    "verified_assets": 7,
+    "prepared_inventory_sha256": "7473cf79bbd3e96fd5d57ab526acdeed0a29bdbda367e5b779bc3a68cab9daa8",
+    "receipt_sha256": "fa74bee915b05646148815773076f43fe111c800a24cd21ba6caecacaf719fe6",
+    "plap_anonymous_download": {
+      "state": "verified",
+      "host": "PLAP",
+      "utc": "2026-11-08T02:38:45Z",
+      "url": "https://api.gitcode.com/api/v5/repos/SZSLGJCOM/LanGame-Server-Manager-Releases/releases/ark-tools-dependencies-ase-3.56-asa-2.1/attach_files/AsaApi_2.1.zip/download",
+      "bytes": 32203814,
+      "sha256": "58d626b34c85e08e85d3dc076f1f18420150752802e1d227bed370182c84f3b6",
+      "anonymous": true
+    },
+    "desktop_update_pointer_changed": false,
+    "symbol_cache_reuploaded": false
+  },
+  "data_protection": {
+    "instances": 9,
+    "files": 40998,
+    "backup_bytes": 37990848608,
+    "backup_database_integrity": "ok",
+    "checked_utc": "2026-11-08T02:53:06Z",
+    "files_changed": 0,
+    "original_data_unchanged": true,
+    "backup_retained": true,
+    "remaining_task_owned_native_processes": 0,
+    "remaining_scheduled_tasks": 0
+  },
+  "artifacts": [
+    {
+      "name": "native-result.json",
+      "size_bytes": 1318,
+      "sha256": "d93c7e53a7f24fca39cd709475022921888bb3a8714c7b0e2ca278c8e9d18b46"
+    },
+    {
+      "name": "asa-gm-native.stdout",
+      "size_bytes": 3070,
+      "sha256": "6f5ce7f5caefa5166513d8755c402cc9207c1b12afcf1ca8d24016e5cc18f218"
+    },
+    {
+      "name": "asa-gm-native.stderr",
+      "size_bytes": 19598,
+      "sha256": "ff8e9d9d9b5298208a5c07e77a493ecbaa878321f1bced6cf8e4eb00494184d4"
+    },
+    {
+      "name": "installed-payload.json",
+      "size_bytes": 1439,
+      "sha256": "dd14bf8226228924a3084c8660f02d3e877aba2f6a4e6611349ac2c679cfe6a5"
+    },
+    {
+      "name": "protected-after.json",
+      "size_bytes": 100,
+      "sha256": "156e9041a15805b4b18bce4ae74c608397c6cdecd3a2ea7c1a74ff25f033bfe2"
+    },
+    {
+      "name": "final-cleanup.json",
+      "size_bytes": 1558,
+      "sha256": "26dd20476185e81eec0d63503e301e4c3097e3d259f0456dccb93be5c96f0f09"
+    }
+  ],
+  "scope_limits": [
+    "The native test used a fresh isolated world and preserved existing instances; no migration of populated worlds was attempted.",
+    "RCON acknowledgements for time and wild-dino removal do not establish client-observed gameplay effects.",
+    "No client joined; successful taming for an online player and a populated player-map snapshot were not tested.",
+    "Entity readback is from the same running server; creature persistence across a later restart was not tested.",
+    "The matching symbol cache stays on the three official providers; the GitCode publication contains the fixed framework dependencies and notices.",
+    "Historical failed fixtures and the module's settings last_verified date remain unchanged."
+  ]
+}

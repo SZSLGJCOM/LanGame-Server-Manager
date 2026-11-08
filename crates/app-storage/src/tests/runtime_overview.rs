@@ -171,6 +171,39 @@ async fn running_instance_rejects_bind_and_port_changes_atomically() {
 
 #[tokio::test]
 async fn runtime_overview_reads_recent_runs_and_log_tail() {
+    use std::io::Write;
+
+    async fn record_master(
+        paths: &StoragePaths,
+        instance_id: &str,
+        pid: u32,
+        log_path: &Path,
+        session: &str,
+    ) -> app_core::InstanceProcessState {
+        mark_instance_process_started_with_identity(
+            paths,
+            &StartedInstanceProcess {
+                instance_id,
+                session_id: Some(session),
+                process_key: "master",
+                display_name: "Master",
+                pid,
+                log_path: &log_path.to_string_lossy(),
+                is_primary: true,
+            },
+            Some(&app_core::ProcessIdentity {
+                creation_time: u64::from(pid),
+                image_path: paths.games_root.join("dontstarve/fixture.exe").to_string_lossy().into_owned(),
+            }),
+        )
+        .await
+        .unwrap()
+    }
+
+    const FIRST_PROBE: &str = "[00:00:01]: [LGSM-DST-PROBE:0123456789abcdef0123456789abcdef]";
+    const FIRST_READY: &str = "[00:00:02]: [LGSM-DST-READY:0123456789abcdef0123456789abcdef]";
+    const SECOND_PROBE: &str = "[00:00:04]: [LGSM-DST-PROBE:abcdef0123456789abcdef0123456789]";
+    const SECOND_READY: &str = "[00:00:05]: [LGSM-DST-READY:abcdef0123456789abcdef0123456789]";
     let root = unique_test_root();
     let paths = test_paths(&root);
     let descriptor = test_descriptor(&root);
@@ -199,18 +232,18 @@ async fn runtime_overview_reads_recent_runs_and_log_tail() {
         .join("run-1.log");
     fs::write(
         &log_path,
-        "booting\nloading world\n[00:00:02]: Server ready\nlistening on udp/10999\nheartbeat ok\n",
+        format!("booting\n{FIRST_PROBE}\n{FIRST_READY}\nlistening on udp/10999\nheartbeat ok\n"),
     )
     .unwrap();
 
-    let run = record_started_test_instance(
+    let run = record_master(
         &paths,
         &created.summary.id,
         6789,
-        &log_path.to_string_lossy(),
+        &log_path,
+        "first-dst-session",
     )
-    .await
-    .unwrap();
+    .await;
 
     let overview = read_instance_runtime_overview(&paths, &created.summary.id)
         .await
@@ -225,16 +258,14 @@ async fn runtime_overview_reads_recent_runs_and_log_tail() {
     assert_eq!(overview.log_tail.total_lines, 5);
     assert!(overview.log_tail.read_error.is_none());
     assert_eq!(overview.health.status, "ready");
-    assert_eq!(
-        overview.health.matched_line.as_deref(),
-        Some("[00:00:02]: Server ready")
-    );
+    assert_eq!(overview.health.reason.code, "ready_signal");
+    assert_eq!(overview.health.matched_line, None, "DST readiness aggregates every enabled shard");
     assert!(
         overview
             .log_tail
             .lines
             .iter()
-            .any(|line| line.contains("[00:00:02]: Server ready"))
+            .any(|line| line == FIRST_READY)
     );
 
     let document = read_instance_log_document(&paths, &created.summary.id, 3, None)
@@ -243,7 +274,7 @@ async fn runtime_overview_reads_recent_runs_and_log_tail() {
     assert_eq!(document.total_lines, 5);
     assert!(document.truncated);
     assert_eq!(document.lines.len(), 3);
-    assert_eq!(document.lines[0], "[00:00:02]: Server ready");
+    assert_eq!(document.lines[0], FIRST_READY);
 
     mark_instance_process_stopped(&paths, &created.summary.id, run.run_id, Some(0), false)
         .await
@@ -260,14 +291,30 @@ async fn runtime_overview_reads_recent_runs_and_log_tail() {
     )
     .unwrap();
 
-    let second_run = record_started_test_instance(
+    let second_run = record_master(
         &paths,
         &created.summary.id,
         6790,
-        &second_log_path.to_string_lossy(),
+        &second_log_path,
+        "second-dst-session",
     )
+    .await;
+
+    let loading = read_instance_runtime_overview(&paths, &created.summary.id)
     .await
     .unwrap();
+    assert_eq!(loading.health.status, "starting", "The first run's proof and a Server ready line cannot admit this run");
+    fs::OpenOptions::new()
+        .append(true)
+        .open(&second_log_path)
+        .unwrap()
+        .write_all(format!("{SECOND_PROBE}\n{SECOND_READY}\n").as_bytes())
+        .unwrap();
+    let ready_again = read_instance_runtime_overview(&paths, &created.summary.id)
+        .await
+        .unwrap();
+    assert_eq!(ready_again.health.status, "ready");
+    assert_eq!(ready_again.recent_runs[0].run_id, second_run.run_id);
 
     let latest_document = read_instance_log_document(&paths, &created.summary.id, 10, None)
         .await
@@ -280,7 +327,7 @@ async fn runtime_overview_reads_recent_runs_and_log_tail() {
         latest_document
             .lines
             .iter()
-            .any(|line| line.contains("[00:00:03]: Server ready"))
+            .any(|line| line == SECOND_READY)
     );
 
     let first_run_document =
@@ -295,7 +342,7 @@ async fn runtime_overview_reads_recent_runs_and_log_tail() {
         first_run_document
             .lines
             .iter()
-            .any(|line| line.contains("[00:00:02]: Server ready"))
+            .any(|line| line == FIRST_READY)
     );
 
     mark_instance_process_stopped(
@@ -313,6 +360,7 @@ async fn runtime_overview_reads_recent_runs_and_log_tail() {
         .unwrap();
     assert_eq!(stopped_overview.recent_runs[0].run_id, second_run.run_id);
     assert_eq!(stopped_overview.recent_runs[0].status, "stopped");
+    assert_eq!(stopped_overview.health.status, "stopped");
 
     cleanup_root(&root);
 }

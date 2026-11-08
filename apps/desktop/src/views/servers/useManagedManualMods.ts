@@ -28,6 +28,12 @@ export function useManagedManualMods(options: Options) {
     return () => { scope.current += 1; };
   }, [options.instanceId]);
 
+  useEffect(() => {
+    if (!result || result.value.warnings.length) return;
+    const timer = window.setTimeout(() => setResult(null), 5000);
+    return () => window.clearTimeout(timer);
+  }, [result]);
+
   async function change(item: ManualModInventoryItem, action: ManagedModAction) {
     const instanceId = options.instanceId;
     const token = scope.current;
@@ -54,6 +60,7 @@ export function useManagedManualMods(options: Options) {
 
   return {
     review, error, result,
+    dismissResult: () => setResult(null),
     change: (item: ManualModInventoryItem, action: ManagedModAction) => { void change(item, action); },
     requestDelete: (item: ManualModInventoryItem) => { setError(null); setReview(item); },
     close: () => { setReview(null); setError(null); }

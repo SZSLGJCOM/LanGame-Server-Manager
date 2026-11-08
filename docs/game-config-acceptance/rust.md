@@ -177,95 +177,6 @@
 }
 ```
 
-## `2026-09-28-native_september_configuration_build_25129933.json`
-
-- Evidence: `best_effort_verified` at `2026-09-28` (build `Installed build 25129933 read-only IL; deterministic nondefault configuration and navmesh opt-in`)
-- Sources: `facepunch_september_2026`, `native_september_configuration_build_25129933`
-- Coverage: editable `12`, specialized `0`, derived `0`, generated `0`, excluded `3`
-
-### Settings
-
-```json
-{
-  "banned_entries": "76561198022222222|Griefing|Repeated",
-  "custom_launch_flags": "",
-  "max_players": 250,
-  "moderator_entries": "76561198011111111|Moderator|Weekend",
-  "owner_entries": "76561198077777777|Host|Created by LanGame",
-  "rcon_password": "acceptance-rust-rcon",
-  "rcon_web": true,
-  "server_description": "原生配置覆盖验收",
-  "server_name": "LanGame Rust 验收",
-  "skip_queue_entries": "76561198000000000|Priority Friend",
-  "upkeep_group_count_locks": false,
-  "upkeep_group_history_max": 128,
-  "upkeep_group_max_multiplier": 2.5,
-  "upkeep_group_scaling": false,
-  "upkeep_group_tier_0_increase": 0.01,
-  "upkeep_group_tier_0_playercount": 3,
-  "upkeep_group_tier_1_increase": 0.03,
-  "upkeep_group_tier_1_playercount": 5,
-  "upkeep_group_tier_2_increase": 0.05,
-  "upkeep_group_window_hours": 12,
-  "upkeep_lock_min_users": 1,
-  "use_new_navmesh": true,
-  "world_config_json": "{\n  \"MainRoads\": false,\n  \"FutureNative\": {\n    \"keep\": true\n  }\n}"
-}
-```
-
-### Expected outputs
-
-```json
-{
-  "files": [
-    {
-      "format": "text",
-      "fragments": [
-        "decay.upkeep_group_scaling false",
-        "decay.upkeep_group_window_hours 12",
-        "decay.upkeep_group_tier_0_playercount 3",
-        "decay.upkeep_group_tier_0_increase 0.01",
-        "decay.upkeep_group_tier_1_playercount 5",
-        "decay.upkeep_group_tier_1_increase 0.03",
-        "decay.upkeep_group_tier_2_increase 0.05",
-        "decay.upkeep_group_max_multiplier 2.5",
-        "decay.upkeep_group_count_locks false",
-        "decay.upkeep_group_history_max 128",
-        "decay.upkeep_lock_min_users 1"
-      ],
-      "path": "server/acceptance-rust/cfg/server.cfg",
-      "root": "install"
-    }
-  ],
-  "launch": {
-    "arguments": [
-      "-batchmode",
-      "-nographics",
-      "-logfile",
-      "-",
-      "+server.ip",
-      "0.0.0.0",
-      "+server.identity",
-      "acceptance-rust",
-      "+world.configfile",
-      "world-config.json",
-      "-useNewNavmesh",
-      "+server.port",
-      "28015",
-      "+server.queryport",
-      "28017",
-      "+rcon.port",
-      "28016",
-      "+rcon.password",
-      "acceptance-rust-rcon",
-      "+rcon.web",
-      "true"
-    ],
-    "executable_suffix": "RustDedicated.exe"
-  }
-}
-```
-
 ## `2026-09-29-native_deep_sea_terrain_build_25454815.json`
 
 - Evidence: `best_effort_verified` at `2026-09-29` (build `Installed build 25454815 read-only metadata and IL; deterministic enabled terrain configuration`)
@@ -382,6 +293,103 @@
       "acceptance-rust",
       "+world.configfile",
       "world-config.json",
+      "+server.port",
+      "28015",
+      "+server.queryport",
+      "28017",
+      "+rcon.port",
+      "28016",
+      "+rcon.password",
+      "acceptance-rust-rcon",
+      "+rcon.web",
+      "true"
+    ],
+    "executable_suffix": "RustDedicated.exe"
+  }
+}
+```
+
+## `2026-11-07-facepunch_november_2026.json`
+
+- Evidence: `best_effort_verified` at `2026-11-07` (build `Fresh isolated build 26498655 read-only IL and official November notes; expected optional configuration and saved old-navmesh choice, retaining September upkeep cases. Native lifecycle results are separate evidence.`)
+- Sources: `facepunch_november_2026`, `native_november_build_26498655`, `native_september_configuration_build_25129933`
+- Coverage: editable `16`, specialized `0`, derived `0`, generated `0`, excluded `3`
+
+### Settings
+
+```json
+{
+  "banned_entries": "76561198022222222|Griefing|Repeated",
+  "batch_packets": false,
+  "custom_launch_flags": "",
+  "max_players": 250,
+  "moderator_entries": "76561198011111111|Moderator|Weekend",
+  "network_position_lod": 0,
+  "network_position_lod_players": 2,
+  "owner_entries": "76561198077777777|Host|Created by LanGame",
+  "player_update_jobs": 4,
+  "rcon_password": "acceptance-rust-rcon",
+  "rcon_web": true,
+  "server_description": "原生配置覆盖验收",
+  "server_name": "LanGame Rust 验收",
+  "skip_queue_entries": "76561198000000000|Priority Friend",
+  "upkeep_group_count_locks": false,
+  "upkeep_group_history_max": 128,
+  "upkeep_group_max_multiplier": 2.5,
+  "upkeep_group_scaling": false,
+  "upkeep_group_tier_0_increase": 0.01,
+  "upkeep_group_tier_0_playercount": 3,
+  "upkeep_group_tier_1_increase": 0.03,
+  "upkeep_group_tier_1_playercount": 5,
+  "upkeep_group_tier_2_increase": 0.05,
+  "upkeep_group_window_hours": 12,
+  "upkeep_lock_min_users": 1,
+  "use_new_navmesh": false,
+  "world_config_json": "{\n  \"MainRoads\": false,\n  \"FutureNative\": {\n    \"keep\": true\n  }\n}"
+}
+```
+
+### Expected outputs
+
+```json
+{
+  "files": [
+    {
+      "format": "text",
+      "fragments": [
+        "decay.upkeep_group_scaling false",
+        "decay.upkeep_group_window_hours 12",
+        "decay.upkeep_group_tier_0_playercount 3",
+        "decay.upkeep_group_tier_0_increase 0.01",
+        "decay.upkeep_group_tier_1_playercount 5",
+        "decay.upkeep_group_tier_1_increase 0.03",
+        "decay.upkeep_group_tier_2_increase 0.05",
+        "decay.upkeep_group_max_multiplier 2.5",
+        "decay.upkeep_group_count_locks false",
+        "decay.upkeep_group_history_max 128",
+        "decay.upkeep_lock_min_users 1",
+        "net.position_lod 0",
+        "net.position_lod_players 2",
+        "server.batchpackets false",
+        "server.useplayerupdatejobs 4"
+      ],
+      "path": "server/acceptance-rust/cfg/server.cfg",
+      "root": "install"
+    }
+  ],
+  "launch": {
+    "arguments": [
+      "-batchmode",
+      "-nographics",
+      "-logfile",
+      "-",
+      "+server.ip",
+      "0.0.0.0",
+      "+server.identity",
+      "acceptance-rust",
+      "+world.configfile",
+      "world-config.json",
+      "-useOldNavmesh",
       "+server.port",
       "28015",
       "+server.queryport",

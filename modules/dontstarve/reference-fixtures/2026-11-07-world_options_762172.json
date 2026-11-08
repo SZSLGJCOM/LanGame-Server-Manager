@@ -1,0 +1,64 @@
+{
+  "schema_version": 1,
+  "module_id": "dontstarve",
+  "evidence_classification": "official_package_static_config_comparison",
+  "verified_on": "2026-11-07",
+  "acquisition": {
+    "steam_app_id": 343050,
+    "steam_build_id": "26474880",
+    "completed_at_utc": "2026-11-07T03:52:00.4572421Z",
+    "state_flags": 4,
+    "update_result": 0,
+    "manifest_path": "steamapps/appmanifest_343050.acf",
+    "manifest_sha256": "b24ec794b13f665235a9b0d9729f7b60bdb1296f9a770d2a91c92c35cdb75d17",
+    "size_on_disk": 4623832788
+  },
+  "game_version": "762172",
+  "scripts_sha256": "afa2c1b06daaafadef446dce3fb9c14577b6fbb25b185c7c7c7056a5d7ac11a1",
+  "executable": {
+    "path": "bin64/dontstarve_dedicated_server_nullrenderer_x64.exe",
+    "sha256": "0d99172c3a4428ae9edb5813e33c65d99557db1ad5b5f1f9151137aa1412b0c2"
+  },
+  "prior": {
+    "fixture": "reference-fixtures/2026-10-31-world_options_761239.json",
+    "steam_build_id": "26335402",
+    "game_version": "761239",
+    "scripts_sha256": "4d905828318646db65b064f3774583f82d7e868d2ad276d8ab592a6249fd5cc7"
+  },
+  "inventory": {
+    "option_count": 238,
+    "group_counts": {
+      "worldgen": 5,
+      "settings": 10
+    },
+    "page_counts": {
+      "mastergen": 64,
+      "mastersettings": 126,
+      "cavesgen": 38,
+      "cavessettings": 50
+    },
+    "all_groups_and_option_objects_equal_tracked_inventory": true,
+    "comparison_differences": [
+      "gameVersion: tracked '761239'; package '762172'",
+      "scriptsSha256: tracked '4d905828318646db65b064f3774583f82d7e868d2ad276d8ab592a6249fd5cc7'; package 'afa2c1b06daaafadef446dce3fb9c14577b6fbb25b185c7c7c7056a5d7ac11a1'"
+    ],
+    "schema_errors": [],
+    "inventory_master_controlled_option_count": 39,
+    "source_hashes": {
+      "scripts/map/customize.lua": "c298ed69e10a0dd91af63e74446defb16cd4f968f1cf32569504a47885453d19",
+      "scripts/map/locations.lua": "0c9c0b4d9a9b72a3285094c138e8780a83f4e6b8f239c8a7633b8f0b445326d4",
+      "scripts/map/tasksets.lua": "8ee6f0c9cfee9796277db993243bb8758805aea13bb08d90dea9a71333bbd292",
+      "scripts/map/startlocations.lua": "78841f1ed7e6d71b7d1da09a396a354ee2560c5351cc671272debaed57f6f4ad",
+      "scripts/map/levels/forest.lua": "acec7ce9b2a223ab7c2a71ba00269e6521048d3e025a56f247906fa00ed52031",
+      "scripts/map/levels/caves.lua": "ef13cf469afafe709cc17c67564845221b383c3c921aa79734dcbde7b1557391",
+      "scripts/screens/redux/servercreationscreen.lua": "e6d33c85305b7de84f379cdadf0dd53375310fba562763d3e3ce651de007180a",
+      "scripts/widgets/redux/worldsettings/worldsettingsmenu.lua": "174258a04405164a9583abbe12395a3343bb37f2613f0fd4a91f212e8aa4a991",
+      "scripts/map/tasksets/caves.lua": "ca042a09698e4f5bd4ce5b673a101c9f552824336729777862f1f3d7a069010d",
+      "scripts/map/tasksets/forest.lua": "1d0cf156eab56cc385fd08241ea514f4c9146df95d22ffdb19302b253be348a4",
+      "scripts/map/tasksets/lavaarena.lua": "9686ed03aea71dc2417ecf4c4d8f1d409b315c25f34b61dfb7326a5084527817",
+      "scripts/map/tasksets/quagmire.lua": "1a3cf406b3fe8b8b115e9db88ad93f3e175cea5d8fcf5fca8db4fe6aaeabf9f4"
+    },
+    "source_hash_changes": {}
+  },
+  "scope": "Read-only extraction from the freshly validated official public Windows package using the repository authoritative static Lua parser. No game or mod Lua was executed; no module inventory, schema or defaults were changed. This report does not renew native lifecycle, saves, restart, client or gameplay evidence."
+}

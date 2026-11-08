@@ -1,0 +1,114 @@
+{
+  "schema_version": 1,
+  "module_id": "soulmask",
+  "evidence_classification": "official_package_static_config_comparison",
+  "reviewed_on": "2026-11-07",
+  "acquisition": {
+    "steam_app_id": 3017310,
+    "steam_build_id": "26480169",
+    "completed_at_utc": "2026-11-07T03:57:28.3547693Z",
+    "state_flags": 4,
+    "update_result": 0,
+    "manifest_path": "steamapps/appmanifest_3017310.acf",
+    "manifest_sha256": "511bd85aacb81623e51ed08a78324777baafb7886aec1f4be84b4b5742c6cff7",
+    "size_on_disk": 5757161141
+  },
+  "executable": {
+    "path": "WS/Binaries/Win64/WSServer-Win64-Shipping.exe",
+    "sha256": "955fa0855b7c756695ba530681d21807e985688ca4aa10fcf7a6493dfc69ec68"
+  },
+  "prior": {
+    "fixture": "native-evidence/2026-10-31-public-build-26241597-static.json",
+    "steam_build_id": "26241597"
+  },
+  "configuration": {
+    "files": [
+      {
+        "path": "WS/Config/GameplaySettings/GameXishuConfig_Template.json",
+        "sha256": "c9f9128fe1df1608c18a7873f9bf9c5a50877fc3393fc7a439f91b0ae02cd00c",
+        "prior_sha256": "c9f9128fe1df1608c18a7873f9bf9c5a50877fc3393fc7a439f91b0ae02cd00c",
+        "baseline_bytes_match": true,
+        "profile_key_counts": {
+          "0": 282,
+          "1": 282,
+          "2": 282
+        }
+      },
+      {
+        "path": "WS/Config/GameplaySettings/GameXishu_Template.json",
+        "sha256": "687d3351fd0706583348decc95cdb9f07b4ad0e8d5e07ac89a62918cf5fe9768",
+        "prior_sha256": "687d3351fd0706583348decc95cdb9f07b4ad0e8d5e07ac89a62918cf5fe9768",
+        "baseline_bytes_match": true,
+        "profile_key_counts": {
+          "0": 282,
+          "1": 282,
+          "2": 282
+        }
+      }
+    ],
+    "all_template_files": {
+      "file_count": 137,
+      "inventory_sha256": "db6834f73fb9236e26c9a0171779f54c43551a9f843fa8e2bfa64cb83130c9a4",
+      "prior_inventory_sha256": "db6834f73fb9236e26c9a0171779f54c43551a9f843fa8e2bfa64cb83130c9a4",
+      "matches_prior_inventory": true,
+      "inventory_encoding": "UTF-8; filenames sorted case-sensitively; each entry is filename, TAB, byte length, TAB, lowercase SHA256, LF"
+    },
+    "schema_mapped_key_count": 282,
+    "profiles": {
+      "0": {
+        "native_key_count": 282,
+        "missing_schema_keys": [],
+        "metadata_keys_match_values": true,
+        "schema_default_differences_float32_normalized": []
+      },
+      "1": {
+        "native_key_count": 282,
+        "missing_schema_keys": [],
+        "metadata_keys_match_values": true,
+        "schema_default_differences_float32_normalized": [
+          {
+            "native_key": "GameWorldDayTimePortion",
+            "schema_key": "xishu_game_world_day_time_portion",
+            "schema_default": 0.69999999,
+            "native_default": 0.800000011920929
+          },
+          {
+            "native_key": "JianZhuChuanSongMenPlusKaiGuan",
+            "schema_key": "xishu_jian_zhu_chuan_song_men_plus_kai_guan",
+            "schema_default": 1,
+            "native_default": 0
+          },
+          {
+            "native_key": "GongHuiMaxZhaoMuCount",
+            "schema_key": "xishu_gong_hui_max_zhao_mu_count",
+            "schema_default": 50,
+            "native_default": 40
+          },
+          {
+            "native_key": "ManRenChuZhanCount",
+            "schema_key": "xishu_man_ren_chu_zhan_count",
+            "schema_default": 3,
+            "native_default": 1
+          },
+          {
+            "native_key": "AnimalFollowerMaxCount",
+            "schema_key": "xishu_animal_follower_max_count",
+            "schema_default": 3,
+            "native_default": 1
+          }
+        ]
+      },
+      "2": {
+        "native_key_count": 282,
+        "missing_schema_keys": [],
+        "metadata_keys_match_values": true,
+        "schema_default_differences_float32_normalized": []
+      }
+    }
+  },
+  "reviewed_module_files": {
+    "schema.json": "fb0c616802aff1891317c177e59726fccba88f50219ea7c17ee422c16455db43",
+    "module.toml": "f27fc73a46d9fff05d65424c6378e991393542e171089455d1c20d3d5cf78c5f"
+  },
+  "scope": "Read-only JSON and SHA256 comparison of the freshly validated official public Windows package. Matching canonical bytes establish unchanged native keys, metadata and defaults across three profiles; schema shared defaults and existing profile-specific preset differences are reported separately. No game process, Echo/RCON, save, shutdown, restart or recovery was tested. Historical native evidence retains its original build and date."
+}

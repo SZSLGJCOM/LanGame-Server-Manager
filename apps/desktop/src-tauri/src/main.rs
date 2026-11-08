@@ -10,6 +10,7 @@ mod command_registry;
 mod commands;
 mod commands_assistant_connection;
 mod commands_knowledge;
+mod curseforge_browser;
 mod desktop_app_log;
 #[cfg(all(windows, feature = "desktop-reliability"))]
 mod desktop_reliability;
@@ -131,6 +132,10 @@ fn main() {
         std::process::exit(code);
     }
     #[cfg(all(windows, feature = "desktop-reliability"))]
+    if curseforge_browser::smoke::run_if_requested() {
+        return;
+    }
+    #[cfg(all(windows, feature = "desktop-reliability"))]
     if desktop_reliability::run_if_requested() {
         return;
     }
@@ -188,11 +193,13 @@ fn main() {
             app.manage(media_cache::MediaCacheState::new(
                 storage_paths.app_data_root.join("cache/media"),
             ));
+            app.manage(curseforge_browser::BrowserState::new(
+                storage_paths.logs_root.join("desktop-ui/active.jsonl"),
+            ));
             app.handle()
                 .plugin(tauri_plugin_updater::Builder::new().build())?;
             setup_tray(app)?;
-            let main_window = app
-                .get_webview_window("main")
+            let main_window = curseforge_browser::main_window(app.handle())
                 .ok_or_else(|| std::io::Error::other("main window is missing"))?;
             let window = app
                 .config()
@@ -239,10 +246,15 @@ fn main() {
             Ok(())
         })
         .on_page_load(|webview, payload| {
+            if webview.label() != "main" {
+                return;
+            }
+            if matches!(payload.event(), tauri::webview::PageLoadEvent::Started) {
+                curseforge_browser::close_active_host(webview.app_handle());
+            }
             if matches!(payload.event(), tauri::webview::PageLoadEvent::Finished) {
                 #[cfg(windows)]
-                if webview.label() == "main"
-                    && let Some(window) = webview.app_handle().get_webview_window("main")
+                if let Some(window) = curseforge_browser::main_window(webview.app_handle())
                     && let Err(error) = webview_drop::install(&window)
                 {
                     eprintln!("Restore dropped-file bridge after page load: {error}");
@@ -371,7 +383,7 @@ fn setup_tray(app: &mut tauri::App) -> tauri::Result<()> {
 fn show_main_window(app_handle: &tauri::AppHandle) {
     webview_recovery::set_window_visible(app_handle, true);
     webview_recovery::retry_from_user(app_handle);
-    if let Some(window) = app_handle.get_webview_window("main") {
+    if let Some(window) = curseforge_browser::main_window(app_handle) {
         let _ = window.show();
         let _ = window.unminimize();
         let _ = window.set_focus();

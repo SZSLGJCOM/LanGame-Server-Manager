@@ -930,11 +930,18 @@ pub(super) fn lookup_rust_launch_token(
             },
         ),
         "world_configfile_args" => Some(render_rust_world_configfile_args(context.settings)),
-        "use_new_navmesh_flag" => Some(render_optional_launch_flag(
-            context.settings,
-            "use_new_navmesh",
-            "-useNewNavmesh",
-        )),
+        "use_new_navmesh_flag" => Some(
+            if context
+                .settings
+                .get("use_new_navmesh")
+                .and_then(Value::as_bool)
+                == Some(false)
+            {
+                "-useOldNavmesh".to_owned()
+            } else {
+                String::new()
+            },
+        ),
         "custom_launch_flags" => Some(render_split_launch_flags(
             context.settings,
             "custom_launch_flags",

@@ -8,6 +8,8 @@ export const EN_US_ARK_SURVIVAL_ASCENDED_MESSAGES_PART_1: MessageCatalog = {
   "ark.settings.groups.crafting.item-rules.title": "Item preservation and attributes",
   "ark.settings.groups.limits.tame-levels.title": "Tame level and unit limits",
   "ark.settings.groups.limits.generators.title": "Generator limits",
+  "ark.settings.groups.limits.gacha.title": "Gacha feeding penalty",
+  "ark.settings.groups.limits.cloning.title": "Cloning chamber limits",
   "ark.settings.groups.loot.lifetime.title": "Corpse and dropped item lifetime",
   "ark.settings.groups.rates.hexagon-economy.title": "Hexagon rewards and costs",
   "ark.settings.groups.breeding.rules.title": "Breeding eligibility",

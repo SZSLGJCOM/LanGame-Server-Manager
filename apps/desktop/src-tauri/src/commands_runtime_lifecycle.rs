@@ -2106,7 +2106,7 @@ fn report_app_shutdown_failure(
     if state.is_final_exit_requested() {
         return;
     }
-    if let Some(window) = app_handle.get_webview_window("main") {
+    if let Some(window) = crate::curseforge_browser::main_window(app_handle) {
         let _ = window.show();
         let _ = window.unminimize();
         let _ = window.set_focus();

@@ -212,6 +212,13 @@ const RUST_GROUP_SPECS: Record<string, RustFieldGroupSpec[]> = {
       keys: ["use_new_navmesh"]
     },
     {
+      id: "server-performance",
+      title: "Server performance",
+      description: "Optional network and player-processing overrides. Unset controls keep the game's settings.",
+      layoutClass: "rust-server-performance",
+      keys: ["network_position_lod", "network_position_lod_players", "batch_packets", "player_update_jobs"]
+    },
+    {
       id: "overrides",
       title: "Raw overrides",
       description: "Escape hatches for unmanaged cfg lines and launch flags.",

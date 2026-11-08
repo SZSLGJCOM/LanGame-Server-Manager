@@ -250,11 +250,15 @@ export const readInstanceArkMapAvailability = async (instanceId: string) =>
   parseInstanceArkMapAvailability(await invokeOrMock<unknown>("read_instance_ark_map_availability", {
     instanceId
   }), instanceId);
-export const resolveManualModReferences = (instanceId: string, references: string[]) =>
-  invokeOrMock<ManualModReferenceResolveResult>("resolve_manual_mod_references", {
+export const resolveManualModReferences = (instanceId: string, references: string[], moduleId?: string, browserSession?: string) => {
+  const browser = isTauri() && moduleId === "arksurvivalascended";
+  return invokeOrMock<ManualModReferenceResolveResult>(browser
+    ? "resolve_curseforge_browser_references" : "resolve_manual_mod_references", {
     instanceId,
-    references
+    references,
+    ...(browser ? { browserSession: browserSession ?? null } : {})
   });
+};
 export const createInstance = (input: CreateInstanceInput) =>
   invokeOrMock<InstanceProvisioning>("create_instance_record", {
     input: { name: input.name, module_id: input.module_id }, programMode: input.program_mode

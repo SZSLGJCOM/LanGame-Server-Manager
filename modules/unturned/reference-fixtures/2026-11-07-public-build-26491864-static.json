@@ -1,0 +1,62 @@
+{
+  "schema_version": 1,
+  "module_id": "unturned",
+  "evidence_classification": "official_package_static_config_comparison",
+  "verified_on": "2026-11-07",
+  "acquisition": {
+    "steam_app_id": 1110390,
+    "steam_build_id": "26491864",
+    "completed_at_utc": "2026-11-07T03:53:20.0446795Z",
+    "state_flags": 4,
+    "update_result": 0,
+    "manifest_path": "steamapps/appmanifest_1110390.acf",
+    "manifest_sha256": "e7cffe23ba4cde07924b08c40ca99b1fd77b937dda6316cf994e278f9fcda761"
+  },
+  "assembly": {
+    "path": "Unturned_Data/Managed/Assembly-CSharp.dll",
+    "sha256": "dd37a145331b7d21025ac28954f8b43f77257bfc7de8f975841df13934c3c361"
+  },
+  "inventory": {
+    "native_field_count": 282,
+    "category_counts": {
+      "Animals": 9,
+      "Barricades": 11,
+      "Browser": 10,
+      "Events": 30,
+      "Gameplay": 47,
+      "Items": 20,
+      "Objects": 8,
+      "Players": 47,
+      "Server": 27,
+      "Structures": 7,
+      "UnityEvents": 4,
+      "Vehicles": 20,
+      "Zombies": 42
+    },
+    "schema_mapped_count": 274,
+    "ledger_mapped_count": 274,
+    "excluded_count": 8,
+    "unmapped_native_fields": [],
+    "non_serialized_fields": [
+      "Server.Chat_Always_Use_Rich_Text",
+      "Server.Max_Packets_Per_Second"
+    ],
+    "schema_native_type_metadata_mismatches": [],
+    "field_inventory_sha256": "9be3f808b5d9f68fdd9ffd00f841c5574446a022fde7270211cbfa193b155407"
+  },
+  "reviewed_module_files": {
+    "schema.json": "a80ad59a0208ff188732e3689c327d106542b354ccdecb6840006bd95b26e1be",
+    "module.toml": "fd5886d92913f072bc25d0161833c507ae9d1e3310a30c290e813c2d044710a6"
+  },
+  "method": {
+    "parser": "Package-bundled Mono.Cecil metadata and IL reader; target game assembly is not loaded or executed",
+    "parser_sha256": "b8570aa24c47827f36e8015c7edb8e3fe35323ed6bd9829ab09f58777baf413f"
+  },
+  "scope": "Static public field-name/type inventory comparison against the current canonical schema and exclusions. This does not assert constructor/default, serialization, native console, save, restart or client behavior, and does not renew prior runtime evidence.",
+  "game_version": "3.26.3.14",
+  "version_source": {
+    "path": "Status.json",
+    "sha256": "7af822a13c001f92d77d94112e20bd689515d526af1db4b26b1ba289c9ba992f",
+    "native_formatter": "SDG.Unturned.GameStatusData.FormatApplicationVersion: 3.{Major_Version}.{Minor_Version}.{Patch_Version}"
+  }
+}

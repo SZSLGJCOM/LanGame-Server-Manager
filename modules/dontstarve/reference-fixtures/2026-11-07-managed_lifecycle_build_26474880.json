@@ -1,0 +1,575 @@
+{
+  "schema_version": 1,
+  "module_id": "dontstarve",
+  "evidence_classification": "isolated_managed_backend_native_full_lifecycle_and_vanilla_world_reload",
+  "verified_on": "2026-11-07",
+  "verification_timezone": "Asia/Shanghai",
+  "status": "passed",
+  "steam_app_id": 343050,
+  "steam_build_id": "26474880",
+  "game_version": "762172",
+  "package": {
+    "acquisition": "official anonymous SteamCMD public app_update validate followed by completion of declared shared depots through the same trusted main-app validation workflow",
+    "initial_acquisition_completed_utc": "2026-11-07T03:52:00.4572421Z",
+    "state_flags": 4,
+    "update_result": 0,
+    "copied_source_bytes": 4672115505,
+    "files": {
+      "steamapps/appmanifest_228980.acf": {
+        "bytes": 883,
+        "sha256": "84fbd5d769fa79a32890ff2f3f986582ad3c35db511fdf089fb92d729aa0d695"
+      },
+      "steamapps/appmanifest_343050.acf": {
+        "bytes": 1028,
+        "sha256": "e5f45a5696d668d9909261e0085240109c0852ab8c56f5fcfb70ff16c262512f"
+      },
+      "data/databundles/scripts.zip": {
+        "bytes": 56629616,
+        "sha256": "afa2c1b06daaafadef446dce3fb9c14577b6fbb25b185c7c7c7056a5d7ac11a1"
+      },
+      "bin64/dontstarve_dedicated_server_nullrenderer_x64.exe": {
+        "bytes": 6535168,
+        "sha256": "0d99172c3a4428ae9edb5813e33c65d99557db1ad5b5f1f9151137aa1412b0c2"
+      },
+      "version.txt": {
+        "bytes": 8,
+        "sha256": "5c4ea7ee37c51620fdab125c2a1f4e24a47a3eca4403441fa9fe169a5ede84b1"
+      }
+    },
+    "provenance_boundary": "The lifecycle selector labels copied source provenance unverified and does not exercise network acquisition. Independent acquisition and shared-dependency completion receipts identify the official package used by both native tests.",
+    "related_static_evidence": "reference-fixtures/2026-11-07-world_options_762172.json",
+    "shared_dependencies_completed_source_bytes": 4662735519,
+    "harness_inventory_sidecars": [
+      {
+        "path": ".langame-clean-package.json",
+        "bytes": 4689993
+      },
+      {
+        "path": ".langame-initial-package.json",
+        "bytes": 4689993
+      }
+    ],
+    "copy_size_boundary": "The successful lifecycle copy includes two task-created package inventory sidecars totalling 9379986 bytes. The version, Lua archive and server executable hashes still match the validated game payload."
+  },
+  "builds": {
+    "managed_lifecycle": {
+      "source_identity_sha256": "3e620a2ab185e453a2bd8f8b13c36a75bf30a39e5cf5d76e70ce3c3af5531716",
+      "source_manifest_sha256": "5e000e5e3bbfdeb3722cb3034b4964d539541dca11f44547efce21ebac721947",
+      "source_file_count": 4499,
+      "test_binary_sha256": "1faf41ee7bd0b3135bad886cfb4689161fabeb05146dab025ba6b5716e786f32",
+      "test_binary_bytes": 207650816,
+      "captured_utc": "2026-11-07T07:51:56.5163254Z",
+      "cargo_command": "test",
+      "cargo_arguments": [
+        "-p",
+        "langame-desktop",
+        "--bin",
+        "langame-desktop",
+        "--features",
+        "custom-protocol",
+        "--locked",
+        "--no-run"
+      ],
+      "actual_entry_point": "task-scoped approved Cargo wrapper; local path omitted",
+      "actual_entry_point_sha256": "3ed87587c3b62d026d90eee052dda4cc725d77cdc8fbff891a65b54989d8bb01",
+      "actual_invocation_started_utc": "2026-11-07T07:45:43.5736218Z",
+      "resource_override": {
+        "minimum_build_memory_bytes": 12884901888,
+        "maximum_compiler_jobs": 1,
+        "host_reserve_bytes": 8589934592,
+        "shared_queue_and_target_pool_preserved": true,
+        "global_policy_modified": false
+      },
+      "resource_binding": "Frozen modules and migrations selected through the isolated storage fixture; source proof matches the build receipt."
+    },
+    "world_reload": {
+      "source_identity_sha256": "20b153d95410c907851f8c37ae53df9597536163e1e5f392289adf067dabd070",
+      "source_manifest_sha256": "492317027e4d8be9f629262a9213655f94bc205c5c4ce544eb846ed9ff0e93ec",
+      "source_file_count": 4490,
+      "test_binary_sha256": "06e7252637b7b916cd480f523b4ebd021b79b20874c0944c314567f07747791f",
+      "test_binary_bytes": 207506432,
+      "captured_utc": "2026-11-07T05:54:47.3271853Z",
+      "cargo_command": "test",
+      "cargo_arguments": [
+        "-p",
+        "langame-desktop",
+        "--bin",
+        "langame-desktop",
+        "--features",
+        "custom-protocol",
+        "--locked",
+        "--no-run"
+      ],
+      "actual_entry_point": "task-scoped approved Cargo wrapper; local path omitted",
+      "actual_entry_point_sha256": "3ed87587c3b62d026d90eee052dda4cc725d77cdc8fbff891a65b54989d8bb01",
+      "actual_invocation_started_utc": "2026-11-07T05:47:15.4061625Z",
+      "resource_override": {
+        "minimum_build_memory_bytes": 12884901888,
+        "maximum_compiler_jobs": 1,
+        "host_reserve_bytes": 8589934592,
+        "shared_queue_and_target_pool_preserved": true,
+        "global_policy_modified": false
+      },
+      "resource_binding": "Frozen modules and migrations selected through the isolated storage fixture; source proof matches the build receipt."
+    }
+  },
+  "test": {
+    "selector": "commands::tests::manual_runtime_tests::native_lifecycle_tests::native_package_lifecycle",
+    "arguments": [
+      "--exact",
+      "--ignored",
+      "--nocapture",
+      "--test-threads=1"
+    ],
+    "started_utc": "2026-11-07T08:03:16Z",
+    "completed_utc": "2026-11-07T08:12:50Z",
+    "duration_seconds": 573.82,
+    "test_footer_duration_seconds": 573.77,
+    "exit_code": 0,
+    "tests_passed": 1,
+    "tests_failed": 0,
+    "tests_ignored": 0,
+    "exactly_one_test_passed": true,
+    "settings": {
+      "program_update": {
+        "policy": "pinned"
+      }
+    },
+    "flags": {
+      "LANGAME_NATIVE_MANUAL_SAVE": "true",
+      "LANGAME_NATIVE_MANUAL_SAVE_RESTART": "true",
+      "LANGAME_NATIVE_DST_OFFLINE_LAN": "true"
+    },
+    "platform": "Windows x86_64",
+    "elevated": false,
+    "program_mode": "Independent",
+    "creation_scope": "storage",
+    "acquisition_scope": "existing_local_package"
+  },
+  "observations": {
+    "cycles": [
+      "initial",
+      "restart",
+      "after_restore",
+      "after_archive_restore"
+    ],
+    "native_ready_cycles": 4,
+    "shards_each_cycle": [
+      "master",
+      "caves"
+    ],
+    "normal_process_exit_codes": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "crash_flags": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ],
+    "active_run_after_each_stop": "none",
+    "restart": "persisted configuration readback and fresh run verified",
+    "manual_save": {
+      "receipts": 4,
+      "attempts_per_cycle": 1,
+      "retried": false,
+      "route": "native_master_cluster_request",
+      "completion": "requested",
+      "response_present": true,
+      "response_bytes_each": 90,
+      "write_confirmation_pending": false,
+      "instance_run_session_correlation": true,
+      "managed_generations_alive": true,
+      "durable_write": "not_assessed",
+      "request_caused_checkpoint": "not_assessed",
+      "exact_checkpoint_readback_requested": false
+    },
+    "player_count": {
+      "observations": 4,
+      "source": "player_list",
+      "collector": "ready",
+      "overview": "ready",
+      "players_each_cycle": 0,
+      "global_total_each_cycle": 0,
+      "queried_instances": 1,
+      "queryable_instances": 1,
+      "complete": true,
+      "stale": false,
+      "same_run": true
+    },
+    "save_observation_after_stop": "generated",
+    "backup_restore": {
+      "status": "passed",
+      "restored_files": 40,
+      "scope": "declared world data",
+      "safeguard": "verified",
+      "world_save_inventory": "verified",
+      "normalized_worldgen_files": 4,
+      "exact_managed_ini_baseline_files": 4,
+      "unchanged_mod_configuration_files": 4,
+      "unrelated_cluster_root_addition": "preserved",
+      "post_backup_world_marker": "removed",
+      "program_and_configuration": "DST canonical restore verified",
+      "following_native_cycle": "passed",
+      "comparison_boundary": "Worldgen and manager INI comparisons assert byte equality. Other restored world inventories compare paths, byte lengths and DefaultHasher64 fingerprints."
+    },
+    "archive_with_library": {
+      "program_storage": "reconstructable",
+      "omitted_program_bytes": 3553413366,
+      "library": "preserved"
+    },
+    "library_uninstall": {
+      "outcome": "library_only_instance_program_unchanged",
+      "program_entries": "preserved",
+      "saved_inventory_entries_preserved": 66,
+      "retained_native_configuration_entries": 0
+    },
+    "archive_recovery": {
+      "archive": "verified",
+      "interruption": "deferred commit failure with restoring journal and absent instance row",
+      "configuration_saves_and_program_inventory": "preserved",
+      "recovery": "stopped ownership readback verified",
+      "following_native_cycle": "passed"
+    },
+    "final_instance_delete": "independent program removed; library record preserved; cleanup verified",
+    "final_library_uninstall": "unused programs removed; retained data paths zero",
+    "owned_fixture_cleanup": "passed; success path asserts fixture directory absent"
+  },
+  "dependency_completion_chain": {
+    "initial_lifecycle_attempt": {
+      "label": "dontstarve",
+      "started_utc": "2026-11-07T06:17:49Z",
+      "completed_utc": "2026-11-07T06:18:31Z",
+      "duration_seconds": 42.56,
+      "exit_code": 101,
+      "tests_passed": 0,
+      "tests_failed": 1,
+      "failure_stage": "pre-start installation readiness",
+      "error_code": "module_not_ready",
+      "install_state": "Incomplete",
+      "native_ready_cycles": 0,
+      "classification": "correct admission rejection of incomplete shared dependency metadata; not a game-version compatibility defect",
+      "cleanup": "failure fixture retained because process shutdown ownership was not yet confirmed by the cleanup guard",
+      "stdout_sha256": "5a68c5a5b6c6d69aed6129dba6047fcbbad8cc02c812ff2ba3671ea858593c45",
+      "stderr_sha256": "7a4fc6735efebb4958c9cbef050b303ceb42fbde6f79198113d52b3d43ce9927"
+    },
+    "validation": {
+      "action": "repeat official anonymous SteamCMD app_update 343050 validate to complete declared shared depots; follows the existing complete_shared_dependencies workflow",
+      "exit_code": 0,
+      "duration_seconds": 49.97,
+      "main_build_id": "26474880",
+      "required_shared_depots_present": true,
+      "game_content_identities_unchanged": true,
+      "before": {
+        "main_manifest_sha256": "b24ec794b13f665235a9b0d9729f7b60bdb1296f9a770d2a91c92c35cdb75d17",
+        "main_state_flags": 4,
+        "shared_owner_app": 228980,
+        "shared_state_flags": 2,
+        "shared_build_id": "0",
+        "shared_installed_depots": [],
+        "shared_manifest_sha256": "ac5d0ebf125fedf3c89c01d5a961c402d7f5d2000b68841b840e35ade16166ab"
+      },
+      "after": {
+        "main_manifest_sha256": "e5f45a5696d668d9909261e0085240109c0852ab8c56f5fcfb70ff16c262512f",
+        "main_state_flags": 4,
+        "shared_owner_app": 228980,
+        "shared_state_flags": 4,
+        "shared_build_id": "24098430",
+        "shared_installed_depots": {
+          "228982": "6413394087650432851",
+          "228988": "6645201662696499616"
+        },
+        "shared_manifest_sha256": "84fbd5d769fa79a32890ff2f3f986582ad3c35db511fdf089fb92d729aa0d695"
+      },
+      "unchanged_files": {
+        "version.txt": "5c4ea7ee37c51620fdab125c2a1f4e24a47a3eca4403441fa9fe169a5ede84b1",
+        "data/databundles/scripts.zip": "afa2c1b06daaafadef446dce3fb9c14577b6fbb25b185c7c7c7056a5d7ac11a1",
+        "bin64/dontstarve_dedicated_server_nullrenderer_x64.exe": "0d99172c3a4428ae9edb5813e33c65d99557db1ad5b5f1f9151137aa1412b0c2"
+      },
+      "artifacts": {
+        "dst-shared-before.json": {
+          "sha256": "8e6e6c5916f975c9339eabd75d8faee690fbfdc5c938c1d8df595c67577e1585"
+        },
+        "dst-shared-after.json": {
+          "sha256": "b13f7e4e14b1b5a10065ba1739198fc3e979cd76bd76f44842588dab34d81e86"
+        },
+        "dst-shared-validation.stdout": {
+          "sha256": "66ad74162cd3615902e7b315cecfeacc9e7a8fb29c41cbca50bb47f3b7847752"
+        },
+        "dst-shared-validation.stderr": {
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      }
+    }
+  },
+  "readiness_failure_and_fix": {
+    "failed_attempt": {
+      "label": "dontstarve-retry1",
+      "build": "world_reload",
+      "started_utc": "2026-11-07T06:57:09Z",
+      "completed_utc": "2026-11-07T06:59:22Z",
+      "duration_seconds": 132.84,
+      "exit_code": 101,
+      "tests_passed": 0,
+      "tests_failed": 1,
+      "native_ready_cycles": 1,
+      "shards": 2,
+      "failure": "The production save readiness gate rejected the request before native save dispatch, despite successful native startup acknowledgements from both shards.",
+      "classification": "managed health evaluation did not consume the existing native startup barrier evidence",
+      "normal_cleanup_exit_codes": [
+        0,
+        0
+      ],
+      "artifacts": {
+        "dontstarve-retry1-native.stdout": {
+          "bytes": 1411,
+          "sha256": "121d135af537af270b82af7a88dbddca30bf2a1e91be290cb4c44a1205ce8d23"
+        },
+        "dontstarve-retry1-native.stderr": {
+          "bytes": 32238,
+          "sha256": "4cc6ada6f5d5a09e41217e288be5e09c813b86f77459f9f47dc5cd11950bcc0e"
+        }
+      }
+    },
+    "fix": {
+      "production_behavior": "Reuse the native PROBE-to-READY protocol for every enabled shard in the current managed session, with its own run and process identity. Require the same nonce across shards and retain validated evidence with the existing bounded log observer.",
+      "rejection_boundaries": [
+        "console echoes",
+        "unpaired or malformed acknowledgements",
+        "partial output",
+        "mismatched nonce",
+        "missing or stopped shard",
+        "foreign session or new run",
+        "correlated FAILED",
+        "ordinary fatal diagnostics"
+      ],
+      "retained_evidence": "Verified readiness survives UI tail eviction and managed rotation. Ordinary fatal evidence remains blocking; only the existing native missing-prefab, retry, generation-complete sequence clears that specific recoverable failure.",
+      "boundary": "The fix changes managed health evaluation, not native commands, schema defaults or readiness wait duration. It does not establish that an upstream release removed any particular text message."
+    },
+    "regressions": {
+      "storage": {
+        "test_filter": "dst",
+        "tests_passed": 124,
+        "tests_failed": 0,
+        "tests_ignored": 0,
+        "duration_seconds": 180.98,
+        "test_footer_duration_seconds": 19.67,
+        "included_dst_health_cases": 9,
+        "included_runtime_log_diagnostics_cases": 8,
+        "artifacts": {
+          "dst-focused2.stdout": {
+            "bytes": 15254,
+            "sha256": "ace7376850eccda2e28494ba432e666ca74575b8e6b23470f418e967e7d5266a"
+          },
+          "dst-focused2.stderr": {
+            "bytes": 342,
+            "sha256": "945cee0da0c4ea28accf6a4ae04646aa57a008c16c9c5f55807e9e1d128c2c48"
+          }
+        }
+      },
+      "desktop": {
+        "selector": "commands::commands_runtime_lifecycle::dst_lifecycle::tests::dst_save_readiness_uses_the_native_start_barrier_without_server_ready_text",
+        "build": "managed_lifecycle",
+        "exit_code": 0,
+        "tests_passed": 1,
+        "tests_failed": 0,
+        "tests_ignored": 0,
+        "duration_seconds": 41.62,
+        "test_footer_duration_seconds": 41.58,
+        "artifacts": {
+          "rcon-unit2-dst_save_readiness_uses_the_native_start_barrier_without_server_ready_text.stdout": {
+            "bytes": 263,
+            "sha256": "14f553366fe4131952e8486be3f6c35b59322d8ad0174da554c4b736adc8dd6a"
+          },
+          "rcon-unit2-dst_save_readiness_uses_the_native_start_barrier_without_server_ready_text.stderr": {
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        }
+      }
+    },
+    "successful_native_rerun": "The managed lifecycle test recorded above used the fixed managed_lifecycle build and passed all four save gates and all subsequent lifecycle assertions."
+  },
+  "world_reload": {
+    "build": "world_reload",
+    "status": "passed",
+    "test": {
+      "selector": "commands::tests::dst_native_smoke_tests::smoke_dst_native_world_generation_save_and_reload",
+      "arguments": [
+        "--exact",
+        "--ignored",
+        "--nocapture",
+        "--test-threads=1"
+      ],
+      "started_utc": "2026-11-07T07:06:54Z",
+      "completed_utc": "2026-11-07T07:10:26Z",
+      "duration_seconds": 212.54,
+      "test_footer_duration_seconds": 212.49,
+      "exit_code": 0,
+      "tests_passed": 1,
+      "tests_failed": 0,
+      "tests_ignored": 0,
+      "exactly_one_test_passed": true,
+      "configuration": {
+        "scenario": "vanilla",
+        "offline": true,
+        "initial_world_size": "small",
+        "second_cycle_configured_world_size": "huge"
+      },
+      "setup": {
+        "package": "task-owned official package copy",
+        "steamcmd_root": "task-owned validated depot cache",
+        "bind_ip": "0.0.0.0",
+        "storage": "isolated storage fixture and disposable runtime root"
+      },
+      "source_boundary": "This separate test used the earlier world_reload build. Its immediate save helper bypasses the generic save-readiness gate, so its pass does not by itself validate the later health fix."
+    },
+    "observations": {
+      "native_ready_cycles": 2,
+      "shards_each_cycle": [
+        "master",
+        "caves"
+      ],
+      "normal_process_exit_codes": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "saved_world_status_after_each_stop": "Existing for all enabled shards",
+      "native_session_seed_and_map_dimensions_equal_after_reload": true,
+      "world_size_metadata_excluded_from_fingerprint": true,
+      "world_size_boundary": "The second cycle verifies changed configuration but reloads the original saved map, rather than generating the newly requested size.",
+      "map_readback": {
+        "snapshots": 4,
+        "current_run_matched": true,
+        "terrain_length_equals_width_times_height": true,
+        "master_dimensions": [
+          444,
+          444
+        ],
+        "caves_dimensions": [
+          422,
+          422
+        ],
+        "native_minimap_layers_each_shard": 67,
+        "native_minimap_atlases_each_shard": 3,
+        "live_players": 0
+      },
+      "save_requests": {
+        "count": 2,
+        "route": "immediate_save::request_save",
+        "causal_durable_checkpoint": "not_assessed"
+      },
+      "gameplay_features_selected": 0
+    },
+    "prior_setup_failures": [
+      {
+        "label": "dst-world-reload",
+        "started_utc": "2026-11-07T07:00:28Z",
+        "completed_utc": "2026-11-07T07:00:29Z",
+        "duration_seconds": 0.89,
+        "exit_code": 101,
+        "tests_passed": 0,
+        "tests_failed": 1,
+        "stage": "installation inventory validation before native launch",
+        "reason": "The worker omitted LANGAME_DST_SMOKE_STEAMCMD_ROOT, so the isolated fixture lacked the existing depot-cache manifest.",
+        "resolution": "Use the already supported variable to bind the task-owned validated SteamCMD cache.",
+        "artifacts": {
+          "dst-world-reload-native.stdout": {
+            "bytes": 513,
+            "sha256": "e433677c856b28ee7a3270311a6856cb9c5aca09ffa5bf65f81623c8dcb0b712"
+          },
+          "dst-world-reload-native.stderr": {
+            "bytes": 1430,
+            "sha256": "533b82b96d1d7a663b400a5081e99aefbc4c40afb7f618da3ee0840c696ededf"
+          }
+        }
+      },
+      {
+        "label": "dst-world-reload-retry1",
+        "started_utc": "2026-11-07T07:02:54Z",
+        "completed_utc": "2026-11-07T07:04:21Z",
+        "duration_seconds": 86.4,
+        "exit_code": 101,
+        "tests_passed": 0,
+        "tests_failed": 1,
+        "stage": "firewall preflight before native launch",
+        "reason": "The default loopback binding was not accepted by the non-elevated firewall scope check.",
+        "resolution": "Use the already supported LANGAME_DST_SMOKE_BIND_IP=0.0.0.0 in the disposable test fixture.",
+        "artifacts": {
+          "dst-world-reload-retry1-native.stdout": {
+            "bytes": 567,
+            "sha256": "4845bb9eeca011f4a4d63c9f9573fc97a13d4fd3d17b72941511d32e76279889"
+          },
+          "dst-world-reload-retry1-native.stderr": {
+            "bytes": 785,
+            "sha256": "17b450ca613bc9172952cae921a87c3047bd28d47b28d86fefa15b1c3918e954"
+          }
+        }
+      }
+    ],
+    "setup_failure_boundary": "Both failed setup receipts were retained. The successful worker changed existing environment inputs; neither failure required weakening production guards.",
+    "artifacts": {
+      "dst-world-reload-retry2-native.stdout": {
+        "bytes": 2307,
+        "sha256": "fcd957d9b57ba6a7cf93e788b3761e439b3bb608d92197015561e99d912e1f44"
+      },
+      "dst-world-reload-retry2-native.stderr": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "world-map-1-caves.json": {
+        "bytes": 2993412,
+        "sha256": "e6615349f47faf9d25a5d31777d52e0989e83db826bb3560b355d0464f04ecb5"
+      },
+      "world-map-0-master.json": {
+        "bytes": 3631329,
+        "sha256": "b0e3c83b77fcb6142191fab6550c34f87b9c9d47fd2911a624b6591d559b2ccd"
+      },
+      "world-map-1-master.json": {
+        "bytes": 3706667,
+        "sha256": "0d7f07a3c644bf4ca72e7f3c5a69cafed09b82a4ae0227f25230b7b1cc69dd1a"
+      },
+      "world-map-0-caves.json": {
+        "bytes": 2997776,
+        "sha256": "a325634f0aa692f4f5a51bcb9bbdc6aae58bab0e34bfcb5bdce8669749bd5f6c"
+      },
+      "native-smoke.json": {
+        "bytes": 34794,
+        "sha256": "6a14abd2fb2214bc7f3aafdedb566919252fe6bb2f5e79de527ea94e50193004"
+      }
+    }
+  },
+  "artifacts": {
+    "dontstarve-retry2-native.stderr": {
+      "bytes": 280513,
+      "sha256": "a7107563dd3852d71b43b6e7c49e7e9ae24eff50deb4c24bbf7a96c1b690ade2"
+    },
+    "dontstarve-retry2-native.stdout": {
+      "bytes": 8953,
+      "sha256": "d78cf93fd9a3e09c7bb712539ba88a5265129b23b6713bcf81ba15eeccbaa6d1"
+    }
+  },
+  "scope_limits": [
+    "Requested save receipts prove correlated native dispatch, not that the request caused a durable checkpoint.",
+    "The vanilla reload test proves that normal save-and-stop followed by restart retained the native session, original seed and actual map dimensions after generation options changed. It does not compare every saved entity or establish manual-save causality.",
+    "Build identities identify the exact tested source snapshots. This record does not claim byte identity with subsequent source changes.",
+    "Backup and archive comparisons use the harness inventory methods described above; package, build and log identities use SHA256.",
+    "No live clients, populated player identities, online account session, native Mods, Islands or Volcano gameplay were selected.",
+    "The full lifecycle copies an independently acquired official package. It does not itself exercise network acquisition or updates.",
+    "No network program maintenance/update, whole-world entity equality, populated save migration or GUI acceptance was selected.",
+    "Public evidence omits local paths, hostnames, instance identifiers, credentials, connection codes and raw native log excerpts."
+  ]
+}

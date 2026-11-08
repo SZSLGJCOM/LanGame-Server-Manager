@@ -1,0 +1,161 @@
+{
+  "schema_version": 1,
+  "module_id": "arksurvivalascended",
+  "evidence_classification": "isolated_managed_backend_native_game_tools_attempt",
+  "attempted_on": "2026-11-07",
+  "verification_timezone": "Asia/Shanghai",
+  "status": "blocked_upstream_during_production_prepare",
+  "source_identity_sha256": "20b153d95410c907851f8c37ae53df9597536163e1e5f392289adf067dabd070",
+  "source_manifest_sha256": "492317027e4d8be9f629262a9213655f94bc205c5c4ce544eb846ed9ff0e93ec",
+  "source_file_count": 4490,
+  "test_binary_sha256": "06e7252637b7b916cd480f523b4ebd021b79b20874c0944c314567f07747791f",
+  "shared_build_provenance_fixture": "2026-11-07-managed_native_lifecycle_build_26477280.json",
+  "package": {
+    "steam_app_id": 2430930,
+    "steam_build_id": "26477280",
+    "copied_payload_bytes": 12314762895,
+    "executable_sha256": "8cd7d552c22c7fac118e798e891d6167efc0045bc1f31d6bf19d9a557a73d579",
+    "separate_official_acquisition_receipt_sha256": "2e00abdf11c07fb9c6751a5d01bcd44d7d4ee37b5af26698824e816f9a2da804"
+  },
+  "test": {
+    "selector": "commands::tests::manual_runtime_tests::native_lifecycle_tests::native_game_tools",
+    "started_utc": "2026-11-07T06:55:19Z",
+    "completed_utc": "2026-11-07T06:56:21Z",
+    "duration_seconds": 62.33,
+    "exit_code": 101,
+    "exactly_one_test_passed": false,
+    "tests_passed": 0,
+    "tests_failed": 1,
+    "settings": {
+      "program_update": {
+        "policy": "pinned"
+      },
+      "num_gachas_per_tribe_for_penalty": -1,
+      "gachas_over_tribe_limit_penalty": 2,
+      "limit_replicators_per_saddle": 0,
+      "limit_cloning_chambers_range": 7500,
+      "limit_cloning_chambers_in_range_num": -1,
+      "limit_cloning_chambers_in_tribe_num": 45
+    },
+    "flags": {
+      "LANGAME_NATIVE_GM_TOOLS": "true",
+      "LANGAME_NATIVE_ARK_CREATURES": "true"
+    },
+    "gm_commands_sha256": "4b4148623e8bb40a52a1bb7bdffc5b552d97cee493f054dc9fe381553c1e562a"
+  },
+  "observed_phases": [
+    {
+      "phase": "begin"
+    },
+    {
+      "phase": "package_copy",
+      "outcome": "passed",
+      "acquisition": "existing_local_package",
+      "elapsed_ms": 18055,
+      "source_provenance_in_native_receipt": "unverified"
+    },
+    {
+      "phase": "instance_created",
+      "program_mode": "Independent",
+      "preparation": "isolated_copy",
+      "library": "preserved",
+      "ownership": "verified",
+      "elapsed_ms": 23461
+    },
+    {
+      "phase": "production_prepare_matching_symbols",
+      "outcome": "failed",
+      "error": "Matching ASA symbols could not be prepared."
+    }
+  ],
+  "actual_installer_error": {
+    "source": "asa-gm-native.stderr",
+    "error_category": "matching_symbol_cache_unavailable",
+    "providers": [
+      {
+        "provider": "cdn.pelayori.com",
+        "http_status": 404,
+        "http_reason": "Not Found"
+      },
+      {
+        "provider": "cdn.shadowhunter.co.za",
+        "http_status": 404,
+        "http_reason": "Not Found"
+      },
+      {
+        "provider": "cdn.shadowhunter-systems.co.za",
+        "http_status": 404,
+        "http_reason": "Not Found"
+      }
+    ],
+    "distinct_from_static_preflight": true,
+    "static_preflight_fixture": "2026-11-07-v97_extension_symbol_preflight.json"
+  },
+  "latest_read_only_symbol_recheck": {
+    "started_utc": "2026-11-07T07:58:57.4193731Z",
+    "completed_utc": "2026-11-07T07:59:01.5554083Z",
+    "provider_count": 3,
+    "all_head_status": 404,
+    "all_bounded_get_status": 404,
+    "all_get_error_code": "NoSuchKey",
+    "get_body_limit_bytes": 4096,
+    "get_body_bytes_per_provider": 392,
+    "user_agent": "LanGame-Server-Manager/ARK-Symbols",
+    "archive_downloaded": false,
+    "historical_cache_requested": false,
+    "production_prepare_repeated": false,
+    "report_artifact": "asa-symbols-recheck-20261107T075857Z.json",
+    "report_size_bytes": 5911,
+    "report_sha256": "9703c82059b18a5fd249121d830f49b953efdfe317b43af7437773ea774b2bdb",
+    "details_fixture": "2026-11-07-v97_extension_symbol_preflight.json",
+    "interpretation": "This later HTTP-only check still found no matching symbol package. It does not replace the original production installer error or constitute a new GM/Enigmasaur native attempt."
+  },
+  "unreached_acceptance": [
+    "extension_installed",
+    "native_server_start",
+    "extension_status_handshake",
+    "map_and_players_snapshot",
+    "native_gm_command_responses",
+    "dodo_and_rex_spawn_readback",
+    "enigmasaur_spawn_readback",
+    "game_tools_complete"
+  ],
+  "enigmasaur": {
+    "catalog_identity": "static_asset_evidence_only",
+    "native_spawn_readback": "not_reached",
+    "reference_fixture": "2026-11-07-enigmasaur_asset_identity.json",
+    "compatible_native_class_or_engine_layout": "not_established_by_this_attempt"
+  },
+  "cleanup": {
+    "successful_test_cleanup_receipt": "not_emitted",
+    "native_server_started": false,
+    "native_server_stop_or_exit": "not_applicable_before_start",
+    "post_failure_read_only_checked_utc": "2026-11-07T06:58:25.9899397Z",
+    "matching_task_owned_asa_processes": 0,
+    "remaining_task_fixture_directories": 0
+  },
+  "artifacts": [
+    {
+      "name": "asa-gm-native.json",
+      "size_bytes": 1277,
+      "sha256": "45c3a916811e1f97cedbd0bff42226d6bd0e95347238ef0910f2a616d5c2d8e1"
+    },
+    {
+      "name": "asa-gm-native.stdout",
+      "size_bytes": 811,
+      "sha256": "f91e87ac3c86a5c820b5ff4249e2b1fd32c628ef00fb3929ee3d6e264ba92c66"
+    },
+    {
+      "name": "asa-gm-native.stderr",
+      "size_bytes": 490,
+      "sha256": "ed018f10413c12e4fbe6b78237511640d0cc8f1d9e857ca83acde0dbeda7ce0d"
+    }
+  ],
+  "scope_limits": [
+    "This failure is from the actual production prepare path invoked by the frozen native test, not an inference substituted from the earlier read-only CDN preflight.",
+    "The test stopped during matching-symbol preparation, before extension_installed or game startup. No successful extension install, GM operation, Enigmasaur spawn or UE5.8 extension-layout compatibility is claimed.",
+    "The ordinary server lifecycle passed separately without the optional extension; this optional-extension failure does not invalidate that narrower result.",
+    "The post-failure cleanup counts are independent read-only observations, not a successful game-tools test or a synthesized cleanup=passed receipt.",
+    "No clients, existing populated worlds, migrations or gameplay effects were tested. Historical static observations and module last_verified remain unchanged."
+  ]
+}

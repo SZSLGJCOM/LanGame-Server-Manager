@@ -892,7 +892,12 @@ fn lookup_ark_ascended_template_token(
                 context.schema_defaults,
                 ARK_ASA_ADVANCED_GAME_INI,
             );
-            return Some(format!("{official}{advanced}"));
+            let optional = render_ark_native_ini_lines(
+                context.settings,
+                context.schema_defaults,
+                ARK_ASA_OPTIONAL_GAME_INI,
+            );
+            return Some(format!("{official}{advanced}{optional}"));
         }
         "multihome_ini_line" => {
             return Some(render_ark_multihome_ini_line(context.bind_ip));
@@ -1295,6 +1300,26 @@ fn lookup_rust_template_token(settings: &Map<String, Value>, path: &str) -> Opti
             settings,
             "powergrid_fuse_decay_low_pop_scale",
             "powergrid.fusedecaylowpopscale",
+        )),
+        "network_position_lod_line" => Some(render_rust_optional_setting_line(
+            settings,
+            "network_position_lod",
+            "net.position_lod",
+        )),
+        "network_position_lod_players_line" => Some(render_rust_optional_setting_line(
+            settings,
+            "network_position_lod_players",
+            "net.position_lod_players",
+        )),
+        "batch_packets_line" => Some(render_rust_optional_setting_line(
+            settings,
+            "batch_packets",
+            "server.batchpackets",
+        )),
+        "player_update_jobs_line" => Some(render_rust_optional_setting_line(
+            settings,
+            "player_update_jobs",
+            "server.useplayerupdatejobs",
         )),
         _ => None,
     }

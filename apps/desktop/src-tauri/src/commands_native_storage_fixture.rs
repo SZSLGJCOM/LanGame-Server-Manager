@@ -21,7 +21,8 @@ pub(super) fn prepare(
 mod tests {
     use super::*;
 
-    const CHILD: &str = "commands::tests::manual_runtime_tests::native_lifecycle_tests::storage_fixture::tests::relocated_storage_process_fixture";
+    const CHILD: &str =
+        "commands::tests::native_storage_fixture::tests::relocated_storage_process_fixture";
     const ROOT_VARIABLE: &str = "LANGAME_NATIVE_STORAGE_TEST_ROOT";
 
     #[tokio::test]

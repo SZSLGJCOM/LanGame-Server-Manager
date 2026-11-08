@@ -1,0 +1,318 @@
+{
+  "schema_version": 1,
+  "module_id": "rust",
+  "evidence_classification": "isolated_production_native_lifecycle",
+  "verified_on": "2026-11-07",
+  "package": {
+    "steam_app_id": 258550,
+    "steam_build_id": "26498655",
+    "manifest_sha256": "e8e07500cb0795cb3b5f02585feff67ea672e2aad098cc5eaf44a6807c6e99fc",
+    "static_contract_fixture": "2026-11-07-webrcon-connection-admission.json",
+    "harness_acquisition": "existing_local_package",
+    "harness_source_provenance": "unverified",
+    "copied_bytes": 5705812988,
+    "creation_scope": "storage",
+    "program_mode": "Independent",
+    "isolation": "The harness copied the task-owned package into an exclusively owned disposable fixture. It did not use an existing user instance or save.",
+    "scope": "Package identification comes from the separate manifest and assembly inspection. This lifecycle run is not itself a Steam download or installation-provenance test."
+  },
+  "test_execution": {
+    "selector": "commands::tests::manual_runtime_tests::native_lifecycle_tests::native_package_lifecycle",
+    "started_utc": "2026-11-07T07:56:28Z",
+    "completed_utc": "2026-11-07T08:03:16Z",
+    "runner_duration_seconds": 407.34,
+    "test_report_duration_seconds": 407.3,
+    "harness_exit_code": 0,
+    "exactly_one_test_passed": true,
+    "passed": 1,
+    "failed": 0,
+    "ignored": 0,
+    "filtered_out": 3453,
+    "test_binary_sha256": "1faf41ee7bd0b3135bad886cfb4689161fabeb05146dab025ba6b5716e786f32",
+    "test_binary_bytes": 207650816,
+    "source_identity_sha256": "3e620a2ab185e453a2bd8f8b13c36a75bf30a39e5cf5d76e70ce3c3af5531716",
+    "source_manifest_sha256": "5e000e5e3bbfdeb3722cb3034b4964d539541dca11f44547efce21ebac721947",
+    "build_receipt_sha256": "9cc05e9c326602f2712d4331bd42f2d1d877d22f4369cb3b067f065a63ce04ad",
+    "resource_boundary": "Exported test binary with frozen source resources; the separate exported_native_fixture_keeps_its_source_resources regression passed on the same binary.",
+    "gui_tested": false
+  },
+  "settings": {
+    "program_update": {
+      "policy": "pinned"
+    },
+    "use_new_navmesh": true,
+    "world_size": 1000,
+    "seed": 11072026,
+    "network_position_lod": 2,
+    "network_position_lod_players": 1,
+    "batch_packets": false,
+    "player_update_jobs": 3
+  },
+  "runtime_flags": {
+    "LANGAME_NATIVE_MANUAL_SAVE": "true",
+    "LANGAME_NATIVE_MANUAL_SAVE_RESTART": "true"
+  },
+  "convar_readback": {
+    "transport": "websocket_rcon",
+    "path": "Production generation-bound runtime command dispatcher; no external RCON client",
+    "expected_values": {
+      "net.position_lod": 2,
+      "net.position_lod_players": 1,
+      "server.batchpackets": false,
+      "server.useplayerupdatejobs": 3
+    },
+    "total_successful_readbacks": 16,
+    "same_managed_run_verified": true,
+    "response_validation": "Exact convar name and quoted typed value; wrong values, unrelated names, pending text and duplicate replies are rejected"
+  },
+  "cycles": [
+    {
+      "name": "initial",
+      "start_elapsed_ms": 115190,
+      "native_readiness": "passed",
+      "convar_readbacks": 4,
+      "manual_save_receipts": 1,
+      "raw_receipt_cycle_label": "initial",
+      "native_game_exit_code": -1,
+      "crash_flag": false,
+      "manager_process_status": "stopped",
+      "active_run_after_stop": "none"
+    },
+    {
+      "name": "restart",
+      "start_elapsed_ms": 70006,
+      "native_readiness": "passed",
+      "convar_readbacks": 4,
+      "manual_save_receipts": 1,
+      "raw_receipt_cycle_label": "restart",
+      "native_game_exit_code": -1,
+      "crash_flag": false,
+      "manager_process_status": "stopped",
+      "active_run_after_stop": "none"
+    },
+    {
+      "name": "after_restore",
+      "start_elapsed_ms": 71226,
+      "native_readiness": "passed",
+      "convar_readbacks": 4,
+      "manual_save_receipts": 1,
+      "raw_receipt_cycle_label": "other",
+      "native_game_exit_code": -1,
+      "crash_flag": false,
+      "manager_process_status": "stopped",
+      "active_run_after_stop": "none"
+    },
+    {
+      "name": "after_archive_restore",
+      "start_elapsed_ms": 70041,
+      "native_readiness": "passed",
+      "convar_readbacks": 4,
+      "manual_save_receipts": 1,
+      "raw_receipt_cycle_label": "other",
+      "native_game_exit_code": -1,
+      "crash_flag": false,
+      "manager_process_status": "stopped",
+      "active_run_after_stop": "none"
+    }
+  ],
+  "save_evidence": {
+    "formal_manual_save_receipts": 4,
+    "receipt_status": "Requested",
+    "each_attempted_once": true,
+    "retried": false,
+    "instance_run_session_matches": true,
+    "managed_generations_alive_at_dispatch": true,
+    "response_present": true,
+    "response_bytes_each": 42,
+    "write_confirmation_pending": false,
+    "native_log_observation": "Saving complete and Config Saved appear in the stopped-run logs; subsequent starts spawn entities from a save.",
+    "exact_checkpoint_content_roundtrip_proven": false,
+    "scope": "The production receipt remains Requested, not Confirmed. Native completion logs, generated save files, file-level backup/restore and later native reloads are separate observations; they do not upgrade this receipt into a durable-write or exact requested-checkpoint verification."
+  },
+  "native_quit_evidence": {
+    "requested_commands": [
+      "server.save",
+      "quit"
+    ],
+    "manager_transport": "websocket_rcon",
+    "manager_fallback_transport": null,
+    "observed_native_log": "[Raknet] Server Shutting Down (quit)",
+    "observed_native_game_exit_codes": [
+      -1,
+      -1,
+      -1,
+      -1
+    ],
+    "harness_exit_code": 0,
+    "unexpected_failure_cleanup_markers": 0,
+    "assembly_csharp_sha256": "6bd5748d015a0fea49f920b81ff6594036096a2a36f6a8f902e26fc18ff5039e",
+    "system_assembly_path": "RustDedicated_Data/Managed/System.dll",
+    "system_assembly_sha256": "c9f2cca03f4d565962eae80ddba79e8d387b7d4cb98b380b1c30b62de4c642e7",
+    "il_references": [
+      {
+        "method": "ConVar.Global::quit(ConsoleSystem/Arg)",
+        "offsets": "IL_003c; IL_0042; IL_0057; IL_005c-IL_0061",
+        "finding": "The no-argument quit path calls ServerMgr.Shutdown, marks Rust.Application.isQuitting, stops the network server with reason quit, then calls GetCurrentProcess().Kill(). Rust.Application.Quit follows at IL_0070; this evidence does not claim Application.Quit(-1)."
+      },
+      {
+        "method": "System.Diagnostics.Process::Kill()",
+        "offsets": "System.dll IL_000b-IL_000c",
+        "finding": "Passes integer -1 to Microsoft.Win32.NativeMethods.TerminateProcess for its process handle."
+      }
+    ],
+    "production_control_flow": [
+      "commands_instance_stop::stop_run awaits request_instance_graceful_shutdown before normal-stop finalization.",
+      "Rust declares server.save then quit with no fallback. request_instance_graceful_shutdown requires the complete managed process tree to exit; otherwise it returns an error without forced stopping.",
+      "stop_active_instance_processes refuses normal finalization unless the supervisor already confirms that the complete process tree is not running."
+    ],
+    "interpretation": "The native quit log, successful production stop path, verified self-termination implementation and observed -1 agree. LanGame did not substitute a forced stop. Rust's own quit implementation terminates its own process with -1; this is distinct from the successful test harness exit code 0 and from the initial failed run's cleanup exit 0xC000013A.",
+    "audit_scope": "The disposable fixture was cleaned after completion. This conclusion uses retained native logs, lifecycle results and the reviewed production/native control flow; it does not claim a separately retained desktop audit log."
+  },
+  "navigation_and_seed": {
+    "new_navigation_generated": true,
+    "new_navigation_reloaded": true,
+    "reloads_observed": 3,
+    "reloaded_tile_count": 347,
+    "native_navmesh_filename": "proceduralmap.1000.11072026.290.navmesh",
+    "seed_rcon_readback_performed": false,
+    "uploaded_cache_filename": "The seedless MapCache filename uses World.Timestamp; its initial zero and later timestamp are not the configured seed.",
+    "scope": "Native RustNav logs show initial generation and later loading of the saved navmesh whose filename includes the configured size and seed. The legacy -useOldNavmesh branch and a live RCON seed query were not exercised."
+  },
+  "storage_lifecycle": {
+    "prestart_update": "Pinned policy verified on every cycle; download bytes not measured",
+    "restart": "Fresh managed run and persisted configuration readback verified",
+    "backup_restore": {
+      "outcome": "passed",
+      "restored_files": 32,
+      "safeguard": "verified",
+      "program_config": "preserved",
+      "followed_by_native_cycle": "after_restore"
+    },
+    "program_maintenance": {
+      "outcome": "not_tested",
+      "reason": "network_update_not_selected"
+    },
+    "library_uninstall": {
+      "outcome": "library_only_instance_program_unchanged",
+      "program_entries": "preserved",
+      "saves_preserved": 32,
+      "native_config_files_preserved": 0
+    },
+    "archive_recovery": {
+      "archive": "verified",
+      "injected_failure": "deferred_commit_failure",
+      "interrupted_journal_state": "restoring",
+      "instance_row_during_interruption": "absent",
+      "config_saves_program_bytes": "preserved",
+      "interrupted_commit": "recovered",
+      "restored_state": "stopped",
+      "ownership": "verified",
+      "followed_by_native_cycle": "after_archive_restore"
+    },
+    "instance_deletion": {
+      "independent_program": "removed",
+      "library_record": "preserved",
+      "cleanup": "verified"
+    },
+    "final_library_uninstall": {
+      "unused_programs": "removed",
+      "retained_data_paths": 0
+    },
+    "final_cleanup": "passed",
+    "scope": "File-level restore and isolated archive recovery were exercised. No existing user instance, library or save was the target of these deletion or restore operations."
+  },
+  "regression_chain": [
+    {
+      "stage": "initial native lifecycle",
+      "result": "failed",
+      "evidence": "2026-11-07-webrcon-connection-admission.json",
+      "detail": "Four new convar queries and one manual save succeeded; the following shutdown save failed during the sixth WebRCON handshake. Normal stop was not completed."
+    },
+    {
+      "stage": "production correction",
+      "result": "implemented",
+      "detail": "Endpoint-shared connection admission retains failed and in-flight attempts, waits before sending, and never replays a command. No native limit, fixture pacing or RCON protocol change."
+    },
+    {
+      "stage": "Windows synthetic peer correction",
+      "result": "implemented in test only",
+      "detail": "Accepted fixture sockets explicitly use blocking mode while retaining their two-second read/write timeouts and all assertions. This corrected three initial mock-peer failures; it did not change production admission."
+    },
+    {
+      "stage": "focused units on the frozen binary",
+      "result": "passed",
+      "detail": "All 12 websocket-filter tests passed, including the six admission regressions, production GM and save-then-quit dispatch tests, and frame/deadline coverage."
+    },
+    {
+      "stage": "post-fix native lifecycle",
+      "result": "passed",
+      "detail": "The original four-query plus single manual-save sequence was retained in all four cycles, followed by the declared production save/quit path."
+    }
+  ],
+  "focused_unit_proof": {
+    "status_artifact": "rcon-unit2-status.json",
+    "status_sha256": "086d886998e1bad9fb7cef8ea81de9326f0dd4be43d40ca834e65eed67b12c0a",
+    "websocket": {
+      "exit_code": 0,
+      "passed": 12,
+      "failed": 0,
+      "admission_tests_passed": 6,
+      "runner_duration_seconds": 19.95,
+      "test_report_duration_seconds": 16.47,
+      "stdout_sha256": "a4a090ae1e19cfc26216b7172a61446a40b79fbb95f4dca49d602c077b3476bf",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "additional_relevant_filters": [
+      {
+        "filter": "rust_configuration_readback_requires_exact_convar_and_typed_value",
+        "exit_code": 0,
+        "passed": 1,
+        "stdout_sha256": "c0d39a1e7c7805ba2a7f360a78e4025cb1008b39935a65f29992bc6621294bcb"
+      },
+      {
+        "filter": "exported_native_fixture_keeps_its_source_resources",
+        "exit_code": 0,
+        "passed": 1,
+        "stdout_sha256": "ea2bddfd12f5f65cfcd84820a21d63f59a448670a2af0b60d11f7877c3346c1e"
+      }
+    ],
+    "same_test_binary_and_source_identity": true,
+    "scope": "Focused tests only; this is not a claim that the entire desktop unit suite passed."
+  },
+  "artifacts": [
+    {
+      "logical_name": "rust-retry1-native.json",
+      "bytes": 1084,
+      "sha256": "113fd13c660a9165a92f58d3eb16af2d72a3e49d8f338acf4cde9eda4fa4a774"
+    },
+    {
+      "logical_name": "rust-retry1-native.stdout",
+      "bytes": 8834,
+      "sha256": "d1a1327b968162cf087f6ea8b8b5a567daf0ea2a54f886a273ba071bfebf9f38"
+    },
+    {
+      "logical_name": "rust-retry1-native.stderr",
+      "bytes": 112581,
+      "sha256": "c87b2a3db614930d39aaf14ee27e67a9794c3c9d45675d0b17e82532ce546e9d"
+    }
+  ],
+  "log_review": {
+    "stdout": "Complete file reviewed",
+    "stderr_raw_lines": 1784,
+    "stderr_distinct_lines_after_ansi_normalization": 148,
+    "stderr": "Complete file read and every distinct normalized line reviewed; repeated historical log tails are not counted as additional runtime events",
+    "observed_native_warnings": [
+      "DungeonGridRoot was absent for dungeon navmesh generation",
+      "Boat AI entity kill requests referred to already destroyed entities"
+    ],
+    "scope": "Warnings were retained in the raw evidence. This is not a claim of warning-free gameplay."
+  },
+  "limitations": [
+    "No client join, player gameplay or performance benchmark.",
+    "No native legacy Source RCON run or old-navigation branch.",
+    "No network program update or fresh-download behavior tested by this lifecycle fixture.",
+    "Manual-save receipt remains Requested; no exact requested-checkpoint content roundtrip was established.",
+    "Other RCON clients using the same source IP can still consume native connection allowance.",
+    "Credentials, instance identifiers, hostnames and absolute task paths are omitted."
+  ]
+}

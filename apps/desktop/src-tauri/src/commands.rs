@@ -181,7 +181,7 @@ pub(crate) mod commands_workshop_collection_removal;
 #[path = "dst_import_mods.rs"]
 mod dst_import_mods;
 #[path = "commands_mod_curseforge_reference.rs"]
-mod mod_curseforge_reference;
+pub(crate) mod mod_curseforge_reference;
 #[path = "nexus_mods.rs"]
 pub(super) mod nexus_mods;
 pub use commands_workshop_collection_removal::remove_instance_workshop_collection;
@@ -315,13 +315,13 @@ pub use commands_live_players::{
     execute_instance_player_action, read_instance_live_players, refresh_instance_live_players,
 };
 pub use commands_manual_player_actions::execute_instance_manual_player_action;
+pub(crate) use commands_mods::normalize_manual_mod_references;
 use commands_mods::{
     append_mod_install_note, download_steam_workshop_items_inner,
     install_manual_mod_references_inner, install_module_game_inner, module_mods_spec_from_manifest,
-    normalize_manual_mod_references, prepare_dst_import_workshop_items,
-    read_manual_mod_inventory_inner, resolve_manual_mod_references_inner,
-    split_manual_mod_source_path_inputs, stage_manual_mod_files_inner, uninstall_module_game_inner,
-    validate_module_game_inner,
+    prepare_dst_import_workshop_items, read_manual_mod_inventory_inner,
+    resolve_manual_mod_references_inner, split_manual_mod_source_path_inputs,
+    stage_manual_mod_files_inner, uninstall_module_game_inner, validate_module_game_inner,
 };
 #[cfg(test)]
 use commands_mods::{
@@ -908,7 +908,7 @@ pub struct ManualModInventoryResult {
     pub items: Vec<ManualModInventoryItem>,
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ManualModReferenceItem {
     pub reference: String,
     pub status: String,
@@ -917,7 +917,7 @@ pub struct ManualModReferenceItem {
     pub message: Option<String>,
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ManualModReferenceResolveResult {
     pub instance_id: String,
     pub module_id: String,
@@ -931,18 +931,6 @@ pub struct ManualModReferenceResolveResult {
 #[derive(Debug, Deserialize)]
 struct ModuleModsManifest {
     mods: Option<ModuleModsSpec>,
-}
-
-#[derive(Debug, Deserialize)]
-struct CurseToolsSearchResponse {
-    #[serde(default)]
-    data: Vec<CurseToolsMod>,
-}
-
-#[derive(Debug, Deserialize)]
-struct CurseToolsMod {
-    id: u64,
-    name: Option<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -1993,7 +1981,27 @@ pub async fn resolve_manual_mod_references(
 ) -> Result<ManualModReferenceResolveResult, String> {
     let _operation = state.begin_storage_context_operation("Mod reference resolution")?;
     let storage = state.bootstrap_storage()?;
-    resolve_manual_mod_references_inner(&storage, instance_id, references).await
+    let reference_count = references.len();
+    let result =
+        resolve_manual_mod_references_inner(&storage, instance_id.clone(), references).await;
+    let failures = match &result {
+        Err(error) => vec![error.as_str()],
+        Ok(result) => result
+            .items
+            .iter()
+            .filter_map(|item| item.message.as_deref())
+            .collect(),
+    };
+    for error in failures {
+        commands_runtime_supervision::append_desktop_app_log(
+            &storage,
+            "error",
+            "mod.reference.resolve.failed",
+            error,
+            json!({ "instance_id": instance_id, "reference_count": reference_count }),
+        );
+    }
+    result
 }
 #[cfg(windows)]
 fn apply_no_window(command: &mut ProcessCommand) {

@@ -181,6 +181,8 @@ const ARK_CREATURE_NAME_ZH: Record<string, string> = {
   Dodo: "渡渡鸟",
   Doedicurus: "星尾兽",
   Dragon: "喷火龙",
+  // Retain the publisher name until an authoritative Chinese name is available.
+  Enigmasaur: "Enigmasaur",
   Equus: "庞马",
   Giganotosaurus: "南方巨兽龙",
   Gigantopithecus: "巨猿",

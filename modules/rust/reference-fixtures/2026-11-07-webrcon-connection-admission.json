@@ -1,0 +1,159 @@
+{
+  "schema_version": 1,
+  "module_id": "rust",
+  "evidence_classification": "native_rcon_contract_and_failed_runtime_observation",
+  "reviewed_on": "2026-11-07",
+  "package": {
+    "steam_app_id": 258550,
+    "steam_build_id": "26498655",
+    "manifest_path": "steamapps/appmanifest_258550.acf",
+    "manifest_sha256": "e8e07500cb0795cb3b5f02585feff67ea672e2aad098cc5eaf44a6807c6e99fc",
+    "state_flags": 4,
+    "update_result": 0,
+    "last_updated_unix_seconds": 1794023220,
+    "scope": "Read-only inspection of the isolated package also copied by the failed native lifecycle fixture. The manifest identifies the package; the lifecycle harness itself labels its input as an existing local package."
+  },
+  "assemblies": [
+    {
+      "path": "RustDedicated_Data/Managed/Fleck.dll",
+      "sha256": "0387b5ca0f08046f4d5c0d9d84213dcd41bec6ba4bb38f1d9e503b306a450016"
+    },
+    {
+      "path": "RustDedicated_Data/Managed/Facepunch.Rcon.dll",
+      "sha256": "a2c3d782e5d803085b7a76e4177ae17d542abee421a3032cc16aebe30a2cbfde"
+    },
+    {
+      "path": "RustDedicated_Data/Managed/Assembly-CSharp.dll",
+      "sha256": "6bd5748d015a0fea49f920b81ff6594036096a2a36f6a8f902e26fc18ff5039e"
+    }
+  ],
+  "inspection": {
+    "method": "Package-bundled Mono.Cecil reads metadata and IL; target game assemblies are not loaded or executed",
+    "parser_path": "RustDedicated_Data/Managed/Mono.Cecil.dll",
+    "parser_sha256": "b8570aa24c47827f36e8015c7edb8e3fe35323ed6bd9829ab09f58777baf413f",
+    "attempt_limit_setter_call_count": {
+      "Fleck.dll": 0,
+      "Facepunch.Rcon.dll": 0,
+      "Assembly-CSharp.dll": 0
+    },
+    "setter_search_scope": "Method-reference operands named SetAttemptLimits in all method bodies, including nested types, in the three identified assemblies"
+  },
+  "native_contract": {
+    "scope": "New TCP attempts from one source IP at a Fleck WebSocket listener",
+    "attempts_per_window": 5,
+    "window_seconds": 5,
+    "clock": "System.DateTime.UtcNow",
+    "window_expiry_comparison": "strictly greater than five seconds",
+    "first_attempt_count": 0,
+    "sixth_attempt_count": 5,
+    "reject_when": "AttemptCount >= _maxAttemptsPerWindow",
+    "authentication_success_resets_attempt_count": false,
+    "connection_close_resets_unexpired_attempt_count": false,
+    "rejection_stage": "Before HTTP upgrade and command delivery",
+    "rejection_behavior": "Close the accepted socket and return, without an HTTP error response, WebSocket error frame or limit-specific log message",
+    "il_references": [
+      {
+        "method": "Fleck.ConnectionLimiter::.ctor()",
+        "offsets": "IL_0029-IL_003e",
+        "finding": "Initializes _maxAttemptsPerWindow to 5 and _attemptWindow with TimeSpan.FromSeconds(5)"
+      },
+      {
+        "method": "Fleck.ConnectionLimiter::TryAdd(System.Net.IPAddress)",
+        "offsets": "IL_0016; IL_006a-IL_00e5",
+        "finding": "Reads UtcNow; initializes a new window with count 0; resets only when elapsed > window; otherwise increments the count and rejects count >= 5, before checking the per-IP active-connection limit"
+      },
+      {
+        "method": "Fleck.ConnectionLimiter::Remove(System.Net.IPAddress); Fleck.ConnectionLimiter::IsIdle(ClientState,System.DateTime)",
+        "offsets": "Remove IL_0036-IL_0067; IsIdle IL_0000-IL_001f",
+        "finding": "Decrements active and overall connection counts; an IP entry is removed only when it has zero active connections and its attempt window has strictly expired"
+      },
+      {
+        "method": "Fleck.WebSocketServer::.ctor(System.String,System.Boolean,System.Int32,System.Int32,System.Int32)",
+        "offsets": "IL_0089-IL_009e",
+        "finding": "Creates ConnectionLimiter and overrides only the concurrent connection limits through SetConnectionLimits; does not override the attempt window"
+      },
+      {
+        "method": "Fleck.WebSocketServer::OnClientConnect(Fleck.ISocket)",
+        "offsets": "IL_0027-IL_004c",
+        "finding": "Calls TryAdd with RemoteIpAddress; failure calls ISocket.Close and exits before constructing the WebSocket connection"
+      },
+      {
+        "method": "Fleck.SocketWrapper::Close()",
+        "offsets": "IL_0019; IL_002c",
+        "finding": "Closes the stream and underlying socket"
+      }
+    ]
+  },
+  "initial_runtime_observation": {
+    "test": "commands::tests::manual_runtime_tests::native_lifecycle_tests::native_package_lifecycle",
+    "result": "failed",
+    "duration_seconds": 155.22,
+    "artifacts": [
+      {
+        "logical_name": "rust-native.stdout",
+        "sha256": "0f912350d1421e119ee155fc792bb47862d80420419ad8fbae6431b352a15143",
+        "bytes": 2350,
+        "last_write_utc": "2026-11-07T06:05:28.4454208Z"
+      },
+      {
+        "logical_name": "rust-native.stderr",
+        "sha256": "26c3874515edd180f2d155a708deded4cb06f11861bb301d0f9958f547814993",
+        "bytes": 11104,
+        "last_write_utc": "2026-11-07T06:05:28.4444210Z"
+      }
+    ],
+    "completed_checks": {
+      "initial_native_readiness": "passed; declared A2S readiness",
+      "same_run_rcon_readback": {
+        "net.position_lod": 2,
+        "net.position_lod_players": 1,
+        "server.batchpackets": false,
+        "server.useplayerupdatejobs": 3
+      },
+      "manual_save_receipt": "One production save dispatch, no retry, matching instance/run/session, response present, save_completion=requested",
+      "native_save_log": "Saved 420 entities followed by Saving complete; this is a native completion log, not a backup-restore or exact content-readback result"
+    },
+    "failure": {
+      "phase": "First normal shutdown command: server.save",
+      "stage": "Reading the WebSocket HTTP upgrade response",
+      "windows_socket_error": 10054,
+      "shutdown_save_command_sent": false,
+      "quit_command_sent": false,
+      "normal_stop_passed": false,
+      "call_sequence": "Four separate successful RCON queries, then one successful manual-save connection, followed by the shutdown save connection",
+      "assessment": "The sixth-connection failure matches the verified native five-attempt window and the former one-connection-per-command production path. The original run did not capture per-connection arrival timestamps or a native limit event; the limit trigger is a diagnosis supported by the call sequence and static native contract, not a packet-capture claim."
+    },
+    "cleanup": {
+      "owned_process_tree": "finished",
+      "exit_code_hex": "0xC000013A",
+      "interpretation": "Reported by test-owned cleanup after shutdown failed; it is not evidence of a spontaneous native server crash or a successful normal stop",
+      "fixture_files": "Removed after owned-process cleanup was confirmed; the original server.cfg was not retained"
+    }
+  },
+  "map_cache_filename_interpretation": {
+    "observed_pattern": "proceduralmap.1000.0.290_<content-hash>.map",
+    "method": "Assembly-CSharp.dll: MapUploader::get_SeedlessMapFileName()",
+    "offset": "IL_0044",
+    "middle_component": "World.Timestamp, not World.Seed",
+    "call_sites": "MapUploader/<UploadMap>d__25::MoveNext IL_00a7 and MapUploader/<UploadMapImage>d__27::MoveNext IL_002a",
+    "local_map_filename_contrast": "World::get_MapFileName reads World.Seed at IL_0077 for the ordinary local filename",
+    "scope": "The uploaded-cache URL does not show that configured seed 11072026 was lost. The initial fixture's actual seed was not independently read back before cleanup."
+  },
+  "manager_correction": {
+    "connection_policy": "Process-wide admission keyed by parsed endpoint, with five slots. In-flight slots remain occupied until the TCP stream is dropped. Completed successful and failed attempts retain their slots until both monotonic and UTC elapsed time are strictly greater than five seconds.",
+    "admission_budget_ms": 5100,
+    "unchanged_wire_total_budget_ms": 8000,
+    "unchanged_wire_idle_io_limit_ms": 3000,
+    "combined_queue_and_wire_budget_ms": 13100,
+    "command_replay": false,
+    "native_limit_changes": false,
+    "persistent_connection_pool": false,
+    "scope": "Waiting occurs before connecting or sending. It does not change commands, passwords, server limits or the native configuration readback helper. Other clients using the same source IP can still consume the server's allowance.",
+    "formatted_source_sha256": {
+      "apps/desktop/src-tauri/src/runtime_transport.rs": "e55e1951b55d7920e5d875d95f542874ffb5aad9cf9434a3a54d8746ec079866",
+      "apps/desktop/src-tauri/src/runtime_transport_websocket_admission.rs": "d2cba40a162528945e57cb922e34e58062544138c15c6516cdfd01e9fa3bd504",
+      "apps/desktop/src-tauri/src/runtime_transport_websocket_admission_tests.rs": "5126bbb7373634d027a73f22d2a20a82e6a4a97830d6cbdfc6ae999f91b3f3d4"
+    }
+  },
+  "scope": "This artifact records static native behavior, the initial failed lifecycle observation and the implemented correction. It does not establish a passing post-fix build, unit suite, native lifecycle, Source RCON run, client join or performance result. Later validation is recorded separately. Credentials, instance identifiers, machine names and absolute task paths are omitted."
+}

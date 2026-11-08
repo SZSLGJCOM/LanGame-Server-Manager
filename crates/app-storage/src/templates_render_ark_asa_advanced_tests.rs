@@ -180,3 +180,58 @@ fn native_null_is_omitted_but_zero_false_and_empty_strings_remain_explicit() {
         "Zero=0\nDisabled=false\nEmpty=\n"
     );
 }
+
+#[test]
+fn asa_v97_limits_are_optional_and_preserve_native_numbers_and_sentinels() {
+    let schema: Value = serde_json::from_str(include_str!(
+        "../../../modules/arksurvivalascended/schema.json"
+    ))
+    .unwrap();
+    let defaults = schema["properties"]
+        .as_object()
+        .unwrap()
+        .iter()
+        .filter_map(|(key, prop)| {
+            prop.get("default")
+                .map(|value| (key.clone(), value.clone()))
+        })
+        .collect::<Map<String, Value>>();
+    for &(_, key, ..) in ARK_ASA_OPTIONAL_GAME_INI {
+        assert!(schema["properties"][key].get("default").is_none(), "{key}");
+    }
+    assert_eq!(
+        render_ark_native_ini_lines(&Map::new(), &defaults, ARK_ASA_OPTIONAL_GAME_INI),
+        ""
+    );
+    let nulls = ARK_ASA_OPTIONAL_GAME_INI
+        .iter()
+        .map(|&(_, key, ..)| (key.to_owned(), Value::Null))
+        .collect::<Map<String, Value>>();
+    assert_eq!(
+        render_ark_native_ini_lines(&nulls, &defaults, ARK_ASA_OPTIONAL_GAME_INI),
+        ""
+    );
+    let settings = json!({
+        "num_gachas_per_tribe_for_penalty": -1,
+        "gachas_over_tribe_limit_penalty": 3,
+        "limit_replicators_per_saddle": 0,
+        "limit_cloning_chambers_range": 10000,
+        "limit_cloning_chambers_in_range_num": 0,
+        "limit_cloning_chambers_in_tribe_num": -1
+    });
+    assert_eq!(
+        render_ark_native_ini_lines(
+            settings.as_object().unwrap(),
+            &defaults,
+            ARK_ASA_OPTIONAL_GAME_INI,
+        ),
+        concat!(
+            "NumGachasPerTribeForPenalty=-1\n",
+            "GachasOverTribeLimitPenalty=3\n",
+            "LimitReplicatorsPerSaddle=0\n",
+            "LimitCloningChambersRange=10000\n",
+            "LimitCloningChambersInRangeNum=0\n",
+            "LimitCloningChambersInTribeNum=-1\n",
+        )
+    );
+}

@@ -14,6 +14,8 @@ for (const viewport of [{ width: 1560, height: 900 }, { width: 960, height: 600 
     assert.equal(report.status, "passed", report.error);
     assert.deepEqual(report.browser_errors, []); assert.equal(report.browser_exited, true);
     assert.equal(report.local_imports, 2); assert.equal(report.nexus_api_calls, 0);
+    assert.ok(report.success_auto_dismiss_ms >= 4800 && report.success_auto_dismiss_ms < 6500);
+    assert.equal(report.success_manual_dismiss, true); assert.equal(report.inventory_retained_after_feedback, true);
     assert.equal(report.browser_processes_remaining, 0); assert.equal(report.scratch_removed, true);
     console.log(JSON.stringify({ viewport, checks: report.checks?.length, local_imports: report.local_imports, nexus_api_calls: report.nexus_api_calls }));
   });

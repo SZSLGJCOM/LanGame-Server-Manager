@@ -1,0 +1,174 @@
+{
+  "schema_version": 1,
+  "module_id": "unturned",
+  "evidence_classification": "isolated_managed_backend_native_full_lifecycle",
+  "verified_on": "2026-11-07",
+  "verification_timezone": "Asia/Shanghai",
+  "status": "passed",
+  "steam_app_id": 1110390,
+  "steam_build_id": "26491864",
+  "game_version": "3.26.3.14",
+  "package": {
+    "acquisition": "fresh official anonymous SteamCMD public app_update validate, independently verified",
+    "completed_utc": "2026-11-07T03:53:20.0446795Z",
+    "state_flags": 4,
+    "update_result": 0,
+    "copied_source_bytes": 1863684956,
+    "files": {
+      "steamapps/appmanifest_1110390.acf": {
+        "bytes": 1100,
+        "sha256": "e7cffe23ba4cde07924b08c40ca99b1fd77b937dda6316cf994e278f9fcda761"
+      },
+      "Unturned.exe": {
+        "bytes": 674016,
+        "sha256": "48ead292062692a00da9db2404ba9187559c01f8c64f53a340ce2a1cca4de38b"
+      },
+      "Unturned_Data/Managed/Assembly-CSharp.dll": {
+        "bytes": 4512992,
+        "sha256": "dd37a145331b7d21025ac28954f8b43f77257bfc7de8f975841df13934c3c361"
+      },
+      "Status.json": {
+        "bytes": 5794,
+        "sha256": "7af822a13c001f92d77d94112e20bd689515d526af1db4b26b1ba289c9ba992f"
+      }
+    },
+    "provenance_boundary": "The lifecycle selector labels copied source provenance unverified and does not exercise network acquisition. The separate completed acquisition receipt and matching package hashes identify this official package.",
+    "related_static_evidence": "reference-fixtures/2026-11-07-public-build-26491864-static.json"
+  },
+  "build": {
+    "source_identity_sha256": "20b153d95410c907851f8c37ae53df9597536163e1e5f392289adf067dabd070",
+    "source_manifest_sha256": "492317027e4d8be9f629262a9213655f94bc205c5c4ce544eb846ed9ff0e93ec",
+    "source_file_count": 4490,
+    "test_binary_sha256": "06e7252637b7b916cd480f523b4ebd021b79b20874c0944c314567f07747791f",
+    "test_binary_bytes": 207506432,
+    "captured_utc": "2026-11-07T05:54:47.3271853Z",
+    "cargo_command": "test",
+    "cargo_arguments": [
+      "-p",
+      "langame-desktop",
+      "--bin",
+      "langame-desktop",
+      "--features",
+      "custom-protocol",
+      "--locked",
+      "--no-run"
+    ],
+    "actual_entry_point": "task-scoped approved Cargo wrapper; local path omitted",
+    "actual_entry_point_sha256": "3ed87587c3b62d026d90eee052dda4cc725d77cdc8fbff891a65b54989d8bb01",
+    "actual_invocation_started_utc": "2026-11-07T05:47:15.4061625Z",
+    "resource_override": {
+      "minimum_build_memory_bytes": 12884901888,
+      "maximum_compiler_jobs": 1,
+      "host_reserve_bytes": 8589934592,
+      "shared_queue_and_target_pool_preserved": true,
+      "global_policy_modified": false
+    },
+    "resource_binding": "Frozen modules and migrations selected through the isolated storage fixture; source proof matches the build receipt."
+  },
+  "test": {
+    "selector": "commands::tests::manual_runtime_tests::native_lifecycle_tests::native_package_lifecycle",
+    "arguments": [
+      "--exact",
+      "--ignored",
+      "--nocapture",
+      "--test-threads=1"
+    ],
+    "started_utc": "2026-11-07T06:08:06Z",
+    "completed_utc": "2026-11-07T06:17:49Z",
+    "duration_seconds": 583.1,
+    "exit_code": 0,
+    "tests_passed": 1,
+    "tests_failed": 0,
+    "settings": {
+      "program_update": {
+        "policy": "pinned"
+      }
+    },
+    "flags": {
+      "LANGAME_NATIVE_MANUAL_SAVE": "true",
+      "LANGAME_NATIVE_MANUAL_SAVE_RESTART": "true"
+    },
+    "platform": "Windows x86_64",
+    "elevated": false,
+    "program_mode": "Independent",
+    "creation_scope": "storage",
+    "acquisition_scope": "existing_local_package"
+  },
+  "observations": {
+    "cycles": [
+      "initial",
+      "restart",
+      "after_restore",
+      "after_archive_restore"
+    ],
+    "native_ready_cycles": 4,
+    "normal_process_exit_codes": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "crash_flags": [
+      false,
+      false,
+      false,
+      false
+    ],
+    "active_run_after_each_stop": "none",
+    "restart": "persisted configuration readback and fresh run verified",
+    "manual_save": {
+      "receipts": 4,
+      "attempts_per_cycle": 1,
+      "retried": false,
+      "route": "managed_process_generation",
+      "completion": "requested",
+      "response_present": false,
+      "response_bytes_each": 0,
+      "instance_run_session_correlation": true,
+      "managed_generations_alive": true,
+      "durable_write": "not_assessed",
+      "request_caused_checkpoint": "not_assessed",
+      "exact_checkpoint_readback_requested": false
+    },
+    "save_observation_after_stop": "generated",
+    "backup_restore": {
+      "status": "passed",
+      "restored_files": 23,
+      "safeguard": "verified",
+      "program_and_configuration": "preserved",
+      "following_native_cycle": "passed"
+    },
+    "library_uninstall": {
+      "outcome": "library_only_instance_program_unchanged",
+      "program_entries": "preserved",
+      "saved_inventory_entries_preserved": 23,
+      "retained_native_configuration_entries": 0
+    },
+    "archive_recovery": {
+      "archive": "verified",
+      "interruption": "deferred commit failure with restoring journal and absent instance row",
+      "configuration_saves_and_program_inventory": "preserved",
+      "recovery": "stopped ownership readback verified",
+      "following_native_cycle": "passed"
+    },
+    "final_instance_delete": "independent program removed; library record preserved; cleanup verified",
+    "final_library_uninstall": "unused programs removed; retained data paths zero",
+    "owned_fixture_cleanup": "passed; success path asserts fixture directory absent"
+  },
+  "artifacts": {
+    "unturned-native.stdout": {
+      "bytes": 6457,
+      "sha256": "3b7aa6d4efde2e0be44ae23d25e57296bbdc24488e38cdc66303e626512956e5"
+    },
+    "unturned-native.stderr": {
+      "bytes": 117602,
+      "sha256": "05f164b01d57ebb88b4dd81c15a1d60cc5a011406dae37d72533231d180d996f"
+    }
+  },
+  "scope_limits": [
+    "Requested save receipts prove the correlated managed dispatch, not causal durable persistence or exact manual-saved content reload.",
+    "Backup and archive comparisons use the harness file inventory, byte lengths and content fingerprints; package, build and log identities use SHA256.",
+    "No network program update/validate, live-client gameplay, populated player behavior or GUI acceptance was selected.",
+    "The public evidence omits local paths, hostnames, instance identifiers, credentials, connection codes and raw native log excerpts."
+  ]
+}

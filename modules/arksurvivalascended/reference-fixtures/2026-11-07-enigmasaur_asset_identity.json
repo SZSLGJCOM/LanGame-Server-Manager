@@ -1,0 +1,41 @@
+{
+  "reviewed_at": "2026-11-07",
+  "module_id": "arksurvivalascended",
+  "app_id": 2430930,
+  "build_id": "26477280",
+  "status": "static_asset_identity_verified_runtime_pending",
+  "manifest": {
+    "path": "Manifest_UFSFiles_Win64.txt",
+    "sha256": "c8637a579916a637f462dec58a635dc63db29bc3564acba954c4c3ed435c19f2",
+    "entries": [
+      {
+        "line": 199731,
+        "path": "ShooterGame/Content/ASA/Dinos/Chameleon/Chameleon_Character_BP.uasset"
+      },
+      {
+        "line": 199721,
+        "path": "ShooterGame/Content/ASA/Dinos/Chameleon/DinoSpawnEntriesEnigmasaur.uasset"
+      },
+      {
+        "line": 199561,
+        "path": "ShooterGame/Content/ASA/Dinos/Chameleon/SFX/s_enigmasaur_vo_torpid_out_Cue.uasset"
+      }
+    ]
+  },
+  "container_directory": {
+    "path": "ShooterGame/Content/Paks/pakchunk0-WindowsServer.utoc",
+    "observed_filename": "Chameleon_Character_BP.uasset"
+  },
+  "candidate": {
+    "name": "Enigmasaur",
+    "class_name": "Chameleon_Character_BP_C",
+    "class_path": "/Game/ASA/Dinos/Chameleon/Chameleon_Character_BP.Chameleon_Character_BP_C",
+    "class_name_basis": "Blueprint generated-class naming convention applied to the official package asset; pending native entity readback"
+  },
+  "limitations": [
+    "Read-only package inspection; no server was started during this inspection.",
+    "The manifest and directory index establish the asset path, not successful loading or spawning.",
+    "No authoritative Chinese display name was found; retain the publisher's English name.",
+    "The package contains no actual PDB, C/C++ SDK header or usmap files, although manifests mention PDB staging paths."
+  ]
+}

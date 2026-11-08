@@ -1138,3 +1138,77 @@
   }
 }
 ```
+
+## `2026-11-07-asa_server_patch_notes_v97.json`
+
+- Evidence: `best_effort_verified` at `2026-11-07` (build `Studio Wildcard official v97 release (2026-11-06); deterministic native output contract only, no new game-server run`)
+- Sources: `asa_server_patch_notes_v97`
+- Coverage: editable `6`, specialized `0`, derived `0`, generated `0`, excluded `0`
+
+### Settings
+
+```json
+{
+  "admin_password": "fixture-admin-password",
+  "gachas_over_tribe_limit_penalty": 3,
+  "limit_cloning_chambers_in_range_num": -1,
+  "limit_cloning_chambers_in_tribe_num": 50,
+  "limit_cloning_chambers_range": 10000,
+  "limit_replicators_per_saddle": 0,
+  "num_gachas_per_tribe_for_penalty": -1,
+  "server_name": "LanGame ASA v97 configuration",
+  "server_password": "fixture-server-password"
+}
+```
+
+### Expected outputs
+
+```json
+{
+  "files": [
+    {
+      "format": "ini",
+      "keys": {
+        "/script/shootergame.shootergamemode.GachasOverTribeLimitPenalty": "3",
+        "/script/shootergame.shootergamemode.LimitCloningChambersInRangeNum": "-1",
+        "/script/shootergame.shootergamemode.LimitCloningChambersInTribeNum": "50",
+        "/script/shootergame.shootergamemode.LimitCloningChambersRange": "10000",
+        "/script/shootergame.shootergamemode.LimitReplicatorsPerSaddle": "0",
+        "/script/shootergame.shootergamemode.NumGachasPerTribeForPenalty": "-1"
+      },
+      "path": "Game.ini",
+      "root": "config"
+    },
+    {
+      "format": "ini",
+      "keys": {
+        "/script/shootergame.shootergamemode.GachasOverTribeLimitPenalty": "3",
+        "/script/shootergame.shootergamemode.LimitCloningChambersInRangeNum": "-1",
+        "/script/shootergame.shootergamemode.LimitCloningChambersInTribeNum": "50",
+        "/script/shootergame.shootergamemode.LimitCloningChambersRange": "10000",
+        "/script/shootergame.shootergamemode.LimitReplicatorsPerSaddle": "0",
+        "/script/shootergame.shootergamemode.NumGachasPerTribeForPenalty": "-1"
+      },
+      "path": "ShooterGame/Saved/Config/WindowsServer/Game.ini",
+      "root": "install"
+    }
+  ],
+  "launch": {
+    "arguments": [
+      "TheIsland_WP?AltSaveDirectoryName=acceptance-arksurvivalascended?QueryPort=27015?MaxPlayers=30?SessionName=LanGame ASA v97 configuration?RCONEnabled=true?RCONPort=27020",
+      "-port=7777",
+      "-QueryPort=27015",
+      "-WinLiveMaxPlayers=30",
+      "-NullRHI",
+      "-Unattended",
+      "-NoSplash",
+      "-abslog={{paths.logs_dir}}/ark-ascended-server.log",
+      "-servergamelog",
+      "-servergamelogincludetribelogs",
+      "-ServerRCONOutputTribeLogs",
+      "-NoTransferFromFiltering"
+    ],
+    "executable_suffix": "ShooterGame/Binaries/Win64/ArkAscendedServer.exe"
+  }
+}
+```

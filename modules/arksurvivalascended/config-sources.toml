@@ -1,6 +1,42 @@
 status = "best_effort_verified"
 last_verified = "2026-09-08"
-notes = "Current public build 26334129 has separate 2026-10-31 official acquisition and static identity evidence in public_package_build_26334129_20261031; no new native execution or settings-default verification is claimed. Prior build 26258656 retains its 2026-10-30 native start/stop and save-request evidence in native_lifecycle_build_26258656_20261030; it does not renew historical settings verification or establish durable save/readback on the current build. SteamCMD anonymous app_update 2430930 validate succeeded on 2026-07-13; the installed manifest reports buildid 24159508 and depot 2430931 manifest 2381721962790820553. On 2026-08-12 the pinned official Server configuration source (SHA256 72b00288f130913ad6dfac1b680c62c159e76e86c70b3f90a2369260d63d5f63) was exhaustively crosswalked: all 270 ASA Yes rows are classified, all 30 No and 244 Unknown rows have explicit exclusions, and every native row is bound to a typed schema field and edition-specific writer. Studio Wildcard patch evidence separately retains the anchored-vessel, aquatic-compartment, and Astraeos controls. ASE-only inherited controls and duplicate native aliases were removed. On 2026-09-07, 15 advanced Game.ini controls were added from independent ASA maintainer and Wildcard evidence. The overall module status is best_effort_verified: the earlier 270-row confirmed catalog remains completely classified, while the new settings have native-output contract coverage and have not been exercised on a v93.19 game server. Semantic review on 2026-09-30 compared all 273 settings and both rendered locales with the official ARK wiki crosswalk and native bindings. Corrected nearby text chat, resource-regrowth delay direction and structure pickup sections; replaced generic field help using canonical bilingual descriptions. No defaults or native keys changed in this semantic pass; gameplay effects were not newly exercised."
+notes = "A separate 2026-11-08 isolated creature-persistence run on build 26477280 / AsaApi 2.1 passed a primary world save, two normal exit-0 stops and a new managed run: Dodo 37, Rex 150 and wild Enigmasaur 73 were read back by their original native IDs with matching classes, levels, wild state and teams, without replaying Spawn. The three-creature fixture used zero dino damage/resistance multipliers. Existing nine instances and 40998 protected files were unchanged; online-player taming was deferred at the user's request. The 2026-11-07 isolated native lifecycle on public build 26477280 passed four start/stop cycles with exit 0, backup/restore of 17 files, interrupted archive restoration, deletion and cleanup; the six v97 overrides have startup and managed-configuration-preservation coverage, not measured gameplay effects. Its save receipts remain requested. Steam initialization failures and non-elevated firewall timeout warnings leave public discovery and external client connectivity unverified. The 2026-11-08 isolated native GM run passed on the same build after upgrading the SDK, import library and framework together to the newly released AsaApi 2.1: extension handshake, native map snapshot, Dodo level 37, Rex level 150 and wild Enigmasaur level 73 entity readback, duplicate request identity, invalid class and missing owner rejection, normal exit 0 and cleanup all passed. Two earlier same-day 2.03 runs reached ordinary RCON but timed out reading the map; the dated 2026-11-07 preparation failure remains separate historical HTTP 404 evidence. The dedicated GitCode 2.1 dependency release has seven hash-verified attachments and a separate successful full download from PLAP. Existing nine instances and 40998 protected files were unchanged. These dated runtime results do not renew historical settings/default verification or last_verified. Historical public build 26334129 has separate 2026-10-31 official acquisition and static identity evidence in public_package_build_26334129_20261031; that acquisition/static entry itself does not claim native execution or settings-default verification. Prior build 26258656 retains its 2026-10-30 native start/stop and save-request evidence in native_lifecycle_build_26258656_20261030; it does not renew historical settings verification or establish durable save/readback on subsequent builds. SteamCMD anonymous app_update 2430930 validate succeeded on 2026-07-13; the installed manifest reports buildid 24159508 and depot 2430931 manifest 2381721962790820553. On 2026-08-12 the pinned official Server configuration source (SHA256 72b00288f130913ad6dfac1b680c62c159e76e86c70b3f90a2369260d63d5f63) was exhaustively crosswalked: all 270 ASA Yes rows are classified, all 30 No and 244 Unknown rows have explicit exclusions, and every native row is bound to a typed schema field and edition-specific writer. Studio Wildcard patch evidence separately retains the anchored-vessel, aquatic-compartment, and Astraeos controls. ASE-only inherited controls and duplicate native aliases were removed. On 2026-09-07, 15 advanced Game.ini controls were added from independent ASA maintainer and Wildcard evidence. The overall module status is best_effort_verified: the earlier 270-row confirmed catalog remains completely classified, while the new settings have native-output contract coverage and have not been exercised on a v93.19 game server. Semantic review on 2026-09-30 compared all 273 settings and both rendered locales with the official ARK wiki crosswalk and native bindings. Corrected nearby text chat, resource-regrowth delay direction and structure pickup sections; replaced generic field help using canonical bilingual descriptions. No defaults or native keys changed in this semantic pass; gameplay effects were not newly exercised."
+
+[[sources]]
+id = "managed_native_creature_persistence_build_26477280_20261108"
+kind = "runtime_probe"
+path = "reference-fixtures/2026-11-08-managed_native_creature_persistence_build_26477280.json"
+authority = "compiled_manager_backend_with_pinned_asa_2_1_and_isolated_official_package"
+description = "2026-11-08 Asia/Shanghai: the native_game_tools persistence run passed exactly one test with exit 0 on Steam build 26477280 / native 97.5 and AsaApi 2.1. Three wild creatures (Dodo 37, Rex 150 and Enigmasaur 73) were saved and read back by original native IDs after normal stop and restart; class, level, wild state and team matched, and both managed runs exited 0 without a crash. Restart used Inspect only, with no Spawn or DestroyWildDinos replay. The fixture used zero dino damage/resistance multipliers. The existing nine instances and 40998 protected files were unchanged. Online-player taming was deferred by the user; tamed persistence, crashes and populated-world migration were not tested. Historical settings last_verified remains unchanged."
+
+[[sources]]
+id = "managed_native_game_tools_build_26477280_20261108"
+kind = "runtime_probe"
+path = "reference-fixtures/2026-11-08-managed_native_game_tools_build_26477280.json"
+authority = "compiled_manager_backend_with_pinned_asa_2_1_and_isolated_official_package"
+description = "2026-11-08 Asia/Shanghai: the frozen native_game_tools test passed exactly one test with exit 0 on Steam build 26477280 / native banner 97.5. Newly published AsaApi 2.1, its matching SDK and import library were pinned and the plugin was rebuilt. Production extension installation and handshake, native map snapshot, Dodo 37, Rex 150 and wild Enigmasaur 73 readback, duplicate nonce identity, invalid class and absent owner rejection passed. Normal server exit 0, no crash, no active run and owned cleanup passed. The separate GitCode dependency release has seven fully verified attachments and a full anonymous ASA download from PLAP. Existing nine instances and 40998 protected files remained byte-identical. No live-player taming, client-observed effects, creature restart persistence or populated-world migration was tested; last_verified is unchanged."
+
+[[sources]]
+id = "managed_native_lifecycle_build_26477280_20261107"
+kind = "runtime_probe"
+path = "reference-fixtures/2026-11-07-managed_native_lifecycle_build_26477280.json"
+authority = "compiled_manager_backend_with_isolated_official_steamcmd_package"
+description = "2026-11-07 Asia/Shanghai: native_package_lifecycle completed with exitCode 0 and exactlyOneTestPassed=true on Steam build 26477280. Four native-ready runs (initial, restart, after backup restore, after archive restore) exited 0 with crash_flag=false and no active run. Backup restore actually passed for 17 files; configuration preservation, interrupted archive-commit recovery, library/instance removal and owned cleanup passed. The six v97 overrides were supplied during startup and retained by managed configuration checks; gameplay enforcement and defaults were not measured. All four formal save receipts remain requested, without exact checkpoint readback. Network program maintenance was not selected. Native Steam initialization failures and firewall timeout warnings are retained as limits; no public discovery or external client connectivity is claimed. The immutable source/test hashes and actual approved task-Cargo wrapper provenance are recorded separately from the canonical entry-point label. This result does not renew last_verified."
+
+[[sources]]
+id = "managed_native_game_tools_build_26477280_20261107"
+kind = "runtime_probe"
+path = "reference-fixtures/2026-11-07-managed_native_game_tools_build_26477280.json"
+authority = "compiled_manager_backend_production_extension_prepare_with_isolated_official_package"
+description = "2026-11-07 Asia/Shanghai: the actual native_game_tools attempt failed with exitCode 101 and exactlyOneTestPassed=false during production matching-symbol preparation for build 26477280. All three configured CDN providers returned HTTP 404. This is the recorded installer error, separately from the earlier static preflight. The isolated instance was created, but extension_installed, server startup, GM responses and Enigmasaur native readback were not reached. No successful-test cleanup receipt was emitted; a separate read-only post-failure observation found zero task-owned ASA processes and zero remaining task fixture directories. Ordinary startup and full lifecycle passed in the separate no-extension fixture. This failed attempt does not establish extension/UE5.8 compatibility or renew last_verified."
+
+[[sources]]
+id = "v97_extension_symbol_preflight_20261107"
+kind = "upstream_blocker"
+path = "reference-fixtures/2026-11-07-v97_extension_symbol_preflight.json"
+authority = "arkserverapi_official_release_metadata_and_declared_symbol_provider_http_responses"
+url = "https://github.com/ArkServerApi/AsaApi/releases/tag/2.03"
+description = "2026-11-07 Asia/Shanghai: read-only HEAD and GET requests to all three production symbol providers returned HTTP 404 / NoSuchKey for build 26477280 EXE SHA256 8cd7d552c22c7fac118e798e891d6167efc0045bc1f31d6bf19d9a557a73d579. A same-path historical-hash control returned HTTP 200 with Content-Length 17382972. ArkServerApi's latest formal release remains AsaApi 2.03 (2026-07-29), matching the manager pin. No matching archive was downloaded, so cache format, symbol keys and UE5.8 layout compatibility remain unverified. Optional extension GM and Enigmasaur native readback are blocked by this missing upstream prerequisite; ordinary startup without the extension still requires separate native verification. This is not a production prepare run or native acceptance, and does not renew module last_verified."
 
 [[sources]]
 id = "managed_native_game_tools_20261031"
@@ -132,6 +168,50 @@ description = "Reviewed 2026-10-26. The official v94.7 server release dated 2026
 source = "asa_server_patch_notes_v94_7"
 key = "ServerSettings.AllowVariantDinoPacks"
 schema_key = "allow_variant_dino_packs"
+surface = "config_file"
+
+[[sources]]
+id = "asa_server_patch_notes_v97"
+kind = "documentation"
+path = "Game.ini:[/script/shootergame.shootergamemode]"
+authority = "studio_wildcard_official_server_patch_notes"
+url = "https://survivetheark.com/index.php?/forums/topic/773786-asa-server-patch-notes-server-v97-updated-11062026/"
+description = "Reviewed 2026-11-07 against the official v97 release dated 2026-11-06. Six Game.ini controls cover the deployed-Gacha feeding penalty, platform-saddle Tek Replicators, and local/tribal Tek Cloning Chamber limits. The publisher lists values 100, 3, 1, 10000, 10 and 50 respectively. LanGame treats each as an optional override, preserving existing native keys until explicitly managed; clearing a managed override removes its key. The range prose says 1000 meters while LimitCloningChambersRange is 10000, so the UI uses an unconverted native range value and makes no unit claim. This source and its output fixture establish configuration bindings, not measured engine defaults, gameplay effects, or current native lifecycle acceptance."
+
+[[items]]
+source = "asa_server_patch_notes_v97"
+key = "/script/shootergame.shootergamemode.NumGachasPerTribeForPenalty"
+schema_key = "num_gachas_per_tribe_for_penalty"
+surface = "config_file"
+
+[[items]]
+source = "asa_server_patch_notes_v97"
+key = "/script/shootergame.shootergamemode.GachasOverTribeLimitPenalty"
+schema_key = "gachas_over_tribe_limit_penalty"
+surface = "config_file"
+
+[[items]]
+source = "asa_server_patch_notes_v97"
+key = "/script/shootergame.shootergamemode.LimitReplicatorsPerSaddle"
+schema_key = "limit_replicators_per_saddle"
+surface = "config_file"
+
+[[items]]
+source = "asa_server_patch_notes_v97"
+key = "/script/shootergame.shootergamemode.LimitCloningChambersRange"
+schema_key = "limit_cloning_chambers_range"
+surface = "config_file"
+
+[[items]]
+source = "asa_server_patch_notes_v97"
+key = "/script/shootergame.shootergamemode.LimitCloningChambersInRangeNum"
+schema_key = "limit_cloning_chambers_in_range_num"
+surface = "config_file"
+
+[[items]]
+source = "asa_server_patch_notes_v97"
+key = "/script/shootergame.shootergamemode.LimitCloningChambersInTribeNum"
+schema_key = "limit_cloning_chambers_in_tribe_num"
 surface = "config_file"
 
 [[sources]]

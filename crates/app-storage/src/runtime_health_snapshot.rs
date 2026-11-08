@@ -52,14 +52,37 @@ pub(super) async fn read(
             .as_ref()
             .and_then(ark_readiness::analyze_ark_maps_runtime_health)
             .unwrap_or_else(|| {
-                analyze_runtime_health_with_startup_evidence(
-                    &module_id,
-                    &status,
-                    &health_scan,
-                    health_run.as_ref(),
-                    &health_ports,
-                )
+                if module_id == "dontstarve" {
+                    // DST's per-shard observer below retains the nonce proof
+                    // across managed rotation; an expired startup head is not
+                    // a missing current-run readiness observation.
+                    analyze_runtime_health(
+                        &module_id,
+                        &status,
+                        &health_scan,
+                        health_run.as_ref(),
+                        &health_ports,
+                    )
+                } else {
+                    analyze_runtime_health_with_startup_evidence(
+                        &module_id,
+                        &status,
+                        &health_scan,
+                        health_run.as_ref(),
+                        &health_ports,
+                    )
+                }
             });
+        // Inactive overviews still show status and logs without requiring a
+        // readable configuration; only a live run needs its shard settings.
+        let health = if module_id == "dontstarve"
+            && matches!(status, InstanceStatus::Running | InstanceStatus::Starting)
+        {
+            let settings = crate::instances::read_instance_settings_json(&config_file_path)?;
+            dst_health::analyze(&settings, &status, health_run.as_ref(), health)
+        } else {
+            health
+        };
         let health = if matches!(health.status.as_str(), "starting" | "ready") {
             status_health_root
                 .as_ref()

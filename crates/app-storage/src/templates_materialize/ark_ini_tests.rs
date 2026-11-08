@@ -331,6 +331,8 @@ fn ark_ini_invalid_native_file_rolls_back_rendered_configuration() {
     assert_eq!(fs::read_to_string(live_path).unwrap(), malformed);
 }
 
+#[path = "ark_ini_asa_v97_tests.rs"]
+mod asa_v97_tests;
 #[path = "ark_ini_encoding_tests.rs"]
 mod encoding_tests;
 #[path = "ark_ini_history_tests.rs"]

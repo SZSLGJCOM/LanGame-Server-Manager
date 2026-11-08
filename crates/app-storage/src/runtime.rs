@@ -21,6 +21,8 @@ mod a2s_health;
 mod console_health_evidence;
 #[path = "runtime_dragonwilds_health.rs"]
 mod dragonwilds_health;
+#[path = "runtime_dst_health.rs"]
+mod dst_health;
 #[path = "runtime_enshrouded_health.rs"]
 mod enshrouded_health;
 #[path = "runtime_health_evidence.rs"]

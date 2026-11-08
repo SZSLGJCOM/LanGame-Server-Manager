@@ -70,8 +70,9 @@ def ark_aggregate_token_settings(
             return None
         keys.update(patch_keys)
     if keys is not None and (prefix, token) == ("arksa", "additional_game_ini"):
-        additional_keys = rust_tuple_array_setting_keys(storage_source, "ARK_ASA_ADVANCED_GAME_INI")
-        if additional_keys is None:
-            return None
-        keys.update(additional_keys)
+        for array in ("ARK_ASA_ADVANCED_GAME_INI", "ARK_ASA_OPTIONAL_GAME_INI"):
+            additional_keys = rust_tuple_array_setting_keys(storage_source, array)
+            if additional_keys is None:
+                return None
+            keys.update(additional_keys)
     return keys

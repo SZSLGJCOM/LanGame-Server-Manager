@@ -8,19 +8,13 @@ import { describeError } from "../../app-state";
 import { selectLocaleText, useI18n } from "../../i18n";
 import { parseArkEnabledModIds, type ArkCustomCreatureEntry } from "./gm-tools";
 import { ArkCatalogPicker } from "./ArkCatalogPicker";
+import { resolveArkCreatureBlueprint } from "./ark-creature-blueprints";
 import { useArkToolsInstallation } from "./useArkToolsInstallation";
 import type { ArkMapPlayer } from "../../ark-world-map";
 import "./ark-creature-spawner.css";
 
 interface Props { instanceId: string; instanceName: string; moduleId: string; status: string; settingsJson: string; processKey: string;
   runId: number | null; runtimeRunning?: boolean; selectedPlayer?: ArkMapPlayer | null; extensionStatus?: ArkToolsStatus | null }
-// These base-game asset paths are shared by ASE and ASA. Other classes can be
-// resolved from the loaded world's registry or supplied as a full asset path.
-const BASE_CLASSES: Record<string, string> = {
-  Rex_Character_BP_C: "/Game/PrimalEarth/Dinos/Rex/Rex_Character_BP.Rex_Character_BP_C",
-  Dodo_Character_BP_C: "/Game/PrimalEarth/Dinos/Dodo/Dodo_Character_BP.Dodo_Character_BP_C"
-};
-
 function savedCreatures(id: string): ArkCustomCreatureEntry[] {
   try {
     const value: unknown = JSON.parse(localStorage.getItem(`lsgm.gmTools.arkCreatures.${id}`) ?? "[]");
@@ -123,7 +117,7 @@ export function ArkCreatureSpawner({ instanceId, instanceName, moduleId, status,
     pending.current = true; setBusy(true); setError(null); setResult(null);
     try {
       const value = await spawnArkCreature({ instanceId, processKey, runId, requestId: crypto.randomUUID().replace(/-/g, ""),
-        creature: BASE_CLASSES[creature.trim()] ?? creature.trim(), level: Number(level),
+        creature: resolveArkCreatureBlueprint(moduleId, creature), level: Number(level),
         x: target.x, y: target.y, z: target.z, tamed, playerId: tamed ? target.playerId : 0 });
       if (current.current === token) setResult(value);
     } catch (reason) { if (current.current === token) setError(describeError(reason)); }
@@ -155,7 +149,7 @@ export function ArkCreatureSpawner({ instanceId, instanceName, moduleId, status,
       if (node instanceof HTMLElement) { const details = node.closest("details"); if (details) details.open = true; }
     }}>
       <fieldset disabled={working}>
-        <ArkCatalogPicker kind="creature" query={search} onQueryChange={setSearch} value={creature} onPick={setCreature} />
+        <ArkCatalogPicker kind="creature" moduleId={moduleId} query={search} onQueryChange={setSearch} value={creature} onPick={setCreature} />
         <div className="ark-spawn-dock">
         <details className="ark-spawn-options"><summary>{positionMode === "manual"
           ? text("手动坐标已启用 · 自定义生物", "Manual position active · Custom creatures")

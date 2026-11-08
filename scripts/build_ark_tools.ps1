@@ -103,10 +103,10 @@ function Expand-Selected([string]$Archive, [string]$Prefix, [string]$Destination
     } finally { $zip.Dispose() }
 }
 
-$asaCommit = '86bd3b21d1e940fe837af6511f945944977bb9ca'
+$asaCommit = '08eef96decb0c626ff5f187dca18a98603b41a46'
 $aseCommit = '9459cb3941c2e62d4144cbb8294fe6c4c772d564'
 $loaderCommit = '4e04dc8982e1473920278f199638b29dc511d539'
-$asa = Get-VerifiedArchive 'AsaApi-sdk.zip' "https://codeload.github.com/ArkServerApi/AsaApi/zip/$asaCommit" '01b21af8a98265b273bc1fb3b264f2bfdff0e603a1f6bb7cc1616fbf0d27ee30'
+$asa = Get-VerifiedArchive 'AsaApi-sdk.zip' "https://codeload.github.com/ArkServerApi/AsaApi/zip/$asaCommit" '724e67648f73d003fdded2e17a3dbe420a27d285b666692daa43bf5f06c57e81'
 $loader = Get-VerifiedArchive 'AsaApiLoader-sdk.zip' "https://codeload.github.com/ArkServerApi/AsaApiLoader/zip/$loaderCommit" 'dd3c6ac17d2bdc9d072ca01c8e86f9451e6de909c2bf901bb5b2c63cb939e833'
 # MSVC still applies MAX_PATH to relative includes containing ../, even when
 # the normalized file exists. Keep the SDK's Public/Private relationship while
@@ -121,7 +121,7 @@ if ($ProxyOnly) {
     Expand-Selected $asa "AsaApi-$asaCommit/" $asaRoot @('AsaApi/Core/Public/json.hpp', 'LICENSE') 'AsaApi/Core/'
 } else {
     $ase = Get-VerifiedArchive 'AseApi-sdk.zip' "https://codeload.github.com/ArkServerApi/AseApi/zip/$aseCommit" '500cc0e0d46e75e3c67374a81914fe318ee1f88db8bca0c291f2e8a72ede3def'
-    $asaRelease = Get-VerifiedArchive 'asa-runtime.zip' 'https://github.com/ArkServerApi/AsaApi/releases/download/2.03/AsaApi_2.03.zip' 'ac72fb29436198ac062cd273e1c496b1ef4e6ffddeec08243d11d9b35e8b8ae3'
+    $asaRelease = Get-VerifiedArchive 'asa-runtime.zip' 'https://github.com/ArkServerApi/AsaApi/releases/download/2.1/AsaApi_2.1.zip' '58d626b34c85e08e85d3dc076f1f18420150752802e1d227bed370182c84f3b6'
     Expand-Selected $asa "AsaApi-$asaCommit/" $asaRoot @('AsaApi/Core/Public/', 'AsaApi/Core/Private/Ark/Globals.h', 'LICENSE') 'AsaApi/Core/'
     Expand-Selected $ase "AseApi-$aseCommit/" $aseRoot @('version/Core/Public/', 'version/Core/Private/Ark/Globals.h', 'out_lib/ArkApi.lib', 'LICENSE') 'version/Core/'
     Expand-Selected $asaRelease '' $asaRoot @('Lib/AsaApi.lib')

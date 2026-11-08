@@ -120,6 +120,12 @@ EDITION_SCHEMA_EXTRAS = {
         "priority_join_list",
         "rcon_enabled",
         "use_astraeos_traversal_buff",
+        "num_gachas_per_tribe_for_penalty",
+        "gachas_over_tribe_limit_penalty",
+        "limit_replicators_per_saddle",
+        "limit_cloning_chambers_range",
+        "limit_cloning_chambers_in_range_num",
+        "limit_cloning_chambers_in_tribe_num",
     },
 }
 
@@ -184,9 +190,23 @@ def rust_extra_ini_tables(
         rows.append(
             f"    ({json.dumps(native)}, {json.dumps(key)}, false, false, false),"
         )
-    if not rows:
-        return {}
-    return {f"{prefix}_PATCH_GUS_SERVER_SETTINGS": rows}
+    tables = {f"{prefix}_PATCH_GUS_SERVER_SETTINGS": rows} if rows else {}
+    if edition == "asa":
+        optional_rows = []
+        section = "/script/shootergame.shootergamemode."
+        for key, prop in schema["properties"].items():
+            if prop.get("x-lsgm-source") != "asa_server_patch_notes_v97":
+                continue
+            source_key = str(prop.get("x-lsgm-source-key", ""))
+            if not source_key.startswith(section):
+                raise ValueError(f"Unexpected optional ASA Game.ini key: {source_key}")
+            native = source_key[len(section):]
+            optional_rows.append(
+                f"    ({json.dumps(native)}, {json.dumps(key)}, false, false, false),"
+            )
+        if optional_rows:
+            tables["ARK_ASA_OPTIONAL_GAME_INI"] = optional_rows
+    return tables
 
 
 def rust_data_file(tables: dict[str, list[str]], type_name: str) -> str:

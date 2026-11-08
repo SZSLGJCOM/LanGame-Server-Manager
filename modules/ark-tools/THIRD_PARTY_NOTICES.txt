@@ -3,7 +3,7 @@ Third-party notices for LanGame ARK Tools
 These notices apply to the listed upstream components, not to the entire
 LanGame project or the proprietary game software.
 
-ArkServerApi ASE SDK 3.56 and ASA SDK 2.03
+ArkServerApi ASE SDK 3.56 and ASA SDK 2.1
 MIT License
 
 Copyright (c) 2024 ArkServerApi

@@ -25,6 +25,10 @@ pub(super) enum SessionKind {
     Conan,
     Rust,
     Satisfactory,
+    DstMaster,
+    DstCaves,
+    DstIslands,
+    DstVolcano,
 }
 
 impl SessionKind {
@@ -42,13 +46,32 @@ impl SessionKind {
             Self::Conan => ".conan-startup.json",
             Self::Rust => ".rust-startup.json",
             Self::Satisfactory => ".satisfactory-startup.json",
+            Self::DstMaster => ".dst-master-readiness.json",
+            Self::DstCaves => ".dst-caves-readiness.json",
+            Self::DstIslands => ".dst-islands-readiness.json",
+            Self::DstVolcano => ".dst-volcano-readiness.json",
         }
     }
 
     fn valid(self, state: &Checkpoint) -> bool {
+        let dst = matches!(
+            self,
+            Self::DstMaster | Self::DstCaves | Self::DstIslands | Self::DstVolcano
+        );
+        if !dst && state.dst_generation_failure.is_some() {
+            return false;
+        }
         if !matches!(
             self,
-            Self::Dragonwilds | Self::Nightingale | Self::Conan | Self::Rust | Self::Satisfactory
+            Self::Dragonwilds
+                | Self::Nightingale
+                | Self::Conan
+                | Self::Rust
+                | Self::Satisfactory
+                | Self::DstMaster
+                | Self::DstCaves
+                | Self::DstIslands
+                | Self::DstVolcano
         ) && (state.native_process.is_some()
             || state.fatal.is_some()
             || !state.native_head.is_empty()
@@ -58,6 +81,27 @@ impl SessionKind {
             return false;
         }
         match self {
+            Self::DstMaster | Self::DstCaves | Self::DstIslands | Self::DstVolcano => {
+                state.native_process.is_none()
+                    && state.native_head.is_empty()
+                    && state.native_latest_end.is_none()
+                    && state.native_fatal_end.is_none()
+                    && state.steam.is_none()
+                    && state.online_session.is_none()
+                    && state.engine_initialized.is_none()
+                    && state.fatal.as_ref().is_none_or(|line| {
+                        !crate::runtime_fatal_log_lines("dontstarve", std::slice::from_ref(line))
+                            .is_empty()
+                    })
+                    && state
+                        .dst_generation_failure
+                        .as_ref()
+                        .is_none_or(|failure| failure.valid(LINE_BYTES))
+                    && state
+                        .latest
+                        .as_deref()
+                        .is_none_or(|line| super::dst_health::event(line).is_some())
+            }
             Self::Dragonwilds => {
                 state.latest.is_some() == state.native_latest_end.is_some()
                     && state.fatal.is_some() == state.native_fatal_end.is_some()
@@ -217,6 +261,14 @@ impl SessionKind {
 
     fn consume(self, state: &mut Checkpoint, line: &str) {
         match self {
+            Self::DstMaster | Self::DstCaves | Self::DstIslands | Self::DstVolcano => {
+                super::dst_health::consume(
+                    &mut state.latest,
+                    &mut state.fatal,
+                    &mut state.dst_generation_failure,
+                    line,
+                );
+            }
             Self::Dragonwilds => match super::dragonwilds_health::event(line) {
                 Some(super::dragonwilds_health::Event::Fatal) => state.fatal = Some(line.into()),
                 Some(_) => state.latest = Some(line.into()),
@@ -327,6 +379,8 @@ struct Checkpoint {
     native_process: Option<ObservedProcess>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     fatal: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    dst_generation_failure: Option<super::dst_health::GenerationFailure>,
     source: String,
     offset: u64,
     partial: Vec<u8>,
@@ -571,6 +625,12 @@ fn observe_with_process(
             state
                 .fatal
                 .iter()
+                .chain(
+                    state
+                        .dst_generation_failure
+                        .iter()
+                        .map(|failure| &failure.line),
+                )
                 .chain(state.steam.iter())
                 .chain(state.latest.iter())
                 .chain(state.online_session.iter())
@@ -578,7 +638,17 @@ fn observe_with_process(
                 .cloned()
                 .collect()
         } else {
-            state.fatal.iter().cloned().collect()
+            state
+                .fatal
+                .iter()
+                .chain(
+                    state
+                        .dst_generation_failure
+                        .iter()
+                        .map(|failure| &failure.line),
+                )
+                .cloned()
+                .collect()
         };
         let replacement = serde_json::to_vec(&state).map_err(io::Error::other)?;
         if replacement.len() as u64 > STATE_BYTES {
@@ -653,6 +723,7 @@ fn advance(
         state.overlong = false;
         state.latest = None;
         state.fatal = None;
+        state.dst_generation_failure = None;
         state.native_latest_end = None;
         state.native_fatal_end = None;
         state.native_head.clear();
@@ -677,6 +748,7 @@ fn advance(
             state.offset = segment.start_offset;
             state.latest = None;
             state.fatal = None;
+            state.dst_generation_failure = None;
             state.native_latest_end = None;
             state.native_fatal_end = None;
             state.native_head.clear();
