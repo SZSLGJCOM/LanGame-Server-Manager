@@ -34,7 +34,7 @@ pub(super) async fn prepare(
     let worker_storage = storage.clone();
     let worker_instance = instance.clone();
     let log_path = log_path.map(str::to_owned);
-    let prepared = tokio::task::spawn_blocking(move || {
+    let (executable, installed) = tokio::task::spawn_blocking(move || {
         let result = prepare_local(
             &worker_storage,
             &worker_instance,
@@ -55,50 +55,44 @@ pub(super) async fn prepare(
     .map_err(
         |_| "The Enshrouded extension worker failed; its inactive state could not be verified.",
     )??;
-    let native_extension_prepared = match prepared {
-        Some((executable, installed)) => {
-            let updater_storage = storage.clone();
-            let instance_id = instance.summary.id.clone();
-            crate::enshrouded_extension::start_refresh(
-                storage.paths.app_data_root.clone(),
-                executable.clone(),
-                move |result| {
-                    use crate::enshrouded_extension::RefreshResult;
-                    let (level, action, version, issue) = match result {
-                        Ok(RefreshResult::Cached { version }) => (
-                            "info",
-                            "instance.enshrouded_extension.cached",
-                            Some(version),
-                            None,
-                        ),
-                        Ok(RefreshResult::Unsupported) => (
-                            "info",
-                            "instance.enshrouded_extension.update_finished",
-                            None,
-                            None,
-                        ),
-                        Err(error) => (
-                            "warn",
-                            "instance.enshrouded_extension.update_failed",
-                            None,
-                            Some(error),
-                        ),
-                    };
-                    super::commands_runtime_supervision::append_desktop_app_log(
-                        &updater_storage,
-                        level,
-                        action,
-                        "Background player-management extension check completed; the running server is unchanged",
-                        serde_json::json!({ "instance_id": instance_id, "executable_sha256": executable,
-                        "extension_version": version, "update_issue": issue, "applies_on_next_start": true }),
-                    );
-                },
+    let updater_storage = storage.clone();
+    let instance_id = instance.summary.id.clone();
+    crate::enshrouded_extension::start_refresh(
+        storage.paths.app_data_root.clone(),
+        executable.clone(),
+        move |result| {
+            use crate::enshrouded_extension::RefreshResult;
+            let (level, action, version, issue) = match result {
+                Ok(RefreshResult::Cached { version }) => (
+                    "info",
+                    "instance.enshrouded_extension.cached",
+                    Some(version),
+                    None,
+                ),
+                Ok(RefreshResult::Unsupported) => (
+                    "info",
+                    "instance.enshrouded_extension.update_finished",
+                    None,
+                    None,
+                ),
+                Err(error) => (
+                    "warn",
+                    "instance.enshrouded_extension.update_failed",
+                    None,
+                    Some(error),
+                ),
+            };
+            super::commands_runtime_supervision::append_desktop_app_log(
+                &updater_storage,
+                level,
+                action,
+                "Background player-management extension check completed; the running server is unchanged",
+                serde_json::json!({ "instance_id": instance_id, "executable_sha256": executable,
+                "extension_version": version, "update_issue": issue, "applies_on_next_start": true }),
             );
-            installed
-        }
-        None => false,
-    };
-    Ok(native_extension_prepared)
+        },
+    );
+    Ok(installed)
 }
 
 fn report_preparation_failure(
@@ -130,7 +124,7 @@ fn prepare_local(
     instance: &InstanceDetails,
     binding: Result<Option<app_storage::InstanceProgramInstall>, String>,
     log_path: Option<&str>,
-) -> Result<Option<(String, bool)>, String> {
+) -> Result<(String, bool), String> {
     let instance_root = super::commands_program_storage::instance_root(instance)?;
     if app_storage::instance_program_mode(instance_root).map_err(|e| e.to_string())?
         != InstanceProgramMode::Independent
@@ -191,7 +185,7 @@ fn prepare_local(
             issue.as_deref().unwrap_or(""),
         );
     }
-    Ok(Some((executable, installed)))
+    Ok((executable, installed))
 }
 
 /// Compatibility misses are optional; local ownership, path and publication

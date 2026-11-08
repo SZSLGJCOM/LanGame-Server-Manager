@@ -150,7 +150,7 @@ Tauri、共享领域契约、游戏模块和迁移等生产边界变更仍运行
 
 真实包校验基准为 ignored 测试 `native_valheim_verification_benchmark_and_three_instance_acceptance`，使用 `--ignored --test-threads=1 --nocapture` 单独执行。`LANGAME_VERIFICATION_FIXTURE_ROOT` 指向已复制的完整 Valheim 包，`LANGAME_VERIFICATION_STEAMCMD_ROOT` 指向含对应 `depotcache` 的独立目录；`LANGAME_SMOKE_RUNTIME_ROOT` 和 `LANGAME_VERIFICATION_REPORT` 必须是仓库外已创建的测试、报告目录。可用 `LANGAME_VERIFICATION_SECOND_FIXTURE_ROOT` 与 `LANGAME_VERIFICATION_SECOND_MODULE` 添加第二个包的计时。测试不会下载、运行 SteamCMD 或启动游戏；它复制输入，在副本中校验、篡改及创建三个实例，成功后清理副本并保留 JSON 报告。基准预热后交错执行四次双重哈希对照与四次当前证据复用，两边均完整执行官方 SHA-1/SHA-256；报告当前构建的本地耗时和 Windows 进程逻辑读取量，不代表旧提交完整二进制、冷磁盘或 SteamCMD 下载/validate 的耗时。
 
-普通 `cargo test` 使用开发测试设置。发行优化设置使用 `cargo bench --locked -p langame-desktop --bin langame-desktop --features custom-protocol native_valheim_verification_benchmark_and_three_instance_acceptance -- --test --ignored --test-threads=1 --nocapture`；默认 bench profile 继承 release，末尾的 `--test` 让优化后的测试程序执行现有验收。报告记录编译时的 `debug_assertions_enabled`；发行对照必须为 `false`，且优化前后使用相同构建，只切换本轮证据复用，避免将 Debug SHA 依赖编译优化混入发行去重收益。托管工作站仍通过规定的 Cargo 封装执行。
+普通 `cargo test` 使用开发测试设置。发行优化设置使用 `cargo bench --locked -p langame-desktop --bin langame-desktop --features custom-protocol native_valheim_verification_benchmark_and_three_instance_acceptance -- --test --ignored --test-threads=1 --nocapture`；默认 bench profile 继承 release，末尾的 `--test` 让优化后的测试程序执行现有验收。报告记录编译时的 `debug_assertions_enabled`；发行对照必须为 `false`，且优化前后使用相同构建，只切换当前操作的证据复用，避免将 Debug SHA 依赖编译优化混入发行去重收益。托管工作站仍通过规定的 Cargo 封装执行。
 
 仅重跑真实完整性及三实例验收时，选择 `native_valheim_three_instance_integrity_acceptance`，使用相同输入目录；它执行同样的完整哈希、归属及篡改断言，跳过耗时统计，报告中的计时字段为 `null`。
 

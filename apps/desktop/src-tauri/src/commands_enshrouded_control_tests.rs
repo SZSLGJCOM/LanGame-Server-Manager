@@ -233,8 +233,7 @@ async fn optional_enshrouded_save_start_preserves_native_start_without_save_read
         }
         let (_, native_extension_prepared) =
             prepare_local(&storage, &details, Ok(Some(binding)), None)
-                .expect("an unsupported optional extension must preserve native startup")
-                .expect("the actual executable was inspected");
+                .expect("an unsupported optional extension must preserve native startup");
         let manager: serde_json::Value = serde_json::from_slice(
             &fs::read(runtime.join(".langame-enshrouded-control-state.json")).unwrap(),
         )

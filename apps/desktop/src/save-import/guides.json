@@ -74,7 +74,7 @@
     },
     "singlePlayer": {
       "status": "unverified",
-      "zh": "单机世界迁移及主人角色身份改写，本轮未取得当前版本的完整官方步骤；不能保证直接复制后保留角色。",
+      "zh": "尚未确认当前版本单机世界迁移及主人角色身份改写的完整官方步骤；不能保证直接复制后保留角色。",
       "en": "A complete current first-party procedure for solo-world migration and host identity conversion was not verified. Direct copying does not guarantee character continuity."
     },
     "source": {
@@ -206,7 +206,7 @@
     },
     "singlePlayer": {
       "status": "unverified",
-      "zh": "本轮官方材料只明确世界生成参数迁入，未证实完整单机进度及角色迁移；不能把 worldgenparams 复制当作转档。",
+      "zh": "现有官方材料只明确世界生成参数迁入，未证实完整单机进度及角色迁移；不能把 worldgenparams 复制当作转档。",
       "en": "Reviewed first-party material documents copying generation parameters, but not complete solo progress and character migration. Copying worldgenparams is not save conversion."
     },
     "source": {
@@ -292,7 +292,7 @@
     "moduleId": "humanitz",
     "server": {
       "status": "conditional",
-      "zh": "需迁入与 SaveName 对应的完整世界、玩家和关联索引；本轮未证实可只复制某个 .sav。",
+      "zh": "需迁入与 SaveName 对应的完整世界、玩家和关联索引；尚未证实可只复制某个 .sav。",
       "en": "Transfer the complete world, player and associated index data for SaveName. Copying an arbitrary single .sav was not verified."
     },
     "singlePlayer": {
