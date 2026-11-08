@@ -1081,7 +1081,9 @@ test("Rust anonymous package validate records generated cfg ownership boundary",
   const optIn = JSON.parse(read(path.join(rustRoot, "reference-fixtures/2026-09-28-native_september_configuration_build_25129933.json")));
   const november = JSON.parse(read(path.join(rustRoot, "config-fixtures/2026-11-07-facepunch_november_2026.json")));
 
-  assert.match(ledger, /last_verified = "2026-09-28"/);
+  const verifiedDate = /^last_verified = "(\d{4}-\d{2}-\d{2})"/m.exec(ledger)?.[1];
+  assert.ok(verifiedDate, "package verification has an explicit date");
+  assert.ok(verifiedDate >= november.evidence.verified_at, "the ledger includes the current configuration review");
   assert.match(ledger, /steam_public_build_24090743/);
   assert.match(ledger, /Public branch build 24090743/);
   assert.match(ledger, /steamcmd_anonymous_app_258550/);
