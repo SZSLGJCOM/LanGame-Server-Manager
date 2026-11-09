@@ -10,6 +10,15 @@ uses license-file to refer to that text. Noncommercial use and private
 modification are permitted; commercial use requires separate written
 authorization, and independent modified releases are not permitted.
 
+Using the Software to promote a business or attract customers is commercial
+use under LICENSE section 3, even when the Software is provided free of
+charge. This does not restrict the noncommercial player communities permitted
+by section 2 or change the permissions for truthful editorial brand uses below.
+
+使用本软件推广业务、招揽客户，属于 LICENSE 第 3 条所指的商业用途，即使软件
+本身免费提供，也须先取得书面授权。本说明不限制第 2 条允许的非商业玩家社群开服，
+也不改变下文对真实介绍、教程、评测等品牌使用的授权。
+
 The package-local apps/desktop/LICENSE is an identical distribution copy of
 the repository-root text. Existing rights lawfully granted under MIT are not
 revoked. This project license does not replace any separate licenses below.
@@ -92,6 +101,8 @@ rightsholders. In particular, this permission does not allow you to:
 
 A truthful tutorial or review may include criticism. This policy does not
 require favorable coverage or prior review of permitted editorial content.
+Permitted coverage is not prohibited by this brand policy merely because it
+attracts views or followers.
 Normal software display and screenshots do not require adding a new legal
 legend inside the interface or image. Keep the copyright and applicable
 license notices when distributing the asset files themselves.
@@ -130,6 +141,7 @@ expressly granted here remain reserved, subject to those existing rights.
 授权、赞助或背书。
 
 真实教程和评测可以提出批评；不要求正面评价，也不要求对获准的介绍内容进行事前审核。
+获准的介绍和分享不因带来浏览量或关注而被本品牌规则禁止。
 正常软件展示和截图不必在界面或图片内额外嵌入法律声明；转发图像文件本身时须保留
 版权及适用许可声明。
 

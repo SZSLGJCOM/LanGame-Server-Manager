@@ -10,6 +10,8 @@
 
 LanGame Server Manager is a Windows desktop app for installing, configuring, and running dedicated game servers, turning a spare laptop, an old PC, or a Windows Server machine into a game host.
 
+> ⭐ If LanGame Server Manager makes hosting easier for you, consider giving it a Star to support continued development!
+
 <p align="center">
   <img src="assets/lgsm-system-49eec728.webp" alt="LanGame Server Manager interface" width="920">
 </p>
@@ -35,18 +37,22 @@ Players on the same LAN can join directly, or you can pair it with networking to
 
 ## Development
 
-[Build from source](docs/development.md#english) · [Privacy](PRIVACY.md#english)
+[Build from source](docs/development.md#english) · [Contributing](CONTRIBUTING.md#english) · [Privacy](PRIVACY.md#english)
 
 ## License
 
-Source-available, noncommercial use only: [License](LICENSE) · [Brand rules](NOTICE) · [Contributing](CONTRIBUTING.md#english) · [Security](SECURITY.md#english)
+Source-available and free for noncommercial use. Individuals and player communities are welcome to host games, study the source, and make private changes.
+
+Commercial use (including business promotion and customer acquisition), repackaging, independent modified releases, or presenting this project as your own product require prior written authorization. See the [license](LICENSE).
 
 ## LanGame products
 
 - [LanGame OS Orbit](https://langame.cn/products/langame-os-orbit/): an AI game terminal for PC players; players on the same network can discover and join supported servers from Orbit
 - [LanGame OS Stellar](https://langame.cn/products/langame-os-stellar/): an AI venue management platform for esports spaces
-- [LanGame OS Lunet](https://langame.cn/products/langame-os-lunet/): the SOFA streaming core on Android, for streaming from Orbit on the same network
+- [LanGame OS Lunet](https://langame.cn/products/langame-os-lunet/): play PC games on your phone and turn Android into your portable gaming handheld. Streaming is supported, with local emulators and on-device PC gaming under continued development
 
 ## Community
 
-[Issues](https://github.com/SZSLGJCOM/LanGame-Server-Manager/issues) · [WeChat Official Account](assets/wechat-official-account.jpg)
+Introductions, tutorials, reviews, and sharing with attribution are welcome. Please link to the [official repository](https://github.com/SZSLGJCOM/LanGame-Server-Manager) or [official downloads](https://github.com/SZSLGJCOM/LanGame-Server-Manager/releases).
+
+[Issues](https://github.com/SZSLGJCOM/LanGame-Server-Manager/issues) · [Report a security issue](SECURITY.md#english) · [WeChat Official Account](assets/wechat-official-account.jpg)
