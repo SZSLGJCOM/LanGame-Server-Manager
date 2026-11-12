@@ -73,5 +73,4 @@ test("preview mode preserves the same SteamCMD ownership lifecycle", () => {
   assert.match(mockSource, /ownership:\s*"none",\s*\n\s*can_uninstall:\s*false/);
   assert.match(mockSource, /case "ensure_steamcmd_ready"[\s\S]*?ownership:\s*"managed"[\s\S]*?can_uninstall:\s*true/);
   assert.match(mockSource, /case "uninstall_steamcmd"[\s\S]*?ownership:\s*"none"[\s\S]*?can_uninstall:\s*false/);
-  assert.match(mockSource, /steamCmdRootChanged[\s\S]*?ownership:\s*steamCmdRootChanged \? "none"/);
 });

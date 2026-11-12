@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "mirrorRepository": "SZSLGJCOM/LanGame-Server-Manager-Releases",
+  "packages": [
+    {
+      "steamBuildId": "26564816",
+      "executableSha256": "79b0ce800a05e254f0a591967acea9ae0fcd0c03becf75ab04182e2c3cd0ab02",
+      "fileName": "79b0ce800a05e254f0a591967acea9ae0fcd0c03becf75ab04182e2c3cd0ab02.zip",
+      "upstreamUrl": "https://cdn.pelayori.com/cache/79b0ce800a05e254f0a591967acea9ae0fcd0c03becf75ab04182e2c3cd0ab02.zip",
+      "mirrorTag": "ark-tools-symbols-asa-e5abbfc6189c3a29",
+      "mirrorUrl": "https://api.gitcode.com/api/v5/repos/SZSLGJCOM/LanGame-Server-Manager-Releases/releases/ark-tools-symbols-asa-e5abbfc6189c3a29/attach_files/79b0ce800a05e254f0a591967acea9ae0fcd0c03becf75ab04182e2c3cd0ab02.zip/download",
+      "size": 23155786,
+      "sha256": "e5abbfc6189c3a29bf78009a5e7101ff31d61ef78b82a48e2069653202e4e315"
+    }
+  ]
+}

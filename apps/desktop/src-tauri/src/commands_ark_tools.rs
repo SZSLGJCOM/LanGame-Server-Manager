@@ -1,6 +1,8 @@
 use super::commands_program_storage::instance_root;
 use super::*;
 
+#[path = "ark_tools_blueprints.rs"]
+mod blueprints;
 #[path = "ark_tools_install.rs"]
 mod install;
 #[path = "ark_tools_progress.rs"]
@@ -10,6 +12,11 @@ pub(crate) mod protocol;
 #[path = "commands_ark_tools_remove.rs"]
 pub(crate) mod removal;
 pub use protocol::SpawnInput;
+#[path = "commands_ark_tools_spawn.rs"]
+mod spawn;
+#[cfg(test)]
+pub(super) use spawn::execute_spawn;
+pub(super) use spawn::{SpawnAudit, resolve_and_execute_spawn};
 
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
@@ -430,36 +437,78 @@ pub async fn prepare_ark_tools(
 #[tauri::command]
 pub async fn spawn_ark_creature(
     state: tauri::State<'_, DesktopState>,
-    input: SpawnInput,
+    mut input: SpawnInput,
 ) -> Result<SpawnResult, String> {
-    let command = protocol::spawn_command(&input)?;
-    let operation = state.begin_storage_context_operation("ARK creature generation")?;
-    let storage = state.bootstrap_storage()?;
+    let mut audit = SpawnAudit::new(
+        state
+            .storage_source()
+            .resolve_paths()
+            .ok()
+            .map(|paths| paths.app_log_path()),
+        &input,
+    );
+    protocol::spawn_command(&input).map_err(|error| audit.before_send("invalid_input", error))?;
+    audit.advance("storage_lease");
+    let operation = state
+        .begin_storage_context_operation("ARK creature generation")
+        .map_err(|error| audit.before_send("storage_operation_unavailable", error))?;
+    audit.advance("storage");
+    let storage = state
+        .bootstrap_storage()
+        .map_err(|error| audit.before_send("storage_unavailable", error))?;
+    audit.path = Some(storage.paths.app_log_path());
+    audit.advance("database");
     initialize_database(&storage.paths)
         .await
-        .map_err(|e| e.to_string())?;
-    reconcile_runtime_state(&state).await?;
+        .map_err(|error| audit.before_send("database_unavailable", error))?;
+    audit.advance("runtime_reconciliation");
+    reconcile_runtime_state(&state)
+        .await
+        .map_err(|error| audit.before_send("runtime_reconciliation_failed", error))?;
+    audit.advance("instance_lock");
     let guard = state.acquire_instance_mutation(&input.instance_id).await;
-    let details = instance(&storage, &input.instance_id).await?;
+    audit.advance("instance");
+    let details = instance(&storage, &input.instance_id)
+        .await
+        .map_err(|error| audit.before_send("instance_unavailable", error))?;
+    audit.context["module_id"] = json!(details.summary.module_id);
+    audit.advance("target");
     let details =
-        super::commands_ark_map::selected_target(&details, &input.process_key, input.run_id)?;
-    ensure_endpoint(&details).await?;
+        super::commands_ark_map::selected_target(&details, &input.process_key, input.run_id)
+            .map_err(|error| audit.before_send("target_run_unavailable", error))?;
+    audit.context["process_id"] = json!(details.active_run.as_ref().and_then(|run| run.pid));
+    audit.advance("endpoint");
+    ensure_endpoint(&details)
+        .await
+        .map_err(|error| audit.before_send("rcon_endpoint_unverified", error))?;
+    audit.advance("program_ownership");
+    let root = owned_root(&storage, &details)
+        .await
+        .map_err(|error| audit.before_send("program_ownership_unverified", error))?;
     // Retain ownership through both the mutation and independent read-back, even
     // if the IPC waiter disappears. Never automatically resend a mutation.
     spawn_storage_context_task(&operation, async move {
         let _instance = guard;
-        handshake(&details).await?;
-        let response = dispatch(&details, &command).await.map_err(|e| format!("生成请求的回执未确认；请检查服务器后再决定是否重试。{e}"))?;
-        let spawned = protocol::creature(&response, &details.summary.module_id, "spawn", &input.request_id)
-            .map_err(|e| format!("生成请求已发出，但结果未确认；请检查服务器后再决定是否重试。{e}"))?;
-        let response = dispatch(&details, &format!("LgsmArkTools.Inspect {} {} {}", input.request_id, spawned.id1, spawned.id2))
-            .await.map_err(|e| format!("生物 {}:{} 已返回，但读回失败；请勿重复生成。{e}", spawned.id1, spawned.id2))?;
-        let inspected = protocol::creature(&response, &details.summary.module_id, "inspect", &input.request_id)
-            .map_err(|e| format!("生物 {}:{} 已返回，但读回结果未确认；请勿重复生成。{e}", spawned.id1, spawned.id2))?;
-        protocol::verify_spawn(&input, &spawned, &inspected)
-            .map_err(|error| format!("生物 {}:{} 已返回，但与请求不一致；请勿重复生成。{error}", inspected.id1, inspected.id2))?;
-        append_desktop_app_log(&storage, "info", "instance.ark_creature.spawned", "ARK creature generated and independently read back",
-            json!({"instance_id":input.instance_id,"request_id":input.request_id,"id1":inspected.id1,"id2":inspected.id2,"class":inspected.class_name,"level":inspected.level}));
-        Ok(SpawnResult { instance_id: input.instance_id, process_key: input.process_key, run_id: input.run_id, request_id: input.request_id, creature: inspected })
-    }).await.map_err(|e| format!("ARK creature generation task failed: {e}"))?
+        let inspected = resolve_and_execute_spawn(
+            &mut input,
+            root,
+            &details.summary.module_id,
+            &mut audit,
+            |command| {
+                let details = &details;
+                async move { dispatch(details, &command).await }
+            },
+        )
+        .await?;
+        audit.succeed(&inspected);
+        Ok(SpawnResult {
+            instance_id: input.instance_id,
+            process_key: input.process_key,
+            run_id: input.run_id,
+            request_id: input.request_id,
+            creature: inspected,
+        })
+    })
+    .await
+    .map_err(|_| "生成任务意外中止，结果未确认；请检查服务器和应用日志，勿重复生成。".to_owned())?
 }

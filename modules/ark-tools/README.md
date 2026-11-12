@@ -87,3 +87,45 @@ These tests cover manifest rejection, unchanged ZIP preparation, checksum
 inventory, conflicting attachments, immutable local evidence, full readback,
 lost responses and unresolved mutation recovery. Actual publication additionally
 requires the live anonymous readback recorded in the receipt.
+
+## Executable-bound ASA symbols
+
+[`symbol-caches.json`](symbol-caches.json) separately pins reviewed runtime
+symbol ZIPs. The current entry is for Steam build 26564816, executable SHA-256
+`79b0ce800a05e254f0a591967acea9ae0fcd0c03becf75ab04182e2c3cd0ab02`.
+Its original 23,155,786-byte archive contains 704,423 offset entries, 13,055
+bitfield entries and the upstream symbol-name text. No game executable, content,
+world or credentials are included. The [dated publication record](symbols-publication-2026-11-12.json)
+records all five attachments passing full anonymous size/hash verification.
+
+Chinese requests prefer the reviewed GitCode cache. International requests
+prefer the three existing maintainer CDNs, then GitCode. Known images enforce
+the same reviewed archive size/hash on every route; unreviewed images retain
+the upstream-only lookup. All routes retain executable binding, ZIP/map bounds,
+atomic generation selection and existing-cache preservation. Ordinary startup
+and status inspection still do not download symbols.
+
+Prepare an individual reviewed cache outside the repository:
+
+```powershell
+$symbolWork = Join-Path $env:TEMP 'langame-asa-symbols-26564816'
+python -B -E -s scripts/publish_ark_symbol_cache.py --work-dir $symbolWork --executable-sha256 79b0ce800a05e254f0a591967acea9ae0fcd0c03becf75ab04182e2c3cd0ab02
+```
+
+Review `prepared.json`, the unchanged ZIP, `symbols.json`, `SHA256SUMS`,
+`ASA-SDK-LICENSE.txt` and `THIRD_PARTY_NOTICES.txt`. The SDK notice preserves its
+MIT attribution without relicensing the proprietary game or every derived
+symbol name. Authorized publication uses the existing child-only
+`GITCODE_RELEASE_TOKEN` entry and the same command with `--execute`. It reuses
+the dependency publisher's immutable attachments, pending-write recovery and
+anonymous full readback. The content-addressed symbols release stays `pre`;
+it does not promote or update the desktop application. A new reviewed ZIP
+requires a new content-addressed tag, never replacing an existing attachment.
+
+`scripts.tests.test_publish_ark_symbol_cache` checks identity, map/ZIP rejection
+and the shared publication path. The ignored Rust test
+`asa_reviewed_symbol_mirror_prepares_owned_copy` additionally accepts
+`LANGAME_ARK_SYMBOLS_NATIVE_EXE`, copies that executable read-only to its own
+fixture and downloads the reviewed ZIP through GitCode, publishes a local cache
+generation and reopens it for verification. It does not publish a remote release,
+start a server or edit an existing cache; a fallback does not pass mirror verification.

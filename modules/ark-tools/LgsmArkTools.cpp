@@ -62,12 +62,15 @@ double Coordinate(const std::string& value) {
 }
 
 bool Blueprint(const std::string& value) {
+    const bool path = value.rfind("/Game/", 0) == 0;
     if (value.size() > 300 ||
-        (value.rfind("/Game/", 0) != 0 && !Token(value, 300)) ||
-        !value.ends_with("_C") || value.find("..") != std::string::npos) return false;
+        (!path && !Token(value, 300)) ||
+        !value.ends_with("_C") || value.find("..") != std::string::npos ||
+        value.find("//") != std::string::npos) return false;
     for (unsigned char c : value) {
         if (!((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') ||
-              (c >= '0' && c <= '9') || c == '/' || c == '.' || c == '_')) return false;
+              (c >= '0' && c <= '9') || c == '/' || c == '.' || c == '_' ||
+              (path && c == '-'))) return false;
     }
     return true;
 }
@@ -105,14 +108,23 @@ bool IsTamed(APrimalDinoCharacter* dino) {
 #endif
 }
 
-AShooterPlayerController* Owner(UWorld* world, std::uint32_t player_id) {
+AShooterPlayerController* Owner(UWorld* world, std::uint32_t player_id, Json& diagnostics) {
+    diagnostics["ownerFailure"] = "not_online";
     for (auto& weak : world->PlayerControllerListField()) {
         auto* controller = weak.Get();
         if (!controller || !controller->IsA(AShooterPlayerController::GetPrivateStaticClass()))
             continue;
         auto* player = static_cast<AShooterPlayerController*>(controller);
-        if (player->LinkedPlayerIDField() == player_id && player->GetPlayerCharacter() &&
-            player->PlayerStateField() && player->TargetingTeamField() > 0) return player;
+        if (player->LinkedPlayerIDField() != player_id) continue;
+        if (!player->GetPlayerCharacter()) diagnostics["ownerFailure"] = "character_unavailable";
+        else if (!player->PlayerStateField()) diagnostics["ownerFailure"] = "player_state_unavailable";
+        else if (player->TargetingTeamField() <= 0) diagnostics["ownerFailure"] = "team_unavailable";
+        else {
+            diagnostics.erase("ownerFailure");
+            diagnostics["ownerTeam"] = player->TargetingTeamField();
+            return player;
+        }
+        return nullptr;
     }
     return nullptr;
 }
@@ -141,35 +153,53 @@ Json InspectDino(const std::string& id, APrimalDinoCharacter* dino) {
 
 Json Spawn(UWorld* world, const std::vector<std::string>& args) {
     const std::string& id = args[1];
-    if (args.size() != 9 || !Blueprint(args[2])) return Error(id, "invalid_arguments");
-    const auto level = UInt(args[3]);
-    const double x = Coordinate(args[4]), y = Coordinate(args[5]), z = Coordinate(args[6]);
-    const bool tame = args[7] == "tamed";
-    if ((!tame && args[7] != "wild") || level < 1 || level > 5000)
-        return Error(id, "invalid_arguments");
-    const auto player_id = UInt(args[8]);
-    if (!tame && player_id != 0) return Error(id, "invalid_arguments");
-    auto* owner = tame ? Owner(world, player_id) : nullptr;
-    if (tame && !owner) return Error(id, "owner_not_online");
-    auto* cls = ResolveClass(args[2]);
-    if (!cls || !cls->IsChildOf(APrimalDinoCharacter::GetPrivateStaticClass()))
-        return Error(id, "invalid_dino_class");
-    TSubclassOf<APrimalDinoCharacter> dino_class;
-    dino_class.uClass = cls;
-    const FVector position{static_cast<decltype(FVector::X)>(x),
-                           static_cast<decltype(FVector::Y)>(y),
-                           static_cast<decltype(FVector::Z)>(z)};
-    const FRotator rotation{0, 0, 0};
-    auto* dino = APrimalDinoCharacter::SpawnDino(world, dino_class, position, rotation,
-        1.0f, 0, false, true, static_cast<int>(level), false, 1.0f,
-        static_cast<int>(level), true
-#ifdef LGSM_ASA
-        , false, false
-#endif
-    );
-    if (!dino) return Error(id, "spawn_failed");
+    Json diagnostics = {{"stage", "validate"}, {"cleanup", "not_needed"}};
+    APrimalDinoCharacter* dino = nullptr;
+    const auto failed = [&](Json result) {
+        if (dino) {
+            // Destroy's true result means destruction was requested, not that
+            // the world has already removed the actor or saved the change.
+            try { diagnostics["cleanup"] = dino->Destroy(true, false) ? "destroy_requested" : "destroy_failed"; }
+            catch (const std::exception&) { diagnostics["cleanup"] = "destroy_failed"; }
+        }
+        result["diagnostics"] = diagnostics;
+        return result;
+    };
     try {
+        if (args.size() != 9 || !Blueprint(args[2])) return failed(Error(id, "invalid_arguments"));
+        const auto level = UInt(args[3]);
+        const double x = Coordinate(args[4]), y = Coordinate(args[5]), z = Coordinate(args[6]);
+        const bool tame = args[7] == "tamed";
+        if ((!tame && args[7] != "wild") || level < 1 || level > 5000)
+            return failed(Error(id, "invalid_arguments"));
+        const auto player_id = UInt(args[8]);
+        if (!tame && player_id != 0) return failed(Error(id, "invalid_arguments"));
+        diagnostics["stage"] = "owner";
+        auto* owner = tame ? Owner(world, player_id, diagnostics) : nullptr;
+        if (tame && !owner) return failed(Error(id, "owner_not_online"));
+        diagnostics["stage"] = "class";
+        auto* cls = ResolveClass(args[2]);
+        if (!cls || !cls->IsChildOf(APrimalDinoCharacter::GetPrivateStaticClass()))
+            return failed(Error(id, "invalid_dino_class"));
+        TSubclassOf<APrimalDinoCharacter> dino_class;
+        dino_class.uClass = cls;
+        const FVector position{static_cast<decltype(FVector::X)>(x),
+                               static_cast<decltype(FVector::Y)>(y),
+                               static_cast<decltype(FVector::Z)>(z)};
+        const FRotator rotation{0, 0, 0};
+        diagnostics["stage"] = "spawn";
+        dino = APrimalDinoCharacter::SpawnDino(world, dino_class, position, rotation,
+            1.0f, 0, false, true, static_cast<int>(level), false, 1.0f,
+            static_cast<int>(level), true
+#ifdef LGSM_ASA
+            , false, false
+#endif
+        );
+        if (!dino) return failed(Error(id, "spawn_failed"));
+        diagnostics["id1"] = dino->DinoID1Field();
+        diagnostics["id2"] = dino->DinoID2Field();
         if (tame) {
+            diagnostics["stage"] = "taming_setup";
             // TameDino consumes the taming team and tribe settings; the
             // controller argument alone does not establish ownership.
 #ifdef LGSM_ASA
@@ -180,23 +210,31 @@ Json Spawn(UWorld* world, const std::vector<std::string>& args) {
             dino->TamingTeamIDField() = owner->TargetingTeamField();
             dino->TamerStringField() = ServerApi::IApiUtils::GetCharacterName(owner);
             state->SetTribeTamingDinoSettings(dino);
+            diagnostics["stage"] = "tame";
             dino->TameDino(owner, true, 0, true, true, true);
-            if (!IsTamed(dino) || dino->TargetingTeamField() != owner->TargetingTeamField()) {
-                dino->Destroy(true, false);
-                return Error(id, "tame_failed");
+            diagnostics["stage"] = "tame_verify";
+            const bool tamed = IsTamed(dino);
+            diagnostics["actualTamed"] = tamed;
+            diagnostics["actualTeam"] = dino->TargetingTeamField();
+            if (!tamed || dino->TargetingTeamField() != owner->TargetingTeamField()) {
+                return failed(Error(id, "tame_failed"));
             }
         }
+        diagnostics["stage"] = "identity";
         const auto id1 = dino->DinoID1Field(), id2 = dino->DinoID2Field();
+        diagnostics["id1"] = id1;
+        diagnostics["id2"] = id2;
         if ((!id1 && !id2) || APrimalDinoCharacter::FindDinoWithID(world, id1, id2) != dino) {
-            dino->Destroy(true, false);
-            return Error(id, "entity_readback_failed");
+            return failed(Error(id, "entity_readback_failed"));
         }
+        diagnostics["stage"] = "inspect";
         auto result = InspectDino(id, dino);
-        if (!result.at("ok").get<bool>()) dino->Destroy(true, false);
+        if (!result.at("ok").get<bool>()) return failed(std::move(result));
         return result;
+    } catch (const std::invalid_argument&) {
+        return failed(Error(id, dino ? "entity_readback_failed" : "invalid_arguments"));
     } catch (const std::exception&) {
-        dino->Destroy(true, false);
-        return Error(id, "entity_readback_failed");
+        return failed(Error(id, dino ? "entity_readback_failed" : "outcome_unknown"));
     }
 }
 
@@ -247,6 +285,14 @@ void Execute(RCONClientConnection* connection, RCONPacket* packet, UWorld* world
         result = Error(id, "native_operation_failed");
     }
     result["action"] = action;
+    if (action == "spawn") {
+        // Persist the bounded receipt even if the RCON peer disconnects. It
+        // contains generated-entity identity and fixed diagnostics, never the
+        // raw command, account names, credentials or arbitrary exception text.
+        const auto receipt = "LGSM_ARK_TOOLS_RECEIPT " + result.dump(-1, ' ', true, Json::error_handler_t::replace) + "\r\n";
+        DWORD written{};
+        WriteFile(GetStdHandle(STD_ERROR_HANDLE), receipt.data(), static_cast<DWORD>(receipt.size()), &written, nullptr);
+    }
     // The two SDKs use different narrow-string -> FString conversions. ASCII
     // JSON with Unicode escapes preserves player names through both engines.
     auto response = "LGSM_ARK_TOOLS " + result.dump(-1, ' ', true, Json::error_handler_t::replace) + "\n";

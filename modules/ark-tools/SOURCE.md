@@ -157,10 +157,16 @@ controlled player snapshots, with downloaded Wiki JPEGs for visual evidence.
 These checks do not replace a real connected-player test on each game build.
 
 Explicit ASA extension preparation obtains an executable-hash-matched offset
-cache from the maintainer CDNs declared in `ark_tools_symbols.rs`. It validates
-the bounded archive and both cache maps before atomically selecting a complete
-generation; existing caches remain available if preparation fails. The request
-contains the server executable's SHA-256, not its contents or local path.
+cache. Reviewed images in [`symbol-caches.json`](symbol-caches.json) have a fixed
+ZIP size/SHA-256 and a published GitCode mirror: Chinese requests try that mirror
+first; international requests try the three maintainer CDNs before the mirror.
+Unknown executable hashes retain the three upstream sources without inventing
+a mirror address. Every source for a reviewed image must match its pinned ZIP;
+all archives still pass bounded ZIP/member and offset/bitfield-map validation
+before a complete generation is atomically selected. Existing caches remain
+available if preparation fails. Requests contain the executable's SHA-256,
+not its contents or local path. The [publication record](symbols-publication-2026-11-12.json)
+binds the current build 26564816 cache to complete anonymous mirror readback.
 
 Ordinary startup does not download symbols. After program updates, the manager
 refreshes its owned ASA proxy and configuration through the existing installation

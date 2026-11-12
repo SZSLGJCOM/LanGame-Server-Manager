@@ -192,9 +192,17 @@ async function dropFile(target = element(".mw-dropzone")) {
   await act(async () => target.dispatchEvent(new DragEvent("drop", {
     bubbles: true, cancelable: true, dataTransfer: transfer })));
 }
-async function dropReference(reference: string, target = element(".mw-dropzone")) {
-  const transfer = new DataTransfer(); transfer.setData("text/plain", reference);
-  Object.defineProperty(transfer, "effectAllowed", { value: "link" });
+type ReferenceDrop = "plain" | "card-thumbnail" | "uri-thumbnail" | "virtual-image";
+async function dropReference(reference: string, target = element(".mw-dropzone"), format: ReferenceDrop = "plain") {
+  const transfer = new DataTransfer();
+  const thumbnail = "https://staticdelivery.nexusmods.com/mods/1059/images/9559/9559-thumbnail.jpg";
+  transfer.setData("text/plain", format === "card-thumbnail" ? thumbnail : reference);
+  if (format !== "plain") {
+    transfer.setData("text/uri-list", format === "card-thumbnail" ? thumbnail : `${reference}\r\n${thumbnail}`);
+    transfer.setData("text/html", `<a href="${reference.replaceAll("&", "&amp;")}"><img src="${thumbnail}"></a>`);
+  }
+  if (format === "virtual-image") transfer.items.add(new File(["browser thumbnail"], "thumbnail.jpg", { type: "image/jpeg" }));
+  Object.defineProperty(transfer, "effectAllowed", { value: format === "virtual-image" ? "copyLink" : "link" });
   await act(async () => target.dispatchEvent(new DragEvent("drop", { bubbles: true, cancelable: true, dataTransfer: transfer })));
 }
 function cancelButton() {
@@ -236,7 +244,7 @@ async function byteProgress(request: WebsiteRequest, update: Partial<Transfer>) 
   await act(async () => emit(progressEvent, { instanceId: request.instanceId, operationId: request.sessionId,
     attempt: 1, sequence: 1, phase: "downloading", receivedBytes: 0, totalBytes: 4096, elapsedSeconds: 0, ...update }));
 }
-async function beginWebsite(reference = websiteReference, input = false, target = element(".mw-dropzone")) {
+async function beginWebsite(reference = websiteReference, input = false, target = element(".mw-dropzone"), format: ReferenceDrop = "plain") {
   const installsBefore = websiteInstalls, beforeMounts = embeddedMounts, sessionsBefore = openedSessions.length;
   expectedReference = reference;
   if (input) {
@@ -246,7 +254,7 @@ async function beginWebsite(reference = websiteReference, input = false, target 
       field.dispatchEvent(new Event("input", { bubbles: true }));
     });
     await act(async () => field.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true, cancelable: true })));
-  } else await dropReference(reference, target);
+  } else await dropReference(reference, target, format);
   await settle(() => Boolean(pendingWebsite && cancelButton()), "Nexus background session did not start loading");
   check(openedSessions.length === sessionsBefore + 1, "A StrictMode user action reserves exactly one background session");
   check(element(".shell-activity-bar").textContent?.includes(openingCopy),
@@ -373,7 +381,14 @@ async function dispatch(command: string, payload: unknown) {
 async function websiteRegression() {
   await mount(); header();
   const initialInventory = JSON.stringify(inventory());
-  const beforeCancel = await beginWebsite();
+  const beforeCancel = await beginWebsite(websiteReference, false, element(".mw-dropzone"), "card-thumbnail");
+  const cold = pendingWebsite!, beforeRecovery = openedSessions.length;
+  await act(async () => { pendingWebsite = null; cold.reject({ code: "nexus_website_verification_required" }); });
+  await settle(() => Boolean(pendingWebsite && pendingWebsite.request.sessionId !== cold.request.sessionId),
+    "A transient website verification failure did not reopen preparation automatically");
+  check(closedSessions.includes(cold.request.sessionId) && openedSessions.length === beforeRecovery + 1
+    && !fixture.querySelector(".shell-activity-notice.is-error") && websiteInstalls === 0,
+    "Cold verification retries once after releasing the old host, without an error, webpage or false installation");
   const loadingCancelled = pendingWebsite!;
   await act(async () => cancelButton()!.click());
   await verifyClosed(loadingCancelled.request.sessionId, loadingCancelled.request.onProgress);
@@ -403,9 +418,20 @@ async function websiteRegression() {
   ] as const;
   for (const [code, reason, phase] of blockedCases) {
     await mount(); await beginWebsite();
-    const blocked = pendingWebsite!;
+    let blocked = pendingWebsite!;
+    const openedBeforeRetry = openedSessions.length;
     await progress(blocked.request, phase);
     await act(async () => { pendingWebsite = null; blocked.reject({ code, message: "synthetic-private-download-details" }); });
+    if (code === "nexus_website_verification_required") {
+      const original = blocked;
+      await settle(() => Boolean(pendingWebsite && pendingWebsite.request.sessionId !== original.request.sessionId),
+        "Verification preparation was not retried once");
+      check(closedSessions.includes(original.request.sessionId) && openedSessions.length === openedBeforeRetry + 1,
+        "Verification recovery releases its previous session before reserving exactly one replacement");
+      blocked = pendingWebsite!;
+      await progress(blocked.request, phase);
+      await act(async () => { pendingWebsite = null; blocked.reject({ code, message: "synthetic-private-download-details" }); });
+    }
     await settle(() => fixture.querySelector(".shell-activity-notice.is-error")?.textContent?.includes(reason) === true,
       `${code} did not explain why background installation did not complete`);
     await verifyClosed(blocked.request.sessionId, blocked.request.onProgress);
@@ -422,6 +448,20 @@ async function websiteRegression() {
       `${code} remains a real failed operation at the settings coordinator barrier`);
     blockedErrors.push(code);
   }
+
+  await mount(); await beginWebsite();
+  const ownedFailure = pendingWebsite!, openedBeforeOwnedFailure = openedSessions.length;
+  await progress(ownedFailure.request, "installing");
+  await act(async () => { pendingWebsite = null; ownedFailure.reject({ code: "nexus_website_verification_required" }); });
+  await settle(() => Boolean(fixture.querySelector(".shell-activity-notice.is-error")),
+    "An accepted installation failure did not finish without retry");
+  await verifyClosed(ownedFailure.request.sessionId, ownedFailure.request.onProgress);
+  check(openedSessions.length === openedBeforeOwnedFailure && !pendingWebsite,
+    "A runtime-owned installation is never repeated by website verification recovery");
+  let ownedError: unknown;
+  await act(async () => { try { await coordinator.flush(details.summary.id); } catch (error) { ownedError = error; } });
+  check(ownedError instanceof Error && ownedError.message === "nexus_website_verification_required",
+    "An accepted failure remains a real failure at the server start barrier");
 
   await mount(); await beginWebsite();
   const cancelledByNative = pendingWebsite!;
@@ -444,7 +484,7 @@ async function websiteRegression() {
   check(!fixture.querySelector(successSelector) && JSON.stringify(inventory()) === initialInventory && websiteInstalls === 0,
     "Cancelling an ID-based background import preserves inventory without success feedback");
 
-  await beginWebsite();
+  await beginWebsite(websiteReference, false, element(".mw-dropzone"), "uri-thumbnail");
   const navigation = pendingWebsite!, closesBeforeNavigation = closedSessions.length;
   await progress(navigation.request, "selecting");
   await tab("My Mods");
@@ -462,7 +502,7 @@ async function websiteRegression() {
     "Cancelling after a same-instance tab change closes only the pending preparation");
 
   for (const [reference, input] of [[websiteReference, false], ["9559", true]] as const) {
-    await beginWebsite(reference, input, element(".mw-config-pane .mw-dropzone"));
+    await beginWebsite(reference, input, element(".mw-config-pane .mw-dropzone"), "virtual-image");
     const myMods = pendingWebsite!;
     await progress(myMods.request, "selecting");
     await act(async () => cancelButton()!.click());

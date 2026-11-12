@@ -296,7 +296,7 @@ pub(super) async fn install(
     // Symbol acquisition is an explicit stopped-instance operation, including
     // re-entry after the game executable changes with an intact plugin bundle.
     let symbols = if profile.module_id == ASA.module_id {
-        Some(symbols::prepare(root.clone(), report.clone()).await?)
+        Some(symbols::prepare(root.clone(), preference, report.clone()).await?)
     } else {
         None
     };

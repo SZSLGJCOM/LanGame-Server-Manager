@@ -27,6 +27,7 @@ export const canUseNexusWebsite = isTauri;
 
 export function useNexusWebsite(instanceId: string) {
   const active = useRef<Request | null>(null);
+  const generation = useRef(0);
   const [phase, setPhase] = useState<Phase>("idle");
   const [transfer, setTransfer] = useState<(TransferProgress & { observedAt: number }) | null>(null);
   const metrics = useDownloadMetrics({ operation_id: transfer ? `${transfer.operationId}:${transfer.attempt}` : "",
@@ -39,10 +40,12 @@ export function useNexusWebsite(instanceId: string) {
     const request = active.current;
     // A selected website download belongs to the runtime until publication or rollback.
     if (!request || request.phase === "installing") return;
+    generation.current++;
     request.cancelled = true;
     void close(request).catch((error: unknown) => console.warn("Could not close the Nexus background session", error));
   }, [close]);
   const detach = useCallback(() => {
+    generation.current++;
     cancel();
     active.current = null;
     setPhase("idle");
@@ -51,7 +54,7 @@ export function useNexusWebsite(instanceId: string) {
   // Tab changes stay within this instance's operation. Leaving the instance
   // cancels preparation; a download already owned by the runtime may finish.
   useLayoutEffect(() => detach, [instanceId, detach]);
-  const install = useCallback(async (reference: string) => {
+  const installAttempt = useCallback(async (reference: string, release?: { closed: boolean; owned: boolean }) => {
     if (!canUseNexusWebsite()) throw new NexusApiError("nexus_local_desktop_required");
     if (active.current) throw new NexusApiError("nexus_browser_busy");
     const request: Request = { sessionId: null, cancelled: false, phase: "opening" };
@@ -95,10 +98,26 @@ export function useNexusWebsite(instanceId: string) {
       if (request.cancelled) throw new NexusApiError("nexus_browser_cancelled");
       return nexusStageResult(instanceId, result);
     } finally {
+      if (release) release.owned = request.phase === "installing";
       try { await unlisten?.(); } catch { console.warn("Could not stop observing Nexus download progress"); }
-      await close(request).catch((error: unknown) => console.warn("Could not close the Nexus background session", error));
+      await close(request).then(() => { if (release) release.closed = true; })
+        .catch((error: unknown) => console.warn("Could not close the Nexus background session", error));
       if (active.current === request) { active.current = null; setPhase("idle"); setTransfer(null); }
     }
   }, [instanceId, close]);
+  const install = useCallback(async (reference: string) => {
+    const currentGeneration = generation.current;
+    const release = { closed: false, owned: false };
+    try {
+      return await installAttempt(reference, release);
+    } catch (error) {
+      // A cold website verification can stall while the next ordinary page
+      // load succeeds. Retry preparation once, after its host is fully closed.
+      // Never repeat an accepted download, cancellation, or another instance's work.
+      if (!(error instanceof NexusApiError) || error.code !== "nexus_website_verification_required"
+        || !release.closed || release.owned || generation.current !== currentGeneration || active.current) throw error;
+      return installAttempt(reference);
+    }
+  }, [installAttempt]);
   return { install, cancel, phase, transfer, metrics };
 }

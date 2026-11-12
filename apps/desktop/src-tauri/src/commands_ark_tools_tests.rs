@@ -4,6 +4,9 @@ use crate::commands::commands_ark_tools::{self as ark, protocol};
 #[path = "commands_ark_tools_remove_tests.rs"]
 mod removal;
 
+#[path = "commands_ark_tools_spawn_tests.rs"]
+mod spawn;
+
 struct ArkFixture {
     root: PathBuf,
     _environment: ProgramDataEnvGuard,

@@ -13,6 +13,9 @@ mod mod_deployment_lock_tests;
 
 #[path = "commands_app_exit_sessions_tests.rs"]
 mod app_exit_sessions_tests;
+#[cfg(windows)]
+#[path = "commands_ark_existing_acceptance_tests.rs"]
+mod ark_existing_acceptance;
 #[path = "commands_creation_catalog_tests.rs"]
 mod creation_catalog_tests;
 #[path = "commands_install_launch_matrix_tests.rs"]

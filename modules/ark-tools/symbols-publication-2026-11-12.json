@@ -1,0 +1,112 @@
+{
+  "schema_version": 1,
+  "verified_on": "2026-11-12",
+  "verification_timezone": "Asia/Shanghai",
+  "status": "published_and_anonymously_verified",
+  "scope": "ASA runtime symbol-cache mirror only; no desktop release promotion or game process operation",
+  "repository": "SZSLGJCOM/LanGame-Server-Manager-Releases",
+  "tag": "ark-tools-symbols-asa-e5abbfc6189c3a29",
+  "release_status": "pre",
+  "publisher_completed_utc": "2026-11-12T08:42:20Z",
+  "steam_build_id": "26564816",
+  "executable_sha256": "79b0ce800a05e254f0a591967acea9ae0fcd0c03becf75ab04182e2c3cd0ab02",
+  "prepared_inventory_sha256": "57f407ae812ead6dca9eabd9d4699170261e66c2dbb1b0c2249f6012336ee2a0",
+  "symbol_manifest_sha256": "ab1d4ceea50d616e6fb3aa06a3fd6b1581e23502a1546076ad14b7ea08873447",
+  "publisher_readback": {
+    "anonymous": true,
+    "verified_assets": 5,
+    "receipt_sha256": "5d7721d7c4594e2eb1c6a7652978d84b597a5c61755d60cdbebbe36a86128bcc",
+    "retained_readback_files_independently_rehashed": 5,
+    "source_zip_unchanged": true
+  },
+  "archive_members": [
+    {
+      "name": "cached_offsets.txt",
+      "size": 57844840,
+      "sha256": "990b1f3e45dcf20a4d059dc5388bf1e9fe64629730d963b9ff57cc5a3bf3f1da"
+    },
+    {
+      "name": "cached_offsets.cache",
+      "size": 67706762,
+      "entries": 704423,
+      "sha256": "1458b4b1ab8969a997793fd55a75f3e55738344bfd65c014a86cf59a2dbca909"
+    },
+    {
+      "name": "cached_bitfields.cache",
+      "size": 1146881,
+      "entries": 13055,
+      "sha256": "6d780a7f689de6c417e1c907787f1916ad46709d08d62c83d98397472776f80a"
+    }
+  ],
+  "assets": [
+    {
+      "name": "79b0ce800a05e254f0a591967acea9ae0fcd0c03becf75ab04182e2c3cd0ab02.zip",
+      "size": 23155786,
+      "sha256": "e5abbfc6189c3a29bf78009a5e7101ff31d61ef78b82a48e2069653202e4e315",
+      "url": "https://api.gitcode.com/api/v5/repos/SZSLGJCOM/LanGame-Server-Manager-Releases/releases/ark-tools-symbols-asa-e5abbfc6189c3a29/attach_files/79b0ce800a05e254f0a591967acea9ae0fcd0c03becf75ab04182e2c3cd0ab02.zip/download"
+    },
+    {
+      "name": "ASA-SDK-LICENSE.txt",
+      "size": 1142,
+      "sha256": "42f605c245fbe23ebbf04aa4789a75853963db6754d4653e192630d0f5322b2e",
+      "url": "https://api.gitcode.com/api/v5/repos/SZSLGJCOM/LanGame-Server-Manager-Releases/releases/ark-tools-symbols-asa-e5abbfc6189c3a29/attach_files/ASA-SDK-LICENSE.txt/download"
+    },
+    {
+      "name": "SHA256SUMS",
+      "size": 390,
+      "sha256": "d06ee2b4e910959fe3212a20ec8a9379f269ca952931a417f50b00473dfc9812",
+      "url": "https://api.gitcode.com/api/v5/repos/SZSLGJCOM/LanGame-Server-Manager-Releases/releases/ark-tools-symbols-asa-e5abbfc6189c3a29/attach_files/SHA256SUMS/download"
+    },
+    {
+      "name": "THIRD_PARTY_NOTICES.txt",
+      "size": 1010,
+      "sha256": "3b9a1dac2bee3f3213643070428f05082fa67f14ddf28990189e6865ef838d5c",
+      "url": "https://api.gitcode.com/api/v5/repos/SZSLGJCOM/LanGame-Server-Manager-Releases/releases/ark-tools-symbols-asa-e5abbfc6189c3a29/attach_files/THIRD_PARTY_NOTICES.txt/download"
+    },
+    {
+      "name": "symbols.json",
+      "size": 875,
+      "sha256": "ab1d4ceea50d616e6fb3aa06a3fd6b1581e23502a1546076ad14b7ea08873447",
+      "url": "https://api.gitcode.com/api/v5/repos/SZSLGJCOM/LanGame-Server-Manager-Releases/releases/ark-tools-symbols-asa-e5abbfc6189c3a29/attach_files/symbols.json/download"
+    }
+  ],
+  "source_license": {
+    "url": "https://raw.githubusercontent.com/ArkServerApi/AsaApi/bd376a0422291b0b1bf15a0b7868e7e275605da9/LICENSE",
+    "scope": "Pinned AsaApi SDK project MIT license; not a relicensing of the proprietary game or every derived symbol name."
+  },
+  "runtime_prepare_validation": {
+    "status": "passed",
+    "host": "Windows host with an isolated disposable fixture",
+    "test": "commands::commands_ark_tools::install::symbols::tests::asa_reviewed_symbol_mirror_prepares_owned_copy",
+    "completed_utc": "2026-11-12T09:09:32.7824080Z",
+    "exit_code": 0,
+    "tests_passed": 1,
+    "tests_failed": 0,
+    "tests_ignored": 0,
+    "duration_seconds": 6.08,
+    "preference": "ChinaFirst",
+    "connecting_sources": [
+      "api.gitcode.com"
+    ],
+    "source_fallback_used": false,
+    "cache_ready_after_prepare": true,
+    "cache_ready_after_publication_and_reopen": true,
+    "source_executable_access": "read_only",
+    "source_executable_size_and_modification_time_unchanged": true,
+    "test_uses_disposable_fixture": true,
+    "game_started": false,
+    "scope": "Downloaded the reviewed ZIP, validated both native maps, and atomically selected and reopened an isolated local cache."
+  },
+  "limits": [
+    "Only this reviewed executable currently has a domestic cache entry; unknown executables use the three existing maintainer CDNs.",
+    "Cache format validation does not establish compatibility of every native function or connected-player behavior.",
+    "The dedicated mirror remains pre and does not change the desktop latest pointer."
+  ],
+  "symbol_regressions": {
+    "passed": 12,
+    "failed": 0,
+    "ignored_live_test": 1,
+    "live_test_executed_separately": true,
+    "scope": "Source ordering, reviewed archive digest, redirect trust boundaries, bounded streaming, executable/cache matching, map rejection and preservation/publication invariants. The ignored real download was executed separately as recorded above."
+  }
+}

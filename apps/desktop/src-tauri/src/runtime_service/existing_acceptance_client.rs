@@ -119,6 +119,10 @@ impl ExistingClient {
             Self::EVENT_RESPONSE_BUDGET
         } else if matches!(command, "start_instance_process" | "stop_instance_process") {
             Duration::from_secs(1830)
+        } else if command == "spawn_ark_creature" {
+            // One host call includes handshake, mutation and independent read-back.
+            // A timeout remains uncertain; the opt-in ARK harness never resends it.
+            Duration::from_secs(60)
         } else {
             Duration::from_secs(15)
         };
@@ -228,11 +232,14 @@ fn allowed(command: &str) -> bool {
             | "read_instance_runtime_overview_from_storage"
             | "read_instance_runtime_window_snapshot"
             | "read_instance_log_document_from_storage"
+            | "read_ark_tools_status"
+            | "read_ark_map"
+            | "spawn_ark_creature"
     )
 }
 
 #[test]
-fn existing_acceptance_client_only_allows_lifecycle_and_readback() {
+fn existing_acceptance_client_only_allows_lifecycle_readback_and_ark_acceptance() {
     for forbidden in [
         "create_instance_record",
         "update_instance_record",
@@ -240,10 +247,16 @@ fn existing_acceptance_client_only_allows_lifecycle_and_readback() {
         "restore_instance_backup",
         "runtime_service_shutdown",
         "send_instance_runtime_command",
+        "send_ark_map_gm_command",
+        "prepare_ark_tools",
+        "remove_ark_tools",
     ] {
         assert!(!allowed(forbidden));
     }
     assert!(allowed("start_instance_process"));
     assert!(allowed("stop_instance_process"));
     assert!(allowed("preview_dontstarve_world_start"));
+    assert!(allowed("read_ark_tools_status"));
+    assert!(allowed("read_ark_map"));
+    assert!(allowed("spawn_ark_creature"));
 }

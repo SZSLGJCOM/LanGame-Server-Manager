@@ -63,7 +63,7 @@ import { NexusApiError } from "../../nexus-mods-api";
 import { canUseNexusWebsite, useNexusWebsite } from "./use-nexus-website";
 import { useNexusWebsiteLogin } from "./use-nexus-website-login";
 import { nexusErrorText, nexusText } from "./nexus-mods-messages";
-import { nexusReferencesFromText } from "./nexus-mod-reference";
+import { nexusReferencesFromDrop, nexusReferencesFromText } from "./nexus-mod-reference";
 import { parseEvolvedModIds } from "./ark-evolved-mod-ids";
 import { arkModFields, arkModCompatibilityDiffers, arkModUnionSettings, arkModEnabledCounts, applyArkModChange, applyArkSharedModAction,
   assertArkModChangeBase, readArkModMapOverrides, ArkModScopeError, type ArkModChange } from "./ark-map-mods";
@@ -2796,7 +2796,7 @@ export function ModWorkbench(props: ModWorkbenchProps) {
       onDrop: (event: DragEvent<HTMLElement>) => {
         const effect = updateFeedback(event);
         if (effect === "none") return;
-        const references = allowReferences ? referencesFromDomDrop(event, nexusSource ? nexusReferencesFromText : referenceCandidatesFromText) : [];
+        const references = allowReferences ? nexusSource ? nexusReferencesFromDrop(event.dataTransfer) : referencesFromDomDrop(event) : [];
         const files = Array.from(event.dataTransfer.files);
         const fileItems = Array.from(event.dataTransfer.items).filter((item) => item.kind === "file");
         const browserLinkFiles = files.length > 0 && files.length === fileItems.length

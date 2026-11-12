@@ -36,13 +36,13 @@ for (const viewport of [{ width: 1560, height: 900 }, { width: 960, height: 600 
       old_attempt_ignored: true, old_sequence_ignored: true, instance_session_isolation: true, owned_cancel_disabled: true,
       full_bytes_not_installed: true, stages: ["downloading", "verifying", "installing"], subscription_failure_does_not_abort: true,
       async_release_failure_does_not_abort: true,
-      subscriptions: 22, unsubscriptions: 22 });
-    assert.equal(report.website_references.length, 23);
+      subscriptions: 25, unsubscriptions: 25 });
+    assert.equal(report.website_references.length, 26);
     assert.equal(report.website_references.filter((reference) => reference === "9559").length, 2);
     assert.ok(report.website_references.every((reference) => reference === "9559"
       || reference === "https://www.nexusmods.com/sevendaystodie/mods/9559?tab=files"));
-    assert.deepEqual(report.website_sessions, { opened: 24, closed: 24 }, "All background download sessions close before drag-hint capture");
-    assert.deepEqual(report.fixture_cleanup.website_sessions, { opened: 24, closed: 24 });
+    assert.deepEqual(report.website_sessions, { opened: 27, closed: 27 }, "All background download sessions close before drag-hint capture");
+    assert.deepEqual(report.fixture_cleanup.website_sessions, { opened: 27, closed: 27 });
     assert.deepEqual(report.coordinator, { cancellation_flushes: 8, reference_failure_blocks_flush: true });
     assert.deepEqual(report.loading, { cancel_without_flash: true,
       failure_without_flash: true, late_open_without_flash: true, browser_preview_has_no_native_commands: true });

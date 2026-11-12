@@ -172,7 +172,10 @@ async fn storage_context_process_fixture() -> Result<(), Box<dyn std::error::Err
 
     let state = app.state::<DesktopState>();
     #[cfg(windows)]
-    {
+    let world = {
+        let original_saves = Path::new(&details.saves_path).canonicalize()?;
+        let original_games = paths.games_root.canonicalize()?;
+        let relative_saves = original_saves.strip_prefix(&original_games)?;
         let next_games = root.join("selected-games");
         let next_steamcmd = root.join("selected-steamcmd");
         let input = || AppPathSettingsInput {
@@ -200,8 +203,28 @@ async fn storage_context_process_fixture() -> Result<(), Box<dyn std::error::Err
         let restarted = app_storage::bootstrap_storage_with_paths(paths.clone())?;
         assert_eq!(restarted.paths.games_root, next_games);
         assert_eq!(restarted.paths.steamcmd_root, next_steamcmd);
-        assert_eq!(fs::read(&world)?, b"world belongs to the original context");
-    }
+        let moved =
+            read_instance_details_from_storage(app.state::<DesktopState>(), id.clone()).await?;
+        assert_eq!(
+            Path::new(&moved.saves_path).canonicalize()?,
+            next_games.canonicalize()?.join(relative_saves)
+        );
+        let moved_world = Path::new(&moved.saves_path).join("context-world.dat");
+        assert!(
+            !world.exists(),
+            "migration must retire the original save path"
+        );
+        assert_eq!(
+            fs::read(&moved_world).unwrap_or_else(|error| {
+                panic!(
+                    "cannot read migrated world {}: {error}",
+                    moved_world.display()
+                )
+            }),
+            b"world belongs to the original context"
+        );
+        moved_world
+    };
     assert_eq!(fs::read(&ambient.paths.settings_path)?, ambient_settings);
     assert!(!ambient.paths.database_path.exists());
 
