@@ -38,7 +38,7 @@ Archive SHA-256 后按 gzip tar 归档解压，即可取得上游源码及其声
 LanGame 项目许可不限制接收者依 MPL 获得的源码权利。
 条款见 Mozilla Public License 2.0 第 3.1-3.3 节：https://www.mozilla.org/MPL/2.0/
 
-Locked external crates / 锁定外部 crate: 683
+Locked external crates / 锁定外部 crate: 684
 Reviewed missing-file rules / 缺失文件审计规则: 49
 Unique legal texts / 唯一法律文本: 404
 
@@ -950,6 +950,18 @@ Authors metadata / 作者元数据: Cesar Eduardo Barros <cesarb@cesarb.eti.br>
 Legal text / 法律文本: 62c7a1e35f56406896d7aa7ca52d0cc0d272ac022b5d2796e7d6905db8a3636a — checksum-verified crate file constant_time_eq-0.4.2/LICENSE-APACHE
 Legal text / 法律文本: 9a3aeb3f63659c4c6302d315e1d98784d1e8559858a47ff9562e091bb922d28d — checksum-verified crate file constant_time_eq-0.4.2/LICENSE-MIT0
 Legal text / 法律文本: a2010f343487d3f7618affe54f789f5487602331c0a8d03f49e9a7c547cf0499 — checksum-verified crate file constant_time_eq-0.4.2/LICENSE-CC0
+--------------------------------------------------------------------------------
+Package / 软件包: constant_time_eq@0.6.1
+Declared license / 声明许可证: CC0-1.0 OR MIT-0 OR Apache-2.0
+Selected reviewed terms / 选用审计条款: packaged upstream texts
+Archive SHA-256: 9eb6feb175df65d0a3ccd3e73484e940d0ac664e8034f0519fd49a93db3071d9
+Source archive / 源码归档: https://static.crates.io/crates/constant_time_eq/constant_time_eq-0.6.1.crate
+Repository / 仓库: https://codeberg.org/cesarb/constant_time_eq
+VCS commit / 版本提交: f5f9476a7f84206ecda2b33f3eb2a3fc1badbbe6
+Authors metadata / 作者元数据: Cesar Eduardo Barros <cesarb@cesarb.eti.br>
+Legal text / 法律文本: 62c7a1e35f56406896d7aa7ca52d0cc0d272ac022b5d2796e7d6905db8a3636a — checksum-verified crate file constant_time_eq-0.6.1/LICENSE-APACHE
+Legal text / 法律文本: 9a3aeb3f63659c4c6302d315e1d98784d1e8559858a47ff9562e091bb922d28d — checksum-verified crate file constant_time_eq-0.6.1/LICENSE-MIT0
+Legal text / 法律文本: a2010f343487d3f7618affe54f789f5487602331c0a8d03f49e9a7c547cf0499 — checksum-verified crate file constant_time_eq-0.6.1/LICENSE-CC0
 --------------------------------------------------------------------------------
 Package / 软件包: cookie@0.18.2
 Declared license / 声明许可证: MIT OR Apache-2.0
@@ -6238,15 +6250,15 @@ Legal text / 法律文本: 3fa4ca83dcc9237839b1bdeb2e6d16bdfb5ec0c5ce42b24694d8b
 Legal text / 法律文本: c30152c94a6d75e021adbc52b3a52470366a46edb917e17deae3259251af244c — checksum-verified crate file utf8_iter-1.0.4/COPYRIGHT
 Legal text / 法律文本: cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30 — checksum-verified crate file utf8_iter-1.0.4/LICENSE-APACHE
 --------------------------------------------------------------------------------
-Package / 软件包: uuid@1.29.1
+Package / 软件包: uuid@1.29.2
 Declared license / 声明许可证: Apache-2.0 OR MIT
 Selected reviewed terms / 选用审计条款: packaged upstream texts
-Archive SHA-256: 4a06f08a856b009bc7bbaf7d3e79808595d032dd19074c0c2ef26e49e03e6bdc
-Source archive / 源码归档: https://static.crates.io/crates/uuid/uuid-1.29.1.crate
+Archive SHA-256: bed99139f7dac9b5cfe5f17be4d66dc7079a34dee1d74bcc77217119240e267c
+Source archive / 源码归档: https://static.crates.io/crates/uuid/uuid-1.29.2.crate
 Repository / 仓库: https://github.com/uuid-rs/uuid
-VCS commit / 版本提交: 0fe2dab29a99d0379c08e7b8ba49d89169f994bf
-Legal text / 法律文本: 436bc5a105d8e57dcd8778730f3754f7bf39c14d2f530e4cde4bd2d17a83ec3d — checksum-verified crate file uuid-1.29.1/LICENSE-MIT
-Legal text / 法律文本: a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2 — checksum-verified crate file uuid-1.29.1/LICENSE-APACHE
+VCS commit / 版本提交: 5205a6ea18425e6781f2ac09e896d88153d9cd2d
+Legal text / 法律文本: 436bc5a105d8e57dcd8778730f3754f7bf39c14d2f530e4cde4bd2d17a83ec3d — checksum-verified crate file uuid-1.29.2/LICENSE-MIT
+Legal text / 法律文本: a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2 — checksum-verified crate file uuid-1.29.2/LICENSE-APACHE
 --------------------------------------------------------------------------------
 Package / 软件包: vcpkg@0.2.15
 Declared license / 声明许可证: MIT/Apache-2.0
@@ -7213,15 +7225,15 @@ VCS commit / 版本提交: c56bbb5a7b47409759113903764c456f13b418e5
 Authors metadata / 作者元数据: The ICU4X Project Developers
 Legal text / 法律文本: f367c1b8e1aa262435251e442901da4607b4650e0e63a026f5044473ecfb90f2 — checksum-verified crate file zerovec-0.11.8/LICENSE
 --------------------------------------------------------------------------------
-Package / 软件包: zip@9.4.0
+Package / 软件包: zip@9.5.0
 Declared license / 声明许可证: MIT
 Selected reviewed terms / 选用审计条款: packaged upstream texts
-Archive SHA-256: 3cec733c9820347a592f6375c3c0089b479ba0a0b1cbf3dd1958b02959b7c033
-Source archive / 源码归档: https://static.crates.io/crates/zip/zip-9.4.0.crate
+Archive SHA-256: 0700e6c427aff64acdbf02e85fbfd946c2ee12319d1af013092f3a2178914ff8
+Source archive / 源码归档: https://static.crates.io/crates/zip/zip-9.5.0.crate
 Repository / 仓库: https://github.com/zip-rs/zip2
-VCS commit / 版本提交: f347dd473daa2e53922cc8eae396f390b51930e0
+VCS commit / 版本提交: ddf3ec36017345b8936dd1a3516d9bc4632a0480
 Authors metadata / 作者元数据: Mathijs van de Nes <git@mathijs.vd-nes.nl>; Marli Frost <marli@frost.red>; Ryan Levick <ryan.levick@gmail.com>; Chris Hennick <hennickc@amazon.com>
-Legal text / 法律文本: 58545fed1565e42d687aecec6897d35c6d37ccb71479a137c0deb2203e125c79 — checksum-verified crate file zip-9.4.0/LICENSE
+Legal text / 法律文本: 58545fed1565e42d687aecec6897d35c6d37ccb71479a137c0deb2203e125c79 — checksum-verified crate file zip-9.5.0/LICENSE
 --------------------------------------------------------------------------------
 Package / 软件包: zlib-rs@0.6.8
 Declared license / 声明许可证: Zlib
@@ -14068,7 +14080,7 @@ Source / 来源: checksum-verified crate file sevenz-rust2-0.25.0/LICENSE
    limitations under the License.
 
 Text SHA-256 / 文本 SHA-256: 436bc5a105d8e57dcd8778730f3754f7bf39c14d2f530e4cde4bd2d17a83ec3d
-Source / 来源: checksum-verified crate file uuid-1.29.1/LICENSE-MIT
+Source / 来源: checksum-verified crate file uuid-1.29.2/LICENSE-MIT
 --------------------------------------------------------------------------------
 Copyright (c) 2014 The Rust Project Developers
 Copyright (c) 2018 Ashley Mannix, Christopher Armstrong, Dylan DPC, Hunar Roop Kahlon
@@ -16240,7 +16252,7 @@ SOFTWARE.
 
 Text SHA-256 / 文本 SHA-256: 58545fed1565e42d687aecec6897d35c6d37ccb71479a137c0deb2203e125c79
 Source / 来源: checksum-verified crate file tracing-core-0.1.36/src/spin/LICENSE
-Source / 来源: checksum-verified crate file zip-9.4.0/LICENSE
+Source / 来源: checksum-verified crate file zip-9.5.0/LICENSE
 --------------------------------------------------------------------------------
 The MIT License (MIT)
 
@@ -17552,6 +17564,7 @@ Text SHA-256 / 文本 SHA-256: 62c7a1e35f56406896d7aa7ca52d0cc0d272ac022b5d2796e
 Source / 来源: checksum-verified crate file anyhow-1.0.104/LICENSE-APACHE
 Source / 来源: checksum-verified crate file async-trait-0.1.92/LICENSE-APACHE
 Source / 来源: checksum-verified crate file constant_time_eq-0.4.2/LICENSE-APACHE
+Source / 来源: checksum-verified crate file constant_time_eq-0.6.1/LICENSE-APACHE
 Source / 来源: checksum-verified crate file daachorse-3.0.3/LICENSE-APACHE
 Source / 来源: checksum-verified crate file dary_heap-0.3.9/LICENSE-APACHE
 Source / 来源: checksum-verified crate file dtoa-1.0.11/LICENSE-APACHE
@@ -24223,6 +24236,7 @@ SOFTWARE.
 
 Text SHA-256 / 文本 SHA-256: 9a3aeb3f63659c4c6302d315e1d98784d1e8559858a47ff9562e091bb922d28d
 Source / 来源: checksum-verified crate file constant_time_eq-0.4.2/LICENSE-MIT0
+Source / 来源: checksum-verified crate file constant_time_eq-0.6.1/LICENSE-MIT0
 --------------------------------------------------------------------------------
 Permission is hereby granted, free of charge, to any person obtaining a
 copy of this software and associated documentation files (the
@@ -24759,6 +24773,7 @@ DEALINGS IN THE SOFTWARE.
 
 Text SHA-256 / 文本 SHA-256: a2010f343487d3f7618affe54f789f5487602331c0a8d03f49e9a7c547cf0499
 Source / 来源: checksum-verified crate file constant_time_eq-0.4.2/LICENSE-CC0
+Source / 来源: checksum-verified crate file constant_time_eq-0.6.1/LICENSE-CC0
 Source / 来源: checksum-verified crate file dunce-1.0.5/LICENSE
 --------------------------------------------------------------------------------
 Creative Commons Legal Code
@@ -25234,7 +25249,7 @@ Source / 来源: checksum-verified crate file unicode-normalization-alignments-0
 Source / 来源: checksum-verified crate file unicode-properties-0.1.4/LICENSE-APACHE
 Source / 来源: checksum-verified crate file unicode-segmentation-1.13.3/LICENSE-APACHE
 Source / 来源: checksum-verified crate file url-2.5.8/LICENSE-APACHE
-Source / 来源: checksum-verified crate file uuid-1.29.1/LICENSE-APACHE
+Source / 来源: checksum-verified crate file uuid-1.29.2/LICENSE-APACHE
 Source / 来源: checksum-verified crate file version_check-0.9.5/LICENSE-APACHE
 Source / 来源: checksum-verified crate file wasi-0.11.1+wasi-snapshot-preview1/LICENSE-APACHE
 Source / 来源: checksum-verified crate file wasip2-1.0.4+wasi-0.2.12/LICENSE-APACHE
