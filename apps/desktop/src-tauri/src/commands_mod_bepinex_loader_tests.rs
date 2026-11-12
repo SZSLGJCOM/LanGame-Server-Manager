@@ -122,6 +122,8 @@ impl Fixture {
             path,
             label: "Author-Plugin".into(),
             identity: OnlineModIdentity {
+                display_name: None,
+                icon_url: None,
                 thunderstore_intent: None,
                 provider: "thunderstore".into(),
                 project: "Author-Plugin".into(),
@@ -157,6 +159,70 @@ impl Fixture {
 impl Drop for Fixture {
     fn drop(&mut self) {
         let _ = fs::remove_dir_all(&self.directory);
+    }
+}
+
+#[test]
+fn thunderstore_routed_presentation_survives_disable_enable_and_update() {
+    const ICON: &str = "https://ccdn.thunderstore.io/live/repository/icons/Author-Plugin-1.0.0.png";
+    for module_id in ["valheim", "vrising"] {
+        let fixture = Fixture::new(module_id);
+        // The loader fixture has synthetic release hashes. Management resolves
+        // official loader dependencies against the production profile, so use
+        // an installed plugin dependency and verify its real ownership instead.
+        let mut source = fixture.source(vec!["Author-Library-1.0.0".into()]);
+        let mut library = source.clone();
+        library.path = fixture.directory.join("downloaded-library");
+        fs::create_dir_all(&library.path).unwrap();
+        fs::write(library.path.join("Library.dll"), b"MZlibrary").unwrap();
+        library.label = "Author-Library".into();
+        library.identity.project = "Author-Library".into();
+        library.identity.historical_names = vec!["Author-Library".into()];
+        library.identity.dependencies.clear();
+        source.identity.display_name = Some("Readable plugin".into());
+        source.identity.icon_url = Some(ICON.into());
+        fixture
+            .install(&[source.clone(), library], Some(&fixture.archive))
+            .unwrap();
+        let check = |inventory: &ManualModInventoryResult| {
+            let item = inventory
+                .items
+                .iter()
+                .find(|item| {
+                    item.management
+                        .as_ref()
+                        .is_some_and(|state| state.package_id == "thunderstore-Author-Plugin")
+                })
+                .unwrap();
+            assert_eq!(item.display_name.as_deref(), Some("Readable plugin"));
+            assert_eq!(item.icon_url.as_deref(), Some(ICON));
+            assert_eq!(
+                item.management.as_ref().unwrap().dependencies,
+                ["Author-Library-1.0.0"]
+            );
+        };
+        check(
+            &crate::commands::commands_mods::mod_inventory::read_inventory(fixture.target())
+                .unwrap(),
+        );
+        for action in ["disable", "enable"] {
+            let result = crate::commands::commands_mod_staging::manage_package(
+                fixture.target(),
+                "thunderstore-Author-Plugin",
+                action,
+            )
+            .unwrap();
+            check(&result.inventory);
+        }
+        source.identity.display_name = None;
+        source.identity.icon_url = None;
+        source.identity.version = "2.0.0".into();
+        fs::write(source.path.join("Plugin.dll"), b"MZupdated").unwrap();
+        fixture.install(&[source], None).unwrap();
+        check(
+            &crate::commands::commands_mods::mod_inventory::read_inventory(fixture.target())
+                .unwrap(),
+        );
     }
 }
 
@@ -555,6 +621,8 @@ fn corekeeper_uses_native_mod_staging_without_bepinex() {
         path: source,
         label: "Author-NativeMod".into(),
         identity: OnlineModIdentity {
+            display_name: None,
+            icon_url: None,
             thunderstore_intent: None,
             provider: "thunderstore".into(),
             project: "Author-NativeMod".into(),

@@ -9,6 +9,72 @@ fn metadata(name: &str, version: &str, dependencies: &[&str]) -> ThunderstorePac
 }
 
 #[tokio::test]
+async fn thunderstore_preparation_keeps_optional_verified_presentation() {
+    const ICON: &str = "https://ccdn.thunderstore.io/live/repository/icons/Author-Plugin-1.0.0.png";
+    let root = std::env::temp_dir().join(format!(
+        "langame-mod-presentation-{}",
+        uuid::Uuid::new_v4().simple()
+    ));
+    fs::create_dir_all(root.join("CoreKeeperServer_Data/StreamingAssets")).unwrap();
+    fs::write(root.join("CoreKeeperServer.exe"), b"MZfixture").unwrap();
+    let mut zip = zip::ZipWriter::new(std::io::Cursor::new(Vec::new()));
+    let options =
+        zip::write::SimpleFileOptions::default().compression_method(zip::CompressionMethod::Stored);
+    for (name, bytes) in [
+        (
+            "ModManifest.json",
+            br#"{"name":"Plugin","version":"1.0.0"}"#.as_slice(),
+        ),
+        ("Plugin.dll", b"MZplugin".as_slice()),
+    ] {
+        zip.start_file(name, options).unwrap();
+        zip.write_all(bytes).unwrap();
+    }
+    let archive = zip.finish().unwrap().into_inner();
+    let source = app_core::ModuleModSourceSpec {
+        provider: "thunderstore".into(),
+        label: "Thunderstore".into(),
+        url: "https://thunderstore.io/c/core-keeper/".into(),
+        loaders: Vec::new(),
+        game_versions: Vec::new(),
+        install_note: None,
+    };
+    for icon in [Some(ICON), None, Some("https://untrusted.example/icon.png")] {
+        let mut provider = provider_fixture::FixtureProvider::default();
+        provider.packages.insert("Author-Plugin".into(), serde_json::json!({
+            "full_name": "Author-Plugin", "community_listings": [{"community": "core-keeper"}],
+            "latest": {"name": "Readable Plugin", "icon": icon, "version_number": "1.0.0",
+                "download_url": "https://thunderstore.io/package/download/Author/Plugin/1.0.0/", "dependencies": []}
+        }));
+        provider
+            .archives
+            .insert("Author-Plugin-1.0.0".into(), archive.clone());
+        let prepared = prepare_thunderstore_fixture(
+            "corekeeper",
+            &source,
+            &["https://thunderstore.io/c/core-keeper/p/Author/Plugin/".into()],
+            &root,
+            &[],
+            &app_steamcmd::InstallCancellation::default(),
+            &provider,
+        )
+        .await
+        .unwrap_or_else(|error| panic!("{}", error.message));
+        assert_eq!(prepared.sources().len(), 1);
+        assert_eq!(
+            prepared.sources()[0].identity.display_name.as_deref(),
+            Some("Readable Plugin")
+        );
+        assert_eq!(
+            prepared.sources()[0].identity.icon_url.as_deref(),
+            icon.filter(|value| *value == ICON)
+        );
+        assert!(prepared.sources()[0].path.join("Plugin.dll").is_file());
+    }
+    fs::remove_dir_all(root).unwrap();
+}
+
+#[tokio::test]
 async fn valheim_plan_fetches_transitive_exact_dependencies_but_provides_loader_separately() {
     let mut requested = Vec::new();
     let packages = resolve_packages(

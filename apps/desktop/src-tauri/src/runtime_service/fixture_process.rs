@@ -25,6 +25,7 @@ impl OwnedChild {
             install_root: root.clone(),
             install_state: app_core::InstallState::Installed,
             uses_private_runtime: false,
+            can_update_before_start: false,
             working_directory: root,
             executable_path: std::env::current_exe()
                 .map_err(|e| e.to_string())?

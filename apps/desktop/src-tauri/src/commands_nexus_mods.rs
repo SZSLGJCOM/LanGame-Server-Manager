@@ -74,7 +74,7 @@ pub(crate) async fn nexus_clear_api_key() -> Result<NexusAccountStatus, String> 
     Ok(unconfigured_account())
 }
 
-async fn instance_source(
+pub(super) async fn instance_source(
     storage: &StorageBootstrap,
     instance_id: &str,
 ) -> Result<(app_core::ModuleModSourceSpec, Vec<String>), String> {

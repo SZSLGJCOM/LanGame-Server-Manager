@@ -30,6 +30,10 @@ pub(in crate::commands) use management::{decorate_inventory, manage_package, rec
 #[path = "commands_mod_routed_packages.rs"]
 mod routed;
 
+#[path = "commands_mod_nexus_routes.rs"]
+mod nexus_routes;
+pub(in crate::commands) use nexus_routes::stage_nexus_routed_source;
+
 /// Startup replacement uses the same operator-data boundary as managed Mod
 /// updates. Package identity metadata must retain its strict payload validation.
 pub(in crate::commands) fn protected_operator_mod_file(relative: &str) -> bool {
@@ -63,6 +67,10 @@ struct InstalledPackages {
 #[derive(Debug, serde::Serialize, serde::Deserialize)]
 #[serde(deny_unknown_fields)]
 struct InstalledPackage {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    display_name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    icon_url: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     thunderstore_intent: Option<ThunderstoreInstallIntent>,
     target_name: String,
@@ -314,9 +322,22 @@ fn prepare_packages(
             source.identity.thunderstore_intent.as_ref(),
             &source.identity.version,
         )?;
+        let previous = manifest.packages.get(&key);
+        let display_name = source
+            .identity
+            .display_name
+            .clone()
+            .or_else(|| previous.and_then(|package| package.display_name.clone()));
+        let icon_url = source
+            .identity
+            .icon_url
+            .clone()
+            .or_else(|| previous.and_then(|package| package.icon_url.clone()));
         manifest.packages.insert(
             key,
             InstalledPackage {
+                display_name,
+                icon_url,
                 thunderstore_intent: intent,
                 target_name: target_name.clone(),
                 files: incoming,
@@ -523,7 +544,11 @@ fn preserve_user_files_with_policy(
             protected_operator_mod_file(candidate)
                 && !candidate.eq_ignore_ascii_case("ModManifest.json")
         } else {
-            management::protected_file(candidate) && !routed::is_metadata(candidate)
+            management::protected_file(candidate)
+                && !routed::is_metadata(candidate)
+                // A routed Nexus anchor is its validated project key. Keep its
+                // reviewed root documentation distinct from operator data.
+                && !nexus_routes::is_metadata(&previous.target_name, candidate)
         };
         let preserve = if policy == PackageUserDataPolicy::PreserveVerifiedStartup && protected {
             true

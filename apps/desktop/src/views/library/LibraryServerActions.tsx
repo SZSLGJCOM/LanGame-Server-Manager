@@ -1,6 +1,7 @@
 import { useEffect, useId, useState, type ReactNode } from "react";
 import { InlineConfirmAction } from "../../components/InlineConfirmAction";
 import { ActivityNotice } from "../../components/ActivityNotice";
+import { AstroneerNetworkRequirements } from "../../components/AstroneerNetworkRequirements";
 import { ShellIcon } from "../../components/ShellIcon";
 import { useI18n } from "../../i18n";
 import type { CreateInstanceInput, InstanceProgramMode, ModuleDetails, ModuleSummary, SteamCmdStatus } from "../../types";
@@ -121,7 +122,10 @@ export function LibraryServerActions(props: LibraryServerActionsProps) {
         }}
       >
         <div className="library-create-field">
-          <label className="detail-label" htmlFor={instanceNameId}>{t("library.detail.instanceName")}</label>
+          <div className="astroneer-network-requirements-row">
+            <label className="detail-label" htmlFor={instanceNameId}>{t("library.detail.instanceName")}</label>
+            {props.selected.id === "astroneer" ? <AstroneerNetworkRequirements /> : null}
+          </div>
           <input id={instanceNameId} className="text-input" value={props.instanceName} disabled={props.creating} onChange={(event) => props.onInstanceNameChange(event.target.value)} />
         </div>
 

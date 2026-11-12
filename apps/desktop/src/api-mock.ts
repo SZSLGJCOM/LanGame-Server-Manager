@@ -150,6 +150,7 @@ const mockRuntimeWindowSuppressionStore = new Map<string, RuntimeWindowSuppressi
 const mockAssistantSecretStore = new Map<string, string>();
 const mockManualModInventoryStore = new Map<string, ManualModInventoryResult>();
 const mockWorkshopInstallationStore = new Map<string, Set<string>>();
+const mockWorkshopPreparations = new Map<string, { instanceId: string; result: SteamWorkshopDownloadResult }>();
 const mockBroadcastPolicyStore = new Map<string, InstanceBroadcastPolicy>();
 const mockBroadcastEventStore = new Map<string, InstanceBroadcastEvent[]>();
 const mockLivePlayerStore = new MockLivePlayerStore();
@@ -1080,6 +1081,7 @@ function buildMockLaunchPlan(instanceId: string): LaunchPlan {
     install_root: installRoot,
     install_state: module.summary.install_state,
     uses_private_runtime: true,
+    can_update_before_start: false,
     working_directory: isPalworld
       ? `${installRoot}/Pal/Binaries/Win64`
       : isAbioticFactor
@@ -1801,6 +1803,26 @@ export async function invokeMock<T>(command: string, args?: Record<string, unkno
       };
       return result as T;
     }
+    case "retain_steam_workshop_preparation":
+    case "discard_steam_workshop_preparation":
+    case "commit_steam_workshop_items": {
+      const instanceId = String(args?.instanceId ?? args?.instance_id);
+      const ticketId = String(args?.ticketId ?? args?.ticket_id);
+      const prepared = mockWorkshopPreparations.get(ticketId);
+      if (!prepared) {
+        if (command === "discard_steam_workshop_preparation") return undefined as T;
+        throw new Error("Workshop preparation is no longer available.");
+      }
+      if (prepared.instanceId !== instanceId) throw new Error("Workshop preparation belongs to another instance.");
+      if (command === "retain_steam_workshop_preparation") return undefined as T;
+      mockWorkshopPreparations.delete(ticketId);
+      if (command === "discard_steam_workshop_preparation") return undefined as T;
+      const installedIds = mockWorkshopInstallationStore.get(instanceId) ?? new Set<string>();
+      prepared.result.items.forEach((item) => installedIds.add(item.item_id));
+      mockWorkshopInstallationStore.set(instanceId, installedIds);
+      return prepared.result as T;
+    }
+    case "prepare_steam_workshop_items":
     case "download_steam_workshop_items": {
       const instanceId = String(args?.instanceId ?? args?.instance_id ?? "srv-dst-1");
       const details = ensureMockInstanceDetails(instanceId);
@@ -1816,9 +1838,6 @@ export async function invokeMock<T>(command: string, args?: Record<string, unkno
         throw new Error("No valid Steam Workshop item IDs were provided.");
       }
       requireMockSteamCmd();
-      const installedIds = mockWorkshopInstallationStore.get(instanceId) ?? new Set<string>();
-      itemIds.forEach((itemId) => installedIds.add(itemId));
-      mockWorkshopInstallationStore.set(instanceId, installedIds);
       const installRoot = `D:/LanGame/server-files/${module.install?.shared_game_dir ?? module.summary.id}`;
       const workshopRoot = `${installRoot}/steamapps/workshop/content/${consumerAppId}`;
       const result: SteamWorkshopDownloadResult = {
@@ -1833,7 +1852,7 @@ export async function invokeMock<T>(command: string, args?: Record<string, unkno
         output_excerpt: "Preview mode only. Mock SteamCMD marked the Workshop cache as downloaded."
       };
       pushMockJob({
-        id: `workshop-${instanceId}-${Date.now()}`,
+        id: `workshop-download:${instanceId}:${String(args?.attemptToken ?? Date.now())}`,
         kind: "DownloadWorkshop",
         label: `Download Workshop items for ${details.summary.name}`,
         status: "Completed",
@@ -1842,6 +1861,14 @@ export async function invokeMock<T>(command: string, args?: Record<string, unkno
         detail: `Downloaded ${itemIds.length} Workshop item(s) in preview mode.`,
         output_excerpt: result.output_excerpt
       });
+      if (command === "prepare_steam_workshop_items") {
+        const ticketId = String(args?.attemptToken);
+        mockWorkshopPreparations.set(ticketId, { instanceId, result });
+        return { ticket_id: ticketId, consumer_app_id: consumerAppId } as T;
+      }
+      const installedIds = mockWorkshopInstallationStore.get(instanceId) ?? new Set<string>();
+      itemIds.forEach((itemId) => installedIds.add(itemId));
+      mockWorkshopInstallationStore.set(instanceId, installedIds);
       return result as T;
     }
     case "read_steam_workshop_installation_status": {
@@ -2368,6 +2395,7 @@ export async function invokeMock<T>(command: string, args?: Record<string, unkno
       const activeProcesses = buildMockActiveProcesses(current.summary, parseSettingsJson(current.settings_json) ?? {});
       if (isArkModule(current.summary.module_id)) mockArkMapLogs.clear(instanceId);
       mockDstWorldStateStore.start(current);
+      mockDragonwildsWorldSettings.start(current);
       const summary: InstanceSummary = {
         ...current.summary,
         status: activeProcesses.some((process) => process.status === "error") ? "Error" : "Running",

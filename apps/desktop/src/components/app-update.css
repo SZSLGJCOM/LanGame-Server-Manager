@@ -1,3 +1,9 @@
+.shell-header-tools .app-update-trigger { position: relative; color: var(--shell-focus); }
+.shell-header-tools .app-update-trigger.is-failed { color: var(--theme-danger-text); }
+.app-update-trigger-dot {
+  position: absolute; top: 4px; right: 5px; width: 6px; height: 6px;
+  border-radius: 50%; background: currentColor;
+}
 .app-update-panel .app-update-close {
   display: inline-grid;
   place-items: center;

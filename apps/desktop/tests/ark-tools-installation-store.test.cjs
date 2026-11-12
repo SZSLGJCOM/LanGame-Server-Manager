@@ -6,8 +6,8 @@ require.extensions[".ts"] = (module, filename) => module._compile(transpileTypeS
 const { createArkToolsInstallationStore } = require("../src/ark-tools-installation-store.ts");
 const { queuedArkToolsInstallation } = require("../src/ark-tools-installation.ts");
 
-const ready = { installed: true, connected: false, canUninstall: true, issue: null };
-const removed = { installed: false, connected: false, canUninstall: false, issue: null, frameworkRetained: false };
+const ready = { installed: true, updateAvailable: false, connected: false, canUninstall: true, issue: null };
+const removed = { installed: false, updateAvailable: false, connected: false, canUninstall: false, issue: null, frameworkRetained: false };
 const flush = () => new Promise(resolve => setImmediate(resolve));
 function deferred() { let resolve, reject; const promise = new Promise((yes, no) => { resolve = yes; reject = no; }); return { promise, resolve, reject }; }
 function progress(instanceId, operationId, change = {}) { return { ...queuedArkToolsInstallation(instanceId, operationId), ...change }; }

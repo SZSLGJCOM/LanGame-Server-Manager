@@ -110,6 +110,7 @@ impl Fixture {
             install_root: root.join("runtime").to_string_lossy().into_owned(),
             install_state: app_core::InstallState::Installed,
             uses_private_runtime: true,
+            can_update_before_start: false,
             working_directory: root.join("runtime").to_string_lossy().into_owned(),
             executable_path: executable.to_string_lossy().into_owned(),
             executable_exists: true,

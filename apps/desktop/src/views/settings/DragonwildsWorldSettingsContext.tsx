@@ -44,13 +44,14 @@ function pending(model: WorldDraft) {
 }
 
 function checkSnapshot(snapshot: DragonwildsWorldSettingsSnapshot, instanceId: string) {
-  if (snapshot.instance_id !== instanceId || (snapshot.status === "ready" &&
-    (!snapshot.world_file || !snapshot.revision || !snapshot.world_mode))) {
+  if (snapshot.instance_id !== instanceId || (snapshot.status !== "empty" &&
+    (!snapshot.revision || !snapshot.world_mode ||
+      (snapshot.status === "ready" ? !snapshot.world_file : snapshot.world_file !== null)))) {
     throw new Error("The world settings response does not match this server.");
   }
 }
 
-/** One saved-world draft survives category changes and participates in the start barrier. */
+/** One world-rules draft survives category changes and participates in the start barrier. */
 export function DragonwildsWorldSettingsProvider(props: ConfigurationWorkspaceProviderProps) {
   const instanceId = props.details.summary.id;
   const coordinator = useInstanceSettingsSaveCoordinator();
@@ -68,6 +69,10 @@ export function DragonwildsWorldSettingsProvider(props: ConfigurationWorkspacePr
   const timer = useRef<number | null>(null);
   const flushRef = useRef<() => Promise<void>>(async () => {});
   const owner = useRef({});
+  const sourceKey = JSON.stringify([props.details.summary.status, props.details.summary.active_process_count,
+    props.details.active_run?.run_id, props.details.settings_json]);
+  const observedSource = useRef(sourceKey);
+  const refreshRequested = useRef(false);
   detailsRef.current = props.details;
 
   const publish = useCallback((next: WorldDraft) => {
@@ -132,7 +137,7 @@ export function DragonwildsWorldSettingsProvider(props: ConfigurationWorkspacePr
         if (!change.dirty) return;
         if (change.invalid) throw new InstanceSettingsDraftInvalidError();
         const { snapshot, mode } = captured;
-        if (!isStopped(detailsRef.current) || !snapshot?.writable || !snapshot.world_file || !snapshot.revision || !mode) {
+        if (!isStopped(detailsRef.current) || !snapshot?.writable || snapshot.status === "empty" || !snapshot.revision || !mode) {
           throw new WorldDraftNotWritableError("Stop the server and refresh its world rules before saving changes.");
         }
         if (mounted.current) setStatus({ state: "saving" });
@@ -141,7 +146,7 @@ export function DragonwildsWorldSettingsProvider(props: ConfigurationWorkspacePr
           world_mode: mode, values: change.patch
         });
         checkSnapshot(next, instanceId);
-        if (next.status !== "ready" || next.world_file !== snapshot.world_file) {
+        if (next.status !== snapshot.status || next.world_file !== snapshot.world_file) {
           throw new Error("The saved world identity changed before its rules could be confirmed.");
         }
         // A completed write only owns its captured values. Edits made while saving remain queued.
@@ -179,6 +184,17 @@ export function DragonwildsWorldSettingsProvider(props: ConfigurationWorkspacePr
   const change = pending(model);
   const stopped = isStopped(props.details);
   const signature = JSON.stringify([model.mode, model.values]);
+  useEffect(() => {
+    if (observedSource.current !== sourceKey) {
+      observedSource.current = sourceKey;
+      refreshRequested.current = true;
+    }
+    // Lifecycle and persisted basic settings may change the selected world.
+    // Never replace a draft or a pending write with an automatic read.
+    if (!refreshRequested.current || change.dirty || worker.current || readInFlight.current) return;
+    refreshRequested.current = false;
+    void refresh();
+  }, [sourceKey, change.dirty, loading, status.state, refresh]);
   useEffect(() => {
     if (!change.dirty || change.invalid || failed.current || loading || !model.snapshot?.writable || !isStopped(detailsRef.current)) return;
     timer.current = window.setTimeout(() => {

@@ -155,6 +155,16 @@ test("all bundled schemas preserve explicit sections and expose core tabs", () =
         continue;
       }
 
+      if (moduleId === "astroneer" && ["public_ip", "connection_mode"].includes(key)) {
+        assert.deepEqual(ownedFields, [], `${moduleId}.${key} must not duplicate the shared address editor`);
+        const presented = generalSchema.presentationFields.filter((field) => field.key === key);
+        assert.equal(presented.length, 1, `${moduleId}.${key} must retain exactly one declared owner`);
+        assert.equal(presented[0].presentation.owner, "instance_network");
+        assert.equal(presented[0].presentation.state, "derived");
+        assert.equal(presented[0].sectionId, "network");
+        continue;
+      }
+
       assert.equal(
         ownedFields.length,
         1,
@@ -471,7 +481,7 @@ test("settings surface uses one compact control design language", () => {
   const connectionCss = readSource("apps", "desktop", "src", "views", "settings", "InstanceConnectionSettingsPanel.css");
 
   assert.match(workspaceCss, /\.configuration-section-navigation__button\.is-active/, "sidebar tabs should use a consistent active state");
-  assert.match(controlsCss, /--settings-control-height:\s*38px/, "fields should use the shared 38px size");
+  assert.match(controlsCss, /--settings-control-height:\s*calc\(38px \* var\(--interface-density\)\)/, "fields should scale the shared 38px baseline with the window density");
   assert.match(controlsCss, /\.settings-schema-input,[\s\S]*?\.settings-schema-select,[\s\S]*?\.settings-schema-textarea/, "text inputs, selects, and textareas should share a rule");
   assert.match(controlsCss, /\.settings-toggle-card input\[type="checkbox"\]/, "checkboxes should use the shared settings style");
   for (const source of [guidedCss, overlaysCss]) {
@@ -716,7 +726,7 @@ test("Network settings own the persisted join address copy affordance", () => {
   assert.doesNotMatch(listenAddressSelect, /buildJoinEndpoint|navigator\.clipboard/);
   assert.match(joinAddressSelect, /buildShareEndpoints/);
   assert.match(joinAddressSelect, /navigator\.clipboard\.writeText\(selectedEndpoint\.endpoint\)/);
-  assert.match(joinAddressSelect, /<select[\s\S]{0,300}?endpoints\.map/, "Detected LAN, overlay, and direct public endpoints should be selectable");
+  assert.match(joinAddressSelect, /<select\b(?:(?!<\/select>)[\s\S])*?endpoints\.map/, "Detected LAN, overlay, and direct public endpoints should be selectable");
   assert.match(networkPanel, /<PlayerJoinAddressSelect[\s\S]{0,200}?details=\{props\.details\}/, "Network should own a separate player join-address selector");
   assert.doesNotMatch(networkPanel, /bindIpUnsupported|bindIpStrictHint/, "Network should provide controls instead of bind capability notices");
 

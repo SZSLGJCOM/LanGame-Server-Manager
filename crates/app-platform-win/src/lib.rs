@@ -15,6 +15,8 @@ mod firewall;
 mod host_inventory;
 pub use firewall::run_elevated_firewall_if_requested;
 #[cfg(test)]
+mod bind_address_tests;
+#[cfg(test)]
 mod host_monitor_tests;
 mod host_telemetry;
 mod loopback_tcp_listener_owners;
@@ -414,8 +416,15 @@ impl WindowsPlatform {
             adapter_name: None,
             family_name: None,
         }];
-        candidates.extend(read_bind_address_candidates());
+        candidates.extend(Self::try_bind_address_candidates().unwrap_or_default());
         candidates
+    }
+
+    /// Active interface addresses without the UI's synthetic wildcard option.
+    /// Unlike the display inventory, startup callers must distinguish a failed
+    /// query from a successful query that found no active IPv4 adapters.
+    pub fn try_bind_address_candidates() -> Result<Vec<BindAddressCandidate>, String> {
+        read_bind_address_candidates()
     }
 
     pub fn inspect_process_network_endpoints(
@@ -1934,16 +1943,16 @@ fn parse_u64_token(token: &str) -> Option<u64> {
     token.replace(',', "").parse::<u64>().ok()
 }
 
-fn read_bind_address_candidates() -> Vec<BindAddressCandidate> {
-    let records = read_net_ip_configuration_records();
-    build_bind_address_candidates(records)
+fn read_bind_address_candidates() -> Result<Vec<BindAddressCandidate>, String> {
+    read_net_ip_configuration_records().map(build_bind_address_candidates)
 }
 
-fn read_net_ip_configuration_records() -> Vec<NetIpConfigurationRecord> {
+fn read_net_ip_configuration_records() -> Result<Vec<NetIpConfigurationRecord>, String> {
     let script = r#"
+$ErrorActionPreference = 'Stop'
 [Console]::OutputEncoding = [System.Text.UTF8Encoding]::new($false)
 $OutputEncoding = [System.Text.UTF8Encoding]::new($false)
-$rows = Get-NetIPConfiguration |
+$rows = @(Get-NetIPConfiguration -ErrorAction Stop |
   Where-Object { $_.NetAdapter.Status -eq 'Up' -and $_.IPv4Address } |
   ForEach-Object {
     $alias = $_.InterfaceAlias
@@ -1956,20 +1965,44 @@ $rows = Get-NetIPConfiguration |
       }
     }
   }
-@($rows) | ConvertTo-Json -Compress
+)
+ConvertTo-Json -InputObject $rows -Compress
 "#;
 
-    let Some(output) = powershell_json(script) else {
-        return Vec::new();
-    };
-
-    deserialize_net_ip_configuration_records(&output).unwrap_or_default()
+    let query = system_utility::capture(
+        SystemUtility::PowerShell,
+        &[
+            "-NoLogo",
+            "-NoProfile",
+            "-NonInteractive",
+            "-Command",
+            script,
+        ],
+        QUERY_TIMEOUT,
+    );
+    net_ip_configuration_query_records(query)
 }
 
-fn deserialize_net_ip_configuration_records(
-    stdout: &[u8],
-) -> Option<Vec<NetIpConfigurationRecord>> {
-    deserialize_powershell_json_array(stdout)
+fn net_ip_configuration_query_records(
+    query: std::io::Result<std::process::Output>,
+) -> Result<Vec<NetIpConfigurationRecord>, String> {
+    let output = query.map_err(|error| {
+        if error.kind() == std::io::ErrorKind::TimedOut {
+            String::from("Querying active IPv4 network adapters timed out.")
+        } else {
+            String::from("Could not query active IPv4 network adapters.")
+        }
+    })?;
+    if !output.status.success() {
+        return Err(String::from(
+            "Could not query active IPv4 network adapters.",
+        ));
+    }
+    // This query always emits an array, including [] when no adapters qualify.
+    // Empty, malformed and wrong-shaped output must not imply an empty inventory.
+    let payload = decode_powershell_text(&output.stdout);
+    serde_json::from_str(payload.trim_matches('\u{feff}').trim())
+        .map_err(|_| String::from("The active IPv4 network adapter query returned invalid data."))
 }
 
 fn deserialize_powershell_json_array<T: DeserializeOwned>(stdout: &[u8]) -> Option<Vec<T>> {

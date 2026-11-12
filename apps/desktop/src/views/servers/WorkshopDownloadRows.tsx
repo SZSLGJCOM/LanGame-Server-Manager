@@ -2,12 +2,13 @@ import { useI18n } from "../../i18n";
 import type { SteamWorkshopLookupItem } from "../../types";
 import { SteamWorkshopPreview } from "./SteamWorkshopStoreDetail";
 import { WorkshopStatus } from "./WorkshopStatus";
+import type { WorkshopDownloadItemPresentation } from "./workshop-download-presentation";
 
-export function WorkshopDownloadRows({ ids, lookup, progressPercent, error, onOpen }: {
+export function WorkshopDownloadRows({ ids, lookup, downloads, errors, onOpen }: {
   ids: string[];
   lookup: Record<string, SteamWorkshopLookupItem>;
-  progressPercent: number | null;
-  error: string | null;
+  downloads: Record<string, WorkshopDownloadItemPresentation>;
+  errors: Record<string, string>;
   onOpen: (id: string) => void;
 }) {
   const { t } = useI18n();
@@ -17,8 +18,8 @@ export function WorkshopDownloadRows({ ids, lookup, progressPercent, error, onOp
       <span className="mw-entry-row-copy">
         <span className="mw-entry-row-title mw-entry-row-title--singleline">{lookup[id]?.title ?? id}</span>
         <span className="mw-entry-row-status">
-          {error ? <span className="mw-chip mw-chip--warn" title={error}>{t("status.job.failed", undefined, "Failed")}</span>
-            : <WorkshopStatus state="installing" progressPercent={progressPercent} />}
+          {errors[id] ? <span className="mw-chip mw-chip--warn" title={errors[id]}>{t("status.job.failed", undefined, "Failed")}</span>
+            : downloads[id] ? <WorkshopStatus state={downloads[id].state} progressPercent={downloads[id].progressPercent} /> : null}
           <span className="mw-entry-id">Steam Workshop / {id}</span>
         </span>
       </span>

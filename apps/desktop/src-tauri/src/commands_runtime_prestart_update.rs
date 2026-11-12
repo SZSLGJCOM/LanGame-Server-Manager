@@ -17,18 +17,11 @@ pub(super) use console::PrestartConsole;
 #[path = "commands_runtime_prestart_account_tests.rs"]
 mod account_tests;
 #[cfg(test)]
+#[path = "commands_runtime_prestart_repair_tests.rs"]
+mod repair_tests;
+#[cfg(test)]
 #[path = "commands_runtime_prestart_policy_tests.rs"]
 mod tests;
-
-pub(super) async fn acquire_prestart_program_guard(
-    state: &DesktopState,
-    module_id: &str,
-    root: &Path,
-    reservation: &RuntimeStartReservationLease,
-) -> Result<app_steamcmd::GameInstallLifecycleGuard, String> {
-    let roots = [root.to_owned()];
-    acquire_prestart_program_roots(state, module_id, &roots, reservation).await
-}
 
 pub(super) async fn acquire_prestart_program_roots(
     state: &DesktopState,
@@ -46,8 +39,13 @@ pub(super) async fn acquire_prestart_program_roots(
 }
 
 pub(super) fn should_run_prestart_update(module: &ModuleDetails) -> bool {
-    matches!(module.summary.install_state, InstallState::Installed)
-        && module_supports_automatic_prestart_update(module)
+    matches!(
+        module.summary.install_state,
+        InstallState::Installed
+            | InstallState::Incomplete
+            | InstallState::Corrupted
+            | InstallState::NotInstalled
+    ) && module_supports_automatic_prestart_update(module)
 }
 
 pub(super) fn module_supports_automatic_prestart_update(module: &ModuleDetails) -> bool {
@@ -112,6 +110,18 @@ pub(super) async fn run_prestart_update_if_needed(
     storage: &StorageBootstrap,
     request: PrestartUpdateRequest<'_>,
 ) -> Result<PrestartUpdateOutcome, String> {
+    run_prestart_update_with_repair(state, storage, request, false).await
+}
+
+/// Detachment can require repair of non-entry files even when the installation
+/// probe and launch entries are healthy. Its caller first proves that repair
+/// will not overwrite an existing modified program file in the shared source.
+pub(super) async fn run_prestart_update_with_repair(
+    state: &tauri::State<'_, DesktopState>,
+    storage: &StorageBootstrap,
+    request: PrestartUpdateRequest<'_>,
+    force_repair: bool,
+) -> Result<PrestartUpdateOutcome, String> {
     let PrestartUpdateRequest {
         descriptor,
         module,
@@ -135,36 +145,9 @@ pub(super) async fn run_prestart_update_if_needed(
             warnings: Vec::new(),
         });
     }
-    let existing_archive = if !should_run_prestart_update(module)
-        && module.install.as_ref().is_some_and(|install| {
-            install.download_url_windows.is_some() && install.download_integrity_windows.is_some()
-        }) {
-        // An official archive can move its verification file into a new version
-        // directory. The old managed inventory still authorizes an update.
-        let root = PathBuf::from(
-            super::commands_runtime_lifecycle::private_runtime_install_root(instance)?,
-        );
-        let descriptor = descriptor.clone();
-        let module_id = descriptor.summary.id.clone();
-        let cancellation = app_steamcmd::InstallCancellation::new();
-        super::commands_program_storage::run_baseline_worker(
-            reservation.storage_operation(),
-            &cancellation,
-            &module_id,
-            |_| {},
-            move |_, _| {
-                app_storage::archive_program_has_baseline(&root, &descriptor)
-                    .map_err(|error| error.to_string())
-            },
-        )
-        .await
-        .map_err(|error| steamcmd_error_message(&error))?
-    } else {
-        false
-    };
-    if !should_run_prestart_update(module) && !existing_archive {
+    if !should_run_prestart_update(module) {
         let message = if module_supports_automatic_prestart_update(module) {
-            "服务器程序尚未完整安装，无法进行启动前更新；请先完成安装。"
+            "服务器程序正在安装、更新或卸载，请等待当前操作完成后再启动。"
         } else {
             "此安装源不支持启动前自动更新，使用现有程序；需要更新时请手动维护。"
         };
@@ -176,6 +159,10 @@ pub(super) async fn run_prestart_update_if_needed(
     }
     let root =
         PathBuf::from(super::commands_runtime_lifecycle::private_runtime_install_root(instance)?);
+    // Enter preparation with repairable files; only the post-update checks can
+    // authorize process creation. A matching version must not bypass repair.
+    let requires_repair = force_repair || module.summary.install_state != InstallState::Installed;
+    let program_roots = super::commands_save_startup::program_roots(instance, &root)?;
     let uses_library = app_storage::instance_uses_library_program(
         super::commands_program_storage::instance_root(instance)?,
     )
@@ -224,11 +211,37 @@ pub(super) async fn run_prestart_update_if_needed(
         cancellation,
         context: &context,
     };
-    let update = async {
-        if descriptor
-            .install
-            .as_ref()
-            .is_some_and(|install| install.download_url_windows.is_some())
+    // Keep preparation state out of the enclosing start/detach future. The
+    // operation stays in this task and retains its leases until it settles.
+    let mut update = Box::pin(async {
+        let requires_repair = if !requires_repair {
+            let checked_root = root.clone();
+            let checked_descriptor = descriptor.clone();
+            super::commands_program_storage::run_baseline_worker(
+                reservation.storage_operation(),
+                cancellation,
+                &descriptor.summary.id,
+                |_| {},
+                move |cancel, _| {
+                    app_storage::program_launch_files_match_baseline(
+                        &checked_root,
+                        &checked_descriptor,
+                        Some(cancel),
+                    )
+                    .map(|matches| matches == Some(false))
+                    .map_err(|error| error.to_string())
+                },
+            )
+            .await
+            .map_err(|error| steamcmd_error_message(&error))?
+        } else {
+            true
+        };
+        if !requires_repair
+            && descriptor
+                .install
+                .as_ref()
+                .is_some_and(|install| install.download_url_windows.is_some())
         {
             let revision = app_steamcmd::read_program_install_revision(
                 &storage.paths.instances_root,
@@ -271,30 +284,32 @@ pub(super) async fn run_prestart_update_if_needed(
         }
         // A read-only remote comparison avoids mutating an already-current shared
         // Minecraft install, including when another instance is running or pinned.
-        match app_steamcmd::current_program_version(
-            &storage.settings,
-            module,
-            &root,
-            &install_guard,
-            cancellation,
-        )
-        .await
-        {
-            Ok(Some(version)) => {
-                let message = format!("已确认服务器程序为当前发布版本 {version}。");
-                return Ok((
-                    PrestartUpdateOutcome {
-                        install_guard,
-                        warnings: Vec::new(),
-                    },
-                    message,
-                ));
+        if !requires_repair {
+            match app_steamcmd::current_program_version(
+                &storage.settings,
+                module,
+                &root,
+                &install_guard,
+                cancellation,
+            )
+            .await
+            {
+                Ok(Some(version)) => {
+                    let message = format!("已确认服务器程序为当前发布版本 {version}。");
+                    return Ok((
+                        PrestartUpdateOutcome {
+                            install_guard,
+                            warnings: Vec::new(),
+                        },
+                        message,
+                    ));
+                }
+                Ok(None) => {}
+                Err(error) if fallback::permits_installed_program(&error) => {
+                    return fallback.recover(install_guard, &error).await;
+                }
+                Err(error) => return Err(steamcmd_error_message(&error)),
             }
-            Ok(None) => {}
-            Err(error) if fallback::permits_installed_program(&error) => {
-                return fallback.recover(install_guard, &error).await;
-            }
-            Err(error) => return Err(steamcmd_error_message(&error)),
         }
         let mut install_guard = install_guard;
         let mut account_name = None;
@@ -323,7 +338,9 @@ pub(super) async fn run_prestart_update_if_needed(
                 .transpose()
                 .map_err(|error| format!("启动日志无法打开：{error}"))?;
             let mut output_error = None;
-            let attempt = install_program_with_baseline(
+            // Provider downloads and baseline callbacks form a large future;
+            // isolate that state from the cancellation/reporting poll frame.
+            let attempt = Box::pin(install_program_with_baseline(
                 ProgramUpdateRequest {
                     storage,
                     descriptor,
@@ -331,7 +348,7 @@ pub(super) async fn run_prestart_update_if_needed(
                     root: &root,
                     operation: reservation.storage_operation(),
                     guard: install_guard,
-                    validate: false,
+                    validate: requires_repair,
                     cancellation,
                     account_name: account_name.as_deref(),
                 },
@@ -361,7 +378,7 @@ pub(super) async fn run_prestart_update_if_needed(
                         cancellation.cancel();
                     }
                 },
-            )
+            ))
             .await;
             if let Some(console) = console
                 && let Err(error) = console.finish()
@@ -409,10 +426,10 @@ pub(super) async fn run_prestart_update_if_needed(
                     }
                     // Failure released the provider and program lease. Reacquire
                     // under the original start reservation; never wait for UI here.
-                    install_guard = acquire_prestart_program_guard(
+                    install_guard = acquire_prestart_program_roots(
                         state,
                         &instance.summary.module_id,
-                        &root,
+                        &program_roots,
                         reservation,
                     )
                     .await?;
@@ -433,10 +450,10 @@ pub(super) async fn run_prestart_update_if_needed(
                     // The provider released its lease on failure. Recheck the
                     // exact program under a new lease; a pending revision is
                     // still fatal even when all old files happen to match.
-                    let guard = acquire_prestart_program_guard(
+                    let guard = acquire_prestart_program_roots(
                         state,
                         &instance.summary.module_id,
-                        &root,
+                        &program_roots,
                         reservation,
                     )
                     .await?;
@@ -470,8 +487,7 @@ pub(super) async fn run_prestart_update_if_needed(
             },
             message,
         ))
-    };
-    tokio::pin!(update);
+    });
     let result = tokio::select! {
         biased;
         _ = reservation.cancelled() => {

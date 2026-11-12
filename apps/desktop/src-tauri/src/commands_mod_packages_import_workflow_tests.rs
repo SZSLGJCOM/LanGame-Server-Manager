@@ -60,6 +60,8 @@ fn external_manager_workflows_reject_mutations_without_changing_packages_or_conf
             packages: [(
                 "local-Example".into(),
                 InstalledPackage {
+                    display_name: None,
+                    icon_url: None,
                     thunderstore_intent: None,
                     target_name: "Example".into(),
                     files: fingerprint_tree(&target_path.join("Example")).unwrap(),

@@ -9,7 +9,9 @@ use super::commands_module_mutation_locks;
 
 #[path = "commands_library_baseline.rs"]
 mod baseline;
-pub(super) use baseline::{LibraryBaselineRecorder, run_baseline_worker};
+pub(super) use baseline::{
+    LibraryBaselineRecorder, run_baseline_worker, verify_steam_original_defaults,
+};
 
 #[path = "commands_program_update.rs"]
 mod update;

@@ -204,3 +204,32 @@ test("Dragonwilds preview preserves internal Creative values when switching to C
   assert.equal(custom.values["Difficulty.Progression.AllSkillsMaxed"], 1);
   assert.equal(custom.values["Difficulty.AI.DisableAggressiveAI"], 1);
 });
+
+test("Dragonwilds preview persists fresh rules and initializes them on the first start", () => {
+  const { MockDragonwildsWorldSettings } = require("../src/api-mock/dragonwilds-world-settings.ts");
+  const worlds = new MockDragonwildsWorldSettings();
+  const details = { summary: { id: "new-world-preview", module_id: "runescapedragonwilds", name: "Preview server",
+    status: "Stopped", active_process_count: 0 }, settings_json: JSON.stringify({ default_world_name: "First world" }), active_run: null };
+  const fresh = worlds.read(details);
+  assert.equal(fresh.status, "new");
+  assert.equal(fresh.world_file, null);
+  assert.equal(fresh.world_name, "First world");
+  assert.equal(fresh.writable, true);
+  assert.ok(fresh.revision);
+  const input = { instance_id: details.summary.id, world_file: null, expected_revision: fresh.revision,
+    world_mode: "Custom", values: { [processing]: 0.8 } };
+  const saved = worlds.write(details, input);
+  assert.equal(saved.status, "new");
+  assert.equal(saved.backup_id, null);
+  assert.equal(worlds.read(details).values[processing], 0.8);
+  assert.throws(() => worlds.write(details, input), /changed/u);
+  details.settings_json = JSON.stringify({ default_world_name: "Renamed world" });
+  assert.equal(worlds.read(details).values[processing], 0.8);
+  worlds.start(details);
+  const initialized = worlds.read(details);
+  assert.equal(initialized.status, "ready");
+  assert.equal(initialized.world_file, "Renamed world.sav");
+  assert.equal(initialized.values[processing], 0.8);
+  worlds.start(details);
+  assert.deepEqual(worlds.read(details), initialized, "Later starts do not reset the saved world");
+});

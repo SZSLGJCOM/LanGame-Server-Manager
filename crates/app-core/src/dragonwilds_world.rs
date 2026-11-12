@@ -80,7 +80,7 @@ pub struct DragonwildsWorldSettingsSnapshot {
 #[serde(deny_unknown_fields)]
 pub struct WriteDragonwildsWorldSettingsInput {
     pub instance_id: String,
-    pub world_file: String,
+    pub world_file: Option<String>,
     pub expected_revision: String,
     pub world_mode: DragonwildsWorldMode,
     pub values: BTreeMap<String, f64>,

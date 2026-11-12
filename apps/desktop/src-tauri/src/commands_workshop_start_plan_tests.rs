@@ -21,6 +21,8 @@ fn inventory(module_id: &str) -> ManualModInventoryResult {
 fn item(name: &str, package_name: Option<&str>) -> ManualModInventoryItem {
     ManualModInventoryItem {
         name: name.into(),
+        display_name: None,
+        icon_url: None,
         path: format!("D:/instance/Mods/{name}"),
         item_type: "directory".into(),
         inferred_id: package_name.map(String::from),

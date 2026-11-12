@@ -1,4 +1,4 @@
-use std::collections::{HashMap, HashSet, VecDeque};
+use std::collections::{HashSet, VecDeque};
 use std::env;
 use std::fs::{self, OpenOptions};
 use std::io::Write;
@@ -46,6 +46,7 @@ mod program_update_check;
 mod retained_install_data;
 mod steam_app_access;
 pub mod steam_depot;
+mod steam_install_probe;
 mod steam_install_retained;
 mod steamcmd_account;
 mod steamcmd_bootstrap_log;
@@ -67,6 +68,8 @@ mod workshop_cache_transaction;
 mod workshop_deployment_baseline;
 mod workshop_instance_membership;
 mod workshop_paths;
+mod workshop_prefetch;
+mod workshop_script;
 
 use archive_install::{DirectDownloadInstallRequest, install_or_update_module_from_download};
 use discovery::{configured_steamcmd_root, require_steamcmd_ready};
@@ -102,6 +105,8 @@ use minecraft_files::{
 };
 use minecraft_install::install_or_update_minecraft_java_module;
 use minecraft_java::ensure_minecraft_jre;
+#[cfg(any(test, feature = "test-support"))]
+pub use minecraft_java::with_minecraft_java_package_fixture;
 #[cfg(test)]
 use module_install::steamcmd_install_script_lines;
 pub use module_install::{
@@ -153,6 +158,10 @@ pub use workshop_deployment_baseline::WorkshopDeploymentBaseline;
 use workshop_paths::inspect_workshop_item_paths;
 use workshop_paths::resolve_workshop_content_roots;
 pub use workshop_paths::{inspect_workshop_items, inspect_workshop_items_with_dst_ugc_roots};
+pub use workshop_prefetch::{
+    PreparedWorkshopDownload, WorkshopPrefetchRequest, prefetch_workshop_items,
+    publish_prefetched_workshop_items,
+};
 mod workshop_download;
 
 const MINECRAFT_VERSION_MANIFEST_URL: &str =
@@ -1054,43 +1063,62 @@ fn probe_steam_app_manifest(install_root: &Path, app_id: u32) -> Option<SteamApp
         .join("steamapps")
         .join(format!("appmanifest_{app_id}.acf"));
     let text = fs::read_to_string(&path).ok()?;
-    let fields = parse_steam_app_manifest_fields(&text);
+    let app = steam_depot::manifest::parse_acf_app_state(text.as_bytes(), app_id).ok();
+    let field = |key: &str| {
+        app.as_ref()
+            .and_then(|app| app.get(key))
+            .and_then(|value| steam_depot::manifest::text(value).ok())
+    };
+    let number =
+        |key: &str| field(key).and_then(|value| steam_depot::manifest::decimal(value).ok());
     let downloading_path = install_root
         .join("steamapps")
         .join("downloading")
         .join(app_id.to_string());
     let downloading_path_exists = downloading_path_has_pending_payload(&downloading_path);
-    let bytes_to_download = parse_u64_field(&fields, "BytesToDownload");
-    let bytes_downloaded = parse_u64_field(&fields, "BytesDownloaded");
-    let bytes_to_stage = parse_u64_field(&fields, "BytesToStage");
-    let bytes_staged = parse_u64_field(&fields, "BytesStaged");
-    let state_flags = parse_u64_field(&fields, "StateFlags");
-    let complete = steam_manifest_is_complete(
+    let bytes_to_download = number("bytestodownload");
+    let bytes_downloaded = number("bytesdownloaded");
+    let bytes_to_stage = number("bytestostage");
+    let bytes_staged = number("bytesstaged");
+    let state_flags = number("stateflags");
+    let progress_complete = steam_manifest_is_complete(
         state_flags,
         bytes_to_download,
         bytes_downloaded,
         bytes_to_stage,
         bytes_staged,
         downloading_path_exists,
-    ) && steam_depot::manifest::parse_acf_app_state(text.as_bytes(), app_id)
-        .and_then(|app| {
-            module_install::shared_dependencies::unfinished_shared_depots(
+    );
+    let complete = app.as_ref().is_some_and(|app| {
+        let valid_progress = [
+            "bytestodownload",
+            "bytesdownloaded",
+            "bytestostage",
+            "bytesstaged",
+        ]
+        .into_iter()
+        .all(|key| !app.contains_key(key) || number(key).is_some());
+        let installed = valid_progress
+            && (progress_complete
+                || (!downloading_path_exists && steam_install_probe::has_prefetched_update(app)));
+        installed
+            && module_install::shared_dependencies::unfinished_shared_depots(
                 install_root,
-                &app,
+                app,
                 None,
                 || Ok(()),
             )
-        })
-        .is_ok_and(|unfinished| unfinished.is_empty());
+            .is_ok_and(|unfinished| unfinished.is_empty())
+    });
 
     Some(SteamAppManifestProbe {
         path: path.to_string_lossy().into_owned(),
         app_id,
-        name: fields.get("name").cloned(),
-        install_dir: fields.get("installdir").cloned(),
+        name: field("name").map(str::to_owned),
+        install_dir: field("installdir").map(str::to_owned),
         state_flags,
-        build_id: fields.get("buildid").cloned(),
-        target_build_id: fields.get("TargetBuildID").cloned(),
+        build_id: field("buildid").map(str::to_owned),
+        target_build_id: field("targetbuildid").map(str::to_owned),
         bytes_to_download,
         bytes_downloaded,
         bytes_to_stage,
@@ -1114,9 +1142,7 @@ fn steam_manifest_is_complete(
         return false;
     }
 
-    if let Some(state_flags) = state_flags
-        && state_flags & 4 == 0
-    {
+    if !state_flags.is_some_and(|state_flags| state_flags & 4 != 0) {
         return false;
     }
 
@@ -1133,68 +1159,16 @@ fn steam_manifest_is_complete(
 
 fn downloading_path_has_pending_payload(downloading_path: &Path) -> bool {
     match fs::read_dir(downloading_path) {
-        Ok(mut entries) => matches!(entries.next(), Some(Ok(_))),
-        Err(_) => false,
+        Ok(mut entries) => entries.next().is_some(),
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => false,
+        // An unreadable or unexpected entry cannot prove that no update work
+        // exists. In particular it must not enable the prefetch-only exception.
+        Err(_) => true,
     }
 }
 
 fn known_incomplete_byte_progress(expected: Option<u64>, actual: Option<u64>) -> bool {
     matches!((expected, actual), (Some(expected), Some(actual)) if expected > 0 && actual < expected)
-}
-
-fn parse_u64_field(fields: &HashMap<String, String>, key: &str) -> Option<u64> {
-    fields.get(key).and_then(|value| value.parse::<u64>().ok())
-}
-
-fn parse_steam_app_manifest_fields(text: &str) -> HashMap<String, String> {
-    let mut fields = HashMap::new();
-
-    for line in text.lines() {
-        if let Some((key, value)) = parse_quoted_key_value_line(line) {
-            fields.insert(key, value);
-        }
-    }
-
-    fields
-}
-
-fn parse_quoted_key_value_line(line: &str) -> Option<(String, String)> {
-    let mut values = Vec::new();
-    let mut current = String::new();
-    let mut in_quote = false;
-    let mut escaped = false;
-
-    for character in line.trim().chars() {
-        if escaped {
-            current.push(character);
-            escaped = false;
-            continue;
-        }
-
-        if character == '\\' && in_quote {
-            escaped = true;
-            continue;
-        }
-
-        if character == '"' {
-            if in_quote {
-                values.push(current.clone());
-                current.clear();
-            }
-            in_quote = !in_quote;
-            continue;
-        }
-
-        if in_quote {
-            current.push(character);
-        }
-    }
-
-    if values.len() == 2 {
-        Some((values.remove(0), values.remove(0)))
-    } else {
-        None
-    }
 }
 
 pub struct SteamWorkshopDownloadRequest<'a> {
@@ -1254,7 +1228,6 @@ where
     let account_name = account_name
         .map(normalize_workshop_account_name)
         .transpose()?;
-    let login_line = steamcmd_account::workshop_login_line(account_name.as_deref());
     guard.0.ensure_root(install_root)?;
     steamcmd_guard.ensure_settings(settings)?;
     let item_ids = normalize_steam_workshop_item_ids(ids);
@@ -1266,6 +1239,35 @@ where
             on_progress(InstallProgressUpdate::preparing_steamcmd(update));
         })
         .await?;
+    download_workshop_items_with_runtime(
+        &steamcmd,
+        SteamWorkshopDownloadRequest {
+            consumer_app_id,
+            install_root,
+            ids: &item_ids,
+            account_name: account_name.as_deref(),
+        },
+        deadline,
+        on_progress,
+    )
+    .await
+}
+
+/// The caller has validated IDs and owns every runtime/cache root until the
+/// native process tree has settled and the result is no longer being consumed.
+async fn download_workshop_items_with_runtime<F: FnMut(InstallProgressUpdate)>(
+    steamcmd: &SteamCmdStatus,
+    request: SteamWorkshopDownloadRequest<'_>,
+    deadline: InstallDeadline,
+    mut on_progress: F,
+) -> Result<SteamWorkshopDownloadResult, SteamCmdError> {
+    let SteamWorkshopDownloadRequest {
+        consumer_app_id,
+        install_root,
+        ids: item_ids,
+        account_name,
+    } = request;
+    let login_line = steamcmd_account::workshop_login_line(account_name);
     on_progress(InstallProgressUpdate {
         console_output: None,
         install_progress: None,
@@ -1293,36 +1295,24 @@ where
         output_excerpt: String::new(),
     });
 
-    let stamp = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .map(|duration| duration.as_millis())
-        .unwrap_or(0);
-    let script_root = steamcmd_script_root();
-    fs::create_dir_all(&script_root).map_err(|source| SteamCmdError::CreatePath {
-        path: script_root.clone(),
-        source,
-    })?;
-    let script_path = script_root.join(format!("steamcmd-workshop-{consumer_app_id}-{stamp}.txt"));
-
     let mut script_lines = vec![
         String::from("@ShutdownOnFailedCommand 1"),
         String::from("@NoPromptForPassword 1"),
         format!("force_install_dir {}", steamcmd_script_path(install_root)),
         login_line,
     ];
-    for item_id in &item_ids {
+    for item_id in item_ids {
         script_lines.push(format!(
             "workshop_download_item {consumer_app_id} {item_id} validate"
         ));
     }
     script_lines.push(String::from("quit"));
 
-    fs::write(&script_path, script_lines.join("\n")).map_err(|source| {
-        SteamCmdError::WriteScript {
-            path: script_path.clone(),
-            source,
-        }
-    })?;
+    let script = workshop_script::WorkshopScript::create(
+        Path::new(&steamcmd.root),
+        consumer_app_id,
+        &script_lines.join("\n"),
+    )?;
 
     on_progress(InstallProgressUpdate {
         console_output: None,
@@ -1336,9 +1326,9 @@ where
     });
 
     let mut stream_progress = 18.0_f32;
-    let output = match run_steamcmd_script_with_progress(
+    let output = run_steamcmd_script_with_progress(
         &steamcmd.executable_path,
-        &script_path,
+        script.path(),
         &steamcmd.root,
         deadline,
         |update| {
@@ -1362,25 +1352,16 @@ where
             });
         },
     )
-    .await
-    {
-        Ok(output) => output,
-        Err(error) => {
-            let _ = fs::remove_file(&script_path);
-            return Err(error);
-        }
-    };
+    .await?;
 
-    let _ = fs::remove_file(&script_path);
-
-    workshop_download::verify_command_result(consumer_app_id, account_name.as_deref(), &output)?;
+    workshop_download::verify_command_result(consumer_app_id, account_name, &output)?;
 
     let (workshop_root, alternate_workshop_root) =
         resolve_workshop_content_roots(install_root, Path::new(&steamcmd.root), consumer_app_id);
     let items = workshop_cache::inspect_downloaded_items(
         consumer_app_id,
         &[workshop_root.clone(), alternate_workshop_root],
-        item_ids,
+        item_ids.to_vec(),
         &output.workshop_command_evidence,
     )?;
     verify_downloaded_workshop_items(&items, &workshop_download::failure_context(&output))

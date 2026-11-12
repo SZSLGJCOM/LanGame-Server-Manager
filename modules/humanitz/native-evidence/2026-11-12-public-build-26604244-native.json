@@ -1,0 +1,223 @@
+{
+  "schema_version": 1,
+  "verified_on": "2026-11-12",
+  "module_id": "humanitz",
+  "steam_app_id": 2728330,
+  "public_build_id": "26604244",
+  "package_identity": {
+    "static_evidence": "2026-11-12-public-build-26604244-static.json",
+    "manifest_sha256": "6d1974088eaeb6e4d896856fc94e6d201fa2089c128dee59f2f4eb18ab394ffd",
+    "executable": {
+      "path": "HumanitZServer/Binaries/Win64/HumanitZServer-Win64-Shipping.exe",
+      "size": 79284224,
+      "sha256": "bfb85c9197166694eb2335e6f1c9a800ef11027b2e82b71c0ac8e6df7d64b8a8"
+    },
+    "source_bytes": 1353095156,
+    "acquisition": "Official SteamCMD acquisition was independently verified by the static evidence. This storage-scoped native fixture imported a local package; it did not exercise network installation or update."
+  },
+  "tested_source": {
+    "git_revision": "b5f0421a63c61ded2badff588261548db4fd7974",
+    "working_tree_clean": false,
+    "source_identity_sha256": "8ecd9d4866d8f0f204e3a30f378304100a7ac168ace58870e997327c72740c9a",
+    "source_manifest_sha256": "084d23b719f1af47e7229e531476217f44b979c8f55b50ffece94f9db007a1ed",
+    "independently_verified_source_files": 4655,
+    "source_mismatches": 0,
+    "build_receipt": {
+      "artifact": "native-build-01.json",
+      "size": 1726,
+      "sha256": "a9a4171551f2d4ad13002f8e546a04659635d6a79f5e5393cb53d34b36a12127"
+    },
+    "source_proof": {
+      "artifact": "source-proof.json",
+      "size": 572,
+      "sha256": "15a9b9e40babd2e76546971f23ac8819bed1403338e679365926eb2d086afc8a"
+    },
+    "test_binary": {
+      "artifact": "langame_desktop-332a17add179e225.exe",
+      "size": 232290816,
+      "sha256": "c4ce15f417ce527dfea71b693ac29573b8bfb078a73417e8e0ad133925af5b50"
+    },
+    "relevant_files": [
+      {
+        "path": "apps/desktop/src-tauri/src/commands_assistant_ops/runtime_dispatch.rs",
+        "length": 52735,
+        "sha256": "3c78fa17f8e59426d0aed8136090b07f260705b7ad15e337bd5f71a3ed7f617e"
+      },
+      {
+        "path": "apps/desktop/src-tauri/src/commands_world_save.rs",
+        "length": 12039,
+        "sha256": "cdcc7a689f6b2cedbc61fa757355bd078069406698b984b9bd376ba8502a1c80"
+      },
+      {
+        "path": "apps/desktop/src-tauri/src/runtime_transport_humanitz.rs",
+        "length": 9062,
+        "sha256": "d948aa5cf5e5ab598d3977a11e140de033ce2d56fc9db1ea1c8ee341e0bb1dd1"
+      },
+      {
+        "path": "apps/desktop/src-tauri/src/runtime_transport_humanitz_save.rs",
+        "length": 2770,
+        "sha256": "463e737947204752fbc273682e0d08bfb1f73c08c45049460281874625556424"
+      },
+      {
+        "path": "crates/app-storage/src/templates_render_humanitz.rs",
+        "length": 2958,
+        "sha256": "5f3ff3773d0471c61af3e68a8735e455c5de6530cf261c8aae27ffd91eb8804b"
+      },
+      {
+        "path": "modules/humanitz/module.toml",
+        "length": 6229,
+        "sha256": "afe7f6a83fb4faffdd80e2391fa4d9abdea4728a37443af021aa268622da3b41"
+      },
+      {
+        "path": "modules/humanitz/schema.json",
+        "length": 44643,
+        "sha256": "ff49688ee7340269fc11426ee67f1d0e7b02ced1c202218d306f1bf7e5d9e83c"
+      },
+      {
+        "path": "modules/humanitz/smoke.toml",
+        "length": 714,
+        "sha256": "97b7cf60286cd5b9e2265b3c467d71c76b963ea089f7d5d144213d10013adbe4"
+      },
+      {
+        "path": "modules/humanitz/templates/AdminList.txt.hbs",
+        "length": 30,
+        "sha256": "48338072bab321c4b9607f45b7d462f725c2f1ff9d6640180cbc1557ac071f43"
+      },
+      {
+        "path": "modules/humanitz/templates/F_BannedPlayers.txt.hbs",
+        "length": 33,
+        "sha256": "0dcf04145d46d3d0c32102b048fe15441e70ea04e573d4128a939900e86da888"
+      },
+      {
+        "path": "modules/humanitz/templates/F_ReservedSlots.txt.hbs",
+        "length": 35,
+        "sha256": "f86d8cefc7585b03a8a66750da916ed8f8d1545af9df7e0963d8f183d8638b8b"
+      },
+      {
+        "path": "modules/humanitz/templates/GameServerSettings.ini.hbs",
+        "length": 3996,
+        "sha256": "72185e12d66d4b15d0e24aed87b7098497f0c1099e67248ba5c113943fe05c86"
+      },
+      {
+        "path": "modules/humanitz/templates/WelcomeMessage.txt.hbs",
+        "length": 29,
+        "sha256": "30b8d1f40c38e3385311c41209d404dff356fe3dd3023afbf02ae274505bf9c0"
+      }
+    ],
+    "reuse_condition": "The listed module, template and production transport/render files match the immutable native01 snapshot. Evidence and provenance documentation added after that snapshot do not extend runtime coverage. Later behavior changes require affected checks to be rerun."
+  },
+  "invocation": {
+    "selector": "commands::tests::manual_runtime_tests::native_lifecycle_tests::native_package_lifecycle",
+    "test_arguments": [
+      "--exact",
+      "--ignored",
+      "--nocapture",
+      "--test-threads=1"
+    ],
+    "environment": {
+      "TEMP": "<owned-task-temp>",
+      "TMP": "<owned-task-temp>",
+      "LANGAME_NATIVE_MODULE_ID": "humanitz",
+      "LANGAME_NATIVE_PACKAGE_ROOT": "<isolated-official-package>",
+      "LANGAME_SMOKE_SOURCE_ROOT": "<matching-native01-source-snapshot>",
+      "LANGAME_SMOKE_RUNTIME_ROOT": "<owned-isolated-runtime>",
+      "LANGAME_SMOKE_RESOURCE_POLICY": "<task-resource-policy>",
+      "LANGAME_NATIVE_STEAMCMD_ROOT": "<task-steamcmd-root>",
+      "LANGAME_NATIVE_SETTINGS_JSON": "{\"program_update\":{\"policy\":\"pinned\"}}",
+      "LANGAME_NATIVE_LOG_SUCCESS": "true",
+      "LANGAME_NATIVE_OBSERVE_SECONDS": "0",
+      "LANGAME_NATIVE_MANUAL_SAVE": "true",
+      "LANGAME_NATIVE_MANUAL_SAVE_RESTART": "true"
+    },
+    "started_utc": "2026-11-12T02:23:30Z",
+    "completed_utc": "2026-11-12T02:27:53Z",
+    "test_elapsed_seconds": 260.93,
+    "runner_elapsed_seconds": 262.49,
+    "exit_code": 0,
+    "exactly_one_test_passed": true,
+    "non_elevated": true,
+    "run_report": {
+      "artifact": "result.json",
+      "size": 1044,
+      "sha256": "e4faadb0503a747d07f8de6ec3e171beba59975b46220340e015ffc4f55f4233"
+    },
+    "log": {
+      "path": "2026-11-12-public-build-26604244-native-output.txt",
+      "size": 9996,
+      "sha256": "5cdb65fc2f773db90e6065b6142fe9cea77a71cbe1b861ecf6d63e05dce97cc3",
+      "format": "Portable excerpt with structured markers and distinct diagnostics"
+    },
+    "raw_log": {
+      "artifact": "native-output.txt",
+      "size": 95038,
+      "sha256": "9743c0e5cc317da3c8bbbfe6e1f6b2b58fabc24e1cb82afa494a8a5da2b46367",
+      "availability": "Full detailed log retained only in external task evidence"
+    }
+  },
+  "observations": {
+    "cycles": [
+      "initial",
+      "restart",
+      "after_restore",
+      "after_archive_restore"
+    ],
+    "native_ready_cycles": 4,
+    "normal_exit_zero_cycles": 4,
+    "manual_save": {
+      "receipt_count": 4,
+      "completion": "Requested",
+      "response_bytes_each": 11,
+      "attempted_once": true,
+      "retried": false,
+      "current_instance_run_session_and_managed_process_generation_verified": true,
+      "route": "declared_network_transport_current_run",
+      "write_confirmation_pending": false,
+      "durable_write": "not_assessed",
+      "restart_readback_of_manual_saved_content": "not_assessed",
+      "cycle_label_note": "The safe log label is other for after_restore and after_archive_restore; their receipts occur within the corresponding lifecycle cycle."
+    },
+    "player_collector": {
+      "complete_current_run_empty_roster_cycles": 4,
+      "overview_players": 0,
+      "global_players": 0,
+      "queried_instances": 1,
+      "queryable_instances": 1
+    },
+    "backup_restore": {
+      "restored_files": 27,
+      "safeguard_verified": true,
+      "program_config_preserved": true
+    },
+    "library_uninstall": {
+      "instance_program_preserved": true,
+      "save_files_preserved": 29,
+      "native_config_files_preserved": 5
+    },
+    "archive_restore": {
+      "deferred_commit_failure_simulated": true,
+      "restoring_journal_observed": true,
+      "instance_row_absent_before_recovery": true,
+      "config_save_program_bytes_preserved": true,
+      "recovered": true
+    },
+    "cleanup": {
+      "independent_instance_program_removed": true,
+      "library_record_preserved_until_final_uninstall": true,
+      "final_unused_programs_removed": true,
+      "retained_data_paths": 0,
+      "reported_failures": []
+    },
+    "diagnostics": {
+      "firewall": "Under the non-elevated policy, Windows Firewall configuration or its cleanup timed out; startup continued. Firewall admission and external client connectivity were not established.",
+      "native_eos": "Relative CacheDirectory and platform initialization errors/warnings precede successful current-run session creation and native RCON readiness. The log is not warning-free.",
+      "internal_server_build_id": "The native log reports Server BuildID=50; this game-internal identifier is distinct from Steam public build 26604244."
+    }
+  },
+  "scope": [
+    "The production lifecycle passed declared readiness, current-run authenticated manual save delivery, normal stop/restart, backup/restore, uninstall preservation, interrupted archive commit recovery and owned cleanup against public build 26604244.",
+    "The four native save ACKs remain Requested. Neither the ACK, generated files, backup byte preservation nor a successful restart proves that this particular manual save durably persisted exact world contents.",
+    "The collector evidence covers an empty roster only. Real-client joining, populated players, gameplay, complex pre-existing worlds, GUI, native A2S, inbound firewall admission and network install/update/repair were not tested.",
+    "The fixture used storage-scoped creation and an independent local package copy with pinned program updates. Its source_provenance=unverified marker concerns fixture acquisition, separately linked to the verified official package identity above.",
+    "Non-elevated firewall timeouts and native EOS initialization warnings are retained as diagnostics. Successful declared readiness does not establish a clean native log or external connectivity."
+  ]
+}

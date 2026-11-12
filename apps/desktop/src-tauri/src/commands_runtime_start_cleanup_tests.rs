@@ -14,6 +14,7 @@ async fn startup_cleanup_missing_owner_cannot_turn_an_exited_pid_into_cancellati
         install_root: root.to_string_lossy().into_owned(),
         install_state: InstallState::Installed,
         uses_private_runtime: false,
+        can_update_before_start: false,
         working_directory: root.to_string_lossy().into_owned(),
         executable_path: executable.to_string_lossy().into_owned(),
         executable_exists: true,

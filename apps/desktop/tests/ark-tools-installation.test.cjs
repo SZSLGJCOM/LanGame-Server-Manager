@@ -11,7 +11,7 @@ require.extensions[".css"] = () => {};
 const { observeArkToolsInstallation, queuedArkToolsInstallation, parseArkToolsInstallProgress } = require("../src/ark-tools-installation.ts");
 const { ArkToolsInstallActivity } = require("../src/components/ArkToolsInstallActivity.tsx");
 const queued = () => queuedArkToolsInstallation("ark-a", "install-a");
-const ready = { installed: true, connected: false, canUninstall: true, issue: null };
+const ready = { installed: true, updateAvailable: false, connected: false, canUninstall: true, issue: null };
 const receipt = (elapsedSeconds = 8) => ({ ...ready, progress: { ...queued(), phase: "ready", active: false, elapsedSeconds } });
 function deferred() { let resolve, reject; const promise = new Promise((yes, no) => { resolve = yes; reject = no; }); return { promise, resolve, reject }; }
 const flush = () => new Promise(resolve => setImmediate(resolve));

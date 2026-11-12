@@ -12,7 +12,10 @@ pub(crate) mod host;
 pub(crate) use host::{close_active_host, main_window};
 
 use crate::commands::mod_curseforge_reference::parse_reference;
-use crate::commands::{ManualModReferenceItem, ManualModReferenceResolveResult};
+use crate::commands::mod_presentations::{normalize_display_name, verified_icon_url};
+use crate::commands::{
+    ManualModPresentation, ManualModReferenceItem, ManualModReferenceResolveResult,
+};
 
 const WINDOW_PREFIX: &str = "curseforge-project-";
 const BROWSE_TIMEOUT: Duration = Duration::from_secs(120);
@@ -24,6 +27,7 @@ const MAX_CACHE: usize = 256;
 struct Project {
     id: String,
     title: Option<String>,
+    icon_url: Option<String>,
     observed: Instant,
 }
 
@@ -97,6 +101,7 @@ struct Page {
     canonical_url: Option<String>,
     project_id: Option<String>,
     title: Option<String>,
+    icon_url: Option<String>,
     state: String,
 }
 
@@ -130,7 +135,8 @@ fn read_project(page: Page, expected: &str) -> Result<Option<Project>, String> {
         .ok_or_else(|| browser_error("invalid_page"))?;
     Ok(Some(Project {
         id,
-        title: page.title.map(|title| title.chars().take(200).collect()),
+        title: normalize_display_name(page.title.as_deref()),
+        icon_url: verified_icon_url(page.icon_url.as_deref()),
         observed: Instant::now(),
     }))
 }
@@ -231,6 +237,7 @@ async fn resolve_runtime(
     app: &tauri::AppHandle,
     instance_id: String,
     references: Vec<String>,
+    presentations: Vec<ManualModPresentation>,
 ) -> Result<ManualModReferenceResolveResult, String> {
     #[cfg(windows)]
     {
@@ -238,14 +245,20 @@ async fn resolve_runtime(
             .await?
             .request(
                 "resolve_manual_mod_references",
-                json!({ "instanceId": instance_id, "references": references }),
+                json!({ "instanceId": instance_id, "references": references, "presentations": presentations }),
             )
             .await?;
         serde_json::from_value(value)
             .map_err(|error| format!("Invalid mod reference result: {error}"))
     }
     #[cfg(not(windows))]
-    crate::commands::resolve_manual_mod_references(app.state(), instance_id, references).await
+    crate::commands::resolve_manual_mod_references(
+        app.state(),
+        instance_id,
+        references,
+        Some(presentations),
+    )
+    .await
 }
 
 #[tauri::command]
@@ -260,7 +273,7 @@ pub(crate) async fn resolve_curseforge_browser_references(
         .iter()
         .any(|reference| project_url(reference).is_some())
     {
-        return resolve_runtime(&app, instance_id, references).await;
+        return resolve_runtime(&app, instance_id, references, Vec::new()).await;
     }
     let session = host::Resolving::begin(
         &app,
@@ -341,7 +354,17 @@ pub(crate) async fn resolve_curseforge_browser_references(
             .find_map(|(_, _, error)| error.clone())
             .unwrap_or_else(|| browser_error("invalid_page")));
     }
-    let result = resolve_runtime(&app, instance_id, rewritten).await?;
+    let presentations = items
+        .iter()
+        .filter_map(|(_, project, _)| {
+            project.as_ref().map(|project| ManualModPresentation {
+                id: project.id.clone(),
+                title: project.title.clone(),
+                icon_url: project.icon_url.clone(),
+            })
+        })
+        .collect();
+    let result = resolve_runtime(&app, instance_id, rewritten, presentations).await?;
     session.check_active()?;
     merge_result(result, items)
 }
@@ -362,6 +385,7 @@ fn merge_result(
                     status: "failed".into(),
                     resolved_id: None,
                     title: None,
+                    icon_url: None,
                     message: Some(error),
                 });
             }
@@ -377,6 +401,9 @@ fn merge_result(
             item.reference = reference;
             if let Some(project) = project {
                 item.title = project.title;
+                if project.icon_url.is_some() {
+                    item.icon_url = project.icon_url;
+                }
             }
             Ok(item)
         })

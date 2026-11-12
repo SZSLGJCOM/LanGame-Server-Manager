@@ -124,12 +124,21 @@ async fn program_update_same_version_cannot_certify_changed_program_bytes()
 -> Result<(), Box<dyn std::error::Error>> {
     let fixture = ProgramBaselineFixture::new()?;
     fixture.record()?;
+    let expected_clean = fixture.clean_manifest()?;
+    let initial_path = fixture.root.join(".langame-initial-package.json");
+    let expected_initial = fs::read(&initial_path)?;
     fs::write(fixture.root.join("server.jar"), b"modified server")?;
     fixture
         .recorder()?
         .finish((), fixture.root.clone(), false, true, |_| {})
         .await?;
-    assert!(!fixture.root.join(".langame-clean-package.json").exists());
+    assert_eq!(fixture.clean_manifest()?, expected_clean);
+    assert_eq!(fs::read(initial_path)?, expected_initial);
+    assert!(!app_storage::library_program_is_pristine(
+        &fixture.root,
+        &fixture.descriptor,
+        None
+    )?);
     assert_eq!(
         fs::read(fixture.root.join("server.jar"))?,
         b"modified server"

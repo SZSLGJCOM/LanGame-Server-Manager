@@ -1,4 +1,3 @@
-@import "../managed-manual-mods.css";
 
 .mw-workbench {
   display: grid;
@@ -217,22 +216,11 @@
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--shell-accent) 12%, transparent);
 }
 
-.mw-terraria-import,
-.mw-source-lists {
-  margin: 0 0 8px;
-  color: var(--shell-muted);
-  font-size: var(--text-body);
-}
-.mw-terraria-import summary,
-.mw-source-lists summary {
-  color: var(--shell-text);
-  cursor: pointer;
-}
-.mw-terraria-import form,
-.mw-terraria-import label { display: grid; gap: 6px; margin-top: 6px; }
-.mw-terraria-import button { justify-self: start; }
 .mw-source-field { padding-block: 8px; }
 .mw-source-field + .mw-source-field { border-top: 1px solid var(--shell-line); }
+.mw-source-settings-dialog { font-weight: var(--font-weight-regular); }
+.mw-source-settings-unsaved { margin: 0 0 12px; color: var(--theme-danger-text); font-size: var(--text-body); }
+.mw-native-mod-note { color: var(--shell-muted); font-size: var(--text-body); line-height: var(--leading-body); }
 
 .mw-mod-grid {
   display: grid;
@@ -534,6 +522,9 @@
 }
 
 .mw-chip--lifecycle-installing,
+.mw-chip--lifecycle-queued,
+.mw-chip--lifecycle-ready,
+.mw-chip--lifecycle-applying,
 .mw-chip--lifecycle-checking {
   border-color: color-mix(in srgb, var(--shell-accent) 32%, transparent);
   background: color-mix(in srgb, var(--shell-accent) 11%, transparent);
@@ -1059,7 +1050,7 @@ button.mw-store-detail-metric {
   min-width: 180px;
 }
 
-.mw-manual-toolbar :is(.mw-reference-input, .mw-reference-row > .mw-btn, .mw-source-open-btn, .mw-version-policy-btn, .mw-sort-pills) {
+.mw-manual-toolbar :is(.mw-reference-input, .mw-reference-row > .mw-btn, .mw-source-open-btn, .mw-version-policy-btn, .mw-nexus-login-btn, .mw-sort-pills) {
   height: 36px;
   box-sizing: border-box;
 }
@@ -1120,6 +1111,7 @@ button.mw-store-detail-metric {
 .mw-reference-browser-toolbar > span { display: flex; align-items: center; gap: 8px; flex: 1; font-size: var(--text-secondary); }
 .mw-reference-browser-toolbar > button { flex-shrink: 0; }
 .mw-reference-browser-page { flex: 1; min-height: 0; margin: 0 8px 8px; background: #fff; }
+.mw-reference-browser[data-nexus-browser="login"] .mw-reference-browser-page { background: var(--panel); }
 .mw-dropzone-copy { display: grid; gap: 8px; font-size: var(--text-secondary); overflow-wrap: anywhere; }
 .mw-dropzone-title { color: var(--shell-text); font-size: var(--text-body); font-weight: var(--font-weight-semibold); }
 .mw-manual-pane > .mw-manual-feedback { flex-shrink: 0; margin: 0 14px 14px; overflow-wrap: anywhere; }
@@ -2128,6 +2120,11 @@ button.mw-store-detail-metric {
   display: none;
 }
 
-.mw-detail-col-title > .mw-ghost-btn {
+.mw-detail-col-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 8px;
   margin-left: auto;
 }

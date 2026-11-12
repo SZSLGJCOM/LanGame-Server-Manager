@@ -7,7 +7,10 @@ interface Props {
   message: string;
   wrapperClassName?: string;
   confirmLabel?: string;
+  confirmClassName?: string;
   cancelLabel?: string;
+  cancelIcon?: ReactNode;
+  revealOnOpen?: boolean;
   preparing?: boolean;
   pending?: boolean;
   scrollable?: boolean;
@@ -27,8 +30,12 @@ export function InlineConfirmReview(props: Props) {
   const container = props.containerRef ?? fallbackContainer;
   const cancel = useRef<HTMLButtonElement>(null);
   const dismiss = props.onDismissOutside ?? props.onCancel;
+  const cancelLabel = props.cancelLabel ?? t("common.cancel");
 
-  useLayoutEffect(() => { cancel.current?.focus(); }, []);
+  useLayoutEffect(() => {
+    cancel.current?.focus();
+    if (props.revealOnOpen) container.current?.scrollIntoView({ block: "nearest", inline: "nearest" });
+  }, [container, props.revealOnOpen]);
   useEffect(() => {
     if (props.pending) return;
     function outside(event: Event) {
@@ -56,11 +63,13 @@ export function InlineConfirmReview(props: Props) {
       </span>
       {props.error}
       <span className="inline-confirm-buttons">
-        <button ref={cancel} type="button" className="secondary-button" disabled={props.pending} onClick={props.onCancel}>
-          {props.cancelLabel ?? t("common.cancel")}
+        <button ref={cancel} type="button" className="secondary-button inline-confirm-cancel"
+          aria-label={props.cancelIcon ? cancelLabel : undefined} title={props.cancelIcon ? cancelLabel : undefined}
+          disabled={props.pending} onClick={props.onCancel}>
+          {props.cancelIcon ?? cancelLabel}
         </button>
         {props.onRetry ? <button type="button" className="secondary-button" onClick={props.onRetry}>{t("common.retry")}</button> : null}
-        <button type="button" className="secondary-button inline-confirm-submit"
+        <button type="button" className={`secondary-button inline-confirm-submit ${props.confirmClassName ?? ""}`.trim()}
           disabled={props.pending || props.preparing || !props.onConfirm} onClick={props.onConfirm}>
           {props.pending ? t("common.processing") : props.confirmLabel ?? t("common.confirm")}
         </button>

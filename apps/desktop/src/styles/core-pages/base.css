@@ -159,7 +159,7 @@ button { cursor: pointer; font-weight: var(--font-weight-medium); line-height: v
   min-height: var(--control-height);
   border: 1px solid transparent;
   border-radius: 8px;
-  padding: 4px var(--control-padding-inline);
+  padding: var(--control-padding-block) var(--control-padding-inline);
   line-height: var(--leading-control);
   transition: 180ms ease;
 }

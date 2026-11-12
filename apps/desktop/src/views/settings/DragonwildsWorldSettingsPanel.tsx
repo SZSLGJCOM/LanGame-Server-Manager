@@ -44,6 +44,7 @@ export function DragonwildsWorldSettingsPanel(props: ConfigurationSpecializedRen
   const { t } = useI18n();
   const editor = useDragonwildsWorldSettings();
   const { snapshot, mode } = editor;
+  const hasRules = snapshot?.status === "ready" || snapshot?.status === "new";
   const saving = editor.status.state === "saving";
   const disabled = props.disabled || !editor.stopped || !snapshot?.writable || editor.loading;
   const grouped = useMemo(() => {
@@ -97,12 +98,13 @@ export function DragonwildsWorldSettingsPanel(props: ConfigurationSpecializedRen
         onClick={() => void editor.refresh()}>{t(editor.dirty ? `${COPY}.discardAndRefresh` : `${COPY}.refresh`)}</button>
     }>{editor.error}</ActivityNotice> : null}
     {editor.loading ? <ActivityNotice>{t(`${COPY}.loading`)}</ActivityNotice> : null}
-    {!editor.loading && snapshot?.status === "empty" ? <p className="form-note" role="status">{t(`${COPY}.empty`)}</p> : null}
+    {!editor.loading && snapshot?.status === "empty" ? <p className="form-note" role="status">{snapshot.message ?? t(`${COPY}.empty`)}</p> : null}
+    {snapshot?.status === "new" && !editor.stopped ? <p className="form-note" role="status">{t(`${COPY}.initializing`)}</p> : null}
     {snapshot?.status === "ready" && !editor.stopped ? <ActivityNotice tone="warning">{t(`${COPY}.stopRequired`)}</ActivityNotice> : null}
-    {snapshot?.status === "ready" && editor.stopped && !snapshot.writable ? <ActivityNotice tone="warning">
+    {hasRules && editor.stopped && !snapshot.writable ? <ActivityNotice tone="warning">
       {snapshot.message ?? t(`${COPY}.refreshRequired`)}
     </ActivityNotice> : null}
-    {snapshot?.status === "ready" && mode ? <>
+    {hasRules && mode ? <>
       {props.sectionId === "world" ? <div className="settings-schema-grid configuration-field-grid">
         <label className="settings-schema-field" data-field-key="world_settings">
           <span className="detail-label settings-field-label">{t(`${COPY}.mode`)}</span>

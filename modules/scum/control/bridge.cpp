@@ -9,17 +9,21 @@ constexpr wchar_t BRIDGE_NAME[] = L"LgsmScumSaveControl.dll";
 struct GameProfile {
     std::string_view image_hash, save_prologue;
     uintptr_t save, entity_class, entity_vtable, get_world;
+    uintptr_t entity_loading, entity_saving, entity_shutdown;
 };
 constexpr GameProfile PROFILES[]{
     {"4ca11449c4c8d3a243c797c719f66e33192eefad53a9c64cca9aac925c9e39ad",
      "48895c2420574881ecb0000000488b05a45484054833c4488984249000000080",
-     0x1b94040, 0x7447070, 0x5e40c60, 0x15501c0},
+     0x1b94040, 0x7447070, 0x5e40c60, 0x15501c0, 0x798, 0x79a, 0x79b},
     {"070fcad918ba04eb9797db29674cadbd6691427b936fe354bca23b008c8c9971",
      "48895c2420574881ecb0000000488b0594eb8d054833c4488984249000000080",
-     0x1bb2680, 0x7500180, 0x5edfe20, 0x1552cc0},
+     0x1bb2680, 0x7500180, 0x5edfe20, 0x1552cc0, 0x798, 0x79a, 0x79b},
     {"a862d658271f26d082de5df7bba01e8af9c3d051cb9634e908bb94d8a9efbc7a",
      "48895c2420574881ecb0000000488b0524f590054833c4488984249000000080",
-     0x1bc0530, 0x753f010, 0x5f13ba0, 0x1554920},
+     0x1bc0530, 0x753f010, 0x5f13ba0, 0x1554920, 0x798, 0x79a, 0x79b},
+    {"805396516e64d17f1713f24ce97a7d525a6d761db46ce069f40cf63114add6d9",
+     "48895c2420574881ecb0000000488b05f48698054833c4488984249000000080",
+     0x1bcc000, 0x75c3e90, 0x5f87490, 0x1555d10, 0x7a8, 0x7aa, 0x7ab},
 };
 const GameProfile* selected_profile{};
 bool select_game_profile(std::string_view identity) {
@@ -47,10 +51,11 @@ void alive(uintptr_t object, size_t size) {
     require(readable(object, size) && !(read<uint32_t>(object + 8) & 0x40018010), "object_unavailable");
 }
 void entity_contract(uintptr_t image, uintptr_t system, uintptr_t instance, uintptr_t world) {
-    alive(system, 0x79c);
-    auto cls = read<uintptr_t>(image + game_profile().entity_class);
+    const auto& profile = game_profile();
+    alive(system, profile.entity_shutdown + 1);
+    auto cls = read<uintptr_t>(image + profile.entity_class);
     require(cls && read<uintptr_t>(system + 0x10) == cls
-        && read<uintptr_t>(system) == image + game_profile().entity_vtable, "entity_system_class");
+        && read<uintptr_t>(system) == image + profile.entity_vtable, "entity_system_class");
     alive(instance, 0x28);
     require(read<uintptr_t>(system + 0x20) == instance, "entity_system_instance");
     alive(world, 0x188);
@@ -65,9 +70,9 @@ void entity_contract(uintptr_t image, uintptr_t system, uintptr_t instance, uint
     require((read<uint8_t>(game_mode + 0x5c) & 0xc0) == 0x80
         && (read<uint8_t>(game_state + 0x5c) & 0xc0) == 0x80, "world_not_begun_play");
     require(read<uint8_t>(system + 0x30) == 1
-        && read<uint8_t>(system + 0x798) == 0
-        && read<uint8_t>(system + 0x79a) == 0
-        && read<uint8_t>(system + 0x79b) == 0, "entity_system_not_ready");
+        && read<uint8_t>(system + profile.entity_loading) == 0
+        && read<uint8_t>(system + profile.entity_saving) == 0
+        && read<uint8_t>(system + profile.entity_shutdown) == 0, "entity_system_not_ready");
 }
 void target_contract(uintptr_t image, uintptr_t system, uintptr_t instance, uintptr_t world) {
     entity_contract(image, system, instance, world);

@@ -3,6 +3,7 @@ Third-Party Asset Redistribution Ledger
 
 Licensed build assets: Inter 4.1 variable UI fonts (see below).
 Reference game media: versioned ARK map artwork (see below).
+Licensed test data: reviewed 7z and RAR decoder fixtures (see below).
 
 Registrations apply only to the exact files listed below. This file does not
 infer permission from public availability, a download URL, a game
@@ -77,6 +78,53 @@ or add it to an installer on the strength of the network allowlist.
 The separately licensed Minecraft fallback illustration is recorded in NOTICE.
 Its reported in-house/AI creation does not license third-party game elements.
 Neither that record nor this ledger declares all game media cleared for release.
+
+Archive decoder test fixtures
+-----------------------------
+
+Repository directory: apps/desktop/src-tauri/src/test_fixtures/mod_archives/
+The eight archives are unchanged upstream test data, not downloaded game mods.
+Their per-file source paths, byte lengths and SHA-256 are in sources.json;
+README.md explains their test roles. These source-only fixtures are not installed
+application resources and are not relicensed under the LanGame project license.
+
+7z files: lzma.7z, solid.7z, ppmd.7z, encrypted.7z.
+Upstream: sevenz-rust2 contributors, maintained by hasenbanck.
+Source: https://github.com/hasenbanck/sevenz-rust2
+Crate: https://static.crates.io/crates/sevenz-rust2/sevenz-rust2-0.23.0.crate
+Archive SHA-256: 0a4f883677093690e91fef8ae81fad8bce9e2c3a079b61054f05ce0d3ecf681e
+Packaged VCS commit: 8fa733090e422c1c583d87a4cd87193b59115317.
+License: Apache-2.0; retain LICENSE-sevenz-APACHE, copied from that crate's LICENSE.
+The production decoder version is independently pinned by Cargo.lock.
+
+RAR files: rar4.rar, rar5-solid.rar, rar5-unicode.rar, encrypted.rar.
+Upstream: unrar.rs contributors; packaged authors Danyel Bayraktar and vjoki.
+Source: https://github.com/muja/unrar.rs
+Crate: https://static.crates.io/crates/unrar/unrar-0.5.8.crate
+Archive SHA-256: 92ec61343a630d2b50d13216dea5125e157d3fc180a7d3f447d22fe146b648fc
+Packaged VCS commit: 8fe139781b92d0678afecc568496f5805401a6c4.
+License: MIT OR Apache-2.0; retain LICENSE-unrar-MIT and LICENSE-unrar-APACHE,
+copied from that crate's LICENSE-MIT and LICENSE-APACHE. The package publishes no
+separate fixture license or additional copyright line in these license files;
+this ledger preserves the package's attribution without inventing one.
+
+LICENSE-unrar-rs is a separate notice for the production unrar-rs 0.15.3 decoder,
+copied from its checksum-locked LICENSE. It is Apache-2.0 with an additional
+UnRAR restriction, not plain Apache-2.0 or MIT. It permits handling RAR archives
+but restricts developing a RAR-compatible archiver or recreating RAR compression.
+Its complete terms, including the required UnRAR paragraph, are retained in the
+installed Rust license inventory. Do not apply the fixture package's MIT option
+to this production decoder.
+
+Evidence verified: 2026-11-11. The two fixture source crates were downloaded from
+the official static.crates.io URLs above and matched the cached archives exactly;
+all eight fixtures and their three licenses matched the recorded archive members.
+The production decoder license matched its Cargo.lock-verified crate.
+
+Only these eight exact archive paths are approved for source snapshots. The
+shared asset policy pins the archives, README, sources.json and all four LICENSE
+files. A selected fixture requires all of its companion files in the snapshot;
+omitted or changed bytes fail verification. Arbitrary archives remain excluded.
 
 ARK map reference media
 -----------------------

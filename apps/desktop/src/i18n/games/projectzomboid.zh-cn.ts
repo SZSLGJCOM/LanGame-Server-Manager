@@ -357,7 +357,7 @@ export const ZH_CN_PROJECT_ZOMBOID_MESSAGES: MessageCatalog = {
   "settings.schema.projectzomboid.login_queue_enabled.title": "启用登录队列",
   "settings.schema.projectzomboid.login_queue_enabled.description": "通过队列处理玩家连接请求。",
   "settings.schema.projectzomboid.steam_scoreboard.title": "玩家列表显示 Steam 身份",
-  "settings.schema.projectzomboid.steam_scoreboard.description": "在游戏内玩家列表中显示 Steam 用户名和头像。",
+  "settings.schema.projectzomboid.steam_scoreboard.description": "允许普通玩家在玩家列表中查看 Steam 身份。关闭后，具备记分板查看权限的角色仍可查看。",
   "settings.schema.projectzomboid.mouse_over_to_see_display_name.title": "悬停时显示玩家姓名",
   "settings.schema.projectzomboid.mouse_over_to_see_display_name.description": "鼠标移到玩家身上时才显示姓名。",
   "settings.schema.projectzomboid.hide_players_behind_you.title": "隐藏视线外玩家",

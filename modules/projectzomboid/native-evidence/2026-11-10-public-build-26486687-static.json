@@ -1,0 +1,156 @@
+{
+  "schema_version": 1,
+  "module_id": "projectzomboid",
+  "reviewed_on": "2026-11-10",
+  "steam_app_id": 380870,
+  "public_build_id": "26486687",
+  "game_version": "42.22.2",
+  "official_announcement": {
+    "title": "42.22.2 STABLE Released",
+    "published_unix": 1794233055,
+    "url": "https://steamcommunity.com/games/108600/announcements/detail/672885171308986780"
+  },
+  "acquisition": {
+    "method": "Fresh task-owned SteamCMD anonymous public app_update 380870 validate",
+    "started_utc": "2026-11-10T03:45:15Z",
+    "completed_utc": "2026-11-10T03:50:21Z",
+    "exit_code": 0,
+    "manifest_state_flags": 4,
+    "manifest_update_result": 0,
+    "target_build_id": "26486687",
+    "size_on_disk": 7124223981,
+    "bytes_downloaded": 1968415728,
+    "bytes_to_download": 1968415728,
+    "depots": {
+      "1004": "7604377918839582995",
+      "380871": "1755746619808321605",
+      "380874": "8283525070457803545"
+    }
+  },
+  "package_identity_files": [
+    {
+      "path": "steamapps/appmanifest_380870.acf",
+      "size": 997,
+      "sha256": "809d19da4ba7d3f9f3534cc2c6fbc88bb1993ba198d5e52f1d2c4f52bfe171af"
+    },
+    {
+      "path": "java/projectzomboid.jar",
+      "size": 68815659,
+      "sha256": "3c4a7c5f149d784758c6fb5f8fa85f3a21d572e38bc081400e89035f8120d287"
+    },
+    {
+      "path": "jre64/bin/java.exe",
+      "size": 50112,
+      "sha256": "e8e29318ae7435579a1f1718589fd753b8ed47effa6f67c0e4986fd7b8d89d93"
+    },
+    {
+      "path": "jre64/release",
+      "size": 1002,
+      "sha256": "e7a20ec3984861d3e109fed266d51340d6be4221d3b6cd1299a4be9b11ce1725"
+    },
+    {
+      "path": "StartServer64.bat",
+      "size": 367,
+      "sha256": "e9d76cadbb74729100808cd6d8a6af1d2a499a774054191c5af515ffd992af82"
+    },
+    {
+      "path": "ProjectZomboid64.json",
+      "size": 468,
+      "sha256": "403263cf4f15461470bb1d36a76a6665c4b436ef35746bcb8d91f970a36eca52"
+    }
+  ],
+  "method": "Read-only zip class hashing and javap disassembly; no game class execution",
+  "class_identities": {
+    "zombie/network/ServerOptions.class": {
+      "bytes": 28208,
+      "sha256": "50a54b1cbba203fa20bd3b94f33299bba70d93eedbe6eaea9d22ba5129ea3fb5"
+    },
+    "zombie/config/BooleanConfigOption.class": {
+      "bytes": 3160,
+      "sha256": "ffa95151e835f60d98ca7ac65bf8e1daf6f7ab5f4c57d7f08554487ae94fb63e"
+    },
+    "zombie/network/ServerOptions$BooleanServerOption.class": {
+      "bytes": 1681,
+      "sha256": "1124c3c9c9b4df23775a6fcd18ce2ea2b32cf5fa6f97acb6d13c36b35059db2e"
+    },
+    "zombie/network/packets/service/ScoreboardUpdatePacket.class": {
+      "bytes": 6173,
+      "sha256": "5b83719c1e38c49069b98cb03e80ec95c11b044ec7221ac1a27ffbd9df05c02a"
+    },
+    "zombie/Lua/LuaManager$GlobalObject.class": {
+      "bytes": 244915,
+      "sha256": "675c3dad3479ec4e6bf8d0f6aa41aeb2ffcf5570df17d3ac07eab99508221059"
+    }
+  },
+  "server_options": {
+    "count": 144,
+    "type_counts": {
+      "Boolean": 73,
+      "String": 22,
+      "Text": 2,
+      "Integer": 29,
+      "Double": 7,
+      "Enum": 11
+    },
+    "added_keys": [],
+    "removed_keys": [],
+    "changed_types_or_constructor_values": [],
+    "unparsed_options": 0,
+    "class_identical_to_recorded_build_25485538": true,
+    "comparison_baseline": "modules/projectzomboid/server-options-build-42.json",
+    "baseline_build_id": "24909836",
+    "baseline_sha256": "1f0bccb9c9024ffe93b918d95eaf2b7513471381ec4ba81c3dc0d3892f702633",
+    "dynamic_defaults_checked": [
+      "ResetID: Rand.Next(1000000000)",
+      "ServerPlayerID: Integer.toString(Rand.Next(2147483647))",
+      "Seed: GameServer.seed"
+    ],
+    "comparison_output_sha256": "c5412bd3f55d88c04112180c3fa4ccac39b9abb9da05ee615724353fbfc1e85d"
+  },
+  "steam_scoreboard": {
+    "native_type": "BooleanServerOption",
+    "native_default": false,
+    "constructor_offset": 1288,
+    "accepted_native_strings": [
+      "true",
+      "false",
+      "1",
+      "0"
+    ],
+    "case_insensitive": true,
+    "invalid_admin_behavior": "BooleanConfigOption.parse logs invalid input and does not set the value; initial value remains false. An already changed value remains unchanged.",
+    "server_consumer": "ScoreboardUpdatePacket.processServer offsets 302-345: in Steam mode, send real SteamID when steamScoreboard is true OR recipient role has GetSteamScoreboard capability; otherwise use -1.",
+    "lua_consumer": "LuaManager$GlobalObject.getSteamScoreboard returns the BooleanServerOption value when Steam mode and a game client are active; otherwise false.",
+    "jar_reference_classes": [
+      "zombie/Lua/LuaManager$GlobalObject.class",
+      "zombie/characters/Capability.class",
+      "zombie/network/ServerOptions.class",
+      "zombie/network/packets/service/ScoreboardUpdatePacket.class"
+    ],
+    "minimal_fix": "Keep existing JSON strings true/false and product default true; remove invalid admin option. Preserve invalid persisted value until an explicit supported choice; surface validation instead of guessing a conversion."
+  },
+  "launch_contract": {
+    "entry": "jre64/bin/java.exe",
+    "bundled_java": "25.0.5+8-LTS",
+    "vendor": "Azul Systems, Inc. / Zulu25.38+107-CA",
+    "main_class": "zombie.network.GameServer",
+    "bat_classpath": [
+      "java/",
+      "java/projectzomboid.jar"
+    ],
+    "json_classpath": [
+      "java/.",
+      "java/projectzomboid.jar"
+    ],
+    "bat_gc": "-XX:+UseZGC",
+    "code_change_required_by_observed_launch_contract": false
+  },
+  "scope": "Static contract review only. Does not claim live launch/RCON/save/backup/player behavior or change historical runtime evidence.",
+  "disassembly_artifacts_sha256": {
+    "BooleanConfigOption.javap.txt": "6297dc00fcd14050fabf9e2b4a7d51ba1c6dc6f4d7aa10a8fabca726a9aa275d",
+    "BooleanServerOption.javap.txt": "49486b0a37b466965bd118692c5a0c184f24f80379f4b7d7623df0ae2d480cc0",
+    "build-26486687-server-options.javap.txt": "dac3d101010c18122f06dee2e123ac82cd033ee02c7992b5c667baca924bb4fb",
+    "zombie_Lua_LuaManager_GlobalObject.javap.txt": "da057621098fcc5794a670259a1ccadaf9e857115c190d887095041601025712",
+    "zombie_network_packets_service_ScoreboardUpdatePacket.javap.txt": "e0602d0caea532aba1e5381ce8aefcdb9da45de985735b5f22df6b96af3ba507"
+  }
+}

@@ -27,6 +27,7 @@ fn resolved() -> ManualModReferenceResolveResult {
             status: "resolved".into(),
             resolved_id: Some("1346144".into()),
             title: None,
+            icon_url: None,
             message: None,
         }],
         resolved_ids: vec!["1346144".into()],
@@ -54,6 +55,7 @@ fn batch_results_keep_original_links_titles_and_partial_failures() {
     assert_eq!(result.resolved_ids, ["1346144"]);
     assert_eq!(result.items.len(), 3);
     assert_eq!(result.items[0].reference, URL);
+    assert_eq!(result.items[0].icon_url, page("ready", None).icon_url);
     assert_eq!(
         result.items[0].title.as_deref(),
         Some("DevkitLiveModTesting")
@@ -73,6 +75,7 @@ fn page(state: &str, id: Option<&str>) -> Page {
         canonical_url: Some(URL.into()),
         project_id: id.map(str::to_owned),
         title: Some("DevkitLiveModTesting".into()),
+        icon_url: Some("https://83374.media.forgecdn.net/avatars/thumbnails/1949/338/256/256/639208701457408935.png".into()),
         state: state.into(),
     }
 }
@@ -141,4 +144,19 @@ fn observed_page_must_match_and_provide_positive_project_id() {
     wrong_canonical.canonical_url = Some("https://evil.test/".into());
     assert!(read_project(wrong_canonical, URL).is_err());
     assert!(read_project(page("invalid", Some("1346144")), URL).is_err());
+}
+
+#[test]
+fn missing_or_untrusted_avatar_does_not_block_project_identity() {
+    for icon in [
+        None,
+        Some("https://evil.example/avatar.png"),
+        Some("file:///private.png"),
+    ] {
+        let mut value = page("ready", Some("1346144"));
+        value.icon_url = icon.map(str::to_owned);
+        let project = read_project(value, URL).unwrap().unwrap();
+        assert_eq!(project.id, "1346144");
+        assert!(project.icon_url.is_none());
+    }
 }

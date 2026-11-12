@@ -1,0 +1,500 @@
+{
+  "schema_version": 1,
+  "module_id": "runescapedragonwilds",
+  "verified_on": "2026-11-10",
+  "verification_timezone": "Asia/Shanghai",
+  "evidence_classification": "isolated_native_1_0_2_loader_save_rules_backup_restart_and_synthetic_moderation",
+  "official_sources": [
+    "https://dragonwilds.runescape.com/news/1.0.2-update",
+    "https://runescapedragonwilds.help.jagex.com/hc/en-gb/articles/45365343055249-Dedicated-Servers-How-to-Guide"
+  ],
+  "package": {
+    "steam_app_id": 4019830,
+    "steam_build_id": "26419371",
+    "windows_depot_id": 4019831,
+    "depot_manifest_id": "6043592975314395149",
+    "file_version": "++dominion+staging-CL-258140",
+    "acquisition": "official anonymous SteamCMD app_update into a new isolated task directory",
+    "steamcmd_exit_code": 0,
+    "state_flags": 4,
+    "update_result": 0,
+    "appmanifest_sha256": "f995ce7652dc15132eb0ce5ed777f96256fc1c505722dc3c598237b7da5f143e",
+    "identity_files": [
+      {
+        "path": "RSDragonwildsServer.exe",
+        "size_bytes": 229536,
+        "sha256": "256137c07dbbdb87431635358cd3ed54403c9ba47556b42bb8a26f93ce1bbf95"
+      },
+      {
+        "path": "RSDragonwilds/Binaries/Win64/RSDragonwildsServer-Win64-Shipping.exe",
+        "size_bytes": 205259424,
+        "sha256": "f7840d934fccb6f3ca0b01e781abf4463f3718ebb29418985cd9281bbd3a8fb2"
+      }
+    ]
+  },
+  "builds": {
+    "desktop": {
+      "source_identity_sha256": "577ae7ccdb0e3a2eb7657683add9c40e9580f0db766b5432a2e72ed2f48a6360",
+      "source_manifest_sha256": "68eef2f847124e6268cbff21bed31eb26d5ca62ff3b3f388919895e08bd5dfa0",
+      "git_revision": "b5f0421a63c61ded2badff588261548db4fd7974",
+      "working_tree_clean": false,
+      "test_binary_sha256": "cc4b39a14a60c2a9c306109f071dc03bc6628e383bdc08d744e16abda82c35cc",
+      "bridge_dll_sha256": "a1267a30b259c7fa2c9addb5c0e0d6d143a7c32cb4e708a736299d04fca432cf",
+      "embedded_bridge_bytes_verified": true,
+      "bridge_source_snapshot_sha256": "8ead0f3c9d212ee819f062038afee95fab84d079b5bcd26357df9f1188f6b1c1",
+      "bridge_source_final_sha256": "8d6b0cc46f0b5220f91282e9a23a1b516f5cd3c2e91c9f70d60cf391f9e828ed",
+      "source_normalization": "The C++ snapshot preceded CRLF-to-LF normalization; normalized source text was compared and matched. Runtime code is unchanged.",
+      "loader_admission_source": {
+        "path": "apps/desktop/src-tauri/src/commands_dragonwilds_player_query_files.rs",
+        "length": 27147,
+        "sha256": "534bdeb0d5b74f4481e1c018dec4c7c56dc9238ebc8af8ee4d436afa68939d98"
+      }
+    },
+    "storage": {
+      "source_identity_sha256": "71cdd1eef288fafd47b838042b80ce8937fd081004a70df2d0d0d010e8ba1535",
+      "source_manifest_sha256": "873545c135f9a74798f426c3c6187880d1bcd00703122bdff461c07e1cf1bcc4",
+      "test_binary_sha256": "eab2db8d09eaa415ca478e26686877faf0263edaaa1916e533f6ff3bcda538da",
+      "conversion_test_source": {
+        "path": "crates/app-storage/src/dragonwilds_native_world_conversion_tests.rs",
+        "length": 3447,
+        "sha256": "b9fd1c463b75a348f406cef31df93faba8f98bc466095f2c488c0a2efc54a217"
+      }
+    },
+    "backup_restart": {
+      "source_identity_sha256": "caaf8ace643217f10f5fc636b42a5211b5118103ad693fdf1e1c227df2c99105",
+      "source_manifest_sha256": "c9711d46d7b4532c8a89742c58a828c5119e5773eb8a8afd0646ff1fb4ba0c79",
+      "test_binary_sha256": "c0b86556e7951ced43007d3f8b8c9c02324df2886ccbd1839e0d2483e1e9d8d8",
+      "fixture_source": {
+        "path": "apps/desktop/src-tauri/src/commands_dragonwilds_compatibility_tests.rs",
+        "length": 16610,
+        "sha256": "3cd11496a733d62aa84ed54ff39e25207fe46bdcc1dbd8db05584555674ed7ab"
+      },
+      "scope": "Only the repaired AutoStop/backup/restart test used this later binary; other successful native tests remain bound to the original desktop build above."
+    }
+  },
+  "runtime_module_files": [
+    {
+      "path": "modules/runescapedragonwilds/module.toml",
+      "sha256": "b87765b02a3966e6583245c99add6c6e6efa4baa6b2e8cb26bf1518810b65427",
+      "bytes": 5199
+    },
+    {
+      "path": "modules/runescapedragonwilds/schema.json",
+      "sha256": "9ee69c93cede0149247e94f10bb62be98ce3076408083b66c749d8c53ebcce33",
+      "bytes": 3936
+    },
+    {
+      "path": "modules/runescapedragonwilds/smoke.toml",
+      "sha256": "eeb5549d10c8f0676dd6b4b1f1e7b8e4ee348eeb9a85c7d614e7398e5ea280d6",
+      "bytes": 412
+    },
+    {
+      "path": "modules/runescapedragonwilds/world-settings.json",
+      "sha256": "448fdd8af326196f0b723b00ff92d63a6b6544bb2420bd01dc0e889f4f65bd49",
+      "bytes": 37507
+    },
+    {
+      "path": "modules/runescapedragonwilds/templates/RSDragonwilds/Saved/Config/WindowsServer/DedicatedServer.ini.hbs",
+      "sha256": "a40474fe1a26e88252e52cf11b0a53d224788fd5355d0000d260a3c63e372a3d",
+      "bytes": 300
+    }
+  ],
+  "loader": {
+    "ue4ss_version": "3.0.1-1125-g527a483b",
+    "archive_sha256": "4f9762f812329a640c8cfa14444c2bb97ecc213b8320bd4c5433383c3eef48f7",
+    "core_sha256": "91d5444f41d19d0bb502f0fbdc15d76421e20359e898caa39e41e134c8f87958",
+    "fresh_boots": 2,
+    "nonce_matched_empty_rosters_per_boot": 2,
+    "stopped_process_rejected": true,
+    "unknown_build_rejection_retained": true
+  },
+  "native_profile": {
+    "read_only_sec_image_no_execute": true,
+    "failure_before_change": "build_26419371_rejected_by_native_bridge",
+    "before_exit_code": 1,
+    "after_exit_code": 0,
+    "test_binary_sha256": "607bf59f217f9cd78efdbf7a69c21c2741644f5d06051135f3cf84c434a37bc9",
+    "test_source_sha256": "a722c25f118c0b94d281bbe801215110fc48f1db0f992b1626243c3989e90615",
+    "unknown_hash_and_changed_entry_bytes_rejected": true,
+    "compiler": "MSVC 19.51.36257.0",
+    "sdk": "10.0.26100.0",
+    "flags_retained": [
+      "/W4",
+      "/WX",
+      "/guard:cf"
+    ]
+  },
+  "tests": {
+    "desktop-dragonwilds-tests": {
+      "output_name": "desktop-dragonwilds-tests.log",
+      "output_sha256": "4e70b1c7479d01b8b13f74e665593d0c286fb71053a1219e4918406998cedac3",
+      "passed": 64,
+      "failed": 0,
+      "ignored": 4,
+      "elapsed_seconds": 4.32,
+      "exit_code": 0
+    },
+    "storage-dragonwilds-tests": {
+      "output_name": "storage-dragonwilds-tests.log",
+      "output_sha256": "98daa0e7fdbfb07da6dfab2d0a6a91722a4d1bdbdd013c49a8f5985970f9ee87",
+      "passed": 61,
+      "failed": 0,
+      "ignored": 5,
+      "elapsed_seconds": 5.65,
+      "exit_code": 0
+    },
+    "native-loader": {
+      "output_name": "native-loader.log",
+      "output_sha256": "544b96c1bb5d0ec1403d2a87683ae4c6ed13f565a7b848032bd74ac42aa80ac0",
+      "passed": 1,
+      "failed": 0,
+      "ignored": 0,
+      "elapsed_seconds": 18.1,
+      "exit_code": 0,
+      "selector": "live_players::file_ipc::dragonwilds_probe_tests::isolated_dragonwilds_automatic_loader_install_survives_native_restart",
+      "arguments": [
+        "--exact",
+        "--ignored",
+        "--test-threads=1",
+        "--nocapture"
+      ]
+    },
+    "native-manual-save": {
+      "output_name": "native-manual-save.log",
+      "output_sha256": "7418e762b125e96e01ec6ef85be9ba40f52215c5ded326fd76b29e65e1fa0a7b",
+      "passed": 1,
+      "failed": 0,
+      "ignored": 0,
+      "elapsed_seconds": 131.29,
+      "exit_code": 0,
+      "selector": "commands::tests::manual_runtime_tests::native_lifecycle_tests::native_manual_save",
+      "arguments": [
+        "--exact",
+        "--ignored",
+        "--test-threads=1",
+        "--nocapture"
+      ]
+    },
+    "native-world-conversion": {
+      "output_name": "native-world-conversion.log",
+      "output_sha256": "a179a74462818b02c176467a24f4cd009c130d32c742b7839e7aaec1e5e749f5",
+      "passed": 1,
+      "failed": 0,
+      "ignored": 0,
+      "elapsed_seconds": 0.23,
+      "exit_code": 0,
+      "selector": "dragonwilds_world_settings::tests::native_conversion::native_normal_world_converts_to_custom_with_verified_backup_and_preserved_content",
+      "arguments": [
+        "--exact",
+        "--ignored",
+        "--test-threads=1",
+        "--nocapture"
+      ]
+    },
+    "native-custom-codec": {
+      "output_name": "native-custom-codec.log",
+      "output_sha256": "d86c38190c8757090c24d83edad3bdb4ef3537ccdb942c35f4e4a0b0797da668",
+      "passed": 1,
+      "failed": 0,
+      "ignored": 0,
+      "elapsed_seconds": 0.0,
+      "exit_code": 0,
+      "selector": "dragonwilds_save::tests::native_probe_save_matches_actual_custom_setting_and_round_trips",
+      "arguments": [
+        "--exact",
+        "--ignored",
+        "--test-threads=1",
+        "--nocapture"
+      ]
+    },
+    "native-stop-backup-restart-fixed": {
+      "output_name": "native-stop-backup-restart-fixed.log",
+      "output_sha256": "892cf65b87c1d66fa10ef392c722f7eec32157f334d3158dc488b7531d7ffe6a",
+      "passed": 1,
+      "failed": 0,
+      "ignored": 0,
+      "elapsed_seconds": 419.61,
+      "exit_code": 0,
+      "selector": "commands::tests::manual_runtime_tests::native_lifecycle_tests::dragonwilds_compatibility::isolated_dragonwilds_production_stop_backs_up_completed_autosave_and_restarts",
+      "arguments": [
+        "--exact",
+        "--ignored",
+        "--test-threads=1",
+        "--nocapture"
+      ]
+    },
+    "quick-storage-tests": {
+      "output_name": "quick-storage-tests.log",
+      "output_sha256": "a7c65e1ef319564746ccb63edc2994a8b9cbf92d72cfd374de98f963708cd10e",
+      "passed": 358,
+      "failed": 0,
+      "ignored": 1,
+      "elapsed_seconds": 59.47,
+      "exit_code": 0
+    }
+  },
+  "manual_save": {
+    "production_receipt": "Requested",
+    "independent_fresh_native_write": true,
+    "periodic_autosave_excluded": true,
+    "exact_checkpoint_captured_before_stop": true,
+    "restored_and_hash_verified_after_stop": true,
+    "fresh_restart_load_passed": true,
+    "second_save_sent": false,
+    "both_cycles_normal_exit": 0
+  },
+  "world_rules": {
+    "fixture_origin": "new empty Normal world generated by the tested 1.0.2 package",
+    "world_name": "Compat102",
+    "input_bytes": 64604,
+    "input_sha256": "224332f21e8bbc0e66f333ae9e892a6eb2563d52977e76b1c09f591303c32123",
+    "output_sha256": "67be875d804d1a46f0be3f922470fc205b0cb32e41ad1dfbc8cd75d532ff43f9",
+    "production_storage_write": "Normal(0) -> Custom(3), Difficulty.Progression.BuildingMaterialCostScale=1.5",
+    "exact_original_backup": true,
+    "reverse_changes_restores_every_original_byte": true,
+    "codec_round_trip": "byte_identical",
+    "native_load_rule_and_ready_to_join": true,
+    "fresh_five_minute_autosave_completed": true,
+    "production_stop_auto_backups": 2,
+    "backup_entire_save_inventory_matches_completed_save": true,
+    "two_fresh_runs_normal_exit": 0,
+    "owned_fixture_removed": true,
+    "graceful_stop_requests_extra_save": false
+  },
+  "native_moderation": {
+    "schema": 1,
+    "build": "26419371",
+    "version": "1.0.2",
+    "observedUtc": "2026-11-10T12:44:29.8032718Z",
+    "passed": true,
+    "syntheticAccount": "00000000000000000000000000000042",
+    "nativeImporterValidated": true,
+    "identityType": "redpointeos",
+    "knownPlayerCount": 1,
+    "liveClientCount": 0,
+    "shippingSha256": "f7840d934fccb6f3ca0b01e781abf4463f3718ebb29418985cd9281bbd3a8fb2",
+    "bridgeSha256": "a1267a30b259c7fa2c9addb5c0e0d6d143a7c32cb4e708a736299d04fca432cf",
+    "probeSha256": "72451533e040fcaf791e831edc8d37c35d38e1f0283fd680adb9c0c5c616c5f5",
+    "hostSha256": "72029549b4b7992a5f07b45a7107626c5394c1b307d08237762c97b661306a42",
+    "phases": [
+      {
+        "phase": "ban",
+        "receiptSha256": "b677a1c6c2eb77d0d1e7f63c9667e2a7d72671d02e6b44a3b39b0d500d03c64c",
+        "nonce": "3e6df24339ac42debf85ae466b250670",
+        "boot": "4907348940e352d7050f45574fcc2a44",
+        "shippingPid": 83748,
+        "shippingCreated": 134387881330819707,
+        "preBanned": "false",
+        "postMemoryBanned": "true",
+        "postIniBanned": "true",
+        "afterStopBanned": true,
+        "effectInvoked": "true",
+        "helperExit": 0,
+        "bootstrapExit": 0,
+        "shippingExit": 0,
+        "jobEmpty": true,
+        "forcedCleanup": false,
+        "exitMarkers": true,
+        "elapsedSeconds": 11.428,
+        "native_result": {
+          "schema": "1",
+          "phase": "ban",
+          "elapsed_seconds": "7",
+          "post_ini_banned": "true",
+          "post_memory_banned": "true",
+          "nonce": "3e6df24339ac42debf85ae466b250670",
+          "known_count": "1",
+          "client_count": "0",
+          "synthetic_only": "true",
+          "success": "true",
+          "invoked": "true",
+          "identity_type": "redpointeos",
+          "native_probe_ready": "true",
+          "error": "",
+          "identity_valid": "true",
+          "boot": "4907348940e352d7050f45574fcc2a44",
+          "pre_banned": "false"
+        },
+        "raw_receipt_name": "lifecycle-ban-3e6df24339ac42debf85ae466b250670.json"
+      },
+      {
+        "phase": "unban",
+        "receiptSha256": "1111c588836e47b43b60fd88a11d2cdf7ff3e4ac3c69496805da8a6232bbebcf",
+        "nonce": "4cc5228046294dbe8de304c9d8f9ba0d",
+        "boot": "4acff4596e8c07cf385c096414e62a86",
+        "shippingPid": 97500,
+        "shippingCreated": 134387881776001221,
+        "preBanned": "true",
+        "postMemoryBanned": "false",
+        "postIniBanned": "false",
+        "afterStopBanned": false,
+        "effectInvoked": "true",
+        "helperExit": 0,
+        "bootstrapExit": 0,
+        "shippingExit": 0,
+        "jobEmpty": true,
+        "forcedCleanup": false,
+        "exitMarkers": true,
+        "elapsedSeconds": 9.258,
+        "native_result": {
+          "identity_type": "redpointeos",
+          "pre_banned": "true",
+          "post_memory_banned": "false",
+          "nonce": "4cc5228046294dbe8de304c9d8f9ba0d",
+          "client_count": "0",
+          "invoked": "true",
+          "synthetic_only": "true",
+          "identity_valid": "true",
+          "boot": "4acff4596e8c07cf385c096414e62a86",
+          "known_count": "1",
+          "phase": "unban",
+          "error": "",
+          "success": "true",
+          "elapsed_seconds": "7",
+          "native_probe_ready": "true",
+          "schema": "1",
+          "post_ini_banned": "false"
+        },
+        "raw_receipt_name": "lifecycle-unban-4cc5228046294dbe8de304c9d8f9ba0d.json"
+      },
+      {
+        "phase": "verify_unbanned",
+        "receiptSha256": "caa63a2ab76a96c7bbe9abed2810605ac1e9a5eaf71cfd768a790791896e6138",
+        "nonce": "fd26550e8820446aa8729d248e1aaf01",
+        "boot": "119716b017fcab576b710e9d1d4bac2d",
+        "shippingPid": 93220,
+        "shippingCreated": 134387882112362242,
+        "preBanned": "false",
+        "postMemoryBanned": "false",
+        "postIniBanned": "false",
+        "afterStopBanned": false,
+        "effectInvoked": "false",
+        "helperExit": 0,
+        "bootstrapExit": 0,
+        "shippingExit": 0,
+        "jobEmpty": true,
+        "forcedCleanup": false,
+        "exitMarkers": true,
+        "elapsedSeconds": 8.895,
+        "native_result": {
+          "post_ini_banned": "false",
+          "identity_type": "redpointeos",
+          "boot": "119716b017fcab576b710e9d1d4bac2d",
+          "nonce": "fd26550e8820446aa8729d248e1aaf01",
+          "pre_banned": "false",
+          "synthetic_only": "true",
+          "schema": "1",
+          "success": "true",
+          "invoked": "false",
+          "client_count": "0",
+          "identity_valid": "true",
+          "elapsed_seconds": "6",
+          "known_count": "1",
+          "native_probe_ready": "true",
+          "error": "",
+          "phase": "verify_unbanned",
+          "post_memory_banned": "false"
+        },
+        "raw_receipt_name": "lifecycle-verify_unbanned-fd26550e8820446aa8729d248e1aaf01.json"
+      }
+    ],
+    "cleanup": {
+      "remainingRuntimeProcesses": 0,
+      "udpPorts": [
+        {
+          "port": 17995,
+          "bindAvailable": true
+        },
+        {
+          "port": 27995,
+          "bindAvailable": true
+        },
+        {
+          "port": 8888,
+          "bindAvailable": true
+        }
+      ],
+      "allPrivateJobsEmpty": true
+    },
+    "coverage": "Native INI importer, exact production DLL probe/ban/unban, native memory and INI state, persistence across three fresh processes, normal Unreal console quit.",
+    "unverified": "Real player online disconnect, banned connection rejection and reconnect after unban; no pre-1.0.2 save was available."
+  },
+  "scope_limits": [
+    "No pre-1.0.2 world save was available; the user confirmed none. Cross-version save migration is unverified. The anonymous historical depot request was rejected with No subscription; no access restriction was bypassed.",
+    "Moderation used one zero-privilege synthetic EOS identity imported by the game, with zero real clients. Actual player disconnect, denied reconnect after ban, unbanned reconnect, authentication and owner authorization remain unverified.",
+    "The stored world-rule evidence covers one real empty native world, one edited rule, original backup and completed native saves; it does not validate every rule, arbitrary saves, character state or player progress.",
+    "The production save action remains Requested. Separate test-only observation established durable file writes and native reload; it does not promote production receipt semantics to Confirmed.",
+    "No desktop GUI, signed installer/upgrade, full backup restoration workflow, uninstall or release publication was exercised. User installations and worlds were not modified."
+  ],
+  "validation_limits": {
+    "workspace_fmt": "passed",
+    "frontend_typecheck_and_build": "passed",
+    "quick_frontend_tests": {
+      "exit_code": 0,
+      "tests_passed": 3022,
+      "tests_failed": 0,
+      "batches": 5,
+      "output_sha256": "bb5584d31cc2bd66bb1c5d0d01c60e130684e9b096f73faf2c7c3b6f12800841"
+    },
+    "workspace_clippy": {
+      "exit_code": 101,
+      "unrelated_existing_finding": "apps/desktop/src-tauri/src/nexus_browser_live_probe.rs:316 clippy::collapsible_if"
+    },
+    "quick_policy": {
+      "exit_code": 1,
+      "unrelated_existing_findings": "13 assigned-secret/url-credential scanner findings in existing Nexus source/tests; no values copied to evidence",
+      "final_output_sha256": "2c3542bd3f351bbc75ebe8787a6cc5562b7ab38b6987d0fc2b96c3d0ad397864",
+      "working_tree_files_scanned": 4601,
+      "task_files_flagged": 0
+    },
+    "quick_core_tests": {
+      "exit_code": 0,
+      "packages": [
+        "app-core",
+        "app-modules",
+        "app-knowledge"
+      ]
+    },
+    "rust_licenses": {
+      "exit_code": 0,
+      "crates": 646,
+      "output_sha256": "91dc9059aa737bd6f8a1211fce1eb6e38b1ece119ac2993307a5594f93a924cd"
+    },
+    "config_provenance": {
+      "exit_code": 0,
+      "modules": 32,
+      "schema_fields": 3399
+    },
+    "config_acceptance": {
+      "exit_code": 0,
+      "modules": 32
+    },
+    "module_setting_coverage": {
+      "exit_code": 0,
+      "modules": 32
+    }
+  },
+  "portable_output": {
+    "path": "2026-11-10-public-build-26419371-native-output.txt",
+    "sha256": "76960107fb744c810230f1bd7a36d8182a906296ae41e70f93c4ec3ae4d0bb68"
+  },
+  "fixture_repair": {
+    "initial_preflight": "The first AutoStop invocation rejected a fixture root containing the frozen resource root before launching any game. Moving only the immutable resource copy to a sibling external root satisfied the existing boundary; the unchanged test then ran.",
+    "superseded_execution": {
+      "output_sha256": "73ff82cbf1a51f6e1426ce7a80ef39675eb750d22d731090e8be0b62e2272f14",
+      "exit_code": 101,
+      "duration_seconds": 651.11,
+      "error": "Server startup timed out after 600 seconds waiting for readiness from: main",
+      "root_cause": "The historical ignored fixture redirected -abslog away from the canonical log now required by production startup readiness.",
+      "cleanup": "The test reported process_stop_failed and retained its disposable copy. After test-host exit, an independent process inventory verified zero Dragonwilds processes; this failed run does not prove normal shutdown."
+    },
+    "change": "Observe the instance runtime canonical native log; archive the previous boot log while stopped so every boot requires fresh evidence. Production readiness, timeouts, normal-exit assertions and byte-exact backup assertions are unchanged."
+  },
+  "official_release_artifact_sha256": "6c1fdbb3d03dac05693dc5badb0bf13ddce88ed5d1a42db7d01ab1f535bc22c9",
+  "final_cleanup": {
+    "remaining_dragonwilds_processes": 0,
+    "successful_compatibility_fixture_removed": true,
+    "failed_fixture_retained_for_diagnostics": true,
+    "operator_installations_modified": false
+  }
+}

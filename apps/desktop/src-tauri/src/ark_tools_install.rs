@@ -40,7 +40,7 @@ pub(super) struct EmbeddedArkTools {
 pub(super) struct InstallStatus {
     // Installed files are intact; runtime protocol compatibility is checked by RCON.
     pub(super) ready: bool,
-    matches_bundle: bool,
+    pub(super) matches_bundle: bool,
     pub(super) can_uninstall: bool,
     pub(super) issue: Option<String>,
     pub(super) framework_version: &'static str,
@@ -79,11 +79,11 @@ const ASE: Profile = Profile {
 const ASA: Profile = Profile {
     module_id: "arksurvivalascended",
     executable: "ArkAscendedServer.exe",
-    version: "AsaApi 2.1",
+    version: "AsaApi 2.11",
     payload: &[
         (
             "ArkApi/AsaApi.dll",
-            "d46af90afab50d36679f8ea4c8b7c1b2e6057ec4ad44963f00244ed8f3969a62",
+            "f7fed1b8e6921a5f63eda1f83369fc147c56c5bdd3c74b122242bc636a3e75a4",
         ),
         (
             "ArkApi/pdbignores.txt",

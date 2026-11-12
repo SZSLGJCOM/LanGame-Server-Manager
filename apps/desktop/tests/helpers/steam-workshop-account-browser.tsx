@@ -244,12 +244,13 @@ async function run() {
     }
     if (command === "list_instance_archives") return { archives: [], pending_deletions: [], issues: [] };
     if (command === "read_instance_log_document_from_storage") return { source_path: null, lines: [], truncated: false, read_error: null };
-    if (command === "download_steam_workshop_items" && delayDownload) {
+    if (command === "prepare_steam_workshop_items" && delayDownload) {
       delayDownload = false; downloads.push({ command: "anonymous" });
       return new Promise<never>((_, reject) => { rejectDownload = reject; });
     }
     if (["read_instance_details_from_storage", "read_manual_mod_inventory", "read_background_jobs", "search_steam_workshop_items",
-      "lookup_steam_workshop_items", "read_steam_workshop_item_details", "read_steam_workshop_installation_status", "download_steam_workshop_items"].includes(command)) return base(command, payload);
+      "lookup_steam_workshop_items", "read_steam_workshop_item_details", "read_steam_workshop_installation_status", "download_steam_workshop_items",
+      "prepare_steam_workshop_items", "commit_steam_workshop_items", "discard_steam_workshop_preparation", "retain_steam_workshop_preparation"].includes(command)) return base(command, payload);
     return invokeMock(command, args);
   }, { shouldMockEvents: true });
   Object.assign(window, { isTauri: true });

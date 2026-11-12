@@ -101,6 +101,8 @@ pub struct DesktopState {
     pub(crate) steam_workshop_account_sessions:
         Arc<crate::steam_workshop_account_sessions::SteamWorkshopAccountSessions>,
     pub(crate) install_operations: Arc<InstallOperationRegistry>,
+    pub(crate) workshop_preparations:
+        Arc<crate::commands::workshop_preparation::WorkshopPreparations>,
     pub(crate) install_locks: app_steamcmd::InstallLockContext,
     pub(crate) storage_management: Arc<StorageManagement>,
     pub(crate) storage_migration:
@@ -174,6 +176,9 @@ impl Default for DesktopState {
             assistant_sessions: crate::assistant_sessions::AssistantSessionStore::default(),
             booted_at: SystemTime::now(),
             install_operations: Arc::new(InstallOperationRegistry::default()),
+            workshop_preparations: Arc::new(
+                crate::commands::workshop_preparation::WorkshopPreparations::default(),
+            ),
             steam_workshop_account_sessions: Arc::new(
                 crate::steam_workshop_account_sessions::SteamWorkshopAccountSessions::default(),
             ),

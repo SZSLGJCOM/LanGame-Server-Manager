@@ -364,6 +364,11 @@ def schema_string_literals_in_rust_function(
 
 def materialized_settings(module_id: str, schema_properties: set[str]) -> set[str]:
     refs = workshop_materialized_settings(module_id, schema_properties)
+    if module_id == "astroneer":
+        startup_source = (DESKTOP_TAURI_COMMANDS_RS.parent / "astroneer_public_ip.rs").read_text(
+            encoding="utf-8-sig"
+        )
+        refs.update(astroneer_startup_settings(startup_source, read_desktop_tauri_commands_rs()) & schema_properties)
     for function_name, allowed_prefixes in MATERIALIZATION_RUST_FUNCTION_COVERAGE.get(module_id, ()):
         if module_id == "satisfactory":
             body = rust_function_body(function_name)
@@ -388,6 +393,26 @@ def materialized_settings(module_id: str, schema_properties: set[str]) -> set[st
         )
     return refs
 
+
+
+def astroneer_startup_settings(source: str, commands: str) -> set[str]:
+    # Connection policy is consumed before rendering PublicIP, not by an INI
+    # placeholder. Retain the real startup call chain as the coverage evidence.
+    if not re.search(r"\bastroneer_public_ip::prepare_for_start\s*\(", rust_executable_source(commands)):
+        return set()
+    entrypoint = rust_function_body_from_source(source, "prepare_for_start")
+    if not re.search(r"\bprepare_with_sources\s*\(", rust_executable_source(entrypoint)):
+        return set()
+    prepare = rust_function_body_from_source(source, "prepare_with_sources")
+    if not re.search(r"\bconnection_mode\s*\(\s*&prepared_settings\s*,", rust_executable_source(prepare)):
+        return set()
+    body = rust_function_body_from_source(source, "connection_mode")
+    executable = rust_executable_source(body)
+    return {
+        match[1]
+        for match in re.finditer(r'\bsettings\.get\(\s*"([a-z][a-z0-9_]*)"\s*\)', body)
+        if executable[match.start():match.start() + len("settings.get")] == "settings.get"
+    }
 
 def workshop_materialized_settings(module_id: str, schema_properties: set[str]) -> set[str]:
     functions = {

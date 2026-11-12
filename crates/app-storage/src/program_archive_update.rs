@@ -79,6 +79,17 @@ pub fn merge_archive_program_update(
             "Archive update requires the original verified package inventory. Preserve this directory and install into a separate empty directory before migrating its saves and configuration.",
         ));
     }
+    let original = read_clean_package_inventory(&source, descriptor)?.ok_or_else(|| {
+        invalid(
+            &source,
+            "archive update has no verified original file inventory",
+        )
+    })?;
+    let original_files = original
+        .files
+        .iter()
+        .map(|(key, hash)| (key.to_ascii_lowercase(), hash))
+        .collect::<BTreeMap<_, _>>();
     let identity = crate::program_removal_files::identity(&source, true)?;
     let package = require_clean_package_tree(&stage, &descriptor.summary.id, cancellation)?;
     let mandatory = package
@@ -87,6 +98,10 @@ pub fn merge_archive_program_update(
         .map(|(key, hash)| (key.to_ascii_lowercase(), hash))
         .collect::<BTreeMap<_, _>>();
     let retained = retained_paths(&source, descriptor, protected)?;
+    let protected = protected
+        .iter()
+        .map(|path| normalize_resource_path(path))
+        .collect::<Result<Vec<_>, _>>()?;
     let entries = inspect_tree(&source, MAX_TREE_ENTRIES)?;
     let original_entries = entries
         .iter()
@@ -98,6 +113,7 @@ pub fn merge_archive_program_update(
         .filter(|entry| retained.iter().any(|path| contains(path, &entry.path)))
         .collect::<Vec<_>>();
     let mut unchanged = BTreeMap::new();
+    let mut repairs = BTreeMap::new();
 
     // Check the entire merge before changing even the disposable staging tree.
     for entry in &selected {
@@ -113,10 +129,29 @@ pub fn merge_archive_program_update(
             ));
         }
         if let Some(expected) = mandatory.get(&key) {
-            if entry.directory || hash_file(&entry.path, cancellation)? != expected.as_str() {
+            if entry.directory {
                 return Err(conflict(&entry.path));
             }
-            unchanged.insert(entry.key.clone(), (**expected).clone());
+            let actual = hash_file(&entry.path, cancellation)?;
+            if actual == expected.as_str() {
+                unchanged.insert(entry.key.clone(), (**expected).clone());
+            } else if let Some(original) = original_files.get(&key)
+                && !protected.iter().any(|path| contains(path, &entry.path))
+            {
+                // The old filtered inventory proves this was program content.
+                // Current exclusions and explicit instance data still take
+                // precedence; unknown files never become repair candidates.
+                repairs.insert(
+                    entry.key.clone(),
+                    ArchiveRepairFile {
+                        original_sha256: (**original).clone(),
+                        preserved_sha256: actual,
+                        installed_sha256: (**expected).clone(),
+                    },
+                );
+            } else {
+                return Err(conflict(&entry.path));
+            }
         } else if !entry.directory
             && mandatory
                 .keys()
@@ -126,10 +161,15 @@ pub fn merge_archive_program_update(
         }
     }
 
-    let mut copied = Vec::new();
+    let mut copied = preserve_repaired_files(&source, &stage, descriptor, &repairs, cancellation)?;
     for entry in selected {
         check_creation_cancelled(cancellation)?;
         normalize_resource_path(&entry.path)?;
+        if repairs.contains_key(&entry.key) {
+            // The verified new file is already staged. Its displaced bytes
+            // travel with the same publication transaction in the recovery tree.
+            continue;
+        }
         let target = normalize_resource_path(&stage.join(&entry.key))?;
         if let Some(digest) = unchanged.get(&entry.key) {
             copied.push((entry.path.clone(), digest.clone()));
@@ -181,10 +221,14 @@ pub fn merge_archive_program_update(
         .into_iter()
         .map(|entry| (entry.key, entry.directory))
         .collect::<BTreeSet<_>>();
+    let current_original = read_clean_package_inventory(&source, descriptor)?;
     if original_entries != current_entries
         || identity.is_none()
         || crate::program_removal_files::identity(&source, true)? != identity
-        || retained_paths(&source, descriptor, protected)? != retained
+        || retained_paths(&source, descriptor, &protected)? != retained
+        || current_original.is_none_or(|current| {
+            current.files != original.files || current.directories != original.directories
+        })
     {
         return Err(invalid(
             &source,
@@ -195,6 +239,74 @@ pub fn merge_archive_program_update(
         crate::templates::validate_rimworld_market_archive_update(&stage)?;
     }
     check_creation_cancelled(cancellation)
+}
+
+#[derive(Serialize)]
+struct ArchiveRepairFile {
+    original_sha256: String,
+    preserved_sha256: String,
+    installed_sha256: String,
+}
+
+fn preserve_repaired_files(
+    source: &Path,
+    stage: &Path,
+    descriptor: &ModuleDescriptor,
+    repairs: &BTreeMap<PathBuf, ArchiveRepairFile>,
+    cancellation: Option<&AtomicBool>,
+) -> Result<Vec<(PathBuf, String)>, StorageError> {
+    if repairs.is_empty() {
+        return Ok(Vec::new());
+    }
+    check_creation_cancelled(cancellation)?;
+    // This tree is deliberately outside the clean inventory. Future updates
+    // and removal retain it as non-package data, including its recovery receipt.
+    let recovery = stage.join(format!(
+        ".langame-archive-recovery-{}",
+        uuid::Uuid::new_v4()
+    ));
+    fs::create_dir(&recovery).map_err(|source| StorageError::CreatePath {
+        path: recovery.clone(),
+        source,
+    })?;
+    let mut copied = Vec::new();
+    let mut files = BTreeMap::new();
+    for (relative, repair) in repairs {
+        check_creation_cancelled(cancellation)?;
+        let original = normalize_resource_path(&source.join(relative))?;
+        let target = normalize_resource_path(&recovery.join("files").join(relative))?;
+        let parent = target
+            .parent()
+            .ok_or_else(|| invalid(&target, "missing recovery parent"))?;
+        fs::create_dir_all(parent).map_err(|source| StorageError::CreatePath {
+            path: parent.to_owned(),
+            source,
+        })?;
+        let digest = copy_creation_file(&original, &target, cancellation)?;
+        if digest != repair.preserved_sha256 || hash_file(&target, cancellation)? != digest {
+            return Err(invalid(
+                &original,
+                "program file changed while its recovery copy was prepared; original files were preserved",
+            ));
+        }
+        copied.push((original, digest));
+        files.insert(relative_key(relative)?, repair);
+    }
+    let receipt = serde_json::json!({
+        "version": 1,
+        "module_id": descriptor.summary.id,
+        "source_root": source,
+        "archive_sha256": descriptor.install.as_ref()
+            .and_then(|install| install.download_integrity_windows.as_ref())
+            .map(|integrity| &integrity.sha256),
+        "files": files,
+    });
+    let path = recovery.join("recovery.json");
+    let bytes = serde_json::to_vec_pretty(&receipt)
+        .map_err(|error| invalid(&path, format!("invalid archive recovery receipt: {error}")))?;
+    crate::atomic_file::create_file_atomically(&path, &bytes)
+        .map_err(|source| StorageError::WriteConfig { path, source })?;
+    Ok(copied)
 }
 
 fn retained_paths(

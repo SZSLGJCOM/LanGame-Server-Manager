@@ -246,7 +246,7 @@ async fn start_instance_process_with_reserved_evidence(
         let worker_keepalive = runtime_start_reservation.clone();
         return run_runtime_start_worker_to_completion(&worker_keepalive, async move {
             let worker_state = worker_app_handle.state::<DesktopState>();
-            let result = start_instance_process_after_reconcile_reserved(
+            let result = Box::pin(start_instance_process_after_reconcile_reserved(
                 Some(&worker_app_handle),
                 &worker_state,
                 &worker_storage,
@@ -254,7 +254,7 @@ async fn start_instance_process_with_reserved_evidence(
                 &worker_source,
                 &runtime_start_reservation,
                 preconditions,
-            )
+            ))
             .await;
             Ok(capture_runtime_start_result(
                 &worker_state,
@@ -268,7 +268,9 @@ async fn start_instance_process_with_reserved_evidence(
         .await
         .map_err(RuntimeStartFailure::from)?;
     }
-    let result = start_instance_process_after_reconcile_reserved(
+    // Keep the complete launch state out of the evidence wrapper's poll frame,
+    // including headless starts that do not cross the app worker boundary.
+    let result = Box::pin(start_instance_process_after_reconcile_reserved(
         None,
         state,
         storage,
@@ -276,7 +278,7 @@ async fn start_instance_process_with_reserved_evidence(
         source,
         &runtime_start_reservation,
         preconditions,
-    )
+    ))
     .await;
     capture_runtime_start_result(
         state,

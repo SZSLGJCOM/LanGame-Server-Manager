@@ -212,6 +212,8 @@ fn read_items_with_budget(
             inferred_id: infer_manual_mod_inventory_id_from_path(id_strategy, &name, &path),
             tmodloader_mod_name: tmod_names.and_then(tmodloader::PackageNames::unique),
             name,
+            display_name: None,
+            icon_url: None,
             path: path.to_string_lossy().into_owned(),
             item_type: if metadata.is_dir() {
                 "directory"

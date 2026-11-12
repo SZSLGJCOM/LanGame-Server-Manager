@@ -197,6 +197,21 @@ pub(crate) fn forward(invoke: tauri::ipc::Invoke<tauri::Wry>) {
     client::forward(invoke);
 }
 
+/// The native Nexus fixture exercises the real secured pipe and command router,
+/// with its own storage and namespace inside the single disposable process.
+#[cfg(feature = "desktop-reliability")]
+pub(crate) fn install_nexus_smoke_runtime(app: &tauri::AppHandle) -> Result<(), String> {
+    use tauri::Manager;
+    let endpoint = security::Endpoint::isolated(&uuid::Uuid::new_v4().to_string())
+        .map_err(|error| error.to_string())?;
+    server::start(app, endpoint.clone())?;
+    let client = client::Client::connect(endpoint).map_err(|error| error.to_string())?;
+    if !app.manage(client) {
+        return Err("Nexus fixture runtime client was already initialized".into());
+    }
+    Ok(())
+}
+
 pub(crate) fn interface_is_closing<R: tauri::Runtime>(app: &tauri::AppHandle<R>) -> bool {
     use tauri::Manager;
     if let Some(startup) = app.try_state::<startup_state::Startup>() {

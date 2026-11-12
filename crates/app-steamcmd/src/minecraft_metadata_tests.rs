@@ -429,6 +429,98 @@ async fn current_program_check_rejects_untrusted_remote_metadata_before_touching
 }
 
 #[tokio::test]
+async fn failed_minecraft_runtime_download_keeps_the_existing_revision_ready() {
+    let details = source(DETAILS).await;
+    let manifest_source = source(&manifest(&details.url, &checksum(DETAILS))).await;
+    let archive_body = "damaged runtime package";
+    let archive = source(archive_body).await;
+    let fixture = InstallFixture::new(&manifest_source.url);
+    let root = fixture.root.join("games/minecraft");
+    std::fs::create_dir_all(root.join("jre/bin")).unwrap();
+    for (relative, bytes) in [
+        ("server.jar", b"previous jar".as_slice()),
+        ("jre/bin/java.exe", b"previous java".as_slice()),
+        (
+            ".langame-clean-package.json",
+            b"previous clean inventory".as_slice(),
+        ),
+        (
+            ".langame-initial-package.json",
+            b"previous initial inventory".as_slice(),
+        ),
+    ] {
+        std::fs::write(root.join(relative), bytes).unwrap();
+    }
+    let guard = crate::acquire_game_install_lifecycle(
+        crate::test_install_lock_context(),
+        "minecraft",
+        std::slice::from_ref(&root),
+    )
+    .await
+    .unwrap();
+    let servers_root = std::path::Path::new(&fixture.settings.servers_root);
+    let key = crate::package_revision::program_revision_key("minecraft", &root).unwrap();
+    let original_revision = crate::begin_game_install_revision(servers_root, &key).unwrap();
+    crate::complete_game_install_revision(servers_root, &key, original_revision).unwrap();
+    let token = crate::InstallCancellation::new();
+    let callbacks = AtomicUsize::new(0);
+    let error = crate::with_minecraft_java_package_fixture(
+        archive.url.clone(),
+        "0".repeat(64),
+        archive_body.len() as u64,
+        crate::install_or_update_module_at_with_callbacks(
+            &fixture.settings,
+            &fixture.module,
+            &root,
+            &guard,
+            false,
+            &token,
+            crate::ModuleInstallCallbacks {
+                on_progress: |_| {},
+                prepare_fresh_payload: |_| {
+                    callbacks.fetch_add(1, Ordering::Relaxed);
+                    async { Ok(()) }
+                },
+            },
+        ),
+    )
+    .await
+    .unwrap_err();
+    assert!(
+        error.to_string().contains("SHA-256 checksum mismatch"),
+        "{error}"
+    );
+    assert_eq!(callbacks.load(Ordering::Relaxed), 0);
+    assert_eq!(archive.requests.load(Ordering::Relaxed), 1);
+    assert_eq!(
+        crate::read_program_install_revision(servers_root, "minecraft", &root).unwrap(),
+        original_revision,
+        "a rejected upstream payload did not change the installed generation",
+    );
+    assert_eq!(
+        std::fs::read(root.join("server.jar")).unwrap(),
+        b"previous jar"
+    );
+    assert_eq!(
+        std::fs::read(root.join("jre/bin/java.exe")).unwrap(),
+        b"previous java"
+    );
+    assert_eq!(
+        std::fs::read(root.join(".langame-clean-package.json")).unwrap(),
+        b"previous clean inventory"
+    );
+    assert_eq!(
+        std::fs::read(root.join(".langame-initial-package.json")).unwrap(),
+        b"previous initial inventory"
+    );
+    assert_eq!(
+        std::fs::read_dir(root.parent().unwrap()).unwrap().count(),
+        1,
+        "owned staging was cleaned without removing the old root"
+    );
+}
+
+#[tokio::test]
 async fn rejected_metadata_never_prepares_java_or_publishes_installation_files() {
     let wrong_id = DETAILS.replace(VERSION, "1.21.2");
     for (body, expected_body, message) in [
@@ -447,13 +539,18 @@ async fn rejected_metadata_never_prepares_java_or_publishes_installation_files()
         std::fs::create_dir_all(metadata_path.parent().unwrap()).unwrap();
         std::fs::write(&metadata_path, b"previous metadata").unwrap();
         std::fs::write(install_root.join("server.jar"), b"previous jar").unwrap();
+        let revision_key =
+            crate::package_revision::program_revision_key("minecraft", &install_root).unwrap();
         let error = install_or_update_minecraft_java_module(
-            &fixture.settings,
-            &fixture.module,
-            fixture.module.install.as_ref().unwrap(),
-            fixture.module.process.as_ref().unwrap(),
-            "update",
-            deadline(),
+            crate::minecraft_install::MinecraftInstallRequest {
+                settings: &fixture.settings,
+                module: &fixture.module,
+                install: fixture.module.install.as_ref().unwrap(),
+                process: fixture.module.process.as_ref().unwrap(),
+                operation: "update",
+                deadline: deadline(),
+                revision_key: &revision_key,
+            },
             &mut |update| {
                 // Stop a regression before it can request an external JRE.
                 assert!(!update.detail.starts_with("Preparing Temurin"));
@@ -462,6 +559,7 @@ async fn rejected_metadata_never_prepares_java_or_publishes_installation_files()
                     app_core::InstallPhase::Preparing
                 );
             },
+            &mut |_| async { Ok(()) },
         )
         .await
         .unwrap_err();
@@ -473,6 +571,15 @@ async fn rejected_metadata_never_prepares_java_or_publishes_installation_files()
         );
         assert_eq!(std::fs::read_dir(&install_root).unwrap().count(), 2);
         assert!(!install_root.join("jre").exists());
+        assert_eq!(
+            crate::read_program_install_revision(
+                std::path::Path::new(&fixture.settings.servers_root),
+                "minecraft",
+                &install_root,
+            )
+            .unwrap(),
+            0,
+        );
         assert_eq!(manifest_source.requests.load(Ordering::Relaxed), 1);
         assert_eq!(details.requests.load(Ordering::Relaxed), 1);
     }

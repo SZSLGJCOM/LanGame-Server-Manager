@@ -40,6 +40,8 @@ if str(REPOSITORY_ROOT) not in sys.path:
 from scripts.verify_no_tracked_secrets import scan_paths
 from scripts.open_source_product_policy import scan_product_surfaces
 from scripts.third_party_asset_policy import (
+    ARCHIVE_FIXTURE_COMPANION_SHA256,
+    THIRD_PARTY_ARCHIVE_FIXTURES,
     THIRD_PARTY_ASSET_LICENSES,
     THIRD_PARTY_REFERENCE_MEDIA,
     verify_third_party_asset_bytes,
@@ -71,6 +73,7 @@ PUBLIC_SNAPSHOT_INTERNAL_LIFECYCLE_PATHS = frozenset(
     {
         "AGENTS.md",
         "apps/desktop/tests/managed-desktop-launcher.test.cjs",
+        "apps/desktop/tests/desktop-development-session.test.cjs",
         "apps/desktop/src-tauri/src/bin/hydrate_smoke_cache.rs",
         "apps/desktop/src-tauri/src/bin/smoke_full_chain.rs",
         "apps/desktop/src-tauri/tests/support/real_smoke.rs",
@@ -82,6 +85,7 @@ PUBLIC_SNAPSHOT_INTERNAL_LIFECYCLE_PATHS = frozenset(
         "scripts/audit_scum_ledger.py",
         "scripts/bootstrap_real_game_roots.py",
         "scripts/close_langame_desktop.ps1",
+        "scripts/desktop_development_session.local.psm1",
         "scripts/prepare_desktop_cargo_target.ps1",
         "scripts/resolve-cargo-target-dir.bat",
         "scripts/resolve-cargo-target-dir.ps1",
@@ -90,6 +94,7 @@ PUBLIC_SNAPSHOT_INTERNAL_LIFECYCLE_PATHS = frozenset(
         "scripts/smoke.ps1",
         "scripts/start_langame_desktop_dev.ps1",
         "scripts/start_langame_desktop_local.ps1",
+        "scripts/start_langame_desktop_session.ps1",
         "scripts/test-smoke-command-contract.ps1",
         "scripts/test-smoke-storage-policy.ps1",
         "scripts/verify_startup_performance_guards.ps1",
@@ -154,6 +159,8 @@ PUBLIC_SNAPSHOT_REQUIRED_PATHS = frozenset(
         "assets/NOTICE",
         *THIRD_PARTY_ASSET_LICENSES,
         *THIRD_PARTY_ASSET_LICENSES.values(),
+        *THIRD_PARTY_ARCHIVE_FIXTURES,
+        *ARCHIVE_FIXTURE_COMPANION_SHA256,
         "docs/game-config-source-ledger.csv",
         "docs/game-config-source-ledger.md",
         "docs/game-integration-validation.md",
@@ -186,6 +193,7 @@ PUBLIC_SNAPSHOT_REQUIRED_PATHS = frozenset(
         "scripts/third_party_license_sources/rust/SPDX-Apache-2.0.txt",
         "scripts/third_party_license_sources/rust/SPDX-MIT.txt",
         "scripts/third_party_license_sources/rust/SPDX-MPL-2.0.txt",
+        "scripts/third_party_license_sources/rust/blake2-simd-47714dc3-LICENSE",
         "scripts/third_party_license_sources/rust/dlopen2-cc80e4a0-LICENSE",
         "scripts/third_party_license_sources/rust/objc2-7f976f7e-LICENSE.md",
         "scripts/third_party_license_sources/rust/webview2-b74dc5e2-LICENSE",
@@ -612,6 +620,7 @@ def exclusion_reason(relative_path: Path, ignored_paths: frozenset[str]) -> str 
         normalized_path in FIRST_PARTY_ASSET_ALLOWLIST
         or normalized_path in THIRD_PARTY_ASSET_LICENSES
         or normalized_path in THIRD_PARTY_REFERENCE_MEDIA
+        or normalized_path in THIRD_PARTY_ARCHIVE_FIXTURES
     ):
         return None
     if lowercase_name in LOCAL_INSTRUCTION_FILENAMES or any(

@@ -8,7 +8,7 @@ for (const scenario of [
   { locale: "en-US", viewport: { width: 1560, height: 900 } },
   { locale: "zh-CN", viewport: { width: 960, height: 600 } },
 ]) {
-  test(`Workshop downloads stay visible across navigation in ${scenario.locale} at ${scenario.viewport.width}x${scenario.viewport.height}`, { timeout: 90000 }, async () => {
+  test(`Concurrent Workshop downloads deploy in order across navigation and failures in ${scenario.locale} at ${scenario.viewport.width}x${scenario.viewport.height}`, { timeout: 90000 }, async () => {
     const output = process.env.LANGAME_WORKSHOP_DOWNLOAD_PROGRESS_OUTPUT;
     if (output) { assert.equal(path.isAbsolute(output), true); await fs.mkdir(output, { recursive: true }); }
     const suffix = `${scenario.locale}-${scenario.viewport.width}x${scenario.viewport.height}`;
@@ -25,13 +25,21 @@ for (const scenario of [
     assert.equal(report.status, "passed");
     assert.equal(report.locale, scenario.locale);
     assert.equal(report.coordinator_count, 1);
-    assert.equal(report.writes, 1);
+    assert.equal(report.writes, 3);
     assert.deepEqual(report.downloads, [
       { instance_id: "fixture-workshop-progress-a", ids: ["1111111"] },
       { instance_id: "fixture-workshop-progress-a", ids: ["2222222"] },
+      { instance_id: "fixture-workshop-progress-a", ids: ["3333333"] },
+      { instance_id: "fixture-workshop-progress-a", ids: ["2222222"] },
     ]);
+    assert.deepEqual(report.commits, report.downloads);
+    assert.equal(report.attempt_tokens, 4);
     for (const key of ["pending_visible_before_job", "page_progress_restored", "remount_progress_restored",
-      "instance_progress_isolated", "duplicate_download_blocked", "completion_deduplicated", "failure_preserved", "fresh_inventory_authoritative"]) {
+      "instance_progress_isolated", "duplicate_download_blocked", "completion_deduplicated", "failure_preserved", "fresh_inventory_authoritative",
+      "queue_accepts_while_running", "queued_progress_isolated", "queue_survives_navigation", "queue_waits_for_settings", "queue_advances_unmounted",
+      "queue_continues_after_failure", "queue_settings_accumulate", "queued_start_barrier", "explicit_retry_recovers", "failure_notice_retry",
+      "concurrent_preparation", "independent_progress", "ready_waits_for_fifo", "bounded_complete_requests", "prepared_files_stay_private",
+      "ordered_commits", "fresh_retry_identity", "prepared_tickets_consumed"]) {
       assert.equal(report[key], true, key);
     }
     assert.equal(report.document_overflow_x, false);

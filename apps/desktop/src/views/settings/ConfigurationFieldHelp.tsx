@@ -250,7 +250,7 @@ export function useConfigurationFieldHelp(
         >
           {text}
         </span>,
-        document.body
+        anchorElement.current?.closest("dialog[open]") ?? document.body
       ) : null}
     </>
   ) : null;

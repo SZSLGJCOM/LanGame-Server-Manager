@@ -173,7 +173,7 @@ impl Fixture {
                 "server_exited": true, "output_worker_joined": true,
                 "profile_verified": true,
                 "window_visibility": visibility,
-                "window_modes": {"generations_verified":3,"resize_edges_disabled":true,"maximize_restore":true,"fixed_size_restored":true},
+                "window_modes": {"generations_verified":3,"resize_edges_disabled":true,"maximize_restore":true,"drag_restore_anchor":true,"fixed_size_restored":true},
                 "native_drop": {"generations_verified":3,"file_and_directory_paths":true,"plain_text_and_uri":true,"installation_attempted":false},
                 "emitted_log_batches": lock(&self.output).batches,
             }),
@@ -461,6 +461,9 @@ fn run(config_path: &Path) -> Result<(), String> {
             let webview = tauri::WebviewWindowBuilder::from_config(app, &window)?
                 .data_directory(setup_fixture.config.root.join("profile"))
                 .build()?;
+            // Automatic preparation must replace an existing page zoom rather
+            // than inherit a previous user's manual setting.
+            webview.set_zoom(0.8)?;
             crate::desktop_window::prepare(&webview, &window).map_err(std::io::Error::other)?;
             crate::webview_drop::install(&webview).map_err(std::io::Error::other)?;
             webview_recovery::install(

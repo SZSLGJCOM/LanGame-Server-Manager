@@ -1,4 +1,5 @@
 import { prepareBrowserLocaleCatalogs } from "./browser-locale-catalogs";
+import { assertShellFrameSpacing } from "./desktop-frame-geometry";
 import { checkStoragePathLayout } from "./storage-path-layout";
 import React, { act, StrictMode, type ComponentProps } from "react";
 import { createRoot } from "react-dom/client";
@@ -73,6 +74,7 @@ function horizontalFit(selector: string) {
     `${selector} overflows horizontally ${target.scrollWidth}/${target.clientWidth}: ${JSON.stringify(overflow)}`);
 }
 function shellGeometry() {
+  assertShellFrameSpacing(fixture);
   check(document.documentElement.scrollWidth <= innerWidth + 1, "Window overflows horizontally");
   check(document.documentElement.scrollHeight <= innerHeight + 1, "Window content escaped its owned scroll area");
   for (const selector of [".shell-header", ".shell-content-scroll", ".shell-activity-bar"]) horizontalFit(selector);
@@ -122,11 +124,58 @@ async function compactAction(selector: string) {
     `${selector} did not settle at its layout size`);
   const style = getComputedStyle(target);
   const height = target.offsetHeight;
-  check(style.fontSize === "13px" && style.fontWeight === "500", `${selector} must use compact medium-weight text`);
-  check(height >= 28 && height <= 30.5, `${selector} must remain a compact, usable target: ${height}`);
+  const maximized = element(".shell-header").dataset.windowMaximized === "true";
+  const bodyFont = maximized ? "16px" : "13px";
+  await settleUntil(() => getComputedStyle(target).fontSize === bodyFont,
+    `${selector} did not settle at the current window's text size`);
+  check(style.fontSize === bodyFont && style.fontWeight === "500",
+    `${selector} must use compact medium-weight text: ${style.fontSize}/${style.fontWeight}, expected ${bodyFont}/500`);
+  check(height >= (maximized ? 36 : 28) && height <= (maximized ? 38.5 : 30.5),
+    `${selector} must match the window state control density: ${height}`);
   check(target.scrollWidth <= target.clientWidth + 1 && target.scrollHeight <= target.clientHeight + 1,
     `${selector} clips its label at the compact size`);
   return { height, fontSize: style.fontSize, lineHeight: style.lineHeight };
+}
+
+async function catalogCardGeometry() {
+  const header = element(".shell-header");
+  const original = header.dataset.windowMaximized;
+  const card = element(".library-catalog-tile.is-active");
+  await settleUntil(() => card.getAnimations().every((animation) => animation.playState !== "running"),
+    "The selected catalog cover did not settle before geometry checks");
+  const observed = [];
+  for (const maximized of [false, true, false]) {
+    header.dataset.windowMaximized = String(maximized);
+    await act(async () => { await new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))); });
+    const cover = card.querySelector<HTMLElement>(".module-cover")!;
+    const bounds = card.getBoundingClientRect();
+    const rail = element(".library-catalog-rail").getBoundingClientRect();
+    check(Math.abs(cover.offsetWidth / cover.offsetHeight - 0.76) < 0.003,
+      "Maximizing must preserve the catalog cover's portrait proportions");
+    check(bounds.top - 6 >= rail.top && bounds.bottom + 6 <= rail.bottom,
+      "The raised cover and selection ring must fit inside the catalog rail");
+    for (const label of fixture.querySelectorAll<HTMLElement>(".library-catalog-focus-title, .library-catalog-focus-status, .library-catalog-focus-subtitle")) {
+      check(label.scrollHeight <= label.clientHeight + 1,
+        `Catalog selection copy must not be clipped vertically: ${label.className}`);
+    }
+    observed.push({ width: card.offsetWidth, height: card.offsetHeight,
+      titleFont: parseFloat(getComputedStyle(element(".library-catalog-focus-title")).fontSize) });
+  }
+  header.dataset.windowMaximized = original;
+  await act(async () => { await new Promise<void>((resolve) => requestAnimationFrame(() => resolve())); });
+  const [windowed, maximized, restored] = observed;
+  if (innerWidth >= 1920 && innerHeight > 800) {
+    check(maximized.width > windowed.width && maximized.width <= 224,
+      "Maximized catalog cards must grow modestly without exceeding 224px");
+  } else if (innerHeight <= 800) {
+    check(maximized.width === windowed.width,
+      "Short windows must preserve the compact catalog cover size");
+  }
+  check(restored.width === windowed.width && restored.height === windowed.height,
+    "Restoring the window must restore the catalog card dimensions");
+  check(windowed.titleFont === 22 && maximized.titleFont === 28,
+    "Catalog selection copy must retain the shared page-title hierarchy");
+  return { windowed, maximized, restored };
 }
 
 async function run() {
@@ -134,7 +183,7 @@ async function run() {
   check(fonts.length > 0 && fonts.every((face) => face.status === "loaded"), "Bundled Inter must load before layout checks");
   await document.fonts.ready;
   const config = await fetch("/__desktop_layout_page").then((response) => response.json()) as {
-    page: "system" | "catalog" | "detail"; locale: "zh-CN" | "en-US";
+    page: "system" | "catalog" | "detail"; locale: "zh-CN" | "en-US"; maximized?: boolean;
   };
   localStorage.setItem("langame.locale", config.locale);
   const bootstrap = await bootstrapApp({ includeSystemSnapshot: true });
@@ -275,9 +324,12 @@ async function run() {
     "Requested interface language did not load");
   await act(async () => { await new Promise<void>((resolve) => requestAnimationFrame(() => resolve())); });
   await settleUntil(() => !migrationModel.recovering, "Migration recovery did not settle");
+  element(".shell-header").dataset.windowMaximized = String(config.maximized ?? false);
+  await act(async () => { await new Promise<void>((resolve) => requestAnimationFrame(() => resolve())); });
   shellGeometry();
   horizontalFit(pageSelector);
   const controls: Record<string, Awaited<ReturnType<typeof compactAction>>> = {};
+  let catalogCards: Awaited<ReturnType<typeof catalogCardGeometry>> | undefined;
   if (config.page === "system") {
     let retries = 0;
     const onRetry = () => { retries++; };
@@ -524,6 +576,7 @@ async function run() {
     horizontalFit(".system-runtime-panel");
     check(!fixture.querySelector("dialog,.system-path-migration-review,.system-path-editor-footer,.system-path-unapplied"), "Completed migration must leave only the four configured path rows");
   } else if (config.page === "catalog") {
+    catalogCards = await catalogCardGeometry();
     await reach(".library-catalog-search-input");
     await reach(".library-catalog-focus-title");
     controls.openDetails = await compactAction(".library-catalog-open-details");
@@ -550,6 +603,14 @@ async function run() {
     await input(".library-catalog-search-input", "no matching library game");
     await reach(".library-catalog-empty");
     centeredIn(".library-catalog-empty", ".library-catalog-rail-shell");
+    await input(".library-catalog-search-input", "");
+    await settleUntil(() => fixture.querySelectorAll(".library-catalog-tile").length === 12, "The catalog must return after clearing an empty search");
+    const firstCard = element(".library-catalog-tile");
+    await act(async () => { firstCard.click(); });
+    await settleUntil(() => firstCard.classList.contains("is-active") && rail.scrollLeft <= 1
+      && firstCard.getAnimations().every((animation) => animation.playState !== "running"),
+    "The catalog must return to its first card without clipping the selected cover");
+    visible(firstCard, "Selected catalog cover");
   } else {
     await reach(".workspace-title");
     controls.back = await compactAction(".library-back-button");
@@ -594,7 +655,8 @@ async function run() {
   }
   check(errors.length === 0, `Unexpected browser errors: ${errors.join("; ")}`);
   return { status: "passed", checks, page: config.page, locale: config.locale,
-    viewport: { width: innerWidth, height: innerHeight }, controls, browser_errors: errors };
+    viewport: { width: innerWidth, height: innerHeight }, maximized: config.maximized ?? false,
+    catalog_cards: catalogCards, controls, browser_errors: errors };
 }
 
 let watchdog: ReturnType<typeof setTimeout>;

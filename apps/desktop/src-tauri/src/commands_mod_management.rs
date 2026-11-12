@@ -30,18 +30,51 @@ pub(in crate::commands) fn manage_package(
     storage::recover(&paths)?;
     let mut manifest = read_manifest(&target.target_path.join(ONLINE_MOD_MANIFEST))?;
     validate_management_manifest(&manifest)?;
+    validate_component(package_id)?;
     let mut warnings = Vec::new();
-    let (key, intended_package) = if action == "adopt" {
+    let existing_key = if action == "adopt" {
+        None
+    } else if let Some(package) = manifest.packages.get(package_id) {
+        if !package.target_name.eq_ignore_ascii_case(package_id)
+            && (manifest.packages.iter().any(|(key, candidate)| {
+                key != package_id && candidate.target_name.eq_ignore_ascii_case(package_id)
+            }) || target
+                .target_path
+                .join(package_id)
+                .try_exists()
+                .map_err(|error| error.to_string())?)
+        {
+            return Err("Mod identity matches another local path; files were preserved".into());
+        }
+        Some(package_id.to_owned())
+    } else {
+        manifest
+            .packages
+            .iter()
+            .find(|(_, package)| package.target_name.eq_ignore_ascii_case(package_id))
+            .map(|(key, _)| key.clone())
+    };
+    let (key, intended_package) = if let Some(key) = existing_key {
+        (key, None)
+    } else {
         let package = adopt_package(&target.target_path, package_id, &manifest)?;
         (format!("local-{package_id}"), Some(package))
-    } else {
-        (package_id.to_owned(), None)
     };
+    if let Some(package) = &intended_package {
+        if manifest.packages.contains_key(&key) {
+            return Err(
+                "Mod identity already belongs to another package; files were preserved".into(),
+            );
+        }
+        // Validate the requested action against its prospective ownership, but
+        // retain the original record for a single publication and rollback.
+        manifest.packages.insert(key.clone(), copy_package(package));
+    }
     if action != "adopt" {
         let package = manifest
             .packages
             .get(&key)
-            .ok_or("Mod is not managed; adopt its files first")?;
+            .ok_or("Mod ownership evidence is missing")?;
         let dependents = dependent_packages(&manifest, &key, action == "disable")?;
         if matches!(action, "disable" | "delete") && !dependents.is_empty() {
             return Err(format!(
@@ -61,7 +94,10 @@ pub(in crate::commands) fn manage_package(
         if package.dependencies.is_none() {
             warnings.push("This package has no complete dependency declaration; unknown dependencies could not be verified".into());
         }
-        if (action == "enable" && package.enabled) || (action == "disable" && !package.enabled) {
+        if intended_package.is_none()
+            && ((action == "enable" && package.enabled)
+                || (action == "disable" && !package.enabled))
+        {
             drop(guard);
             return Ok(ManagedModActionResult {
                 inventory: crate::commands::commands_mods::mod_inventory::read_inventory(target)?,
@@ -70,6 +106,16 @@ pub(in crate::commands) fn manage_package(
                 warnings,
             });
         }
+    }
+    let action = if intended_package.is_some() && action == "enable" {
+        // Existing local files are already in the loading tree. The dependency
+        // checks above still apply; only their management record is missing.
+        "adopt"
+    } else {
+        action
+    };
+    if intended_package.is_some() {
+        manifest.packages.remove(&key);
     }
     let transaction = ManagementTransaction::new(key, action, &mut manifest, intended_package)?;
     let outcome = storage::execute(&paths, &transaction)?;
@@ -104,6 +150,11 @@ pub(in crate::commands) fn decorate_inventory(
             Vec::new()
         };
     for (key, package) in &manifest.packages {
+        let display_name = crate::commands::mod_presentations::normalize_display_name(
+            package.display_name.as_deref(),
+        );
+        let icon_url =
+            crate::commands::mod_presentations::verified_icon_url(package.icon_url.as_deref());
         let state = ManagedModState {
             package_id: key.clone(),
             enabled: package.enabled,
@@ -121,6 +172,8 @@ pub(in crate::commands) fn decorate_inventory(
                 .iter_mut()
                 .find(|item| item.name.eq_ignore_ascii_case(&package.target_name))
         {
+            item.display_name = display_name;
+            item.icon_url = icon_url;
             item.management = Some(state);
             continue;
         }
@@ -135,11 +188,15 @@ pub(in crate::commands) fn decorate_inventory(
                 .find(|item| item.name.eq_ignore_ascii_case(&package.target_name))
         {
             let mut item = item.clone();
+            item.display_name = display_name;
+            item.icon_url = icon_url;
             item.management = Some(state);
             items.push(item);
             continue;
         }
         items.push(ManualModInventoryItem {
+            display_name,
+            icon_url,
             name: package.target_name.clone(),
             path: path.to_string_lossy().into_owned(),
             item_type: "file".into(),
@@ -151,12 +208,15 @@ pub(in crate::commands) fn decorate_inventory(
             management: Some(state),
         });
     }
+    nexus_routes::decorate_inventory(target, &manifest, &paths.root, items)?;
     items.sort_by_key(|item| item.name.to_lowercase());
     Ok(())
 }
 
 pub(super) fn copy_package(package: &InstalledPackage) -> InstalledPackage {
     InstalledPackage {
+        display_name: package.display_name.clone(),
+        icon_url: package.icon_url.clone(),
         thunderstore_intent: package.thunderstore_intent.clone(),
         routed_files: package.routed_files.clone(),
         target_name: package.target_name.clone(),
@@ -175,7 +235,7 @@ pub(super) fn validate_management_manifest(manifest: &InstalledPackages) -> Resu
     let mut routed_paths = HashSet::new();
     for (key, package) in &manifest.packages {
         thunderstore_intent::validate_thunderstore_intent(key, package)?;
-        routed::validate_routes(package, &mut routed_paths)?;
+        routed::validate_routes(key, package, &mut routed_paths)?;
         validate_component(key)?;
         validate_component(&package.target_name)?;
         if protected_root(&package.target_name)
@@ -323,7 +383,7 @@ fn adopt_package(
     let xml_mod = files
         .keys()
         .any(|relative| relative.eq_ignore_ascii_case("ModInfo.xml"));
-    // Explicit adoption grants ownership only over recognizable payloads. User
+    // First management grants ownership only over recognizable payloads. User
     // documents and settings in an existing directory remain unowned.
     files.retain(|relative, _| {
         let candidate = if relative.is_empty() { name } else { relative };
@@ -336,6 +396,8 @@ fn adopt_package(
     // Adoption records files already in the loading tree. Retain declarations
     // even for a broken install so it can be disabled; enabling validates them.
     Ok(InstalledPackage {
+        display_name: None,
+        icon_url: None,
         thunderstore_intent: None,
         routed_files: BTreeMap::new(),
         target_name: name.into(),
@@ -424,21 +486,28 @@ fn verify_enable_dependencies(
         for (relative, hash) in package
             .routed_files
             .iter()
-            .filter(|(path, _)| routed::is_patcher(path))
+            .filter(|(path, _)| routed::moves_with_package(key, path))
         {
             let file = if package.enabled {
-                routed::runtime_root(&target.target_path)?.join(relative)
+                routed::package_runtime_root(key, &target.target_path)?.join(relative)
             } else {
                 paths.root.join("disabled-routes").join(key).join(relative)
             };
-            if fingerprint_tree(&file)?.get("") != Some(hash) {
+            let current = fingerprint_tree(&file)?;
+            if current.get("").is_none()
+                || (!protected_nexus_route(key, relative) && current.get("") != Some(hash))
+            {
                 return Err(format!(
-                    "Patcher {relative} is missing or changed; files were preserved"
+                    "Runtime Mod file {relative} is missing or changed; files were preserved"
                 ));
             }
         }
     }
     verify_recorded_dependencies(target, manifest, &[key.into()], None)
+}
+
+fn protected_nexus_route(key: &str, relative: &str) -> bool {
+    nexus_routes::is_nexus_key(key) && nexus_routes::protected_route(key, relative)
 }
 
 pub(super) fn verify_recorded_dependencies(

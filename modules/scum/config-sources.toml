@@ -1,6 +1,42 @@
 status = "best_effort_verified"
-last_verified = "2026-10-31"
-notes = "The archived generated v7 baseline plus four official August 2026 additions remains the configuration/default acceptance baseline: 436 specialized controls and one generated version key. The four additions and default values match the existing installed build 25187656 configuration inspected read-only on 2026-09-28; that historical fixture and its defaults remain unchanged. The current review adds official build 26320224 ordinary-permission execution via RunAsInvoker, generated key presence, and the separately scoped save/checkpoint/reload evidence below. The 2026-10-31 managed backend acceptance additionally covers four native-ready cycles with normal exits 0, four save requests, stopped-world backup restore, interrupted archive recovery and final cleanup. Save completion remains requested. It does not re-approve all configuration defaults, populated-player behavior, custom-zone edit rollback or every subsystem's durable completion. Three generated JSON contracts are structured. Player identity rosters remain in Player Access. Earlier direct-launch elevation failures and authorized elevated observations are historical evidence, not the current runtime permission requirement."
+last_verified = "2026-11-12"
+notes = "The archived generated v7 baseline plus four official August 2026 additions defines 436 specialized controls and one generated version key. The 2026-11-12 build 26593814 world generated the same 437 keys and unchanged focused animal defaults; its unconfigured MaxPing=400 updates the old 200 default while explicit saved values retain precedence. The image requires new per-image save-state offsets and a strict schema-77 custom-zone pairing. Independent static, generated-world, registry and managed-lifecycle evidence have separate scopes below. Earlier build 26320224 save/checkpoint/reload and four managed cycles remain historical evidence, not automatic validation of the new image. Save completion remains requested; no blanket gameplay-default approval, populated-player behavior or every subsystem's durable completion is asserted. Three generated JSON contracts are structured. Player identity rosters remain in Player Access. Earlier elevation failures remain historical; RunAsInvoker preserves the caller's existing permissions."
+
+[[sources]]
+id = "official_update_build_26593814_20261112"
+kind = "documentation"
+path = "SCUM Update 1.3.6.0.177121"
+url = "https://steamcommunity.com/games/513710/announcements/detail/694277269707817996"
+authority = "official_scum_steam_announcement"
+description = "The released 1.3.6.0.177121 update fixes overlapping custom-zone damage priority and inconsistent grenade/dynamite vehicle damage. Its server-settings notes correct descriptions of the Animal Global Density Multiplier and Max Non-Virtual Animals in World defaults, rather than declaring new native defaults or new configuration keys. Controller/photo-mode/Proton multiplayer items do not establish a new dedicated-server configuration surface."
+
+[[sources]]
+id = "native_contract_build_26593814_20261112"
+kind = "runtime_probe"
+path = "reference-fixtures/2026-11-12-native_contract_build_26593814.json"
+authority = "steamcmd_validated_package_independent_static_analysis_and_native_world"
+description = "Official app 3792580 build 26593814, depot 3792581 manifest 4510314708728724923, EXE SHA256 805396516e64d17f1713f24ce97a7d525a6d761db46ce069f40cf63114add6d9. Independent new-image analysis identifies AutoSave 0x1bcc000 and class/vtable/GetWorld; loading/saving/shutdown state bytes moved from 0x798/0x79a/0x79b to 0x7a8/0x7aa/0x7ab. Four C++ component profiles passed and 11 read-only native owner checks confirmed the new pointers and state guards. New-image registration and live fixed-array metadata identify ArmedNPC 5, Vehicle 11 and unchanged slots 2/3/4 with channels 6/5/4. The fresh native world is schema 77 with two configurations and four regions. Its public stopped-world read/write, exact image/schema gate, pre-change backup and source DB/WAL retention passed; nine storage regressions passed across all three supported synthetic layouts. The read-only observer did not invoke save: direct CTRL_C returned 0xC000013A, remaining owned descendants required Job cleanup, and the overall probe did not pass normal-exit admission. Separate managed-backend evidence below verifies four native save requests and normal exit-0 lifecycle cycles. Old-image complete-function equivalence is not asserted because the old executable was unavailable and anonymous historical manifest access returned 401."
+
+[[sources]]
+id = "managed_native_lifecycle_build_26593814_20261112"
+kind = "runtime_probe"
+path = "reference-fixtures/2026-11-12-managed_lifecycle_build_26593814.json"
+authority = "compiled_manager_backend_with_isolated_official_package"
+description = "The frozen native-build-04 backend completed initial, restart, after-restore and after-archive-restore cycles on build 26593814. Four correlated AutoSave(true) requests each returned ready/invoked/call_returned=true and write_confirmed=false; all receipts remain Requested. All four stops returned native exit 0 with crash_flag=false and cleared active runs. Backup restoration preserved 59 world files, safeguard backup and program/config bytes; interrupted archive restore recovered, library-only uninstall preserved the instance program and 81 save files, and final cleanup passed. The binary and 4665-file frozen source proof were rehashed and linked. This run explicitly supplies MaxPing=400 while its frozen inventory still defaults to 200; final default-400 compilation has separate validation. Exact manual-save content, all-subsystem durability, edited-region in-game reload, clients, combat, GUI and network program maintenance are not claimed."
+
+[[sources]]
+id = "generated_settings_keys_build_26593814_20261112"
+kind = "runtime_probe"
+path = "reference-fixtures/2026-11-12-native_contract_build_26593814.json"
+authority = "independent_native_generated_configuration_key_inventory"
+description = "Build 26593814 generated exactly the current ledger's 437 scum-prefixed keys, including ServerSettingsVersion=7. Focused native defaults remain AnimalGlobalDensityMultiplier=0.500000 and MaxNonVirtualAnimalsInWorld=500. Unconfigured-default comparison and the MaxPing correction are recorded separately below."
+
+[[sources]]
+id = "generated_defaults_build_26593814_20261112"
+kind = "runtime_probe"
+path = "reference-fixtures/2026-11-12-generated_defaults_build_26593814.json"
+authority = "independent_native_generated_configuration_defaults"
+description = "A fresh ordinary build 26593814 package copy generated ServerSettings.ini with only fixture ServerName, ServerPassword and MaxPlayers supplied. The other 434 generated values were compared: MaxPing is 400.000000 instead of the inventory's 200.000000; the other two differences are retained manager ServerDescription/WelcomeMessage wording. The 2026-09-30 build 25247308 static and packaged-default evidence explicitly established 200 as the uncustomized multiplayer default, so this is drift since that baseline, not proof that the latest patch introduced it. Inventory default/nativeDefault and schema now use 400; the existing renderer still prefers explicit saved values. A separate final-source build embeds the complete updated inventory and schema bytes, with 18 SCUM regressions passed and one opt-in native test ignored. These existing tests cover default and explicit-value rendering but do not specifically assert MaxPing's numeric value; the independently executed schema-77 native roundtrip retains its earlier evidence. No user data migration or broad gameplay-default approval is implied."
 
 [[sources]]
 id = "managed_native_lifecycle_build_26320224_20261031"

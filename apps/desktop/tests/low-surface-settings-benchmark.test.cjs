@@ -26,11 +26,12 @@ const fixtures = {
   runescapedragonwilds: "2026-07-13-steamdb_app_4019830.json"
 };
 
-test("ASTRONEER models the current exact-build Astro settings section", () => {
+test("ASTRONEER models its native settings and manager connection policy", () => {
   assertSchemaKeys("astroneer", [
     "active_save_file_name",
     "auto_save_interval_seconds",
     "backup_save_interval_seconds",
+    "connection_mode",
     "console_password",
     "deny_unlisted_players",
     "disable_server_travel",

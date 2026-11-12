@@ -2,6 +2,10 @@ import type { MessageCatalog } from "../../i18n-config";
 
 export const EN_US_ABIOTIC_FACTOR_MESSAGES: MessageCatalog = {
   "abiotic.settings.mods.browseCatalog": "Browse official Abiotic Factor Mods on mod.io",
+  "abiotic.settings.mods.nextStart": "Loads on next start",
+  "abiotic.settings.mods.loadOrder": "Load order",
+  "abiotic.settings.mods.nextStartHelp": "The server downloads and loads this mod.io Mod on its next start. Add or edit official IDs in Advanced settings; drag rows to change their load order.",
+  "abiotic.settings.mods.sideloadNextStartHelp": "The server loads this Mod from the predownloaded Mod directory on its next start. Add or edit official IDs in Advanced settings; drag rows to change their load order.",
   "settings.schema.abioticfactor.mod_ids.title": "Official Mod IDs",
   "settings.schema.abioticfactor.mod_ids.description": "In My Mods, enter numeric mod.io IDs in load order, separated by newlines, commas or semicolons. The server downloads and loads these Mods on its next start.",
   "settings.schema.abioticfactor.modio_token.title": "mod.io Account Token",

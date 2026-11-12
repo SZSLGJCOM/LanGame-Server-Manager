@@ -48,8 +48,7 @@ export function ManagedModDeleteDialog(props: Props) {
       {t("servers.mods.managed.deleteTitle", { name: props.item.name }, "Delete {name}?")}
     </h2></header>
     <div className="mw-collection-removal-body">
-      <p id={descriptionId}>{t("servers.mods.managed.deleteScope", undefined,
-        "Remove this Mod's recorded, unchanged program files from this instance. Configuration, modified files and unowned files are kept. Dependencies are not deleted.")}</p>
+      <p id={descriptionId}>{management ? t("servers.mods.managed.deleteScope") : t("servers.mods.managed.deleteLocalScope")}</p>
       <dl className="mw-entry-info-grid">
         <div className="mw-entry-info-row"><dt>{t("servers.mods.managed.dependencies", undefined, "Requires")}</dt>
           <dd>{management?.dependencies.join(", ") || t("servers.mods.managed.noneDeclared", undefined, "None declared")}</dd></div>

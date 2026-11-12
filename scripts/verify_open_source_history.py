@@ -17,7 +17,14 @@ if str(REPOSITORY_ROOT) not in sys.path:
 
 from scripts.open_source_product_policy import scan_product_payload
 from scripts.verify_no_tracked_secrets import scan_payload
-from scripts.third_party_asset_policy import ARK_MAP_ARTWORK_NOTICE, REFERENCE_MEDIA_SHA256, THIRD_PARTY_REFERENCE_MEDIA
+from scripts.third_party_asset_policy import (
+    ARCHIVE_FIXTURE_COMPANION_SHA256,
+    ARCHIVE_FIXTURE_SHA256,
+    ARK_MAP_ARTWORK_NOTICE,
+    REFERENCE_MEDIA_SHA256,
+    THIRD_PARTY_ARCHIVE_FIXTURES,
+    THIRD_PARTY_REFERENCE_MEDIA,
+)
 from scripts.verify_open_source_boundary import (
     DEVELOPER_MACHINE_PATH,
     ignored_tracked_paths,
@@ -135,6 +142,9 @@ def _unique_file_versions(
         tree_paths = {version.path.as_posix() for version in tree}
         if tree_paths & THIRD_PARTY_REFERENCE_MEDIA and ARK_MAP_ARTWORK_NOTICE not in tree_paths:
             findings.add(HistoryFinding(commit, Path(ARK_MAP_ARTWORK_NOTICE), 0, "historical-reference-media-notice"))
+        if tree_paths & THIRD_PARTY_ARCHIVE_FIXTURES:
+            for companion in ARCHIVE_FIXTURE_COMPANION_SHA256.keys() - tree_paths:
+                findings.add(HistoryFinding(commit, Path(companion), 0, "historical-archive-fixture-notice"))
         for version in tree:
             versions.setdefault((version.object_id, version.path), version)
     return tuple(versions.values()), findings
@@ -271,6 +281,9 @@ def _scan_file_version(
         findings.append(HistoryFinding(version.commit, path, 0, "historical-media"))
     if normalized_path in REFERENCE_MEDIA_SHA256 and hashlib.sha256(payload).hexdigest() != REFERENCE_MEDIA_SHA256[normalized_path]:
         findings.append(HistoryFinding(version.commit, path, 0, "historical-reference-media-integrity"))
+    archive_fixture_hash = ARCHIVE_FIXTURE_SHA256.get(normalized_path) or ARCHIVE_FIXTURE_COMPANION_SHA256.get(normalized_path)
+    if archive_fixture_hash is not None and hashlib.sha256(payload).hexdigest() != archive_fixture_hash:
+        findings.append(HistoryFinding(version.commit, path, 0, "historical-archive-fixture-integrity"))
 
     for product_finding in scan_product_payload(path, payload):
         findings.append(

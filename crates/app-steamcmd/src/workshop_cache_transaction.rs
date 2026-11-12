@@ -71,6 +71,44 @@ impl WorkshopDeploymentProtection {
 }
 
 impl VerifiedWorkshopCache {
+    /// Capture the exact payload that this invocation's native validate selected.
+    /// Only the owned prefetch runner may establish this proof without an older
+    /// receipt; it retains every selected source root while hashing.
+    pub(super) fn capture_native_download(
+        result: SteamWorkshopDownloadResult,
+        cancellation: &InstallCancellation,
+    ) -> io::Result<Self> {
+        let items = result
+            .items
+            .iter()
+            .map(|item| {
+                let path = PathBuf::from(&item.expected_path);
+                Ok(VerifiedItem {
+                    id: item.item_id.clone(),
+                    files: integrity::inventory(&path, cancellation)?,
+                    path,
+                })
+            })
+            .collect::<io::Result<Vec<_>>>()?;
+        Ok(Self { result, items })
+    }
+
+    /// Called only after publication verified the staged bytes against this proof.
+    pub(super) fn relocated_to(mut self, install_root: &Path) -> Self {
+        let content = install_root
+            .join("steamapps/workshop/content")
+            .join(self.result.consumer_app_id.to_string());
+        self.result.install_root = install_root.to_string_lossy().into_owned();
+        self.result.workshop_root = content.to_string_lossy().into_owned();
+        for item in &mut self.result.items {
+            item.expected_path = content.join(&item.item_id).to_string_lossy().into_owned();
+        }
+        for item in &mut self.items {
+            item.path = content.join(&item.id);
+        }
+        self
+    }
+
     pub fn download_result(&self) -> &SteamWorkshopDownloadResult {
         &self.result
     }

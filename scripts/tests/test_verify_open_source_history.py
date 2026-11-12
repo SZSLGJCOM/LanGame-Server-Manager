@@ -10,6 +10,7 @@ import unittest
 from unittest.mock import patch
 
 from scripts.open_source_product_policy import scan_product_payload
+from scripts.third_party_asset_policy import ARCHIVE_FIXTURE_COMPANION_SHA256, ARCHIVE_FIXTURE_SHA256
 from scripts.verify_open_source_history import (
     HistoricalFileVersion,
     _scan_file_version,
@@ -19,6 +20,38 @@ from scripts.verify_open_source_history import (
 
 
 class OpenSourceHistoryScannerTests(unittest.TestCase):
+    def test_later_license_cannot_hide_an_earlier_archive_fixture_without_its_companions(self) -> None:
+        root = Path(__file__).resolve().parents[2]
+        archive = Path("apps/desktop/src-tauri/src/test_fixtures/mod_archives/rar4.rar")
+        notice = archive.with_name("LICENSE-unrar-MIT")
+        with tempfile.TemporaryDirectory() as directory:
+            repository = Path(directory)
+            self._initialize_repository(repository)
+            for path in (archive, *(Path(path) for path in ARCHIVE_FIXTURE_COMPANION_SHA256)):
+                if path == notice:
+                    continue
+                target = repository / path
+                target.parent.mkdir(parents=True, exist_ok=True)
+                target.write_bytes((root / path).read_bytes())
+            missing_notice_commit = self._commit_all(repository, "archive fixture without license")
+            (repository / notice).write_bytes((root / notice).read_bytes())
+            self._commit_all(repository, "restore fixture license")
+            findings = scan_reachable_history(repository).findings
+            self.assertEqual(
+                [(item.commit, item.path.as_posix(), item.rule) for item in findings],
+                [(missing_notice_commit, notice.as_posix(), "historical-archive-fixture-notice")],
+            )
+
+    def test_fixture_registration_rejects_replaced_archives_or_legal_evidence_in_history(self) -> None:
+        root = Path(__file__).resolve().parents[2]
+        for path in ARCHIVE_FIXTURE_SHA256 | ARCHIVE_FIXTURE_COMPANION_SHA256:
+            with self.subTest(path=path):
+                version = HistoricalFileVersion("fixture", Path(path), "fixture")
+                payload = (root / path).read_bytes()
+                self.assertEqual(_scan_file_version(version, payload, frozenset()), ())
+                findings = _scan_file_version(version, payload + b"changed", frozenset())
+                self.assertIn("historical-archive-fixture-integrity", {item.rule for item in findings})
+
     def test_historical_documentation_example_exception_is_bound_to_exact_bytes_and_path(self) -> None:
         path = Path("docs/example.md")
         payload = b"Example: D:" + b"\\LanGameTemp\\example\n"

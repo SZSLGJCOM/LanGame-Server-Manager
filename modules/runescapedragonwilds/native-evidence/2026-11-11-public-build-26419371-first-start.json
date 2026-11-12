@@ -1,0 +1,111 @@
+{
+  "schema_version": 1,
+  "module_id": "runescapedragonwilds",
+  "verified_on": "2026-11-11",
+  "verification_timezone": "Asia/Shanghai",
+  "evidence_classification": "isolated_native_first_start_preconfigured_world_rules",
+  "package": {
+    "steam_app_id": 4019830,
+    "steam_build_id": "26419371",
+    "windows_depot_id": 4019831,
+    "depot_manifest_id": "6043592975314395149",
+    "shipping_sha256": "f7840d934fccb6f3ca0b01e781abf4463f3718ebb29418985cd9281bbd3a8fb2",
+    "source_package_unchanged": true
+  },
+  "build": {
+    "source_identity_sha256": "9a4593443e24c32d8bd6c213c85c2941e87e65c12a9c9efef1d3a0b828255f63",
+    "source_manifest_sha256": "0ba0a6bb6dd738c4ef2300546c6a9f98f9c8f20c66fc4f9202fb618812503991",
+    "git_revision": "b5f0421a63c61ded2badff588261548db4fd7974",
+    "working_tree_clean": false,
+    "test_binary_sha256": "311590103dc2f37cb160c228961e357d256b39c534dfacd6210ac0d535658c1f",
+    "verified_sources": [
+      {
+        "path": "crates/app-core/src/dragonwilds_world.rs",
+        "sha256": "7ef75b025383f7922d676b37b4ade9554dd2258a55753014df9e22a2f3b6554a"
+      },
+      {
+        "path": "crates/app-storage/src/dragonwilds_bootstrap.rs",
+        "sha256": "4cf88b3584f54913fe8ca3ff7cf1788959ab393b9e52620721193f7411d857a7"
+      },
+      {
+        "path": "crates/app-storage/src/dragonwilds_bootstrap_ini.rs",
+        "sha256": "2d5c193b5964c48cf29bbaa458b8164391b1ab46a67a75abdcf15aab51606b1e"
+      },
+      {
+        "path": "crates/app-storage/src/dragonwilds_world_settings_pending.rs",
+        "sha256": "500f10b4ebac9be022f399e10c27229150fca5bc3a4a1661a957e871a31d859d"
+      },
+      {
+        "path": "crates/app-storage/src/dragonwilds_world_settings.rs",
+        "sha256": "02ee922661089dc070120b342584cc3011590acf7583928d58d5ed90b3deb3f5"
+      },
+      {
+        "path": "crates/app-storage/src/dragonwilds_world_io.rs",
+        "sha256": "0a202cad57013d641b2fbf9696eab9151a9a5567457e61454db27af99a7841b0"
+      },
+      {
+        "path": "crates/app-storage/src/dragonwilds_save/metadata.rs",
+        "sha256": "d8e571afae4e3e446c2abebcf1eecec6511a81e54e300f6113a1902e9ac9a666"
+      },
+      {
+        "path": "apps/desktop/src-tauri/src/commands_dragonwilds_lifecycle.rs",
+        "sha256": "cf1b9d47301e3419da87bf704d6eab6e6beb6332c7df17885c5c5b18e3cb2b68"
+      },
+      {
+        "path": "apps/desktop/src-tauri/src/commands_runtime_lifecycle.rs",
+        "sha256": "8b7d6ea8a92bf7e13aa8e408589270f5afc7256aecfe510dade676d6480922f6"
+      },
+      {
+        "path": "apps/desktop/src-tauri/src/commands_dragonwilds_bootstrap_native_tests.rs",
+        "sha256": "d9b00fc7d6e1c7eef6a8b7706a27119e3a0af239f233be32a6b466ff5f1fd8fe"
+      },
+      {
+        "path": "apps/desktop/src/views/settings/DragonwildsWorldSettingsContext.tsx",
+        "sha256": "81563c1658bd9198dd7d9640f3ab15e61ee431fbe225e97785ab09ca49fbaab4"
+      },
+      {
+        "path": "apps/desktop/src/views/settings/DragonwildsWorldSettingsPanel.tsx",
+        "sha256": "96a47cc2969521bb38178f1b7c6a25d95b12c2ee52b317b756da3171dc653b81"
+      }
+    ]
+  },
+  "test": {
+    "name": "commands::tests::manual_runtime_tests::native_lifecycle_tests::dragonwilds_bootstrap::isolated_dragonwilds_first_start_applies_pending_world_settings",
+    "exit_code": 0,
+    "passed": 1,
+    "failed": 0,
+    "duration_seconds": 126.72,
+    "output_file": "2026-11-11-public-build-26419371-first-start-output.txt",
+    "output_sha256": "c8ec78f7a07fd579bc23c1ea82169cf5db4bc966deb44996c4dad4f8b514be2f",
+    "original_output_sha256": "40c2eb3612fc9822151cb10e918a761a9e07a202a309d898bc1a7bf34e2e83a0",
+    "output_normalization": "Renamed the password-restoration status field to an explicit boolean, normalized line endings to LF and removed trailing empty lines for publication; values, timings, process identities and test results are unchanged.",
+    "desktop_regressions": {
+      "passed": 70,
+      "failed": 0,
+      "ignored": 6
+    }
+  },
+  "verified": {
+    "clean_independent_instance_has_no_world": true,
+    "saving_preconfiguration_does_not_fabricate_native_save": true,
+    "single_production_start_initializes_and_formally_starts": true,
+    "initialization_remains_pending_without_formal_run": true,
+    "distinct_initialization_and_formal_native_processes": true,
+    "initialization_native_exit_code": 0,
+    "initialization_complete_owned_tree_stopped": true,
+    "separate_save_session_identities": 2,
+    "every_effective_rule_matches_saved_preconfiguration": true,
+    "native_log_confirms_building_material_cost_scale": 1.5,
+    "native_log_confirms_load_success_and_ready_to_join": true,
+    "configured_join_password_restored": true,
+    "pre_change_world_backup_present": true,
+    "normal_stop_auto_backup_matches_world": true,
+    "restart_skips_initialization_and_preserves_world_bytes": true,
+    "final_owned_fixture_cleanup_complete": true
+  },
+  "scope_notes": [
+    "Uses the complete production startup and stop transactions with an isolated Tauri test runtime; Wry UI events are omitted.",
+    "The native run starts from a clean 1.0.2 package and configures Custom mode with BuildingMaterialCostScale=1.5; no existing operator save or multiplayer client is used.",
+    "Preset conversion, stale revisions, cancellation, partial initialization and interrupted commit recovery have separate storage and desktop regression coverage; this native run proves the successful first-start and restart path."
+  ]
+}

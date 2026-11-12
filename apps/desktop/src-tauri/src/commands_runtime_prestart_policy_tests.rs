@@ -718,10 +718,10 @@ async fn cancelled_prestart_lock_wait_does_not_wait_for_the_current_program_owne
         RuntimeStartReservationAttempt::Reserved(reservation) => reservation,
         other => panic!("unexpected start reservation: {other:?}"),
     };
-    let mut wait = Box::pin(acquire_prestart_program_guard(
+    let mut wait = Box::pin(acquire_prestart_program_roots(
         &state,
         "minecraft",
-        &root.0,
+        std::slice::from_ref(&root.0),
         &reservation,
     ));
     std::future::poll_fn(|context| {

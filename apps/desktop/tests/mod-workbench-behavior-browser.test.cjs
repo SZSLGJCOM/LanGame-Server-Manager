@@ -14,7 +14,7 @@ for (const viewport of [{ width: 1560, height: 900 }, { width: 960, height: 600 
       }
       const report = await runBrowserFixture({ fixturePath: "mod-workbench-behavior-browser.html", viewport,
         screenshotPath: output ? path.join(output, `mod-behavior-${viewport.width}x${viewport.height}.png`) : undefined });
-      assert.equal(report.status, "passed");
+      assert.equal(report.status, "passed", report.error);
       assert.deepEqual(report.inventory_modules, ["minecraft", "valheim", "squad"]);
       assert.equal(report.squad_managed_path, "C:\\Fixture\\squad\\Mods\\123456");
       assert.equal(report.squad_empty_directory_installed, false);

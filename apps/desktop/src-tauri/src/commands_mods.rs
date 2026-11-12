@@ -37,6 +37,8 @@ pub(super) use library_cleanup::after_instance_deletion;
 pub(super) mod thunderstore_start;
 #[path = "commands_workshop_download.rs"]
 mod workshop_download;
+#[path = "commands_workshop_preparation.rs"]
+pub(crate) mod workshop_preparation;
 #[path = "commands_workshop_start.rs"]
 pub(super) mod workshop_start;
 #[path = "commands_workshop_start_plan.rs"]
@@ -213,6 +215,46 @@ fn path_is_same_or_within(candidate: &Path, root: &Path) -> bool {
     }
 }
 
+fn program_recovery_data_paths(
+    install_root: &Path,
+) -> Result<Vec<ProtectedInstallDataPath>, String> {
+    let root = app_storage::program_removal_files::normalize_path(install_root)
+        .map_err(|error| error.to_string())?;
+    let entries = match fs::read_dir(&root) {
+        Ok(entries) => entries,
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(Vec::new()),
+        Err(error) => {
+            return Err(format!("检查程序修复副本 {} 失败：{error}", root.display()));
+        }
+    };
+    let mut candidates = vec![root.join(".langame/minecraft-recovery")];
+    for entry in entries {
+        let entry =
+            entry.map_err(|error| format!("检查程序修复副本 {} 失败：{error}", root.display()))?;
+        if entry
+            .file_name()
+            .to_string_lossy()
+            .to_ascii_lowercase()
+            .starts_with(".langame-archive-recovery-")
+        {
+            candidates.push(entry.path());
+        }
+    }
+    let mut protected = Vec::new();
+    for path in candidates {
+        // Recovery receipts identify displaced user bytes, not removable
+        // installer metadata. A missing/damaged receipt cannot permit deletion;
+        // existing path/link checks still apply when retaining the whole subtree.
+        if contains_preserved_data(&path)? {
+            protected.push(ProtectedInstallDataPath {
+                source: String::from("程序修复前保留的原文件"),
+                path: Some(path),
+            });
+        }
+    }
+    Ok(protected)
+}
+
 pub(super) async fn collect_protected_install_data_paths(
     paths: &app_storage::StoragePaths,
     descriptor: &ModuleDescriptor,
@@ -286,6 +328,7 @@ pub(super) async fn collect_protected_install_data_paths(
         if let Some(declared_path) = declared_install_root_data_path(&descriptor, &install_root)? {
             protected.push(declared_path);
         }
+        protected.extend(program_recovery_data_paths(&install_root)?);
         for candidate in candidates {
             if let Some(path) = candidate.path.as_deref()
                 && contains_preserved_data(path)?
@@ -654,6 +697,7 @@ pub(super) async fn download_steam_workshop_items_inner(
     missing_only: bool,
     preference: app_network::SourcePreference,
     account_name: Option<String>,
+    attempt_token: Option<String>,
 ) -> Result<SteamWorkshopDownloadResult, String> {
     let account_name = account_name
         .as_deref()
@@ -747,9 +791,12 @@ pub(super) async fn download_steam_workshop_items_inner(
         steamcmd,
     ));
     let label = format!("Download Workshop items for {}", instance.summary.name);
-    let job_id = new_background_job_id("workshop-download", &instance.summary.id);
+    let job_id = workshop_preparation::workshop_attempt_job_id(
+        &instance.summary.id,
+        attempt_token.as_deref(),
+    )?;
 
-    insert_background_job(
+    workshop_preparation::register_workshop_job(
         &state,
         &storage,
         BackgroundJob {
@@ -1107,6 +1154,7 @@ pub(super) async fn resolve_manual_mod_references_inner(
                     status: String::from("resolved"),
                     resolved_id: Some(resolved_id),
                     title,
+                    icon_url: None,
                     message: None,
                 });
             }
@@ -1115,6 +1163,7 @@ pub(super) async fn resolve_manual_mod_references_inner(
                 status: String::from("failed"),
                 resolved_id: None,
                 title: None,
+                icon_url: None,
                 message: Some(message),
             }),
         }
@@ -1482,6 +1531,8 @@ pub(super) async fn download_modrinth_mod_sources(
         sources.push(DownloadedManualModSource {
             path: source_path,
             identity: OnlineModIdentity {
+                display_name: None,
+                icon_url: None,
                 thunderstore_intent: None,
                 provider: "modrinth".into(),
                 project: version.project_id.clone(),

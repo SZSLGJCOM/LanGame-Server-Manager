@@ -8,25 +8,28 @@ const filename = path.join(__dirname, "../src/views/servers/instance-removal-pre
 const loaded = { exports: {} };
 vm.runInNewContext(transpileTypeScript(fs.readFileSync(filename, "utf8"), filename), { module: loaded, exports: loaded.exports });
 const { formatInstanceRemovalPlan } = loaded.exports;
-const t = (key, values) => `${key}${values ? `\n${values.paths ?? values.path}` : ""}`;
+const catalogFilename = path.join(__dirname, "../src/i18n-messages-en-extra.ts");
+const catalog = { exports: {} };
+vm.runInNewContext(transpileTypeScript(fs.readFileSync(catalogFilename, "utf8"), catalogFilename),
+  { module: catalog, exports: catalog.exports });
+const t = (key) => catalog.exports.EN_US_EXTRA_MESSAGES[key];
 
-test("removal identifies a related library without promising that unused extra programs remain", () => {
+test("removal keeps consequences and retention clear without listing every path", () => {
   const text = formatInstanceRemovalPlan({ data_path: "D:/instances/one", program_path: "D:/games/example",
     remove_program: false, preserved_program_path: "D:/games/example", owned_data_paths: ["D:/instances/one"],
     preserved_external_saves_path: "D:/external/saves" }, t);
-  const [removed, preserved] = text.split("servers.removal.preserved");
-  assert.match(removed, /D:\/instances\/one/);
-  assert.doesNotMatch(removed, /D:\/games\/example/);
-  assert.match(preserved, /D:\/games\/example/);
-  assert.match(preserved, /D:\/external\/saves/);
-  assert.match(text, /servers\.removal\.libraryProgram\nD:\/games\/example/);
-  assert.match(text, /servers\.removal\.cleanupHint/);
-  assert.equal((text.match(/D:\/instances\/one/g) || []).length, 1);
+  assert.match(text, /saves and backups will also be deleted/);
+  assert.match(text, /cannot be undone/);
+  assert.match(text, /last instance also removes unused programs/);
+  assert.match(text, /base library is kept/);
+  assert.match(text, /External saves are kept/);
+  assert.doesNotMatch(text, /D:\//);
+  assert.ok(text.length < 200, "The card warning must stay concise");
 });
 
-test("exclusive installation cleanup names the additional program path", () => {
+test("exclusive program cleanup stays explicit without inventing external saves", () => {
   const text = formatInstanceRemovalPlan({ data_path: "D:/instances/two", program_path: "D:/programs/two",
     remove_program: true, preserved_program_path: null, owned_data_paths: [], preserved_external_saves_path: null }, t);
-  assert.match(text, /D:\/programs\/two/);
-  assert.doesNotMatch(text, /servers.removal.preserved/);
+  assert.match(text, /exclusive program is also deleted/);
+  assert.doesNotMatch(text, /External saves|D:\//);
 });

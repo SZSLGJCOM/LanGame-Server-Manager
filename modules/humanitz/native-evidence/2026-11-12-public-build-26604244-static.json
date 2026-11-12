@@ -1,0 +1,82 @@
+{
+  "reviewed_on": "2026-11-12",
+  "steam_app_id": 2728330,
+  "public_build_id": "26604244",
+  "public_branch_updated_utc": "2026-11-12T00:06:08Z",
+  "source": "Isolated official SteamCMD package; read-only native-reference comparison against recorded build 26335264. No native game execution in this static review.",
+  "release": {
+    "name": "HumanitZ Hotfix 1.1Z",
+    "published_utc": "2026-11-12T00:07:06Z",
+    "url": "https://steamcommunity.com/games/1766060/announcements/detail/694277726961401859",
+    "scope": "The release removes Halloween content and fixes gameplay, UI, map and item-spawner issues. It does not announce new dedicated-server configuration, launch arguments, RCON commands or save formats. 1.2 Experimental and UE5 migration are future work."
+  },
+  "manifest": {
+    "path": "steamapps/appmanifest_2728330.acf",
+    "sha256": "6d1974088eaeb6e4d896856fc94e6d201fa2089c128dee59f2f4eb18ab394ffd",
+    "build_id": "26604244",
+    "target_build_id": "26604244",
+    "state_flags": 4,
+    "update_result": 0,
+    "size_on_disk": 1353094276,
+    "game_depot_id": "2728331",
+    "game_depot_manifest": "7997973880489855722"
+  },
+  "executable": {
+    "path": "HumanitZServer/Binaries/Win64/HumanitZServer-Win64-Shipping.exe",
+    "size": 79284224,
+    "sha256": "bfb85c9197166694eb2335e6f1c9a800ef11027b2e82b71c0ac8e6df7d64b8a8",
+    "baseline_build_id": "26335264",
+    "baseline_bytes_match": true
+  },
+  "configuration": {
+    "comparison_baseline_build_id": "26335264",
+    "path": "HumanitZServer/REF_GameServerSettings.ini",
+    "sha256": "1508efa4657cea1024d504a1850a7813e767a4f5f510391535e752de56b8cceb",
+    "baseline_bytes_match": true,
+    "reference_version": 39,
+    "assignment_count": 95,
+    "unique_native_key_count": 94,
+    "duplicate_assignment": [
+      {
+        "section": "World Settings",
+        "key": "RecycleCar",
+        "value": "14",
+        "occurrences": 2
+      }
+    ],
+    "added_keys": [],
+    "removed_keys": [],
+    "changed_defaults": [],
+    "module_coverage": "All 92 editable native setting keys are represented by schema controls. RConPort belongs to the instance port model; Version is a reference identifier and is not rendered. The three optional 1.1 controls and the single RecycleCar assignment remain unchanged."
+  },
+  "rcon_reference": {
+    "path": "RCONCommands.txt",
+    "sha256": "2902c3625a795bd5e9f7ccc50ad7add9bd24089b4f0879f341196748780e1bc0",
+    "baseline_bytes_match": true,
+    "save_command": "save",
+    "shutdown_command": "shutdown",
+    "save_contract": "Native RCON save remains an exact request-ID 0, response-ID 1/type 0/Game saved! exchange in the existing adapter. Static reference and executable identity do not establish a fresh native ACK, durable save or restart readback. Formal receipts remain Requested."
+  },
+  "reviewed_module_files": {
+    "schema.json": "ff49688ee7340269fc11426ee67f1d0e7b02ced1c202218d306f1bf7e5d9e83c",
+    "module.toml": "afe7f6a83fb4faffdd80e2391fa4d9abdea4728a37443af021aa268622da3b41",
+    "smoke.toml": "97b7cf60286cd5b9e2265b3c467d71c76b963ea089f7d5d144213d10013adbe4",
+    "templates/GameServerSettings.ini.hbs": "72185e12d66d4b15d0e24aed87b7098497f0c1099e67248ba5c113943fe05c86"
+  },
+  "source_alignment": {
+    "compared_files": 22,
+    "all_matching": true,
+    "scope": "Before this provenance refresh, the complete HumanitZ module tree excluding Python bytecode cache, plus five dedicated transport/render source and test files, matched between local and execution sources. This is source alignment, not compiled-binary identity."
+  },
+  "scope": "The candidate identity matches the refreshed public build. Configuration and RCON references, plus the Shipping executable, are byte-identical to the prior build; no manager behavior change is required by this static comparison. The game package can still contain changed assets. Native readiness, authenticated info/Players/save, normal stop/restart and retained-world behavior require separate current-build verification.",
+  "acquisition": {
+    "method": "Official anonymous SteamCMD app_update 2728330 validate",
+    "exit_code": 0,
+    "receipt": {
+      "artifact": "acquisition.json",
+      "size": 456,
+      "sha256": "99138842fa14412b6a5cb543f07bdf5e059bbace80dfbfe21c56026a7bd68442"
+    },
+    "native_execution": "Separately documented in 2026-11-12-public-build-26604244-native.json"
+  }
+}

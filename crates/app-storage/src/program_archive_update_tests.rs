@@ -145,8 +145,14 @@ fn archive_update_rejects_required_file_conflicts_without_touching_originals() {
         put(&source, path, b"operator customization");
         let before = crate::test_file_snapshot::tree_snapshot(&source).unwrap();
         let staged = crate::test_file_snapshot::tree_snapshot(&stage).unwrap();
-        let error = merge_archive_program_update(&source, &stage, &fixture.descriptor, &[], None)
-            .unwrap_err();
+        let error = merge_archive_program_update(
+            &source,
+            &stage,
+            &fixture.descriptor,
+            &[source.join(path)],
+            None,
+        )
+        .unwrap_err();
         assert!(
             error.to_string().contains("conflicts with a required file"),
             "{error}"
@@ -252,3 +258,6 @@ async fn concurrent_retained_children_changes_reject_the_staged_update() {
         );
     }
 }
+
+#[path = "program_archive_repair_tests.rs"]
+mod repair;

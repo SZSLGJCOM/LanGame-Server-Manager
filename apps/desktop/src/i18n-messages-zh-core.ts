@@ -369,7 +369,7 @@ export const ZH_CN_CORE_MESSAGES: MessageCatalog = {
   "servers.details.operationsHost": "\u4e3b\u673a\u5de5\u5177",
   "servers.details.deleteInstance": "\u5220\u9664\u5b9e\u4f8b",
   "servers.details.deleteInstanceRequiresStop": "\u5220\u9664\u5b9e\u4f8b\u524d\u8bf7\u5148\u505c\u670d\u3002",
-  "servers.details.deleteInstanceConfirm": "永久删除实例、存档和备份？\n删除该游戏最后一个实例时清理不再使用的额外程序，保留基础库及仍有依赖的程序。",
+  "servers.details.deleteInstanceConfirm": "永久删除此实例？\n存档和备份一并删除，无法恢复。",
   "servers.details.archiveInstance": "归档实例",
   "servers.details.archiveInstanceRequiresStop": "归档实例前请先停服。",
   "servers.details.archiveHostOnly": "请在服务器主机的 LanGame 中归档实例。",

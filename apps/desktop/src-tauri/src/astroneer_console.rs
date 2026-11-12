@@ -17,7 +17,7 @@ pub(crate) fn validate_start_settings(instance: &app_core::InstanceDetails) -> R
         .get("public_ip")
         .and_then(serde_json::Value::as_str)
         .ok_or_else(|| String::from("ASTRONEER PublicIP was not prepared before startup."))?;
-    crate::astroneer_public_ip::parse_public_address(value).map(|_| ())
+    crate::astroneer_public_ip::parse_advertised_address(value).map(|_| ())
 }
 
 #[derive(Clone, Copy)]

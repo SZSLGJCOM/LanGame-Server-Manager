@@ -46,6 +46,8 @@ impl Fixture {
             path,
             label: "Author-Plugin".into(),
             identity: OnlineModIdentity {
+                display_name: None,
+                icon_url: None,
                 provider: "thunderstore".into(),
                 project: "Author-Plugin".into(),
                 historical_names: Vec::new(),

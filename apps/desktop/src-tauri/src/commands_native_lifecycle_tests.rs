@@ -22,6 +22,8 @@ mod catalog;
 mod creation;
 #[path = "commands_native_diagnostics.rs"]
 mod diagnostics;
+#[path = "commands_dragonwilds_bootstrap_native_tests.rs"]
+mod dragonwilds_bootstrap;
 #[path = "commands_dragonwilds_compatibility_tests.rs"]
 mod dragonwilds_compatibility;
 #[path = "commands_enshrouded_compatibility_tests.rs"]
@@ -55,6 +57,8 @@ mod package;
 mod player_counts;
 #[path = "commands_native_prestart_probe.rs"]
 mod prestart_probe;
+#[path = "commands_native_program_repair.rs"]
+mod program_repair;
 #[path = "commands_native_readiness.rs"]
 mod readiness;
 #[path = "commands_native_runtime.rs"]
@@ -1157,7 +1161,11 @@ async fn run_native_package(
         || removed.executable_exists
         || !removed.cleanup.retained_installs.is_empty()
     {
-        return Err("native final library uninstall did not release every unused program".into());
+        return Err(format!(
+            "native final library uninstall did not release every unused program: {}",
+            serde_json::to_string(&removed)?
+        )
+        .into());
     }
     println!(
         "NATIVE_LIFECYCLE module={module_id} phase=library_final_uninstall unused_programs=removed retained_data_paths={}",

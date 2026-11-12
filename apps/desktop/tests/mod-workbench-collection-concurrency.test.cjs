@@ -25,6 +25,7 @@ const dstPolicy = require("../src/views/servers/mod-workbench-dst-policy.ts");
 const workshopControls = require("../src/views/servers/mod-workbench-workshop-controls.ts");
 const workshopInventory = require("../src/views/servers/mod-workbench-workshop-inventory.ts");
 const { WorkshopDownloadOperations } = require("../src/views/servers/workshop-download-operations.ts");
+const { loadWorkshopDownloadExecution } = require("./helpers/workshop-download-execution.cjs");
 const { formatDesktopError } = require("../src/desktop-error-message.ts");
 const { EN_US_EXTRA_MESSAGES } = require("../src/i18n-messages-en-extra.ts");
 const { arkModFields } = require("../src/views/servers/ark-map-mods.ts");
@@ -65,8 +66,9 @@ function fixture() {
   const downloads = new WorkshopDownloadOperations();
   downloads.subscribe(() => {
     const snapshot = downloads.snapshot("instance-pz");
-    state.downloadState = snapshot.status;
-    state.downloadError = snapshot.error;
+    const request = snapshot.requests.at(-1);
+    state.downloadState = request?.status ?? "idle";
+    state.downloadError = request?.error ?? null;
   });
   const exports = {};
   const root = {
@@ -80,7 +82,8 @@ function fixture() {
     moduleId, isArk: arkModFields(moduleId).length > 0,
     expectedAppId: 108600, locale: "en-US", readOnly: false, steamAccount: undefined,
     workflow: { steamDownloadMode: "steamcmd-cache" },
-    modMutationsDisabled: false, modWorkflowUnsupported: false,
+    workshopInstallsDisabled: false, modWorkflowUnsupported: false,
+    installingWorkshopIds: new Set(), queuedWorkshopIds: new Set(),
     modChangesBlockedRef: { current: false },
     manualEnablement: null, manualStaging: null,
     settings: structuredClone(INITIAL_SETTINGS), latestSettingsRef: { current: structuredClone(INITIAL_SETTINGS) },
@@ -92,7 +95,7 @@ function fixture() {
     // React coordination is outside this regression; execute its real owned operation.
     runModMutation: async (_kind, operation) => operation(),
     readBackgroundJobs: async () => [],
-    downloadOperation: { begin: (request) => downloads.begin("instance-pz", request) },
+    downloadOperation: { enqueue: (request, execute) => downloads.enqueue("instance-pz", request, execute) },
     setApplyMessage: noOp,
     setPzSnapshot: noOp, setScanNonce: noOp,
     setDownloadError: (value) => { state.downloadError = value; },
@@ -104,11 +107,13 @@ function fixture() {
         settings_json: JSON.stringify(persisted)
       };
     },
-    downloadSteamWorkshopItems: async (id, ids) => {
+    prepareSteamWorkshopItems: async (id, ids, attemptToken) => {
       assert.equal(id, "instance-pz");
       state.downloads.push([...ids]);
-      return { items: ids.map((item_id) => ({ item_id, expected_path_exists: true })) };
+      return { ticket_id: attemptToken, consumer_app_id: 108600 };
     },
+    commitSteamWorkshopItems: async () => ({ items: [{ item_id: MEMBER_ID, expected_path_exists: true }] }),
+    discardSteamWorkshopPreparation: async () => {},
     readProjectZomboidWorkshopModsSnapshot: async (id, ids) => {
       assert.equal(id, "instance-pz");
       assert.equal(ids.join(","), MEMBER_ID);
@@ -132,6 +137,7 @@ function fixture() {
     "readWritableInstanceState", "persistSettings", "isCollectionSummary",
     "canInstallWorkshopItems", "handleInstallWorkshopItems"
   ].map(functionSource).join("\n");
+  context.executeWorkshopDownload = loadWorkshopDownloadExecution(context);
   vm.runInNewContext(transpileTypeScript(`${declarations}\nexports.install = handleInstallWorkshopItems;`, filename), context, { filename });
   return {
     state,

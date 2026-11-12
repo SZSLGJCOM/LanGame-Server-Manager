@@ -6,16 +6,16 @@ pub(super) struct NexusAuthorization {
     pub(super) user_id: u64,
 }
 
-pub(super) struct NexusReference {
-    pub(super) domain: String,
-    pub(super) mod_id: String,
-    pub(super) file_id: Option<String>,
+pub(in crate::commands) struct NexusReference {
+    pub(in crate::commands) domain: String,
+    pub(in crate::commands) mod_id: String,
+    pub(in crate::commands) file_id: Option<String>,
     pub(super) authorization: Option<NexusAuthorization>,
     pub(super) is_nxm: bool,
 }
 
 impl NexusReference {
-    pub(super) fn page_url(&self) -> String {
+    pub(in crate::commands) fn page_url(&self) -> String {
         format!(
             "https://www.nexusmods.com/{}/mods/{}",
             self.domain, self.mod_id
@@ -85,7 +85,7 @@ fn website_url(value: &str) -> Result<reqwest::Url, String> {
     Ok(url)
 }
 
-pub(super) fn source_domain(source: &ModuleModSourceSpec) -> Result<String, String> {
+pub(in crate::commands) fn source_domain(source: &ModuleModSourceSpec) -> Result<String, String> {
     if source.provider != "nexus" {
         return Err(invalid());
     }
@@ -101,7 +101,7 @@ pub(super) fn source_domain(source: &ModuleModSourceSpec) -> Result<String, Stri
     Ok(domain.into())
 }
 
-pub(super) fn parse_reference(
+pub(in crate::commands) fn parse_reference(
     value: &str,
     expected_domain: &str,
 ) -> Result<NexusReference, String> {
@@ -166,9 +166,10 @@ pub(super) fn parse_reference(
         let url = website_url(value)?;
         let parts = url.path().trim_matches('/').split('/').collect::<Vec<_>>();
         let (domain, mod_id, path_file) = match parts.as_slice() {
-            [domain, "mods", mod_id] | ["games", domain, "mods", mod_id] => {
-                (*domain, *mod_id, None)
-            }
+            [domain, "mods", mod_id]
+            | ["games", domain, "mods", mod_id]
+            | [domain, "mods", mod_id, "files"]
+            | ["games", domain, "mods", mod_id, "files"] => (*domain, *mod_id, None),
             [domain, "mods", mod_id, "files", file_id]
             | ["games", domain, "mods", mod_id, "files", file_id] => {
                 (*domain, *mod_id, Some(canonical_id(file_id)?))

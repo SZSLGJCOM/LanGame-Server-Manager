@@ -1,7 +1,7 @@
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { isTauri } from "@tauri-apps/api/core";
 import { useEffect, useMemo } from "react";
-import type { MouseEvent as ReactMouseEvent } from "react";
+import type { MouseEvent as ReactMouseEvent, ReactNode } from "react";
 import type { AiSettings, PersistAiSettings } from "../ai-settings";
 import type { AssistantConversationSummary } from "../assistant-conversations";
 import type {
@@ -23,6 +23,7 @@ import langameLogoUrl from "../assets/langame-logo.svg";
 import { AssistantCapsule } from "./AssistantCapsule";
 import { ShellIcon } from "./ShellIcon";
 import { useWindowMaximized } from "../hooks/useWindowMaximized";
+import { isInteractiveWindowTarget, useWindowDrag } from "../hooks/useWindowDrag";
 import { syncDesktopTrayLocale } from "../desktop-tray-locale";
 
 interface HeaderNavItem {
@@ -41,6 +42,7 @@ const LANGAME_WEBSITE_URL = "https://langame.cn/";
 interface AppHeaderProps {
   activeView: ViewKey;
   aiSettings: AiSettings;
+  appUpdateAction?: ReactNode;
   assistant: AssistantCapsuleModel;
   assistantDraft: string;
   assistantInput: AssistantBuildInput;
@@ -88,6 +90,7 @@ export function AppHeader(props: AppHeaderProps) {
     }
   }, [appWindow, locale]);
   const maximized = useWindowMaximized(appWindow);
+  const handleWindowDragMouseDown = useWindowDrag(appWindow !== null);
   const nextTheme = props.theme === "dark" ? "light" : "dark";
   const themeIcon = props.theme === "dark" ? "moon" : "sun";
   const logoUrl = props.theme === "dark" ? langameDarkLogoUrl : langameLogoUrl;
@@ -104,24 +107,6 @@ export function AppHeader(props: AppHeaderProps) {
     } catch (error) {
       console.error("Window control action failed", error);
     }
-  }
-
-  function isInteractiveWindowTarget(target: EventTarget | null) {
-    if (!(target instanceof Element)) {
-      return false;
-    }
-
-    return Boolean(
-      target.closest("button, input, select, textarea, option, a, label, [role='button'], [data-no-window-drag='true']")
-    );
-  }
-
-  function handleWindowDragMouseDown(event: ReactMouseEvent<HTMLElement>) {
-    if (event.button !== 0 || isInteractiveWindowTarget(event.target)) {
-      return;
-    }
-    event.preventDefault();
-    void runWindowCommand((window) => window.startDragging());
   }
 
   function handleWindowDragDoubleClick(event: ReactMouseEvent<HTMLElement>) {
@@ -174,7 +159,8 @@ export function AppHeader(props: AppHeaderProps) {
   }
 
   return (
-    <header className="shell-header" onMouseDown={handleWindowDragMouseDown} onDoubleClick={handleWindowDragDoubleClick}>
+    <header className="shell-header" data-window-maximized={maximized}
+      onMouseDown={handleWindowDragMouseDown} onDoubleClick={handleWindowDragDoubleClick}>
       <div className="shell-header-row">
         <div className="shell-header-side shell-header-side--left">
           <div className="shell-window-brand">
@@ -204,6 +190,7 @@ export function AppHeader(props: AppHeaderProps) {
 
         <div className="shell-header-side shell-header-side--right">
           <div className="shell-header-tools">
+            {props.appUpdateAction}
             <button
               type="button"
               className="shell-theme-icon-button"

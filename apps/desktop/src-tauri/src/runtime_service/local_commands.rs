@@ -2,6 +2,7 @@
 //! destructive maintenance out of the HTTP dispatcher preserves the LAN boundary.
 use crate::commands::commands_ark_cluster_backups as backups;
 use crate::commands::commands_nexus_mods as nexus;
+use crate::commands::commands_nexus_website as nexus_website;
 use crate::commands::commands_storage_management as storage;
 use crate::commands::commands_storage_migration as migration;
 use crate::state::DesktopState;
@@ -48,6 +49,36 @@ pub(super) fn dispatch<'a>(
                 migration::cancel_app_storage_migration(
                     app.state::<DesktopState>(),
                     string_argument(&args, "operationId")?,
+                )
+                .await?,
+            )
+        })),
+        "prepare_nexus_website_install" => Some(Box::pin(async move {
+            let request: NexusWebsitePrepareInput = serde_json::from_value(args)
+                .map_err(|_| String::from("Invalid Nexus website preparation input."))?;
+            to_json(
+                nexus_website::prepare_nexus_website_install(
+                    app.state::<DesktopState>(),
+                    request.instance_id,
+                    request.reference,
+                )
+                .await?,
+            )
+        })),
+        "install_nexus_website_download" => Some(Box::pin(async move {
+            let request: NexusWebsiteDownloadInput = serde_json::from_value(args)
+                .map_err(|_| String::from("Invalid Nexus website download input."))?;
+            to_json(
+                nexus_website::install_nexus_website_download(
+                    app.clone(),
+                    app.state::<DesktopState>(),
+                    request.instance_id,
+                    request.operation_id,
+                    request.reference,
+                    request.download_url,
+                    request.file_name,
+                    request.title,
+                    request.icon_url,
                 )
                 .await?,
             )
@@ -116,7 +147,7 @@ pub(super) fn dispatch<'a>(
                 .map_err(|error| format!("Invalid Workshop account download input: {error}"))?;
             to_json(crate::commands::commands_steam_workshop_account::download_authenticated_steam_workshop_items(
                 app.clone(), request.instance_id, request.ids, request.account_name,
-                request.missing_only, request.locale,
+                request.missing_only, request.locale, request.attempt_token,
             ).await?)
         })),
         "install_authenticated_module_game" => Some(Box::pin(async move {
@@ -412,6 +443,25 @@ struct NexusReviewInput {
 }
 
 #[derive(serde::Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+struct NexusWebsitePrepareInput {
+    instance_id: String,
+    reference: String,
+}
+
+#[derive(serde::Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+struct NexusWebsiteDownloadInput {
+    instance_id: String,
+    operation_id: String,
+    reference: String,
+    download_url: String,
+    file_name: String,
+    title: Option<String>,
+    icon_url: Option<String>,
+}
+
+#[derive(serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct NexusInstallInput {
     instance_id: String,
@@ -443,6 +493,7 @@ struct WorkshopAccountDownloadInput {
     account_name: String,
     missing_only: Option<bool>,
     locale: Option<String>,
+    attempt_token: Option<String>,
 }
 
 fn input<T: serde::de::DeserializeOwned>(mut args: Value) -> Result<T, String> {

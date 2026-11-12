@@ -2027,6 +2027,7 @@ async fn assistant_operation_inner(
                 ids.clone(),
                 None,
                 None,
+                None,
             )
             .await?;
             output.instance_id = Some(instance.id.clone());

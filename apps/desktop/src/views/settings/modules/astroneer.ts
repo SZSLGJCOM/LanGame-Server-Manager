@@ -1,9 +1,10 @@
 import type { SettingsModuleDefinition } from "../module-types";
 import { AstroneerSaveSelect } from "../AstroneerSaveSelect";
+import { astroneerNetworkSettingsIssue } from "../../../astroneer-network-settings";
 import { createSurvivalDedicatedSettingsDefinition } from "./survival-dedicated";
 
 const ASTRONEER_FIELD_GROUPS = [
-  { id: "network", sectionId: "network", keys: ["public_ip", "console_password"] },
+  { id: "network", sectionId: "network", keys: ["connection_mode", "public_ip", "console_password"] },
   { id: "access", sectionId: "access", keys: ["deny_unlisted_players", "server_owner_display_name", "owner_guid"] },
   {
     id: "world",
@@ -37,6 +38,14 @@ const astroneerBaseSettingsDefinition = createSurvivalDedicatedSettingsDefinitio
 export const astroneerSettingsDefinition: SettingsModuleDefinition = {
   id: "astroneer",
   fieldPresentationOverrides: {
+    connection_mode: {
+      state: "derived", owner: "instance_network", sectionId: "network",
+      reason: "Address source is derived from the player join address selection."
+    },
+    public_ip: {
+      state: "derived", owner: "instance_network", sectionId: "network",
+      reason: "The advertised address is managed by the player join address selector."
+    },
     active_save_file_name: {
       state: "specialized", owner: "configuration", sectionId: "room", rendererId: "astroneer-save-select"
     }
@@ -46,6 +55,10 @@ export const astroneerSettingsDefinition: SettingsModuleDefinition = {
   },
   getSections: astroneerBaseSettingsDefinition.getSections,
   buildFieldGroups: astroneerBaseSettingsDefinition.buildFieldGroups,
+  getSettingsValidationIssues(settings, { t }) {
+    const issue = astroneerNetworkSettingsIssue(settings);
+    return issue ? [{ fieldKey: issue.fieldKey, reason: "module", message: t(`astroneer.network.validation.${issue.reason}`) }] : [];
+  },
   getFieldCopy(key, t, locale) {
     if (key === "active_save_file_name") return {
       title: t("settings.schema.astroneer.active_save_file_name.title", undefined, "Startup Save"),

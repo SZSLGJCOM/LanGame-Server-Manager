@@ -5,6 +5,7 @@ import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 import { I18nProvider } from "../../src/i18n";
 import { RuntimeSurfaceWorkbench } from "../../src/views/servers/RuntimeSurfaceWorkbench";
 import { RUNTIME_LOG_STREAM_EVENT, type RuntimeLogStreamEvent } from "../../src/runtime-log-stream";
+import { verifyNativeDisplayScale } from "./desktop-display-scale";
 
 interface Observations {
   event_command_counts: number[];
@@ -264,6 +265,7 @@ async function run() {
   check(activeNativeLogHandlers() === 0, "A fresh fixture page already has log listeners");
   observations.native_bridge = true;
   persist();
+  await verifyNativeDisplayScale();
   const fixture = document.getElementById("fixture");
   check(fixture, "Missing fixture container");
   const root = createRoot(fixture);

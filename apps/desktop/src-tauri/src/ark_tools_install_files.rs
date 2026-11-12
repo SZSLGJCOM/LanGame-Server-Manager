@@ -329,7 +329,21 @@ pub(super) fn decode_ownership(
         let previous_asa_configuration = profile.module_id == ASA.module_id
             && path == "config.json"
             && *hash == digest(&managed_configuration(&ASA, true)?);
-        if !embedded && wanted.get(path) != Some(hash) && !previous_asa_configuration {
+        // Keep the exact shipped 2.03 and 2.1 dependency pins recognizable so
+        // intact managed installs can be inspected, upgraded or removed. Every
+        // caller still checks the actual file bytes against the recorded hash.
+        let previous_asa_framework = profile.module_id == ASA.module_id
+            && path == "ArkApi/AsaApi.dll"
+            && matches!(
+                hash.as_str(),
+                "7d12ff5fd238c4094da863d99651f3b54d7ffde1752eaa7cc263222cb7cd09d5"
+                    | "d46af90afab50d36679f8ea4c8b7c1b2e6057ec4ad44963f00244ed8f3969a62"
+            );
+        if !embedded
+            && wanted.get(path) != Some(hash)
+            && !previous_asa_configuration
+            && !previous_asa_framework
+        {
             return Err(format!(
                 "ARK extension dependency or configuration has unknown ownership: {path}"
             ));

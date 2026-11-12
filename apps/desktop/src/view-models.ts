@@ -11,6 +11,7 @@ import type {
   StorageStatus
 } from "./types";
 import { instanceHasRunningProcess } from "./runtime-action-state";
+import { astroneerRadminCandidates, readAstroneerAdvertisedAddress, readAstroneerConnectionMode } from "./astroneer-network-settings";
 import { normalizeInstanceStatus } from "./instance-status";
 import {
   formatCoreKeeperAllowedPlatform,
@@ -222,6 +223,21 @@ export function buildShareEndpoints(
 ): ShareEndpoint[] {
   if (isValheimCrossplayEnabled(details)) return [];
 
+  if (details?.summary.module_id === "astroneer") {
+    const address = readAstroneerAdvertisedAddress(details.settings_json);
+    const port = details.ports.find((binding) => binding.name === "game" && binding.protocol === "udp");
+    if (!address || !port || !Number.isInteger(port.port) || port.port <= 0 || port.port > 65535) return [];
+    const candidate = normalizeBindAddressCandidates(bindAddressCandidates).find((item) => item.address === address);
+    return [{
+      address,
+      endpoint: `${address}:${port.port}`,
+      kind: candidate?.kind ?? "configured",
+      label: readAstroneerConnectionMode(details.settings_json) === "radmin" ? "Radmin VPN"
+        : candidate?.kind === "overlay" ? formatShareLabel(candidate, locale)
+          : t("astroneer.network.share.advertised", undefined, "Advertised address")
+    }];
+  }
+
   if (details?.summary.module_id === "corekeeper") {
     const settings = parseCoreKeeperSettingsJson(details.settings_json);
     if (!isCoreKeeperDirectConnectionEnabled(settings)) {
@@ -348,9 +364,19 @@ export function buildInviteText(
   const crossplay = valheimCrossplayJoinGuidance(details, t);
   if (crossplay) return [`${game}: ${details.summary.name}`, crossplay.instructions].join("\n");
 
+  if (details.summary.module_id === "astroneer" && shareEndpoints.length === 0) {
+    return [`${game}: ${details.summary.name}`, t("astroneer.network.share.pending", undefined,
+      "Select the player join address in Network settings, or start the server to select one automatically.")].join("\n");
+  }
+
   const moduleNotes = details.summary.module_id === "vrising"
     ? buildVrisingInviteNotes(details, locale)
-    : [];
+    : details.summary.module_id === "astroneer"
+      && (readAstroneerConnectionMode(details.settings_json) === "radmin"
+        || astroneerRadminCandidates(bindAddressCandidates).some((candidate) => candidate.address === shareEndpoints[0]?.address))
+      ? [t("astroneer.network.share.radmin", undefined,
+        "Join the same Radmin VPN network, then add this address in the game's dedicated server list.")]
+      : [];
 
   if (details.summary.module_id === "corekeeper") {
     return buildCoreKeeperInviteText(details, bindAddressCandidates, locale, t);
@@ -382,6 +408,7 @@ export function buildJoinEndpoint(
   if (primaryEndpoint) {
     return primaryEndpoint.endpoint;
   }
+  if (details?.summary.module_id === "astroneer") return "";
 
   const port = primaryPort(details);
   const fallbackAddress = String(details?.summary.bind_ip ?? "").trim()

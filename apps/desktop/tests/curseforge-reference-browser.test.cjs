@@ -13,6 +13,11 @@ function options(capture = null, pageCapture) {
     fixtureCleanup: true,
     bundleWithMiddleware: true,
     fixtureMiddleware(request, response, next) {
+      if (request.url === "/__mod_fixture_avatar.svg") {
+        response.writeHead(200, { "Content-Type": "image/svg+xml" }).end('<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64"><rect width="64" height="64" rx="12" fill="#29645f"/><path d="M16 46 32 15 48 46Z" fill="#c9eeae"/></svg>');
+        return;
+      }
+      if (request.url === "/__mod_fixture_missing.png") { response.writeHead(404).end(); return; }
       if (request.url === "/__curseforge_page_capture.png" && pageCapture) {
         response.writeHead(200, { "Content-Type": "image/png", "Cache-Control": "no-store" }).end(pageCapture.bytes);
         return;
@@ -43,6 +48,8 @@ test("ASA recognition stays hidden until verification and releases cancelled or 
   assert.equal(report.hidden_by_default, true);
   assert.equal(report.batch_loading_hides_verification, true);
   assert.equal(report.completed_page_hidden_before_result, true);
+  assert.equal(report.presentation_reloaded, true);
+  assert.equal(report.missing_avatar_fallback, true);
   assert.ok(report.success_auto_dismiss_ms >= 4800 && report.success_auto_dismiss_ms < 6500);
   assert.deepEqual(report.browser_errors, []);
   assert.equal(report.browser_exited, true);

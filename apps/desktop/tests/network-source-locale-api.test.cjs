@@ -54,7 +54,7 @@ for (const transport of ["tauri", "lan"]) {
     const operations = [
       () => api.installAuthenticatedModule("fixture-module", true, "Fixture_Account", target),
       () => api.updateAuthenticatedInstanceProgram("fixture-instance", true, "Fixture_Account"),
-      () => api.downloadSteamWorkshopItems("fixture-instance", ["3766499200"], true, "Fixture_Account")
+      () => api.downloadSteamWorkshopItems("fixture-instance", ["3766499200"], true, "Fixture_Account", "attempt-token")
     ];
     for (const operation of operations) {
       if (transport === "tauri") await operation();
@@ -67,7 +67,22 @@ for (const transport of ["tauri", "lan"]) {
       assert.equal(calls[1].args.accountName, "Fixture_Account");
       assert.equal(calls[2].args.accountName, "Fixture_Account");
       assert.equal(calls[2].args.missingOnly, true);
+      assert.equal(calls[2].args.attemptToken, "attempt-token");
     }
+  });
+
+  test(`${transport}: Workshop preparation, commit and leases carry only their declared identities`, async () => {
+    const { api, calls } = fixture(transport);
+    await api.prepareSteamWorkshopItems("fixture-instance", ["3766499200"], "attempt-token");
+    await api.retainSteamWorkshopPreparation("fixture-instance", "ticket");
+    await api.commitSteamWorkshopItems("fixture-instance", "ticket");
+    await api.discardSteamWorkshopPreparation("fixture-instance", "ticket");
+    assert.deepEqual(calls.map((call) => JSON.parse(JSON.stringify(call))), [
+      { command: "prepare_steam_workshop_items", args: { instanceId: "fixture-instance", ids: ["3766499200"], attemptToken: "attempt-token", locale: "zh-CN" } },
+      { command: "retain_steam_workshop_preparation", args: { instanceId: "fixture-instance", ticketId: "ticket" } },
+      { command: "commit_steam_workshop_items", args: { instanceId: "fixture-instance", ticketId: "ticket" } },
+      { command: "discard_steam_workshop_preparation", args: { instanceId: "fixture-instance", ticketId: "ticket" } }
+    ]);
   });
 
   test(`${transport}: displayed Workshop details carry the selected item and explicit interface language`, async () => {

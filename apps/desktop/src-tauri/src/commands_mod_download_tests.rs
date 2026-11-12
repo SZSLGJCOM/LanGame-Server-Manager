@@ -153,6 +153,82 @@ fn mod_download_progress_budget_scales_with_bytes_instead_of_package_size() {
     assert!(download_read_budget(Duration::from_secs(140), 64 * 1024).is_err());
 }
 
+#[test]
+fn slow_download_budget_accepts_steady_nexus_speed_but_still_bounds_idle_time() {
+    let started = Instant::now();
+    let now = started + Duration::from_secs(500);
+    let received = 20 * 1024 * 500;
+    let budget = TransferBudget::Slow {
+        deadline: started + SLOW_MOD_DOWNLOAD_TOTAL_TIMEOUT,
+    };
+    assert!(
+        TransferBudget::Standard
+            .read_budget(now, started, now - Duration::from_secs(1), received)
+            .is_err()
+    );
+    assert_eq!(
+        budget
+            .read_budget(now, started, now - Duration::from_secs(1), received)
+            .unwrap(),
+        Duration::from_secs(29)
+    );
+    assert!(matches!(
+        budget.read_budget(now, started, now - Duration::from_secs(30), received),
+        Err(ModDownloadFailure::Interrupted(_))
+    ));
+}
+
+#[test]
+fn slow_download_deadline_is_shared_across_source_retries() {
+    let started = Instant::now();
+    let deadline = started + Duration::from_secs(100);
+    let budget = TransferBudget::Slow { deadline };
+    let retry_started = started + Duration::from_secs(90);
+    let progress = started + Duration::from_secs(98);
+    assert_eq!(
+        budget
+            .read_budget(
+                deadline - Duration::from_secs(1),
+                retry_started,
+                progress,
+                1
+            )
+            .unwrap(),
+        Duration::from_secs(1)
+    );
+    assert!(matches!(
+        budget.read_budget(deadline, retry_started, progress, 1),
+        Err(ModDownloadFailure::TimeLimit)
+    ));
+}
+
+#[tokio::test]
+async fn expired_slow_download_does_not_retry_or_create_a_partial_file() {
+    let root = download_test_root("expired-slow-budget");
+    let result = download_mod_site_file_with_limit_inner(
+        &download_test_client(),
+        ModDownloadRequest {
+            download_url: "http://127.0.0.1:9/fixture.zip",
+            package_name: "fixture",
+            version: "1",
+            preferred_filename: None,
+            fallback_extension: "zip",
+            integrity: None,
+            max_bytes: Some(1024),
+            download_root: &root,
+        },
+        None,
+        TransferBudget::Slow {
+            deadline: Instant::now() - Duration::from_secs(1),
+        },
+        None,
+    )
+    .await;
+    assert!(matches!(result, Err(ModDownloadFailure::TimeLimit)));
+    assert_download_root_empty(&root);
+    fs::remove_dir(root).unwrap();
+}
+
 #[cfg(windows)]
 #[path = "commands_mod_large_archive_tests.rs"]
 mod large_archives;
@@ -308,6 +384,106 @@ async fn interrupted_download_restarts_with_a_clean_file() {
     .unwrap();
     server.join().unwrap();
     assert_eq!(fs::read(path).unwrap(), b"good");
+    assert_eq!(fs::read_dir(&root).unwrap().count(), 1);
+    fs::remove_dir_all(root).unwrap();
+}
+
+#[tokio::test]
+async fn nexus_download_progress_reports_real_bytes_with_or_without_content_length() {
+    for (response, total_bytes) in [
+        (b"HTTP/1.1 200 OK\r\nContent-Length: 4\r\nConnection: close\r\n\r\ngood".to_vec(), Some(4)),
+        (b"HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\nConnection: close\r\n\r\n4\r\ngood\r\n0\r\n\r\n".to_vec(), None),
+    ] {
+        let root = download_test_root("observed-bytes");
+        let (url, server) = serve_single_response(vec![response]);
+        let updates = Arc::new(std::sync::Mutex::new(Vec::new()));
+        let observed = updates.clone();
+        let (disconnected, receiver) = std::sync::mpsc::channel();
+        drop(receiver);
+        let failed_observations = Arc::new(std::sync::atomic::AtomicUsize::new(0));
+        let failures = failed_observations.clone();
+        let observer: ModDownloadObserver = Arc::new(move |progress| {
+            observed.lock().unwrap().push(progress);
+            if disconnected.send(progress).is_err() {
+                failures.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+            }
+        });
+        let path = download_mod_site_file_with_slow_transfer_budget(
+            &download_test_client(),
+            ModDownloadRequest { download_url: &url, package_name: "fixture", version: "1",
+                preferred_filename: None, fallback_extension: "zip", integrity: None,
+                max_bytes: Some(20), download_root: &root },
+            &app_steamcmd::InstallCancellation::new(), Some(observer),
+        ).await.unwrap();
+        server.join().unwrap();
+        assert_eq!(fs::read(path).unwrap(), b"good");
+        let updates = updates.lock().unwrap();
+        assert_eq!(updates.first().unwrap(), &ModDownloadProgress { attempt: 1, received_bytes: 0, total_bytes: None });
+        assert_eq!(updates.last().unwrap(), &ModDownloadProgress { attempt: 1, received_bytes: 4, total_bytes });
+        assert!(updates.iter().all(|update| update.attempt == 1 && update.received_bytes <= 4));
+        assert_eq!(failed_observations.load(std::sync::atomic::Ordering::Relaxed), updates.len());
+        assert_eq!(fs::read_dir(&root).unwrap().count(), 1);
+        fs::remove_dir_all(root).unwrap();
+    }
+}
+
+#[tokio::test]
+async fn nexus_download_progress_restarts_attempt_and_byte_counters_after_interruption() {
+    let root = download_test_root("observed-retry");
+    let (url, server) = serve_responses(vec![
+        vec![b"HTTP/1.1 200 OK\r\nContent-Length: 10\r\nConnection: close\r\n\r\nab".to_vec()],
+        vec![b"HTTP/1.1 200 OK\r\nContent-Length: 4\r\nConnection: close\r\n\r\ngood".to_vec()],
+    ]);
+    let updates = Arc::new(std::sync::Mutex::new(Vec::new()));
+    let observed = updates.clone();
+    let path = download_mod_site_file_with_slow_transfer_budget(
+        &download_test_client(),
+        ModDownloadRequest {
+            download_url: &url,
+            package_name: "fixture",
+            version: "1",
+            preferred_filename: None,
+            fallback_extension: "zip",
+            integrity: None,
+            max_bytes: Some(20),
+            download_root: &root,
+        },
+        &app_steamcmd::InstallCancellation::new(),
+        Some(Arc::new(move |progress| {
+            observed.lock().unwrap().push(progress)
+        })),
+    )
+    .await
+    .unwrap();
+    server.join().unwrap();
+    assert_eq!(fs::read(path).unwrap(), b"good");
+    let updates = updates.lock().unwrap();
+    assert!(
+        updates
+            .iter()
+            .any(|update| update.attempt == 1 && update.total_bytes == Some(10))
+    );
+    assert_eq!(
+        updates.iter().find(|update| update.attempt == 2).unwrap(),
+        &ModDownloadProgress {
+            attempt: 2,
+            received_bytes: 0,
+            total_bytes: None
+        }
+    );
+    assert_eq!(
+        updates.last().unwrap(),
+        &ModDownloadProgress {
+            attempt: 2,
+            received_bytes: 4,
+            total_bytes: Some(4)
+        }
+    );
+    assert!(
+        updates
+            .windows(2)
+            .all(|pair| pair[0].attempt <= pair[1].attempt)
+    );
     assert_eq!(fs::read_dir(&root).unwrap().count(), 1);
     fs::remove_dir_all(root).unwrap();
 }

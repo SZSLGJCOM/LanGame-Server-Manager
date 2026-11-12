@@ -1,4 +1,4 @@
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::sync::Mutex;
@@ -12,8 +12,6 @@ use crate::dst_workshop_cache_fs::{
 use crate::dst_workshop_cache_publish::PublishStage;
 use crate::dst_workshop_cache_vdf::{KvEntry, KvValue, parse_document, render_document};
 
-const DST_APP_ID: &str = "322330";
-const MANIFEST_NAME: &str = "appworkshop_322330.acf";
 const MAX_MANIFEST_BYTES: u64 = 16 * 1024 * 1024;
 static DEPLOY_LOCK: Mutex<()> = Mutex::new(());
 
@@ -27,7 +25,7 @@ pub struct DstWorkshopCacheDeployment {
 
 #[derive(Debug, Error)]
 pub enum DstWorkshopCacheError {
-    #[error("invalid DST Workshop item id `{item_id}`")]
+    #[error("invalid Workshop item id `{item_id}`")]
     InvalidItemId { item_id: String },
     #[error("unsafe Workshop cache path: {path}")]
     UnsafePath { path: PathBuf },
@@ -95,7 +93,68 @@ fn deploy_cache(
     let _guard = DEPLOY_LOCK
         .lock()
         .map_err(|_| DstWorkshopCacheError::LockUnavailable)?;
-    let item_ids = normalized_ids(item_ids)?;
+    let sources = normalized_ids(item_ids)?
+        .into_iter()
+        .map(|id| (id, source_workshop_root.to_path_buf()))
+        .collect::<Vec<_>>();
+    deploy_selected_cache(
+        322_330,
+        &sources,
+        target_ugc_root,
+        verified,
+        verified.is_some(),
+        false,
+    )
+}
+
+/// Publish the exact locations selected by a native-success result, including
+/// requests whose items were split between install-local and runtime caches.
+/// The prefetch/publish caller owns both source and target path lifecycle leases;
+/// unrelated private snapshots need no process-wide DST deployment lock.
+pub(super) fn deploy_prefetched_cache(
+    verified: &crate::VerifiedWorkshopCache,
+    target_ugc_root: &Path,
+) -> Result<DstWorkshopCacheDeployment, DstWorkshopCacheError> {
+    let result = verified.download_result();
+    let sources = result
+        .items
+        .iter()
+        .map(|item| {
+            let path = Path::new(&item.expected_path);
+            let root = path
+                .ancestors()
+                .nth(3)
+                .ok_or_else(|| incomplete(&item.item_id, "invalid native cache location"))?;
+            if path
+                != root
+                    .join("content")
+                    .join(result.consumer_app_id.to_string())
+                    .join(&item.item_id)
+            {
+                return Err(incomplete(&item.item_id, "unexpected native cache layout"));
+            }
+            Ok((item.item_id.clone(), root.to_path_buf()))
+        })
+        .collect::<Result<Vec<_>, DstWorkshopCacheError>>()?;
+    deploy_selected_cache(
+        result.consumer_app_id,
+        &sources,
+        target_ugc_root,
+        Some(verified),
+        false,
+        true,
+    )
+}
+
+fn deploy_selected_cache(
+    consumer_app_id: u32,
+    sources: &[(String, PathBuf)],
+    target_ugc_root: &Path,
+    verified: Option<&crate::VerifiedWorkshopCache>,
+    allow_verified_installed: bool,
+    allow_missing_details: bool,
+) -> Result<DstWorkshopCacheDeployment, DstWorkshopCacheError> {
+    let item_ids = normalized_ids(&sources.iter().map(|(id, _)| id.clone()).collect::<Vec<_>>())?;
     if item_ids.is_empty() {
         return Ok(DstWorkshopCacheDeployment {
             item_ids,
@@ -105,15 +164,29 @@ fn deploy_cache(
         });
     }
 
-    let source_root = canonical_plain_directory(source_workshop_root)?;
-    let source_manifest_path = source_root.join(MANIFEST_NAME);
-    let source_document = read_manifest(&source_manifest_path)?;
-    let source_app = app_workshop(&source_document, &source_manifest_path)?;
-    require_app_id(source_app, &source_manifest_path)?;
-
+    let app_id = consumer_app_id.to_string();
+    let manifest_name = format!("appworkshop_{app_id}.acf");
     let mut source_items = Vec::with_capacity(item_ids.len());
-    for id in &item_ids {
-        let item = load_source_item(&source_root, source_app, id, verified.is_some())?;
+    let mut source_documents = HashMap::new();
+    for (id, source_root) in sources {
+        let source_root = canonical_plain_directory(source_root)?;
+        let source_manifest_path = source_root.join(&manifest_name);
+        let source_document = match source_documents.entry(source_root.clone()) {
+            std::collections::hash_map::Entry::Occupied(entry) => entry.into_mut(),
+            std::collections::hash_map::Entry::Vacant(entry) => {
+                entry.insert(read_manifest(&source_manifest_path)?)
+            }
+        };
+        let source_app = app_workshop(source_document, &source_manifest_path)?;
+        require_app_id(source_app, &source_manifest_path, &app_id)?;
+        let item = load_source_item(
+            &source_root,
+            source_app,
+            id,
+            &app_id,
+            allow_verified_installed,
+            allow_missing_details,
+        )?;
         if let Some(verified) = verified {
             verified
                 .verify_deployed_item(id, &item.source_path, &crate::InstallCancellation::new())
@@ -134,32 +207,41 @@ fn deploy_cache(
             sum
         });
 
-    if target_ugc_root.exists() && canonical_plain_directory(target_ugc_root)? == source_root {
-        return Ok(deployment(item_ids, totals, true));
+    if target_ugc_root.exists() {
+        let target = canonical_plain_directory(target_ugc_root)?
+            .join("content")
+            .join(&app_id);
+        if source_items
+            .iter()
+            .all(|item| item.source_path == target.join(&item.id))
+        {
+            return Ok(deployment(item_ids, totals, true));
+        }
     }
 
-    let target_manifest_path = target_ugc_root.join(MANIFEST_NAME);
+    let target_manifest_path = target_ugc_root.join(&manifest_name);
     let target_exists = target_manifest_path.exists();
     let mut target_document = if target_exists {
         let document = read_manifest(&target_manifest_path)?;
         require_app_id(
             app_workshop(&document, &target_manifest_path)?,
             &target_manifest_path,
+            &app_id,
         )?;
         document
     } else {
-        new_manifest_document()
+        new_manifest_document(&app_id)
     };
 
     let mut unchanged_items = HashSet::new();
     if target_exists {
         let target_app = app_workshop(&target_document, &target_manifest_path)?;
         for item in &source_items {
-            if target_item_is_current(target_ugc_root, target_app, item)?
+            if target_item_is_current(target_ugc_root, target_app, item, &app_id)?
                 && match verified {
                     Some(verified) => match verified.verify_deployed_item(
                         &item.id,
-                        &target_ugc_root.join("content/322330").join(&item.id),
+                        &target_ugc_root.join("content").join(&app_id).join(&item.id),
                         &crate::InstallCancellation::new(),
                     ) {
                         Ok(()) => true,
@@ -191,14 +273,14 @@ fn deploy_cache(
     }
 
     ensure_plain_directory(target_ugc_root)?;
-    let content_root = target_ugc_root.join("content").join(DST_APP_ID);
+    let content_root = target_ugc_root.join("content").join(&app_id);
     ensure_plain_directory(&content_root)?;
     let stage = create_stage(target_ugc_root)?;
-    let staged_content = stage.join("content").join(DST_APP_ID);
+    let staged_content = stage.join("content").join(&app_id);
     fs::create_dir_all(&staged_content)
         .map_err(|source| io("create staging directory", &staged_content, source))?;
 
-    let staged_manifest = stage.join(MANIFEST_NAME);
+    let staged_manifest = stage.join(&manifest_name);
     let stage_result = (|| {
         for item in &source_items {
             if unchanged_items.contains(&item.id) {
@@ -292,7 +374,9 @@ fn load_source_item(
     source_root: &Path,
     source_app: &[KvEntry],
     id: &str,
+    app_id: &str,
     allow_verified_installed: bool,
+    allow_missing_details: bool,
 ) -> Result<SourceItem, DstWorkshopCacheError> {
     let installed = section_entry(source_app, "WorkshopItemsInstalled", id)
         .cloned()
@@ -301,6 +385,7 @@ fn load_source_item(
         installed.clone()
     } else {
         section_entry(source_app, "WorkshopItemDetails", id)
+            .or_else(|| allow_missing_details.then_some(&installed))
             .cloned()
             .ok_or_else(|| incomplete(id, "missing WorkshopItemDetails metadata"))?
     };
@@ -318,7 +403,7 @@ fn load_source_item(
         .and_then(|value| value.parse::<u64>().ok())
         .filter(|value| *value > 0)
         .ok_or_else(|| incomplete(id, "missing or invalid installed size"))?;
-    let source_path = source_root.join("content").join(DST_APP_ID).join(id);
+    let source_path = source_root.join("content").join(app_id).join(id);
     let stats = inspect_tree(&source_path, 0)?;
     if stats.files == 0 || stats.bytes != expected_size {
         return Err(incomplete(
@@ -343,6 +428,7 @@ fn target_item_is_current(
     target_root: &Path,
     target_app: &[KvEntry],
     source: &SourceItem,
+    app_id: &str,
 ) -> Result<bool, DstWorkshopCacheError> {
     let Some(installed) =
         section_entry(target_app, "WorkshopItemsInstalled", &source.id).and_then(object_value)
@@ -352,10 +438,7 @@ fn target_item_is_current(
     if text_value(installed, "manifest") != Some(source.manifest.as_str()) {
         return Ok(false);
     }
-    let target_path = target_root
-        .join("content")
-        .join(DST_APP_ID)
-        .join(&source.id);
+    let target_path = target_root.join("content").join(app_id).join(&source.id);
     if !target_path.exists() {
         return Ok(false);
     }
@@ -373,7 +456,7 @@ fn merge_items(
         ("WorkshopItemsInstalled", false),
         ("WorkshopItemDetails", true),
     ] {
-        let entries = ensure_object(app, section)?;
+        let entries = ensure_object(app, section, path)?;
         for item in source_items {
             let replacement = if select {
                 &item.details
@@ -385,6 +468,29 @@ fn merge_items(
             } else {
                 entries.push(replacement.clone());
             }
+        }
+    }
+    let total = app
+        .iter()
+        .find(|entry| entry.key == "WorkshopItemsInstalled")
+        .and_then(object_value)
+        .and_then(|entries| {
+            entries.iter().try_fold(0_u64, |sum, entry| {
+                let size = text_value(object_value(entry)?, "size")?
+                    .parse::<u64>()
+                    .ok()?;
+                sum.checked_add(size)
+            })
+        });
+    if let Some(total) = total {
+        let value = KvValue::Text(total.to_string());
+        if let Some(entry) = app.iter_mut().find(|entry| entry.key == "SizeOnDisk") {
+            entry.value = value;
+        } else {
+            app.push(KvEntry {
+                key: "SizeOnDisk".into(),
+                value,
+            });
         }
     }
     Ok(())
@@ -431,9 +537,9 @@ fn app_workshop_mut<'a>(
         .ok_or_else(|| invalid_manifest(path, "missing AppWorkshop object"))
 }
 
-fn require_app_id(app: &[KvEntry], path: &Path) -> Result<(), DstWorkshopCacheError> {
-    if text_value(app, "appid") != Some(DST_APP_ID) {
-        return Err(invalid_manifest(path, "appid is not 322330"));
+fn require_app_id(app: &[KvEntry], path: &Path, app_id: &str) -> Result<(), DstWorkshopCacheError> {
+    if text_value(app, "appid") != Some(app_id) {
+        return Err(invalid_manifest(path, &format!("appid is not {app_id}")));
     }
     Ok(())
 }
@@ -466,6 +572,7 @@ fn text_value<'a>(entries: &'a [KvEntry], key: &str) -> Option<&'a str> {
 fn ensure_object<'a>(
     entries: &'a mut Vec<KvEntry>,
     key: &str,
+    path: &Path,
 ) -> Result<&'a mut Vec<KvEntry>, DstWorkshopCacheError> {
     if !entries.iter().any(|entry| entry.key == key) {
         entries.push(KvEntry {
@@ -475,26 +582,23 @@ fn ensure_object<'a>(
     }
     let Some(entry) = entries.iter_mut().find(|entry| entry.key == key) else {
         return Err(invalid_manifest(
-            Path::new(MANIFEST_NAME),
+            path,
             &format!("failed to create {key} object"),
         ));
     };
     match &mut entry.value {
         KvValue::Object(value) => Ok(value),
-        KvValue::Text(_) => Err(invalid_manifest(
-            Path::new(MANIFEST_NAME),
-            &format!("{key} is not an object"),
-        )),
+        KvValue::Text(_) => Err(invalid_manifest(path, &format!("{key} is not an object"))),
     }
 }
 
-fn new_manifest_document() -> Vec<KvEntry> {
+fn new_manifest_document(app_id: &str) -> Vec<KvEntry> {
     vec![KvEntry {
         key: String::from("AppWorkshop"),
         value: KvValue::Object(vec![
             KvEntry {
                 key: String::from("appid"),
-                value: KvValue::Text(String::from(DST_APP_ID)),
+                value: KvValue::Text(app_id.to_owned()),
             },
             KvEntry {
                 key: String::from("SizeOnDisk"),

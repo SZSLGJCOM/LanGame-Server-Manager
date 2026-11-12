@@ -1,6 +1,7 @@
 import type { MessageCatalog } from "../../i18n-config";
 
 export const EN_US_PROJECT_ZOMBOID_MESSAGES: MessageCatalog = {
+  "settings.schema.projectzomboid.steam_scoreboard.description": "Allow ordinary players to view Steam identities in the player list. Roles with scoreboard access can still view them when this is disabled.",
   "settings.schema.projectzomboid.speed_limit.description": "Vehicle speed threshold in km/h. Multiplayer driving stops applying engine force at this speed, and vehicle speed checks use the same setting. This does not forcibly clamp the vehicle velocity.",
   "settings.schema.projectzomboid.speed_limit.title": "Vehicle driving speed limit (km/h)",
   "settings.schema.projectzomboid.pvp_firearm_damage_modifier.description": "Multiplies ranged weapon damage when the server applies damage to a player. 1 leaves this scaling step unchanged; 50 multiplies it by 50. Armor and other damage rules still apply.",

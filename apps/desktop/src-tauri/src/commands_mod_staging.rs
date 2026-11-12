@@ -20,6 +20,12 @@ mod thunderstore_layout;
 #[path = "commands_mod_thunderstore_import.rs"]
 mod thunderstore_import;
 
+#[path = "commands_mod_nexus_layout.rs"]
+mod nexus_layout;
+
+#[path = "commands_mod_archive_formats.rs"]
+pub(in crate::commands) mod archive_formats;
+
 #[path = "commands_mod_bepinex_loader.rs"]
 mod bepinex_loader;
 pub(super) use bepinex_loader::{
@@ -31,6 +37,7 @@ pub(super) use bepinex_loader::{
 const MANUAL_MOD_ARCHIVE_MAX_ENTRY_COUNT: usize = 20_000;
 const MANUAL_MOD_ARCHIVE_MAX_CENTRAL_DIRECTORY_BYTES: u64 = 64 * 1024 * 1024;
 const MANUAL_MOD_ARCHIVE_MAX_COMPRESSION_RATIO: u64 = 200;
+const MANUAL_MOD_ARCHIVE_HIGH_COMPRESSION_BYTES: u64 = 256 * 1024 * 1024;
 #[cfg(windows)]
 const WINDOWS_FILE_ATTRIBUTE_REPARSE_POINT: u32 = 0x0000_0400;
 
@@ -44,17 +51,27 @@ struct ManualModArchiveMetrics {
     uncompressed_bytes: u64,
 }
 
+#[derive(Default)]
+struct ManualModArchiveCompressionBudget {
+    metrics: ManualModArchiveMetrics,
+    high_compression_bytes: u64,
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum ManualModArchiveEntryKind {
     Directory,
     File,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub(super) enum ManualModArchiveLayout {
     Preserve,
     ThunderstorePayload,
     CoreKeeperNative,
+    SevenDaysToDie {
+        root_name: String,
+        require_manifest: bool,
+    },
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -105,6 +122,19 @@ struct StagedManualModSource {
     stats: DirectoryCopyStats,
 }
 
+pub(in crate::commands) struct ManualModImportPresentation {
+    pub(in crate::commands) display_name: Option<String>,
+    pub(in crate::commands) icon_url: Option<String>,
+}
+
+#[derive(Default)]
+struct ManualModStageContext<'a> {
+    presentation: Option<&'a ManualModImportPresentation>,
+    nexus_project_id: Option<&'a str>,
+    before_commit: Option<&'a dyn Fn() -> Result<(), String>>,
+    before_cleanup: Option<&'a WorkshopBackupCheck<'a>>,
+}
+
 pub(super) fn stage_manual_mod_sources(
     target: ResolvedManualModTarget,
     source_paths: Vec<PathBuf>,
@@ -119,6 +149,46 @@ pub(super) fn stage_manual_mod_sources(
         true,
         ManualModArchiveLayout::Preserve,
         false,
+    )
+}
+
+/// One website-selected file may unpack into several owned package roots. Its
+/// optional display data is published with those roots in the same transaction.
+pub(in crate::commands) fn stage_website_mod_source(
+    target: ResolvedManualModTarget,
+    source_path: PathBuf,
+    presentation: ManualModImportPresentation,
+    nexus_project_id: Option<&str>,
+) -> Result<ManualModStageResult, String> {
+    validate_game_mod_mutation(&target.module_id)?;
+    if !online_packages::manages_local_imports(&target)
+        || matches!(target.module_id.as_str(), "valheim" | "vrising")
+    {
+        return Err("This server does not support website file import ownership".into());
+    }
+    if matches!(
+        target.module_id.as_str(),
+        "abioticfactor" | "humanitz" | "enshrouded"
+    ) && let Some(project_id) = nexus_project_id
+    {
+        return online_packages::stage_nexus_routed_source(
+            target,
+            source_path,
+            presentation,
+            project_id,
+        );
+    }
+    stage_manual_mod_source_batch_guarded(
+        &target,
+        vec![source_path],
+        true,
+        ManualModArchiveLayout::Preserve,
+        false,
+        ManualModStageContext {
+            presentation: Some(&presentation),
+            nexus_project_id,
+            ..Default::default()
+        },
     )
 }
 
@@ -184,8 +254,11 @@ pub(super) fn stage_downloaded_workshop_items_with_preconditions(
             false,
             ManualModArchiveLayout::Preserve,
             true,
-            Some(&pre),
-            Some(&post),
+            ManualModStageContext {
+                before_commit: Some(&pre),
+                before_cleanup: Some(&post),
+                ..Default::default()
+            },
         )
     });
     result.map_err(|message| WorkshopModStageFailure {
@@ -240,8 +313,7 @@ fn stage_manual_mod_source_batch(
         enforce_declared_accepts,
         archive_layout,
         replace_source_roots,
-        None,
-        None,
+        ManualModStageContext::default(),
     )
 }
 
@@ -251,9 +323,14 @@ fn stage_manual_mod_source_batch_guarded(
     enforce_declared_accepts: bool,
     archive_layout: ManualModArchiveLayout,
     replace_source_roots: bool,
-    before_commit: Option<&dyn Fn() -> Result<(), String>>,
-    before_cleanup: Option<&WorkshopBackupCheck<'_>>,
+    context: ManualModStageContext<'_>,
 ) -> Result<ManualModStageResult, String> {
+    let ManualModStageContext {
+        presentation,
+        nexus_project_id,
+        before_commit,
+        before_cleanup,
+    } = context;
     if source_paths.is_empty() {
         return Err(String::from("no mod sources were provided"));
     }
@@ -291,11 +368,20 @@ fn stage_manual_mod_source_batch_guarded(
             None
         };
         let previous_paths = manage_imports.then(|| registry.path_kinds.clone());
+        let source_layout = if target.module_id == "sevendaystodie"
+            && archive_layout == ManualModArchiveLayout::Preserve
+            && !replace_source_roots
+        {
+            nexus_layout::seven_days_layout(&source_path, nexus_project_id)
+                .map_err(|error| manual_mod_staging_failure(error, &transaction, true))?
+        } else {
+            archive_layout.clone()
+        };
         let staged_result = stage_manual_mod_source_to_transaction(
             &source_path,
             &transaction,
             &mut registry,
-            archive_layout,
+            source_layout,
             None,
         );
         let staged = match staged_result {
@@ -364,8 +450,13 @@ fn stage_manual_mod_source_batch_guarded(
     }
 
     if manage_imports {
-        online_packages::prepare_local_mod_ownership(target, &transaction, &import_metadata)
-            .map_err(|error| manual_mod_staging_failure(error, &transaction, true))?;
+        online_packages::prepare_local_mod_ownership(
+            target,
+            &transaction,
+            &import_metadata,
+            presentation,
+        )
+        .map_err(|error| manual_mod_staging_failure(error, &transaction, true))?;
     }
 
     validate_manual_mod_target_path(&target.target_path)
@@ -479,7 +570,9 @@ pub(super) fn validate_manual_mod_source_inputs(
             ));
         };
 
-        if !accepted_types.contains(&source_type) {
+        let supported_archive =
+            accepted_types.contains("zip") && matches!(source_type.as_str(), "7z" | "rar");
+        if !accepted_types.contains(&source_type) && !supported_archive {
             return Err(format!(
                 "manual mod source {} has unsupported type `{}`; accepted types: {}",
                 source_path.display(),
@@ -531,6 +624,21 @@ fn stage_manual_mod_source_to_transaction(
     target_name: Option<&std::ffi::OsStr>,
 ) -> Result<StagedManualModSource, String> {
     let metadata = validate_manual_mod_source_filesystem_entry(source_path)?;
+    if metadata.is_dir()
+        && let ManualModArchiveLayout::SevenDaysToDie {
+            root_name,
+            require_manifest,
+        } = &archive_layout
+        && let Some(staged) = nexus_layout::stage_seven_days_directory(
+            source_path,
+            transaction,
+            registry,
+            root_name,
+            *require_manifest,
+        )?
+    {
+        return Ok(staged);
+    }
     if metadata.is_file()
         && source_path
             .extension()
@@ -538,6 +646,27 @@ fn stage_manual_mod_source_to_transaction(
             .is_some_and(|extension| extension.eq_ignore_ascii_case("zip"))
     {
         let stats = extract_zip_archive_to_directory(
+            source_path,
+            &transaction.staging,
+            &transaction.partials,
+            registry,
+            archive_layout,
+        )?;
+        return Ok(StagedManualModSource {
+            source_path: source_path.to_path_buf(),
+            target_relative_path: None,
+            stats,
+        });
+    }
+    if metadata.is_file()
+        && source_path
+            .extension()
+            .and_then(|extension| extension.to_str())
+            .is_some_and(|extension| {
+                matches!(extension.to_ascii_lowercase().as_str(), "7z" | "rar")
+            })
+    {
+        let stats = archive_formats::extract_additional_mod_archive_to_directory(
             source_path,
             &transaction.staging,
             &transaction.partials,
@@ -1208,7 +1337,7 @@ fn inspect_manual_mod_archive(
         ));
     }
 
-    let mut archive_metrics = ManualModArchiveMetrics::default();
+    let mut compression_budget = ManualModArchiveCompressionBudget::default();
     let mut archive_entries = Vec::with_capacity(archive.len());
     let mut archive_paths = HashSet::new();
     for index in 0..archive.len() {
@@ -1271,29 +1400,34 @@ fn inspect_manual_mod_archive(
             continue;
         }
 
-        validate_manual_mod_archive_metrics(1, entry.compressed_size(), entry.size())
+        compression_budget
+            .include(1, entry.compressed_size(), entry.size())
             .map_err(|error| format!("unsafe archive entry `{}`: {}", entry_name, error))?;
-        archive_metrics.file_count = archive_metrics
-            .file_count
-            .checked_add(1)
-            .ok_or_else(|| String::from("manual mod archive file count overflowed"))?;
-        archive_metrics.compressed_bytes = archive_metrics
-            .compressed_bytes
-            .checked_add(entry.compressed_size())
-            .ok_or_else(|| String::from("manual mod archive compressed size overflowed"))?;
-        archive_metrics.uncompressed_bytes = archive_metrics
-            .uncompressed_bytes
-            .checked_add(entry.size())
-            .ok_or_else(|| String::from("manual mod archive uncompressed size overflowed"))?;
-        validate_manual_mod_archive_metrics(
-            archive_metrics.file_count,
-            archive_metrics.compressed_bytes,
-            archive_metrics.uncompressed_bytes,
-        )?;
     }
 
+    plan_manual_mod_archive_entries(archive_entries, registry, archive_layout)
+}
+
+// Format-specific readers validate the full directory and compression blocks
+// before applying these shared layout and transaction ownership rules.
+fn plan_manual_mod_archive_entries(
+    mut archive_entries: Vec<ManualModArchiveEntryPlan>,
+    registry: &mut ManualModStagingRegistry,
+    archive_layout: ManualModArchiveLayout,
+) -> Result<ManualModArchivePlan, String> {
     let payload_prefix = match archive_layout {
         ManualModArchiveLayout::Preserve => None,
+        ManualModArchiveLayout::SevenDaysToDie {
+            root_name,
+            require_manifest,
+        } => {
+            archive_entries = nexus_layout::route_seven_days_entries(
+                archive_entries,
+                &root_name,
+                require_manifest,
+            )?;
+            None
+        }
         ManualModArchiveLayout::ThunderstorePayload => {
             let files = archive_entries
                 .iter()
@@ -1364,11 +1498,6 @@ fn inspect_manual_mod_archive(
                     .ok_or_else(|| {
                         String::from("manual mod archive uncompressed size overflowed")
                     })?;
-                validate_manual_mod_archive_metrics(
-                    metrics.file_count,
-                    metrics.compressed_bytes,
-                    metrics.uncompressed_bytes,
-                )?;
             }
         }
         entries.push(entry);
@@ -1377,31 +1506,78 @@ fn inspect_manual_mod_archive(
     Ok(ManualModArchivePlan { entries, metrics })
 }
 
+#[cfg(test)]
 pub(super) fn validate_manual_mod_archive_metrics(
     file_count: usize,
     compressed_bytes: u64,
     uncompressed_bytes: u64,
 ) -> Result<(), String> {
-    if file_count > MANUAL_MOD_ARCHIVE_MAX_ENTRY_COUNT {
-        return Err(format!(
-            "archive file count {} exceeds the limit of {}",
-            file_count, MANUAL_MOD_ARCHIVE_MAX_ENTRY_COUNT
-        ));
+    ManualModArchiveCompressionBudget::default().include(
+        file_count,
+        compressed_bytes,
+        uncompressed_bytes,
+    )
+}
+
+impl ManualModArchiveCompressionBudget {
+    // ZIP contributes files; 7z/RAR contribute complete solid blocks. Only bytes
+    // above the ordinary ratio consume this single archive-wide allowance. The
+    // charge never decreases, so file order cannot change the acceptance result
+    // and incompressible padding cannot refund another entry's expansion cost.
+    fn include(
+        &mut self,
+        file_count: usize,
+        compressed_bytes: u64,
+        uncompressed_bytes: u64,
+    ) -> Result<(), String> {
+        self.metrics.file_count = self
+            .metrics
+            .file_count
+            .checked_add(file_count)
+            .ok_or("archive file count overflowed")?;
+        if self.metrics.file_count > MANUAL_MOD_ARCHIVE_MAX_ENTRY_COUNT {
+            return Err(format!(
+                "archive file count {} exceeds the limit of {}",
+                self.metrics.file_count, MANUAL_MOD_ARCHIVE_MAX_ENTRY_COUNT
+            ));
+        }
+        self.metrics.compressed_bytes = self
+            .metrics
+            .compressed_bytes
+            .checked_add(compressed_bytes)
+            .ok_or("archive compressed size overflowed")?;
+        self.metrics.uncompressed_bytes = self
+            .metrics
+            .uncompressed_bytes
+            .checked_add(uncompressed_bytes)
+            .ok_or("archive uncompressed size overflows streaming accounting")?;
+        self.metrics
+            .uncompressed_bytes
+            .checked_add(1)
+            .ok_or("archive uncompressed size overflows streaming accounting")?;
+        if compressed_bytes == 0 && uncompressed_bytes != 0 {
+            return Err(format!(
+                "archive declares {uncompressed_bytes} uncompressed bytes with 0 compressed bytes"
+            ));
+        }
+        self.high_compression_bytes = self
+            .high_compression_bytes
+            .checked_add(uncompressed_bytes.saturating_sub(
+                compressed_bytes.saturating_mul(MANUAL_MOD_ARCHIVE_MAX_COMPRESSION_RATIO),
+            ))
+            .ok_or("archive high-compression accounting overflowed")?;
+        if self.high_compression_bytes > MANUAL_MOD_ARCHIVE_HIGH_COMPRESSION_BYTES {
+            return Err(format!(
+                "archive compression ratio requires {} high-compression bytes above {}:1, exceeding the archive budget of {} bytes (compressed={} bytes, uncompressed={} bytes)",
+                self.high_compression_bytes,
+                MANUAL_MOD_ARCHIVE_MAX_COMPRESSION_RATIO,
+                MANUAL_MOD_ARCHIVE_HIGH_COMPRESSION_BYTES,
+                self.metrics.compressed_bytes,
+                self.metrics.uncompressed_bytes,
+            ));
+        }
+        Ok(())
     }
-    uncompressed_bytes
-        .checked_add(1)
-        .ok_or("archive uncompressed size overflows streaming accounting")?;
-    if uncompressed_bytes > 0
-        && (compressed_bytes == 0
-            || uncompressed_bytes
-                > compressed_bytes.saturating_mul(MANUAL_MOD_ARCHIVE_MAX_COMPRESSION_RATIO))
-    {
-        return Err(format!(
-            "archive compression ratio exceeds the limit of {}:1",
-            MANUAL_MOD_ARCHIVE_MAX_COMPRESSION_RATIO
-        ));
-    }
-    Ok(())
 }
 
 impl ManualModStagingRegistry {
@@ -2704,12 +2880,99 @@ mod staging_tests {
     }
 
     #[test]
-    fn thunderstore_archive_rejects_zip_bombs_without_partial_publish() {
+    fn thunderstore_archive_accepts_bounded_high_compression_data() {
+        let root = staging_test_root("thunderstore-compressible-data");
+        let archive_path = root.join("package.zip");
+        let target = root.join("payload");
+        let data = vec![0u8; 1024 * 1024];
+        write_staging_test_zip(&archive_path, &[("plugins/Prefabs/bridge.tts", &data)]);
+        let mut archive = zip::ZipArchive::new(fs::File::open(&archive_path).unwrap()).unwrap();
+        let entry = archive.by_index(0).unwrap();
+        assert!(entry.size() > entry.compressed_size() * MANUAL_MOD_ARCHIVE_MAX_COMPRESSION_RATIO);
+        drop(entry);
+        drop(archive);
+        stage_thunderstore_archive_to_directory(
+            archive_path,
+            target.clone(),
+            ManualModArchiveLayout::ThunderstorePayload,
+        )
+        .unwrap();
+        assert_eq!(
+            fs::read(target.join("plugins/Prefabs/bridge.tts")).unwrap(),
+            data
+        );
+        assert_no_staging_transaction(&root);
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn archive_compression_budget_is_shared_by_entries_and_independent_of_order() {
+        let high = (1, 1, MANUAL_MOD_ARCHIVE_HIGH_COMPRESSION_BYTES / 2 + 200);
+        let padding = (1, 1024 * 1024, 1024 * 1024);
+        let last_byte = (1, 1, 201);
+        for entries in [
+            [high, high, padding, last_byte],
+            [padding, last_byte, high, high],
+            [last_byte, high, padding, high],
+        ] {
+            let mut budget = ManualModArchiveCompressionBudget::default();
+            for (count, compressed, uncompressed) in entries[..3].iter().copied() {
+                budget.include(count, compressed, uncompressed).unwrap();
+            }
+            let (count, compressed, uncompressed) = entries[3];
+            let error = budget.include(count, compressed, uncompressed).unwrap_err();
+            assert!(
+                error.contains("268435457 high-compression bytes"),
+                "{error}"
+            );
+            assert!(error.contains("compressed=1048579 bytes"), "{error}");
+            assert!(error.contains("uncompressed=269484633 bytes"), "{error}");
+        }
+        let mut budget = ManualModArchiveCompressionBudget::default();
+        budget.include(high.0, high.1, high.2).unwrap();
+        budget.include(high.0, high.1, high.2).unwrap();
+        assert_eq!(
+            budget.high_compression_bytes,
+            MANUAL_MOD_ARCHIVE_HIGH_COMPRESSION_BYTES
+        );
+        // Even tiny independently packed files share the same allowance.
+        let excess = MANUAL_MOD_ARCHIVE_HIGH_COMPRESSION_BYTES
+            / MANUAL_MOD_ARCHIVE_MAX_ENTRY_COUNT as u64
+            + 1;
+        let mut budget = ManualModArchiveCompressionBudget::default();
+        for _ in 0..MANUAL_MOD_ARCHIVE_MAX_ENTRY_COUNT - 1 {
+            budget.include(1, 1, 200 + excess).unwrap();
+        }
+        let error = budget.include(1, 1, 200 + excess).unwrap_err();
+        assert!(error.contains("compression ratio"), "{error}");
+    }
+
+    #[test]
+    fn thunderstore_archive_rejects_total_high_compression_budget_without_partial_publish() {
         let root = staging_test_root("thunderstore-ratio");
         let archive_path = root.join("package.zip");
         let target = root.join("payload");
-        let compressed = vec![0u8; 1024 * 1024];
-        write_staging_test_zip(&archive_path, &[("plugins/compressed.dll", &compressed)]);
+        let mut writer = zip::ZipWriter::new(fs::File::create(&archive_path).unwrap());
+        for index in 0..3 {
+            writer
+                .start_file(
+                    format!("plugins/Prefabs/bridge-{index}.tts"),
+                    zip::write::SimpleFileOptions::default()
+                        .compression_method(zip::CompressionMethod::Deflated),
+                )
+                .unwrap();
+            // Stream real valid compressed bytes without allocating the payload.
+            std::io::copy(&mut std::io::repeat(0).take(128 * 1024 * 1024), &mut writer).unwrap();
+        }
+        writer.finish().unwrap();
+        let mut archive = zip::ZipArchive::new(fs::File::open(&archive_path).unwrap()).unwrap();
+        let mut compressed_bytes = 0;
+        for index in 0..archive.len() {
+            let entry = archive.by_index(index).unwrap();
+            validate_manual_mod_archive_metrics(1, entry.compressed_size(), entry.size()).unwrap();
+            compressed_bytes += entry.compressed_size();
+        }
+        drop(archive);
 
         let error = stage_thunderstore_archive_to_directory(
             archive_path,
@@ -2719,6 +2982,11 @@ mod staging_tests {
         .expect_err("high-ratio archives must fail before publication");
 
         assert!(error.contains("compression ratio"));
+        assert!(
+            error.contains(&format!("compressed={compressed_bytes} bytes")),
+            "{error}"
+        );
+        assert!(error.contains("uncompressed=402653184 bytes"), "{error}");
         assert!(!target.exists());
         assert_no_staging_transaction(&root);
         let _ = fs::remove_dir_all(root);

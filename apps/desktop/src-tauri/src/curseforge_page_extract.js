@@ -1,7 +1,7 @@
 (() => {
   // Read only public project metadata. Native code independently verifies the
   // observed WebView URL and the returned project identity before caching it.
-  const result = { url: "", canonicalUrl: null, projectId: null, title: null, state: "pending" };
+  const result = { url: "", canonicalUrl: null, projectId: null, title: null, iconUrl: null, state: "pending" };
   const normalizeText = (value) => value.replace(/\s+/g, " ").trim();
   const projectUrl = (value) => {
     if (typeof value !== "string" || value.length > 2048) return null;
@@ -68,5 +68,23 @@
   }
   if (ids.size > 1) return { ...result, state: "invalid" };
   if (!result.canonicalUrl || !result.title || ids.size !== 1) return result;
+  // Only project-level social metadata supplies the avatar. Never select the
+  // first page image: author avatars, recommendations and descriptions are unrelated.
+  const images = document.head.querySelectorAll('meta[property="og:image"], meta[property="og:image:secure_url"]');
+  if (images.length <= 8) {
+    const icons = new Set();
+    for (const image of images) {
+      const value = image.getAttribute("content");
+      if (!value || value.length > 2048) continue;
+      let url;
+      try { url = new URL(value, location.href); } catch { continue; }
+      if (url.protocol === "https:" && url.hostname === "83374.media.forgecdn.net"
+        && !url.username && !url.password && !url.port && !url.search && !url.hash
+        && url.pathname.startsWith("/avatars/") && /\.(?:png|jpe?g|webp|gif)$/i.test(url.pathname)) {
+        icons.add(url.href);
+      }
+    }
+    if (icons.size === 1) result.iconUrl = icons.values().next().value;
+  }
   return { ...result, projectId: ids.values().next().value, state: "ready" };
 })();

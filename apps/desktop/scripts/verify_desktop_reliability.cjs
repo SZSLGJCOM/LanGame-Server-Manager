@@ -181,7 +181,7 @@ async function run(executable, output) {
     assert.equal(hostReport.profile_verified, true);
     assert.deepEqual(hostReport.window_modes, {
       generations_verified: 3, resize_edges_disabled: true,
-      maximize_restore: true, fixed_size_restored: true,
+      maximize_restore: true, drag_restore_anchor: true, fixed_size_restored: true,
     });
     assert.ok(hostReport.native_drop, "Host did not provide native drop acceptance evidence");
     assert.equal(hostReport.native_drop.generations_verified, 3);

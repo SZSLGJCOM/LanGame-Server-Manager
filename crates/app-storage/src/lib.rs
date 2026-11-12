@@ -105,6 +105,9 @@ mod valheim_player_roster;
 pub use valheim_player_roster::materialize_valheim_player_roster;
 mod dragonwilds_world_settings;
 mod instance_file_patch;
+pub use dragonwilds_world_settings::bootstrap::{
+    DragonwildsBootstrap, DragonwildsBootstrapObservation, prepare_dragonwilds_bootstrap,
+};
 pub use dragonwilds_world_settings::{
     read_dragonwilds_world_settings, write_dragonwilds_world_settings,
 };
@@ -164,18 +167,22 @@ pub use program_inventory::{
     ModuleProgramInventory, ProgramInstallationSummary, inspect_module_programs,
 };
 mod program_detach;
+pub use program_exclusive::library_reuse_preview_with_original_defaults;
 mod program_seed;
 pub use program_detach::detach_instance_program;
 pub use program_seed::{
     CleanLibrarySeed, LibraryProgramAcquisition, ProgramBaselineInventory, VerifiedProgramFiles,
     archive_program_has_baseline, archive_program_is_current,
-    begin_empty_library_program_acquisition, library_program_acquisition_is_trusted,
-    library_program_is_pristine, merge_archive_program_update, prepare_clean_library_seed_at,
-    prepare_instance_program_seed_at, program_package_path_filter, program_update_retained_paths,
-    read_library_program_acquisition, record_library_program_baseline,
-    record_library_program_baseline_with_progress, record_verified_library_program_baseline,
-    record_verified_library_program_baseline_with_progress, restore_library_program_acquisition,
-    retain_published_library_program_baseline,
+    begin_empty_library_program_acquisition, library_initial_program_matches_files,
+    library_program_acquisition_is_trusted, library_program_is_pristine,
+    merge_archive_program_update, prepare_clean_library_seed_at, prepare_instance_program_seed_at,
+    program_copy_requires_repair, program_launch_files_match_baseline, program_package_path_filter,
+    program_update_retained_paths, read_library_program_acquisition,
+    record_library_program_baseline, record_library_program_baseline_with_progress,
+    record_verified_library_program_baseline,
+    record_verified_library_program_baseline_with_progress,
+    restore_library_initial_program_defaults_with_progress, restore_library_program_acquisition,
+    retain_existing_program_baseline_with_progress, retain_published_library_program_baseline,
     retain_published_library_program_baseline_with_progress,
     retain_verified_library_program_baseline,
     retain_verified_library_program_baseline_with_progress,
@@ -769,5 +776,9 @@ fn current_unix_ms() -> u64 {
         .unwrap_or(0)
 }
 
+#[cfg(test)]
+mod program_catalog_creation_tests;
+#[cfg(test)]
+mod program_launch_integrity_tests;
 #[cfg(test)]
 mod tests;

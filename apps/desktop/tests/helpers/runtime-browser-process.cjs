@@ -582,8 +582,10 @@ async function runBrowserFixture({ fixturePath = "runtime-browser.html", keyboar
   bundleWithMiddleware = false, fixtureCleanup = false, fixtureTimeoutMs = 45000, browserStartupTimeoutMs = defaultBrowserStartupTimeoutMs } = {}) {
   assert.match(fixturePath, /^[a-z-]+\.html$/, "Fixture must be an HTML entry in tests/helpers");
   const { commandTimeoutMs } = browserTimeBudgets({ fixtureTimeoutMs, browserStartupTimeoutMs });
-  assert.ok(Number.isFinite(deviceScaleFactor) && deviceScaleFactor >= 1 && deviceScaleFactor <= 3,
-    "Device scale factor must be between 1 and 3");
+  // Automatic desktop fitting can render at 0.75 physical pixels per CSS pixel
+  // on 1080p displays, independently of the Windows DPI setting.
+  assert.ok(Number.isFinite(deviceScaleFactor) && deviceScaleFactor >= 0.75 && deviceScaleFactor <= 3,
+    "Device scale factor must be between 0.75 and 3");
   assert.ok(viewport || deviceScaleFactor === 1, "DPI emulation requires an explicit CSS viewport");
   assert.ok(reducedMotion === undefined || (viewport && ["reduce", "no-preference"].includes(reducedMotion)),
     "Motion emulation requires an explicit viewport and a supported preference");

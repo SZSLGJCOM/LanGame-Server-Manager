@@ -213,3 +213,104 @@ async fn steam_acquisition_pipeline_rejects_bad_official_hash_without_publishing
     );
     Ok(())
 }
+
+#[path = "commands_steam_reuse_tests.rs"]
+mod reuse;
+
+#[tokio::test]
+async fn steam_acquisition_missing_metadata_allows_only_creation_to_prepare_a_fresh_copy()
+-> Result<(), Box<dyn std::error::Error>> {
+    for missing_acf in [true, false] {
+        let mut fixture = ProgramBaselineFixture::new()?;
+        let (root, steamcmd) = prepare_steam_acquisition(&mut fixture)?;
+        let pending = fs::read(root.join(".langame-program-acquisition.json"))?;
+        let missing = if missing_acf {
+            root.join("steamapps/appmanifest_7.acf")
+        } else {
+            steamcmd.join("depotcache/7_9.manifest")
+        };
+        fs::remove_file(missing)?;
+        let result = fixture
+            .recorder()?
+            .finish_steam_acquisition_for_creation(
+                (),
+                root.clone(),
+                steamcmd.clone(),
+                7,
+                "17".into(),
+                |_| {},
+            )
+            .await?;
+        assert!(matches!(result, SteamAcquisition::MissingMetadata { .. }));
+        assert!(matches!(
+            fixture
+                .recorder()?
+                .finish_steam_acquisition((), root.clone(), steamcmd, 7, "17".into(), |_| {},)
+                .await,
+            Err(app_steamcmd::SteamCmdError::InstallationVerificationFailed { .. })
+        ));
+        assert!(!root.join(".langame-clean-package.json").exists());
+        assert!(!root.join(".langame-initial-package.json").exists());
+        assert_eq!(
+            fs::read(root.join(".langame-program-acquisition.json"))?,
+            pending
+        );
+        assert_eq!(fs::read(root.join("x.bin"))?, b"abc");
+        assert_eq!(
+            fs::read(root.join("operator.cfg"))?,
+            b"operator data preserved"
+        );
+    }
+    Ok(())
+}
+
+#[tokio::test]
+async fn steam_acquisition_creation_keeps_missing_payload_corrupt_metadata_and_cancellation_strict()
+-> Result<(), Box<dyn std::error::Error>> {
+    for failure in ["payload", "metadata", "cancelled"] {
+        let mut fixture = ProgramBaselineFixture::new()?;
+        let (root, steamcmd) = prepare_steam_acquisition(&mut fixture)?;
+        let pending = fs::read(root.join(".langame-program-acquisition.json"))?;
+        match failure {
+            "payload" => fs::remove_file(root.join("x.bin"))?,
+            "metadata" => fs::write(
+                steamcmd.join("depotcache/7_9.manifest"),
+                b"corrupt metadata",
+            )?,
+            _ => {}
+        }
+        let cancellation = app_steamcmd::InstallCancellation::new();
+        if failure == "cancelled" {
+            cancellation.cancel();
+        }
+        let operation = fixture
+            .state
+            .begin_storage_context_operation("strict creation acquisition test")?;
+        let result = LibraryBaselineRecorder::new(&operation, &fixture.descriptor, &cancellation)
+            .finish_steam_acquisition_for_creation(
+                (),
+                root.clone(),
+                steamcmd,
+                7,
+                "17".into(),
+                |_| {},
+            )
+            .await;
+        match failure {
+            "cancelled" => assert!(matches!(
+                result,
+                Err(app_steamcmd::SteamCmdError::InstallCancelled { .. })
+            )),
+            _ => assert!(matches!(
+                result,
+                Err(app_steamcmd::SteamCmdError::InstallationVerificationFailed { .. })
+            )),
+        }
+        assert!(!root.join(".langame-clean-package.json").exists());
+        assert_eq!(
+            fs::read(root.join(".langame-program-acquisition.json"))?,
+            pending
+        );
+    }
+    Ok(())
+}

@@ -2,6 +2,10 @@ use super::*;
 use std::fs;
 use std::io::Write;
 
+#[cfg(windows)]
+#[path = "scum_probe_tests.rs"]
+mod scum_probe_tests;
+
 struct Fixture(std::path::PathBuf);
 impl Fixture {
     fn new() -> Self {
@@ -59,8 +63,15 @@ fn install(fixture: &Fixture, files: &BTreeMap<String, Vec<u8>>) -> Result<Insta
 fn save_image_admission_preserves_game_and_provider_pairing() {
     let current_conan = "d0ea317e7e037e68454414f12828d5995cc9e519b9c34eda264be1954d352b14";
     let current_scum = "070fcad918ba04eb9797db29674cadbd6691427b936fe354bca23b008c8c9971";
-    let scum_evidence: serde_json::Value = serde_json::from_str(include_str!(
+    let prior_scum_evidence: serde_json::Value = serde_json::from_str(include_str!(
         "../../../../../modules/scum/reference-fixtures/2026-10-30-native_contract_build_26320224.json"
+    ))
+    .unwrap();
+    let prior_scum = prior_scum_evidence["package"]["executable_sha256"]
+        .as_str()
+        .unwrap();
+    let scum_evidence: serde_json::Value = serde_json::from_str(include_str!(
+        "../../../../../modules/scum/reference-fixtures/2026-11-12-native_contract_build_26593814.json"
     ))
     .unwrap();
     let latest_scum = scum_evidence["package"]["executable_sha256"]
@@ -81,6 +92,7 @@ fn save_image_admission_preserves_game_and_provider_pairing() {
     for image in [
         Profile::get("scum").unwrap().game_hash,
         current_scum,
+        prior_scum,
         latest_scum,
     ] {
         assert_eq!(verify_game_image("scum", image).unwrap(), None);

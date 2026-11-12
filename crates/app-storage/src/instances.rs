@@ -2566,6 +2566,17 @@ pub(crate) fn merge_schema_defaults_with_settings(
             settings.remove(key);
         }
     }
+    if descriptor.is_some_and(|descriptor| descriptor.summary.id == "astroneer")
+        && !persisted_settings.contains_key("connection_mode")
+        && persisted_settings
+            .get("public_ip")
+            .and_then(Value::as_str)
+            .is_some_and(|address| !address.trim().is_empty())
+    {
+        // Pre-mode instances already chose an advertised address. Preserve that
+        // intent when ordinary saves or startup rendering apply newer defaults.
+        settings.insert("connection_mode".into(), Value::String("manual".into()));
+    }
     settings.extend(persisted_settings);
     if let Some(descriptor) = descriptor {
         normalize_module_player_access_settings_strict(&descriptor.summary.id, &mut settings)?;

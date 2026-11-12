@@ -86,6 +86,7 @@ impl Fixture {
         sqlx::query(match layout {
             NativeLayout::Build25803875 => "PRAGMA user_version=73",
             NativeLayout::Build26320224 => "PRAGMA user_version=75",
+            NativeLayout::Build26593814 => "PRAGMA user_version=77",
         })
         .execute(&mut native)
         .await
@@ -136,7 +137,11 @@ impl Drop for Fixture {
 
 #[tokio::test]
 async fn sqlite_write_changes_only_three_slots_and_preserves_unknown_world_and_regions() {
-    for layout in [NativeLayout::Build25803875, NativeLayout::Build26320224] {
+    for layout in [
+        NativeLayout::Build25803875,
+        NativeLayout::Build26320224,
+        NativeLayout::Build26593814,
+    ] {
         let fixture = Fixture::with_layout(layout).await;
         verify_stopped_write_and_backup(&fixture).await;
     }
@@ -469,6 +474,12 @@ async fn database_version_must_match_its_verified_image_before_read_or_backup() 
         (NativeLayout::Build25803875, "PRAGMA user_version=74"),
         (NativeLayout::Build26320224, "PRAGMA user_version=74"),
         (NativeLayout::Build26320224, "PRAGMA user_version=76"),
+        (NativeLayout::Build25803875, "PRAGMA user_version=77"),
+        (NativeLayout::Build26320224, "PRAGMA user_version=77"),
+        (NativeLayout::Build26593814, "PRAGMA user_version=73"),
+        (NativeLayout::Build26593814, "PRAGMA user_version=75"),
+        (NativeLayout::Build26593814, "PRAGMA user_version=76"),
+        (NativeLayout::Build26593814, "PRAGMA user_version=78"),
     ] {
         let fixture = Fixture::with_layout(layout).await;
         let input = fixture.input().await;

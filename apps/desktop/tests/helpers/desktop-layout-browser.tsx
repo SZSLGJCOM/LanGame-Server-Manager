@@ -1,4 +1,5 @@
 import { prepareBrowserLocaleCatalogs } from "./browser-locale-catalogs";
+import { assertServerDetailFrame, assertShellFrameSpacing } from "./desktop-frame-geometry";
 import React, { act, StrictMode, type ComponentProps } from "react";
 import { createRoot } from "react-dom/client";
 import { bootstrapApp, readInstanceDetails, readInstanceRuntime, readModuleDetails } from "../../src/api";
@@ -68,40 +69,46 @@ function assertVisible(target: HTMLElement, label: string) {
 }
 function assertCoverConfirmation(card: HTMLElement, label: string, visible = true) {
   const review = card.querySelector<HTMLElement>(".server-list-card-delete.is-confirming > .inline-confirm-review");
-  check(review && !document.querySelector(".inline-confirm-popover"), `${label} must replace the cover inside its instance card`);
-  const cover = card.querySelector<HTMLElement>(".server-list-card-media")!.getBoundingClientRect();
-  const footer = card.querySelector<HTMLElement>(".server-list-card-footer")!.getBoundingClientRect();
+  check(review && !document.querySelector(".inline-confirm-popover"), `${label} must stay inside its instance card`);
+  const shell = card.querySelector<HTMLElement>(".server-list-card-shell")!.getBoundingClientRect();
   check(getComputedStyle(card.querySelector(".module-cover")!).visibility === "visible"
-    && getComputedStyle(card.querySelector(".server-list-card-status")!).visibility === "hidden", `${label} must keep the cover behind the translucent review and hide the status`);
+    && getComputedStyle(card.querySelector(".server-list-card-status")!).visibility === "hidden"
+    && getComputedStyle(card.querySelector(".server-list-card-footer")!).visibility === "hidden",
+    `${label} must cover the normal status and footer while preserving the card layout`);
+  const primary = card.querySelector<HTMLElement>(".server-list-card-footer .server-list-card-primary-action")!.getBoundingClientRect();
+  const submit = review.querySelector<HTMLElement>(".inline-confirm-submit")!.getBoundingClientRect();
+  check((["x", "y", "width", "height"] as const).every((key) => Math.abs(primary[key] - submit[key]) < 1),
+    `${label} must replace the primary action in place`);
   for (const target of [review, ...review.querySelectorAll<HTMLElement>(".inline-confirm-message, button")]) {
     const box = target.getBoundingClientRect();
-    check(box.width > 0 && box.height > 0 && box.left >= cover.left - 1 && box.right <= cover.right + 1
-      && box.top >= cover.top - 1 && box.bottom <= cover.bottom + 1 && box.bottom <= footer.top + 1
+    check(box.width > 0 && box.height > 0 && box.left >= shell.left - 1 && box.right <= shell.right + 1
+      && box.top >= shell.top - 1 && box.bottom <= shell.bottom + 1
       && target.scrollWidth <= target.clientWidth + 1
       && (target.classList.contains("inline-confirm-message")
         ? getComputedStyle(target).overflowY === "auto" : target.scrollHeight <= target.clientHeight + 1),
-      `${label} text and controls must fit the cover without covering the footer: ${JSON.stringify(box.toJSON())}`);
+      `${label} text and controls must fit the card: ${JSON.stringify(box.toJSON())}`);
     if (visible) assertVisible(target, label);
   }
   return review;
 }
-async function readFullRemovalPlan(review: HTMLElement) {
+async function readRemovalSummary(review: HTMLElement) {
   const message = review.querySelector<HTMLElement>(".inline-confirm-message")!;
   const buttons = [...review.querySelectorAll<HTMLButtonElement>("button")];
   const before = buttons.map((button) => button.getBoundingClientRect().toJSON());
-  check(message.tabIndex === 0 && message.scrollHeight > message.clientHeight,
-    "The complete removal plan must be a keyboard-accessible local scroll region");
-  check(message.textContent?.includes("fixture/instance/saves") && message.textContent.includes("fixture/instance/backups")
-    && message.textContent.includes("fixture/library") && message.textContent.includes("fixture/external-world"),
-    "Removal confirmation must retain every deleted and preserved data path");
+  check(message.tabIndex === 0, "The removal summary must remain keyboard accessible");
+  check(message.textContent?.includes("存档和备份") && message.textContent.includes("无法恢复")
+    && message.textContent.includes("基础库保留") && message.textContent.includes("外部存档保留")
+    && !message.textContent.includes("fixture/"),
+    "Removal confirmation must summarize consequences and retained data without a path inventory");
+  check(message.scrollHeight <= message.clientHeight + 1, "The concise Chinese summary must fit without scrolling");
   await act(async () => {
     message.focus();
     check(document.activeElement === message, "The removal plan must receive keyboard focus");
     const response = await fetch(`/__reliability_key/${nonce}/End`, { method: "POST" });
     check(response.ok, "Native End dispatch failed");
   });
-  await settleUntil(() => message.scrollTop > 0 && message.scrollHeight - message.clientHeight - message.scrollTop <= 1,
-    "Native End must reveal the end of the complete removal plan");
+  await settleUntil(() => message.scrollHeight - message.clientHeight - message.scrollTop <= 1,
+    "The end of the concise removal summary must remain visible");
   const lastText = message.lastChild!;
   const lastCharacter = document.createRange();
   lastCharacter.setStart(lastText, (lastText.textContent?.length ?? 1) - 1);
@@ -109,9 +116,9 @@ async function readFullRemovalPlan(review: HTMLElement) {
   const lastBounds = lastCharacter.getBoundingClientRect();
   const bounds = message.getBoundingClientRect();
   check(lastBounds.height > 0 && lastBounds.top >= bounds.top - 1 && lastBounds.bottom <= bounds.bottom + 1,
-    "The final preserved path must be visibly readable inside the scrolled plan");
+    "The retained external saves note must remain visibly readable");
   check(JSON.stringify(buttons.map((button) => button.getBoundingClientRect().toJSON())) === JSON.stringify(before),
-    "Reading the full removal plan must not move the confirmation buttons");
+    "Reading the removal summary must not move the confirmation buttons");
 }
 function assertCoverRestored(card: HTMLElement, label: string) {
   const state = {
@@ -143,6 +150,8 @@ function horizontalFit(selector: string) {
     `${selector} overflows horizontally: ${target.scrollWidth}/${target.clientWidth}; descendants: ${JSON.stringify(overflow)}`);
 }
 function shellGeometry() {
+  assertShellFrameSpacing(fixture);
+  assertServerDetailFrame(fixture);
   check(document.documentElement.scrollWidth <= innerWidth + 1, "The window has horizontal overflow");
   check(document.documentElement.scrollHeight <= innerHeight + 1, "The whole window scrolls instead of its content");
   for (const selector of [".shell-header", ".shell-header-tools", ".shell-topnav", ".shell-content-scroll", ".shell-activity-bar"])
@@ -157,6 +166,7 @@ function typography(selector: string) {
 }
 
 async function run() {
+  const { maximized } = await (await fetch("/__server_layout_state")).json() as { maximized: boolean };
   for (const font of ['400 13px "Inter"', '500 13px "Inter"', '600 16px "Inter"', 'italic 400 13px "Inter"']) {
     const loaded = await document.fonts.load(font, "LanGame 0123456789");
     check(loaded.length > 0 && loaded.every((face) => face.status === "loaded"), `Bundled UI font did not load: ${font}`);
@@ -244,6 +254,110 @@ async function run() {
   await act(async () => { await prepareBrowserLocaleCatalogs(); render(); });
   await settleUntil(() => Boolean(fixture.querySelector("pre.server-runtime-console")), "Server console did not mount");
   await frame();
+  const header = element(".shell-header");
+  const interfaceTypography = () => ({
+    navigation: typography(".shell-topnav-label"), input: typography(".server-list-search"),
+    metadata: typography(".server-list-result-count"), console: typography("pre.server-runtime-console")
+  });
+  const cardGeometry = () => Object.fromEntries([".workspace-metric", ".server-list-card", ".server-list-card-media",
+    ".server-list-card-footer"].map((selector) => {
+    const { width, height } = element(selector).getBoundingClientRect();
+    return [selector, { width, height }];
+  }));
+  const cardControlGeometry = () => Object.fromEntries([".workspace-metric-icon", ".workspace-metric-icon-svg",
+    ".server-list-card-actions .server-list-card-icon-action", ".server-list-card-copy-action",
+    ".server-list-card-primary-action", ".server-list-card-primary-action .server-list-card-action-icon"].map((selector) => {
+    const { width, height } = element(selector).getBoundingClientRect();
+    return [selector, { width, height }];
+  }));
+  const cardTextGeometry = () => Object.fromEntries([".workspace-metric-label", ".workspace-metric-value",
+    ".workspace-metric-meta", ".server-list-card-copy .row-title", ".server-list-card-status",
+    ".server-list-card-meta", ".server-list-card-primary-action span"].map((selector) => {
+    const target = element(selector);
+    const card = target.closest<HTMLElement>(".workspace-metric, .server-list-card")!;
+    const range = document.createRange();
+    range.selectNodeContents(target);
+    return [selector, { height: range.getBoundingClientRect().height,
+      size: parseFloat(getComputedStyle(target).fontSize) * Number(getComputedStyle(card).zoom) }];
+  }));
+  const windowedGeometry = cardGeometry();
+  check(windowedGeometry[".workspace-metric"].height === 72
+    && windowedGeometry[".server-list-card"].height === 194
+    && windowedGeometry[".server-list-card-media"].height === 108
+    && cardControlGeometry()[".server-list-card-primary-action"].width === 88,
+    "Windowed cards must retain their original dimensions at every viewport");
+  if (maximized) {
+    fixture.style.width = "1560px";
+    await frame();
+    const original = cardGeometry();
+    const originalControls = cardControlGeometry();
+    const originalText = cardTextGeometry();
+    const originalTypography = interfaceTypography();
+    fixture.style.width = "";
+    header.dataset.windowMaximized = "true";
+    await frame();
+    const enlarged = cardGeometry();
+    const enlargedControls = cardControlGeometry();
+    for (const selector of Object.keys(originalControls)) {
+      for (const dimension of ["width", "height"] as const) {
+        check(Math.abs(enlargedControls[selector][dimension] - originalControls[selector][dimension] * 1.25) <= 1,
+          `Maximized controls must grow with text and spacing: ${JSON.stringify({ selector, original: originalControls[selector], enlarged: enlargedControls[selector] })}`);
+      }
+    }
+    const enlargedText = cardTextGeometry();
+    const enlargedTextRoles: Record<string, number> = {
+      ".workspace-metric-label": 14, ".workspace-metric-value": 28, ".workspace-metric-meta": 14,
+      ".server-list-card-copy .row-title": 20, ".server-list-card-status": 14,
+      ".server-list-card-meta": 14, ".server-list-card-primary-action span": 16,
+    };
+    for (const selector of Object.keys(originalText)) {
+      check(Math.abs(enlargedText[selector].size - enlargedTextRoles[selector]) < 0.01,
+        `Maximized card text must retain its hierarchy after card zoom: ${JSON.stringify({ selector, original: originalText[selector], enlarged: enlargedText[selector] })}`);
+    }
+    const cover = ".server-list-card-media";
+    const horizontalScale = enlarged[cover].width / original[cover].width;
+    const verticalScale = enlarged[cover].height / original[cover].height;
+    if (horizontalScale >= 1) {
+      check(Math.abs(horizontalScale / verticalScale - 1) < 0.015,
+        `Maximizing must preserve cover proportions: ${JSON.stringify({ original: original[cover], enlarged: enlarged[cover] })}`);
+    } else {
+      check(enlarged[cover].height >= original[cover].height, "Narrow cards must retain their minimum cover height");
+    }
+    for (const label of fixture.querySelectorAll<HTMLElement>(".workspace-metric-copy")) {
+      const bounds = label.getBoundingClientRect();
+      const card = label.closest<HTMLElement>(".workspace-metric")!.getBoundingClientRect();
+      check(bounds.top >= card.top + 7 && bounds.bottom <= card.bottom - 7,
+        "Maximized metrics must retain vertical padding around all three text lines");
+    }
+    const title = element(".server-list-card-copy .row-title");
+    const originalTitle = title.textContent;
+    title.textContent = "Long instance name for two-line layout verification";
+    await frame();
+    const titleBox = title.getBoundingClientRect();
+    const footer = element(".server-list-card-footer").getBoundingClientRect();
+    const action = element(".server-list-card-primary-action").getBoundingClientRect();
+    check(titleBox.top >= footer.top && titleBox.bottom + 1 <= action.top && action.bottom <= footer.bottom,
+      "A two-line instance name must remain above the enlarged action row and inside the footer");
+    title.textContent = originalTitle;
+    const metric = element(".workspace-metric").getBoundingClientRect();
+    const sidebar = element(".server-list-panel").getBoundingClientRect();
+    check(Math.abs(metric.left - sidebar.left) <= 1 && Math.abs(metric.right - sidebar.right) <= 1,
+      `The instance list must align with the instance-count card: ${JSON.stringify({ metric: metric.toJSON(), sidebar: sidebar.toJSON() })}`);
+    fixture.style.width = "1560px";
+    header.dataset.windowMaximized = "false";
+    await frame();
+    check(JSON.stringify(cardGeometry()) === JSON.stringify(original),
+      "Restoring the native window must restore the original card geometry exactly");
+    check(JSON.stringify(cardControlGeometry()) === JSON.stringify(originalControls),
+      "Restoring the native window must restore the original control geometry exactly");
+    check(JSON.stringify(cardTextGeometry()) === JSON.stringify(originalText),
+      "Restoring the native window must restore the original rendered text sizes exactly");
+    check(JSON.stringify(interfaceTypography()) === JSON.stringify(originalTypography),
+      "Restoring the native window must restore navigation, form, metadata and console typography exactly");
+    fixture.style.width = "";
+    header.dataset.windowMaximized = "true";
+    await frame();
+  }
   shellGeometry();
   for (const selector of [".servers-page", ".server-layout-grid", ".server-list-panel", ".server-detail-panel", ".server-runtime-console-frame"])
     horizontalFit(selector);
@@ -261,18 +375,19 @@ async function run() {
   const deleteReview = assertCoverConfirmation(firstCard, "Delete confirmation");
   const afterDeleteBox = firstCard.getBoundingClientRect();
   check(afterDeleteBox.height === cardBox.height && afterDeleteBox.width === cardBox.width
-    && firstCard.nextElementSibling!.getBoundingClientRect().top === secondCardTop,
-    "Opening delete confirmation must not stretch the card or move neighboring instances");
+    && firstCard.nextElementSibling!.getBoundingClientRect().top - afterDeleteBox.top === secondCardTop - cardBox.top,
+    "Revealing delete confirmation must preserve card size and spacing between instances");
   check(footerParts.every(({ target, box }) => {
     const current = target.getBoundingClientRect();
-    return current.x === box.x && current.y === box.y && current.width === box.width && current.height === box.height;
+    return current.x - afterDeleteBox.x === box.x - cardBox.x && current.y - afterDeleteBox.y === box.y - cardBox.y
+      && current.width === box.width && current.height === box.height;
   }), "Deletion confirmation must preserve the footer, name, connection and primary-action positions");
   check(deleteReview.textContent?.includes("永久删除") && deleteReview.textContent.includes("存档和备份")
     && deleteReview.textContent.includes("外部存档"), "Compact deletion confirmation explains permanent owned-data deletion and preserved external saves");
   check(deleteRequests.length === 0, "Opening deletion confirmation must not delete an instance");
   const cancelDelete = deleteReview.querySelector<HTMLButtonElement>("button")!;
   check(document.activeElement === cancelDelete, "Deletion review must initially focus Cancel");
-  await readFullRemovalPlan(deleteReview);
+  await readRemovalSummary(deleteReview);
   const deletionList = element(".server-list-panel > .table-list");
   const beforeScroll = deletionList.scrollTop;
   const beforeScrollCardTop = firstCard.getBoundingClientRect().top;
@@ -316,14 +431,13 @@ async function run() {
   assertCoverRestored(firstCard, "Completed deletion");
   checks++;
 
-  const measured = {
-    navigation: typography(".shell-topnav-label"), input: typography(".server-list-search"),
-    metadata: typography(".server-list-result-count"), console: typography("pre.server-runtime-console")
-  };
-  check(measured.navigation.size === "13px" && measured.input.size === "13px", `Navigation and inputs must use 13px: ${JSON.stringify(measured)}`);
+  const measured = interfaceTypography();
+  const bodySize = maximized ? "16px" : "13px";
+  check(measured.navigation.size === bodySize && measured.input.size === bodySize,
+    `Navigation and inputs must use ${bodySize}: ${JSON.stringify(measured)}`);
   check(measured.navigation.weight === "500" && measured.input.weight === "400", "Navigation should be medium weight and input text regular");
-  check(measured.console.size === "13px", "Console output must use the 13px code role");
-  check(parseFloat(measured.metadata.size) >= 12, "Metadata must remain at least 12px");
+  check(measured.console.size === bodySize, "Console output must follow the shared, bounded text step");
+  check(measured.metadata.size === (maximized ? "14px" : "12px"), "Metadata must remain subordinate to body text when maximized");
   check(measured.console.family !== measured.navigation.family, "Console must use the dedicated monospace family");
   checks++;
 
@@ -451,6 +565,39 @@ async function run() {
     horizontalFit(selector);
   reveal(element(".shell-activity-notice"), "Configuration save status");
   checks++;
+  if (maximized) {
+    if (innerWidth <= 1100) await pressEnter(element(".configuration-workspace__navigation-toggle"));
+    const formGeometry = () => {
+      const input = element(".configuration-workspace input.settings-schema-input, .configuration-workspace select.settings-schema-select");
+      const field = element(".configuration-field-grid > .configuration-field");
+      return {
+        font: parseFloat(getComputedStyle(input).fontSize),
+        inputHeight: input.getBoundingClientRect().height,
+        navigationHeight: element(".configuration-section-navigation__button").getBoundingClientRect().height,
+        columnGap: parseFloat(getComputedStyle(element(".configuration-field-grid")).columnGap),
+        rowGap: parseFloat(getComputedStyle(field).paddingBottom),
+        labelGap: parseFloat(getComputedStyle(element(".configuration-field-heading")).paddingBottom),
+        contentPadding: parseFloat(getComputedStyle(element(".configuration-workspace__content")).paddingLeft),
+      };
+    };
+    const states = [];
+    for (const state of [false, true, false]) {
+      header.dataset.windowMaximized = String(state);
+      await frame();
+      states.push(formGeometry());
+    }
+    const [windowed, enlarged, restored] = states;
+    check(windowed.font === 13 && enlarged.font === 16, "Form text must use the readable body role");
+    for (const key of ["inputHeight", "navigationHeight", "columnGap", "rowGap", "labelGap", "contentPadding"] as const) {
+      check(enlarged[key] / windowed[key] >= enlarged.font / windowed.font - 0.01,
+        `Maximized form spacing must grow at least as much as its text: ${JSON.stringify({ key, windowed, enlarged })}`);
+    }
+    check(JSON.stringify(windowed) === JSON.stringify(restored), "Restoring must recover the original form density exactly");
+    header.dataset.windowMaximized = "true";
+    await frame();
+    if (innerWidth <= 1100) await pressEnter(element(".configuration-workspace__navigation-toggle"));
+    checks++;
+  }
   const toggle = element<HTMLButtonElement>(".configuration-workspace__navigation-toggle");
   const narrow = innerWidth <= 1100;
   if (narrow) {
@@ -520,7 +667,8 @@ async function run() {
     && Math.abs(emptyBounds.top + emptyBounds.height / 2 - workspaceBounds.top - workspaceBounds.height / 2) <= 1,
     "First-server guidance must be centered in the whole server workspace");
   const title = typography(".server-workspace-empty h3");
-  check(title.size === "16px" && title.weight === "600", "Section headings must use the compact 16px semibold role");
+  check(title.size === (maximized ? "20px" : "16px") && title.weight === "600",
+    "Section headings must use the compact semibold role with a four-pixel maximized step");
   const createButton = element(".server-workspace-empty .primary-button");
   const restoreButton = element<HTMLButtonElement>(".server-workspace-empty-actions .secondary-button");
   check(restoreButton.disabled && restoreButton.textContent === "还原归档", "A workspace without archives must show a disabled restore entry");
@@ -529,7 +677,7 @@ async function run() {
   check(restoreBounds.left > createBounds.right && Math.abs(restoreBounds.top - createBounds.top) <= 1,
     "Restore archives must sit to the right of Create instance");
   const createHeight = createButton.getBoundingClientRect().height;
-  check(createHeight >= 28 && createHeight <= 30.5, `Create action must retain a compact, usable target: ${createHeight}`);
+  check(Math.abs(createHeight - (maximized ? 38 : 30)) <= 1, `Create action must match the window state density: ${createHeight}`);
   check(createButton.scrollWidth <= createButton.clientWidth + 1 && createButton.scrollHeight <= createButton.clientHeight + 1,
     "Compact create action must not clip its label");
   await pressEnter(element(".server-workspace-empty .primary-button"));
@@ -549,9 +697,9 @@ async function run() {
   await pressEnter(element(".server-list-card-actions > .inline-confirm-action > button"));
   await settleUntil(() => !document.querySelector(".configuration-field-help-tooltip"), "Filter bubble must dismiss before deletion review");
   const finalReview = assertCoverConfirmation(element(".server-list-card"), "Final deletion confirmation");
-  await readFullRemovalPlan(finalReview);
+  await readRemovalSummary(finalReview);
   check(errors.length === 0, `Unexpected browser errors: ${errors.join("; ")}`);
-  return { status: "passed", checks, browser_errors: errors, device_scale_factor: devicePixelRatio,
+  return { status: "passed", checks, maximized, browser_errors: errors, device_scale_factor: devicePixelRatio,
     reduced_motion: matchMedia("(prefers-reduced-motion: reduce)").matches,
     viewport: { width: innerWidth, height: innerHeight }, typography: { ...measured, configurationMeta, title } };
 }

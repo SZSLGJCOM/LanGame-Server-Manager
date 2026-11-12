@@ -1,4 +1,5 @@
 import { prepareBrowserLocaleCatalogs } from "./browser-locale-catalogs";
+import { assertServerDetailFrame } from "./desktop-frame-geometry";
 import React, { act, StrictMode, type ComponentProps } from "react";
 import { createRoot } from "react-dom/client";
 import { invokeMock } from "../../src/api-mock";
@@ -6,7 +7,7 @@ import { buildMockPorts, buildMockSavesPath, buildMockSettingsForModule } from "
 import { createDefaultAiSettings } from "../../src/ai-settings";
 import { I18nProvider } from "../../src/i18n";
 import type { InstanceArchiveDetails, InstanceArchiveSummary } from "../../src/storage-management-types";
-import type { BootstrapResponse, InstanceDetails, InstanceSummary, ModuleDetails } from "../../src/types";
+import type { BootstrapResponse, InstanceDetails, InstanceSummary, LaunchPlan, ModuleDetails } from "../../src/types";
 import { ServersView } from "../../src/views/ServersView";
 import type { ServerDetailTab } from "../../src/views/servers/ServerDetailTabs";
 import { InstanceSettingsSaveProvider } from "../../src/views/settings/InstanceSettingsSaveContext";
@@ -22,7 +23,9 @@ const root = createRoot(fixture);
 const errors: string[] = [];
 const unexpectedWrites: string[] = [];
 const observedCommands: string[] = [];
-const readOnlyQueries = new Set(["lookup_steam_workshop_items", "search_steam_workshop_items", "refresh_instance_live_players"]);
+const isolationReads: string[] = [];
+const readOnlyQueries = new Set(["lookup_steam_workshop_items", "search_steam_workshop_items", "refresh_instance_live_players",
+  "resolve_manual_mod_references"]);
 const isReadOnlyCommand = (command: string) => /^(read_|list_|inspect_)/.test(command) || readOnlyQueries.has(command);
 const normalTabs: ServerDetailTab[] = ["runtime", "settings", "mods", "players", "maintenance", "gm"];
 const archiveTabs: ServerDetailTab[] = ["runtime", "settings", "mods", "players", "maintenance"];
@@ -45,9 +48,14 @@ function tab(id: ServerDetailTab) {
   return element<HTMLButtonElement>(`.server-detail-tabs [role="tab"][id$="-${id}"]`);
 }
 function assertTab(id: ServerDetailTab, context: string) {
+  assertServerDetailFrame(fixture);
   check(tab(id).getAttribute("aria-selected") === "true", `${context}: expected ${id}, selected ${fixture.querySelector('.server-detail-tabs [aria-selected="true"]')?.id}`);
   const panel = element('[role="tabpanel"]');
   check(panel.getAttribute("aria-labelledby") === tab(id).id, `${context}: selected tab must label the current detail panel`);
+}
+function selectedConfigurationSection() {
+  return fixture.querySelector('[data-configuration-section-id] > button[aria-current="page"]')
+    ?.parentElement?.getAttribute("data-configuration-section-id");
 }
 async function settleUntil(predicate: () => boolean, description: string) {
   const deadline = performance.now() + 5000;
@@ -83,6 +91,12 @@ async function chooseTab(id: ServerDetailTab, expectLoadFailure = false) {
   if (!expectLoadFailure) await waitForWorkspace(id);
   check(document.activeElement === tab(id), "Workspace loading must not move focus away from the selected tab");
 }
+async function chooseMyMods() {
+  const target = [...fixture.querySelectorAll<HTMLButtonElement>('.mw-workbench [role="tab"]')]
+    .find((button) => button.textContent?.trim() === "我的 Mod");
+  check(target && !target.disabled, "My Mods must be available before selecting compatibility guidance");
+  await act(async () => { target.click(); await frame(); });
+}
 function unexpectedWrite(command: string): never {
   unexpectedWrites.push(command);
   throw new Error(`Navigation must not perform ${command}`);
@@ -92,7 +106,7 @@ function deferred<T>() {
   const promise = new Promise<T>((yes) => { resolve = yes; });
   return { promise, resolve };
 }
-type ReadArgs = { input?: { archive_id?: string }; moduleId?: string; includePreservedProgramCounts?: boolean } & Record<string, unknown>;
+type ReadArgs = { input?: { archive_id?: string; instance_id?: string }; moduleId?: string; includePreservedProgramCounts?: boolean } & Record<string, unknown>;
 const archiveReads: { id: string; operation: ReturnType<typeof deferred<InstanceArchiveDetails>> }[] = [];
 const moduleReads: { id: string; operation: ReturnType<typeof deferred<ModuleDetails>> }[] = [];
 let holdArchiveReads = false;
@@ -101,6 +115,12 @@ let archives: InstanceArchiveSummary[] = [];
 const archiveSnapshots = new Map<string, InstanceArchiveDetails>();
 Object.assign(window, { isTauri: true, __TAURI_INTERNALS__: { invoke: (command: string, args: ReadArgs = {}) => {
   observedCommands.push(command);
+  if (command === "read_instance_isolation") isolationReads.push(args.input?.instance_id ?? "");
+  if (command === "resolve_manual_mod_references") {
+    check(args.presentations == null && Array.isArray(args.references)
+      && args.references.every((reference) => typeof reference === "string" && /^[1-9]\d{0,9}$/.test(reference)),
+    "Navigation may only resolve numeric Mod IDs from the existing presentation cache");
+  }
   if (command === "list_instance_archives") return Promise.resolve({ archives, pending_deletions: [], issues: [] });
   if (command === "read_instance_archive_details") {
     const id = args.input?.archive_id ?? "";
@@ -123,23 +143,29 @@ async function run() {
   const bootstrap = await invokeMock<BootstrapResponse>("bootstrap", { includeSystemSnapshot: false });
   const sourceA = bootstrap.state.instances.find((instance) => instance.module_id === "dontstarve");
   const sourceB = bootstrap.state.instances.find((instance) => instance.module_id === "minecraft");
-  check(sourceA && sourceB, "Mock includes two independent instance identities");
+  const sourceAsa = bootstrap.state.instances.find((instance) => instance.module_id === "arksurvivalascended");
+  check(sourceA && sourceB && sourceAsa, "Mock includes independent navigation instances and ASA");
   const originalA = await invokeMock<InstanceDetails>("read_instance_details_from_storage", { instanceId: sourceA.id });
+  const originalAsa = await invokeMock<InstanceDetails>("read_instance_details_from_storage", { instanceId: sourceAsa.id });
   const a: InstanceSummary = { ...sourceA, name: "Navigation A", status: "Stopped", active_process_count: 0 };
   const b: InstanceSummary = { ...sourceB, name: "Navigation B", module_id: "dontstarve", status: "Stopped", active_process_count: 0 };
+  const asa: InstanceSummary = { ...sourceAsa, name: "Navigation ASA", status: "Stopped", active_process_count: 0 };
   const unsupported: InstanceSummary = { ...sourceB, name: "Unsupported navigation B", module_id: "scum", status: "Stopped", active_process_count: 0 };
   // Provide complete SCUM native data; opening its configuration must not synthesize missing sections or autosave.
   const scumSettings = initializeScumSettings(buildMockSettingsForModule("scum", unsupported.name, unsupported.id));
-  const detailsFor = (summary: InstanceSummary): InstanceDetails => ({ ...originalA, summary, active_run: null,
-    settings_json: summary.module_id === "scum" ? JSON.stringify(scumSettings, null, 2) : originalA.settings_json,
-    ports: buildMockPorts(summary.module_id), saves_path: buildMockSavesPath(summary),
-    config_file_path: `D:/fixture-only/${summary.id}/config/instance.json` });
+  const detailsFor = (summary: InstanceSummary): InstanceDetails => {
+    const original = summary.module_id === "arksurvivalascended" ? originalAsa : originalA;
+    return { ...original, summary, active_run: null,
+      settings_json: summary.module_id === "scum" ? JSON.stringify(scumSettings, null, 2) : original.settings_json,
+      ports: buildMockPorts(summary.module_id), saves_path: buildMockSavesPath(summary),
+      config_file_path: `D:/fixture-only/${summary.id}/config/instance.json` };
+  };
   const normalDetails = new Map([[a.id, detailsFor(a)], [b.id, detailsFor(b)]]);
   const modules = new Map<string, ModuleDetails>();
-  for (const moduleId of ["dontstarve", "scum", "minecraft"]) {
+  for (const moduleId of ["dontstarve", "scum", "minecraft", "arksurvivalascended"]) {
     modules.set(moduleId, await invokeMock<ModuleDetails>("read_module_details", { moduleId, includePreservedProgramCounts: false }));
   }
-  for (const [id, summary] of [["archive-a", a], ["archive-b", b], ["archive-unsupported", unsupported]] as const) {
+  for (const [id, summary] of [["archive-a", a], ["archive-b", b], ["archive-unsupported", unsupported], ["archive-asa", asa]] as const) {
     const archive: InstanceArchiveSummary = { archive_id: id, instance_id: summary.id, instance_name: `Archived ${summary.name}`,
       module_id: summary.module_id, deleted_at_unix_ms: 1790553600000, archived_instance_root: `D:/fixture-only/archives/${id}`,
       previous_instance_root: `D:/fixture-only/${summary.id}`, preserved_external_saves_path: null, external_saves_backup_id: null,
@@ -152,6 +178,8 @@ async function run() {
       backups: { entries: [], issues: [], truncated: false } });
   }
   const noOperation = () => {};
+  const openedLibraries: string[] = [];
+  let retainDetailsOnSelection = false;
   const props: ComponentProps<typeof ServersView> = {
     aiSettings: createDefaultAiSettings(), assistantCanRun: false, bindAddressCandidates: [], instances: [a, b],
     moduleInstallations: { dontstarve: { installState: "Installed", hasManagedInstallSource: true } },
@@ -159,9 +187,13 @@ async function run() {
     selectedInstanceId: a.id, selectedDetails: normalDetails.get(a.id)!, selectedBackups: [], selectedModuleDetails: modules.get("dontstarve")!,
     selectedModuleDetailsError: null, runtime: null, runtimeWindows: null, launchPlan: null, launchPlanError: null, refreshIssue: null,
     onActivity: noOperation, onResumeAutoRefresh: noOperation,
-    onSelectInstance: (id) => { props.selectedInstanceId = id; props.selectedDetails = null; props.selectedModuleDetails = null; render(); },
+    onSelectInstance: (id) => {
+      props.selectedInstanceId = id;
+      if (!retainDetailsOnSelection) { props.selectedDetails = null; props.selectedModuleDetails = null; }
+      render();
+    },
     onStart: () => unexpectedWrite("start"), onStop: () => unexpectedWrite("stop"), onInstallModule: async () => unexpectedWrite("install"),
-    onOpenModuleLibrary: noOperation, onCreateInstance: () => unexpectedWrite("create instance"), onPickDirectory: async () => null,
+    onOpenModuleLibrary: (id) => openedLibraries.push(id), onCreateInstance: () => unexpectedWrite("create instance"), onPickDirectory: async () => null,
     onImportDontStarveWorldData: async () => unexpectedWrite("import world"), onOpenLocalPath: () => unexpectedWrite("open path"),
     onSendRuntimeCommand: async () => unexpectedWrite("runtime command"), onSuppressRuntimeWindows: async () => unexpectedWrite("suppress windows"),
     onCreateBackup: () => unexpectedWrite("create backup"), onArchivesChanged: async () => unexpectedWrite("archive mutation refresh"),
@@ -259,7 +291,82 @@ async function run() {
   await switchNormal(unsupported, "runtime");
   await chooseTab("settings");
   await switchNormal(a, "settings");
+  await act(async () => { props.instances = [a, b, asa]; render(); await frame(); });
+  await switchNormal(asa, "settings");
+  await waitForWorkspace("settings");
+  const defaultAsaSection = selectedConfigurationSection();
+  check(Boolean(defaultAsaSection) && defaultAsaSection !== "join", "Ordinary ASA configuration starts outside platform admission");
+  const originalAsaSettings = props.selectedDetails!.settings_json;
+  await chooseTab("mods");
+  await chooseMyMods();
+  await settleUntil(() => Boolean(fixture.querySelector(".mw-manual-toolbar [data-asa-open-settings]")),
+    "ASA Mods did not expose its configuration link");
+  check(!fixture.querySelector(".asa-mod-compatibility select, .mw-workbench [data-asa-platform-mode]"),
+    "ASA Mods offers compatibility guidance without a duplicate platform selector");
+  await click(".mw-manual-toolbar [data-asa-open-settings]");
+  assertTab("settings", "ASA compatibility navigation");
+  await waitForWorkspace("settings");
+  const platformSelector = ".asa-platform-settings select[data-asa-platform-mode]";
+  await settleUntil(() => document.activeElement === fixture.querySelector(platformSelector),
+    "ASA compatibility navigation did not focus its platform control");
+  check(selectedConfigurationSection() === "join", "ASA compatibility navigation selects the existing join configuration group");
+  check(element<HTMLSelectElement>(platformSelector).id === "configuration-arksurvivalascended-server-platform-input",
+    "The focused selector is the server_platform configuration field");
+  check(props.selectedDetails!.settings_json === originalAsaSettings && unexpectedWrites.length === 0,
+    `Opening ASA platform configuration preserves settings and dispatches no write: ${JSON.stringify({
+      settingsChanged: props.selectedDetails!.settings_json !== originalAsaSettings, unexpectedWrites
+    })}`);
+  await chooseTab("mods");
+  await chooseTab("settings");
+  check(selectedConfigurationSection() === defaultAsaSection && !fixture.querySelector(platformSelector),
+    "Reopening configuration normally does not replay the consumed platform jump");
+  await chooseTab("mods");
+  await chooseMyMods();
+  await click(".mw-manual-toolbar [data-asa-open-settings]");
+  await settleUntil(() => document.activeElement === fixture.querySelector(platformSelector),
+    "A new explicit ASA platform jump did not focus the selector");
+  await switchNormal(a, "settings");
+  await waitForWorkspace("settings");
+  check(!fixture.querySelector(".asa-platform-settings"), "Switching to another server does not carry the ASA platform control");
+  await switchNormal(asa, "settings");
+  await waitForWorkspace("settings");
+  check(selectedConfigurationSection() === defaultAsaSection && !fixture.querySelector(platformSelector),
+    "Switching back to ASA does not replay another instance's navigation request");
+  check(props.selectedDetails!.settings_json === originalAsaSettings && unexpectedWrites.length === 0,
+    "Repeated platform navigation and instance changes preserve the original ASA configuration");
+  await switchNormal(a, "settings");
   await act(async () => { props.instances = [a, b]; render(); await frame(); });
+  // A private installation and a failed preview need their own instance's maintenance,
+  // even while the shared library is installed and the previous details are still in flight.
+  const privatePlan = await invokeMock<LaunchPlan>("preview_instance_launch", { instanceId: b.id });
+  await act(async () => {
+    props.instanceLaunchPlans = { [b.id]: { ...privatePlan, instance_id: b.id, module_id: b.module_id,
+      uses_private_runtime: true, install_state: "Incomplete", executable_exists: true, ready_to_launch: true } };
+    props.instanceLaunchFailures = { [a.id]: true };
+    retainDetailsOnSelection = true;
+    render(); await frame();
+  });
+  for (const target of [b, a]) {
+    const previousDetails = props.selectedDetails;
+    const readCount = isolationReads.length;
+    const action = `.server-list-card[data-card-id="${target.id}"] .server-list-card-primary-action`;
+    check(element<HTMLButtonElement>(action).textContent?.trim() === "维护",
+      "An unavailable instance program offers maintenance instead of the installed shared library");
+    await click(action);
+    check(props.selectedInstanceId === target.id && props.section === "overview",
+      "The maintenance action selects its own card and leaves the configuration section");
+    check(props.selectedDetails === previousDetails && !fixture.querySelector(".server-detail-tabs, .maintenance-workspace"),
+      "A previous instance's late details must not expose maintenance actions for the new selection");
+    check(openedLibraries.length === 0, "Instance maintenance must not navigate to the shared game library");
+    await finishSelection(target, "maintenance");
+    await waitForWorkspace("maintenance");
+    await settleUntil(() => isolationReads.length > readCount, "Instance maintenance must load its program diagnostics");
+    check(isolationReads.slice(readCount).every((id) => id === target.id),
+      "Program diagnostics must only read the instance chosen by the card action");
+    await chooseTab("settings");
+  }
+  retainDetailsOnSelection = false;
+  await act(async () => { props.instanceLaunchPlans = {}; props.instanceLaunchFailures = {}; render(); await frame(); });
   await changeMode("archived");
   await settleUntil(() => Boolean(fixture.querySelector('[data-archive-id="archive-a"]')), "Archives did not load");
   await switchArchive("archive-a", "runtime");
@@ -272,6 +379,12 @@ async function run() {
   await chooseTab("mods");
   await switchArchive("archive-unsupported", "runtime");
   check(tab("mods").disabled, "Unsupported archive disables mods");
+  await switchArchive("archive-a", "mods");
+  await switchArchive("archive-asa", "mods");
+  await waitForWorkspace("mods");
+  check(Boolean(fixture.querySelector(".asa-mod-compatibility")), "Archived ASA Mods retains compatibility guidance");
+  check(!fixture.querySelector(".asa-mod-compatibility select, .mw-workbench [data-asa-open-settings], .mw-workbench [data-asa-platform-mode]"),
+    "Archived ASA Mods is read-only and exposes neither a platform control nor a configuration jump");
   await switchArchive("archive-a", "mods");
   await chooseTab("players");
   await click('.server-list-card[data-archive-id="archive-a"] .server-list-card-hitarea');
@@ -297,7 +410,10 @@ async function run() {
   check(errors.length === 0, `Unexpected browser errors: ${errors.join("; ")}`);
   // Leave the selected archive and tab strip visible for the caller's screenshot.
   await act(async () => { window.scrollTo(0, 0); await frame(); });
-  return { status: "passed", checks, deferred_loading_verified: true, normal_tabs: normalTabs, archive_tabs: archiveTabs, browser_errors: errors,
+  return { status: "passed", checks, deferred_loading_verified: true, asa_platform_navigation_verified: true,
+    asa_platform_target_consumed: true, asa_archive_read_only: true,
+    instance_maintenance_navigation_verified: true, preview_failure_maintenance_verified: true,
+    normal_tabs: normalTabs, archive_tabs: archiveTabs, browser_errors: errors,
     unexpected_writes: unexpectedWrites, observed_commands: [...new Set(observedCommands)] };
 }
 

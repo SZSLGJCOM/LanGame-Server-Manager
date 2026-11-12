@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "observed_at": "2026-11-09T21:25:03+08:00",
+  "native_game_version": "1.45.1.0",
+  "scope": "Manual advertised-address configuration through the production manager; real Steam PC client over Radmin VPN.",
+  "before": {
+    "native_world_ready": true,
+    "radmin_endpoint_directory_records": 0
+  },
+  "change": {
+    "only_requested_setting_changed": "PublicIP",
+    "address_source": "host Radmin VPN adapter",
+    "normal_stop_exit_code": 0,
+    "configuration_and_save_backups_retained": true,
+    "router_port_forwarding_changed": false
+  },
+  "after": {
+    "native_world_ready": true,
+    "radmin_endpoint_directory_records": 1,
+    "registered_address_matches_radmin": true,
+    "registered_port_matches_game_udp": true,
+    "native_player_query_complete": true,
+    "native_player_query_stale": false,
+    "native_online_players": 1,
+    "client_entry_confirmed_by_user": true
+  },
+  "not_validated": [
+    "The later product connection-mode selector by this manual experiment",
+    "Disconnected offline LAN",
+    "Other overlay products or addressing schemes",
+    "Other game client platforms"
+  ]
+}

@@ -1,12 +1,12 @@
 .settings-editor-stack {
   display: grid;
-  gap: 14px;
+  gap: calc(14px * var(--interface-density));
 }
 
 .settings-editor-toolbar {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: calc(10px * var(--interface-density));
   flex-wrap: wrap;
 }
 
@@ -16,7 +16,7 @@
 
 .settings-editor-toolbar :where(.primary-button, .secondary-button, .ghost-button) {
   min-height: var(--control-height);
-  padding: 4px var(--control-padding-inline);
+  padding: calc(4px * var(--interface-density)) var(--control-padding-inline);
   border-radius: 8px;
   font-size: var(--text-body);
   font-weight: var(--font-weight-medium);
@@ -26,19 +26,19 @@
 
 .settings-guided-sections {
   display: grid;
-  gap: 12px;
+  gap: calc(12px * var(--interface-density));
 }
 
 .settings-schema-section {
   display: grid;
-  gap: 12px;
+  gap: calc(12px * var(--interface-density));
 }
 
 .settings-schema-section-head {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 12px;
+  gap: calc(12px * var(--interface-density));
   flex-wrap: wrap;
 }
 
@@ -51,8 +51,8 @@
 .settings-section-count {
   display: inline-flex;
   align-items: center;
-  min-height: 30px;
-  padding: 0 12px;
+  min-height: calc(30px * var(--interface-density));
+  padding: 0 calc(12px * var(--interface-density));
   border-radius: 999px;
   border: 1px solid var(--theme-card-active-border);
   background: var(--shell-focus-soft);
@@ -64,20 +64,20 @@
 .settings-schema-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
+  gap: calc(12px * var(--interface-density));
 }
 
 .guided-field-groups,
 .dst-guided-groups {
   display: grid;
-  gap: 12px;
+  gap: calc(12px * var(--interface-density));
 }
 
 .guided-field-group,
 .dst-guided-group {
   display: grid;
-  gap: 8px;
-  padding: 0 0 12px;
+  gap: calc(8px * var(--interface-density));
+  padding: 0 0 calc(12px * var(--interface-density));
   border-bottom: 1px solid var(--shell-line);
 }
 
@@ -92,7 +92,7 @@
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 12px;
+  gap: calc(12px * var(--interface-density));
 }
 
 .guided-field-group-title,
@@ -108,13 +108,13 @@
 .settings-schema-field {
   display: grid;
   align-content: start;
-  gap: 6px;
+  gap: calc(6px * var(--interface-density));
   min-width: 0;
 }
 
 .settings-schema-field--with-icon {
-  grid-template-columns: 36px minmax(0, 1fr);
-  column-gap: 8px;
+  grid-template-columns: calc(36px * var(--interface-density)) minmax(0, 1fr);
+  column-gap: calc(8px * var(--interface-density));
 }
 
 .settings-schema-field--with-icon > :not(.settings-field-icon) {
@@ -122,13 +122,13 @@
 }
 
 .settings-field-icon {
-  width: 36px;
-  height: 36px;
+  width: calc(36px * var(--interface-density));
+  height: calc(36px * var(--interface-density));
   grid-column: 1;
   grid-row: 1 / span 2;
   align-self: end;
   object-fit: contain;
-  flex: 0 0 36px;
+  flex: 0 0 calc(36px * var(--interface-density));
 }
 
 .settings-field-label {
@@ -153,14 +153,14 @@
    labels. Empty title tracks collapse for toggle-only rows and single columns. */
 .settings-schema-grid.configuration-field-grid {
   row-gap: 0;
-  margin-bottom: -12px;
+  margin-bottom: calc(-12px * var(--interface-density));
 }
 
 .configuration-field-grid > .configuration-field {
   grid-row: span 3;
   grid-template-rows: subgrid;
   row-gap: 0;
-  padding-bottom: 12px;
+  padding-bottom: calc(12px * var(--interface-density));
 }
 
 .configuration-field-heading {
@@ -172,7 +172,7 @@
   display: inline-flex;
   justify-self: start;
   align-items: baseline;
-  gap: 5px;
+  gap: calc(5px * var(--interface-density));
   max-width: 100%;
   text-decoration: underline;
   text-decoration-color: var(--text-muted);
@@ -185,8 +185,8 @@
 }
 
 .configuration-field-resource-link > svg {
-  width: 13px;
-  height: 13px;
+  width: calc(13px * var(--interface-density));
+  height: calc(13px * var(--interface-density));
   flex: 0 0 auto;
 }
 
@@ -209,7 +209,7 @@
 .configuration-field-feedback {
   display: grid;
   align-content: start;
-  gap: 6px;
+  gap: calc(6px * var(--interface-density));
   min-width: 0;
 }
 
@@ -219,7 +219,7 @@
 
 .configuration-field-grid > .configuration-field > .configuration-field-heading {
   grid-row: 1;
-  padding-bottom: 6px;
+  padding-bottom: calc(6px * var(--interface-density));
 }
 
 .configuration-field-grid > .configuration-field > .configuration-field-control {
@@ -228,7 +228,7 @@
 
 .configuration-field-grid > .configuration-field > .configuration-field-feedback {
   grid-row: 3;
-  padding-top: 6px;
+  padding-top: calc(6px * var(--interface-density));
 }
 
 .configuration-field-grid > .configuration-field > .settings-field-icon {
@@ -242,17 +242,17 @@
 }
 
 .settings-suggestion-combobox .settings-schema-input {
-  padding-right: 34px;
+  padding-right: calc(34px * var(--interface-density));
 }
 
 .settings-suggestion-toggle {
   position: absolute;
   top: 50%;
-  right: 6px;
+  right: calc(6px * var(--interface-density));
   display: grid;
   place-items: center;
-  width: 26px;
-  height: 26px;
+  width: calc(26px * var(--interface-density));
+  height: calc(26px * var(--interface-density));
   padding: 0;
   margin: 0;
   border: none !important;
@@ -267,8 +267,8 @@
 
 .settings-suggestion-toggle::before {
   content: "";
-  width: 14px;
-  height: 14px;
+  width: calc(14px * var(--interface-density));
+  height: calc(14px * var(--interface-density));
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
   background-size: contain;
   background-repeat: no-repeat;
@@ -296,9 +296,9 @@
   left: 0;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: calc(2px * var(--interface-density));
   max-height: 240px;
-  padding: 4px;
+  padding: calc(4px * var(--interface-density));
   overflow-y: auto;
   border: 1px solid var(--shell-line);
   border-radius: 8px;
@@ -308,7 +308,7 @@
 }
 
 .settings-suggestion-menu::-webkit-scrollbar {
-  width: 6px;
+  width: calc(6px * var(--interface-density));
 }
 .settings-suggestion-menu::-webkit-scrollbar-track {
   background: transparent;
@@ -329,9 +329,9 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  min-height: 34px;
-  padding: 6px 10px 6px 14px;
+  gap: calc(12px * var(--interface-density));
+  min-height: calc(34px * var(--interface-density));
+  padding: calc(6px * var(--interface-density)) calc(10px * var(--interface-density)) calc(6px * var(--interface-density)) calc(14px * var(--interface-density));
   margin: 0;
   border: none !important;
   box-shadow: none !important;
@@ -350,7 +350,7 @@
   position: absolute;
   left: 3px;
   top: 50%;
-  width: 3px;
+  width: calc(3px * var(--interface-density));
   height: 0;
   border-radius: 99px;
   opacity: 0;
@@ -377,7 +377,7 @@
 }
 
 .settings-suggestion-option.is-selected::before {
-  height: 18px;
+  height: calc(18px * var(--interface-density));
   opacity: 1;
   background: var(--theme-card-active-text);
   box-shadow: none;
@@ -407,7 +407,7 @@
 }
 
 :root[data-theme="light"] .settings-suggestion-option.is-selected::before {
-  height: 18px;
+  height: calc(18px * var(--interface-density));
   opacity: 1;
   background: var(--theme-card-active-text);
   box-shadow: none;
@@ -447,8 +447,8 @@
 
 .workshop-list-editor {
   display: grid;
-  gap: 10px;
-  padding: 10px;
+  gap: calc(10px * var(--interface-density));
+  padding: calc(10px * var(--interface-density));
   border-radius: 10px;
   border: 1px solid var(--settings-control-border);
   background: color-mix(in srgb, var(--settings-control-bg) 84%, transparent);
@@ -457,16 +457,16 @@
 .workshop-id-chip-grid {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: calc(8px * var(--interface-density));
 }
 
 .workshop-id-chip,
 .string-list-chip {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  min-height: 30px;
-  padding: 5px 7px 5px 10px;
+  gap: calc(8px * var(--interface-density));
+  min-height: calc(30px * var(--interface-density));
+  padding: calc(5px * var(--interface-density)) calc(7px * var(--interface-density)) calc(5px * var(--interface-density)) calc(10px * var(--interface-density));
   border-radius: 8px;
   border: 1px solid color-mix(in srgb, var(--accent) 34%, var(--settings-control-border));
   background: color-mix(in srgb, var(--accent) 10%, var(--settings-control-bg));
@@ -483,8 +483,8 @@
 .string-list-chip-remove {
   display: inline-grid;
   place-items: center;
-  width: 22px;
-  height: 22px;
+  width: calc(22px * var(--interface-density));
+  height: calc(22px * var(--interface-density));
   padding: 0;
   border: 1px solid color-mix(in srgb, var(--border) 72%, transparent);
   border-radius: 7px;
@@ -509,7 +509,7 @@
 }
 
 .workshop-list-editor-input {
-  min-height: 96px;
+  min-height: calc(96px * var(--interface-density));
 }
 
 .workshop-list-editor-toolbar {
@@ -518,8 +518,8 @@
 
 .string-list-editor {
   display: grid;
-  gap: 10px;
-  padding: 10px;
+  gap: calc(10px * var(--interface-density));
+  padding: calc(10px * var(--interface-density));
   border-radius: 10px;
   border: 1px solid var(--settings-control-border);
   background: color-mix(in srgb, var(--settings-control-bg) 84%, transparent);
@@ -528,11 +528,11 @@
 .string-list-chip-grid {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: calc(8px * var(--interface-density));
 }
 
 .string-list-editor-input {
-  min-height: 96px;
+  min-height: calc(96px * var(--interface-density));
 }
 
 .string-list-editor-toolbar {
@@ -542,15 +542,15 @@
 .settings-enum-checklist {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px;
+  gap: calc(8px * var(--interface-density));
 }
 
 .settings-enum-checklist-option {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: calc(8px * var(--interface-density));
   min-height: var(--settings-control-height);
-  padding: 8px 10px;
+  padding: calc(8px * var(--interface-density)) calc(10px * var(--interface-density));
   border: 1px solid var(--settings-control-border);
   border-radius: var(--settings-control-radius);
   background: var(--settings-control-bg);
@@ -568,9 +568,9 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 8px;
+  gap: calc(8px * var(--interface-density));
   min-width: 0;
-  padding: 8px 10px;
+  padding: calc(8px * var(--interface-density)) calc(10px * var(--interface-density));
   border-radius: 8px;
   border: 1px solid var(--theme-status-border);
   background: var(--theme-status-surface);
@@ -581,7 +581,7 @@
 }
 
 .workshop-status-banner > span {
-  flex: 1 1 200px;
+  flex: 1 1 calc(200px * var(--interface-density));
   min-width: 0;
 }
 
@@ -589,8 +589,8 @@
   flex: 0 0 auto;
   width: auto;
   max-width: 100%;
-  min-height: 30px;
-  padding: 4px 10px;
+  min-height: calc(30px * var(--interface-density));
+  padding: calc(4px * var(--interface-density)) calc(10px * var(--interface-density));
   border-radius: 7px;
   font-size: inherit;
   line-height: var(--leading-compact);

@@ -102,6 +102,7 @@ impl LaunchFixture {
             install_root: root.to_string_lossy().into_owned(),
             install_state: app_core::InstallState::Installed,
             uses_private_runtime: false,
+            can_update_before_start: false,
             working_directory: root.to_string_lossy().into_owned(),
             executable_path: executable.clone(),
             executable_exists: true,

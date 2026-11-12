@@ -1,0 +1,78 @@
+{
+  "schema_version": 1,
+  "verified_on": "2026-11-09",
+  "verification_timezone": "Asia/Shanghai",
+  "status": "published_and_verified",
+  "scope": "ARK framework dependency mirror only; no desktop installer build or product release",
+  "repository": "SZSLGJCOM/LanGame-Server-Manager-Releases",
+  "tag": "ark-tools-dependencies-ase-3.56-asa-2.11",
+  "release_status": "pre",
+  "published_utc": "2026-11-09T02:31:47.0342545Z",
+  "prepared_inventory_sha256": "46458aef73783630803b21f1ed0cbb16650297dcf9ab8f20e5c50cdb4cb13fad",
+  "dependency_manifest_sha256": "372baf0170be4b3dc0a16c744d092ee8f4f9b49ecf2efa90526b4ea72a69db54",
+  "publisher_readback": {
+    "anonymous": true,
+    "verified_assets": 7,
+    "receipt_sha256": "033e768927741a6734c1c5d7fde5bf888a0f91c0f0be65186327b559dfc3905b"
+  },
+  "independent_readback": {
+    "client": "separate Windows host, curl.exe HTTP/1.1",
+    "route": "direct, no proxy",
+    "anonymous": true,
+    "verified_assets": 7,
+    "completed_utc": "2026-11-09T02:42:52Z",
+    "checksum_entries_verified": 6,
+    "zip_crc": "both archives passed",
+    "asa_framework_sha256": "f7fed1b8e6921a5f63eda1f83369fc147c56c5bdd3c74b122242bc636a3e75a4",
+    "report_sha256": "a24d900ab777b654f658d4e288b78430f580c71019a3c231310a35ce8f07337d"
+  },
+  "assets": [
+    {
+      "name": "ASA-LICENSE.txt",
+      "size": 1142,
+      "sha256": "42f605c245fbe23ebbf04aa4789a75853963db6754d4653e192630d0f5322b2e",
+      "url": "https://api.gitcode.com/api/v5/repos/SZSLGJCOM/LanGame-Server-Manager-Releases/releases/ark-tools-dependencies-ase-3.56-asa-2.11/attach_files/ASA-LICENSE.txt/download"
+    },
+    {
+      "name": "ASE-LICENSE.txt",
+      "size": 1142,
+      "sha256": "42f605c245fbe23ebbf04aa4789a75853963db6754d4653e192630d0f5322b2e",
+      "url": "https://api.gitcode.com/api/v5/repos/SZSLGJCOM/LanGame-Server-Manager-Releases/releases/ark-tools-dependencies-ase-3.56-asa-2.11/attach_files/ASE-LICENSE.txt/download"
+    },
+    {
+      "name": "ArkApi_3.56.zip",
+      "size": 11003472,
+      "sha256": "169533afd6529dcdb6c58e5b0bfd13f5d90f593f0e1188e4c156104db53e84f6",
+      "url": "https://api.gitcode.com/api/v5/repos/SZSLGJCOM/LanGame-Server-Manager-Releases/releases/ark-tools-dependencies-ase-3.56-asa-2.11/attach_files/ArkApi_3.56.zip/download"
+    },
+    {
+      "name": "AsaApi_2.11.zip",
+      "size": 32408318,
+      "sha256": "64f5f1165ef73f3439bba3794e77e379489167cc385c0ac5c4717ca60ad3e88a",
+      "url": "https://api.gitcode.com/api/v5/repos/SZSLGJCOM/LanGame-Server-Manager-Releases/releases/ark-tools-dependencies-ase-3.56-asa-2.11/attach_files/AsaApi_2.11.zip/download"
+    },
+    {
+      "name": "SHA256SUMS",
+      "size": 502,
+      "sha256": "0129c644e37fdc9ae09b88db488cea35f715cbb547663c89021ed14a4bd11182",
+      "url": "https://api.gitcode.com/api/v5/repos/SZSLGJCOM/LanGame-Server-Manager-Releases/releases/ark-tools-dependencies-ase-3.56-asa-2.11/attach_files/SHA256SUMS/download"
+    },
+    {
+      "name": "THIRD_PARTY_NOTICES.txt",
+      "size": 33438,
+      "sha256": "3849d088626de63033306e04a941ac5bbd23a6093eb179b6aabab5acd944ca97",
+      "url": "https://api.gitcode.com/api/v5/repos/SZSLGJCOM/LanGame-Server-Manager-Releases/releases/ark-tools-dependencies-ase-3.56-asa-2.11/attach_files/THIRD_PARTY_NOTICES.txt/download"
+    },
+    {
+      "name": "dependencies.json",
+      "size": 1502,
+      "sha256": "372baf0170be4b3dc0a16c744d092ee8f4f9b49ecf2efa90526b4ea72a69db54",
+      "url": "https://api.gitcode.com/api/v5/repos/SZSLGJCOM/LanGame-Server-Manager-Releases/releases/ark-tools-dependencies-ase-3.56-asa-2.11/attach_files/dependencies.json/download"
+    }
+  ],
+  "notes": [
+    "The original upstream ZIP bytes are preserved.",
+    "An initial Python urllib read on the independent host stalled before writing archive bytes and was stopped; the separate bounded curl readback passed in full. No upload was repeated.",
+    "The earlier native-run fixture retains its historical prepared-not-published state; this record documents the subsequent publication."
+  ]
+}

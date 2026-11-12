@@ -8,6 +8,12 @@ pub(in crate::commands) struct LibraryBaselineRecorder {
     descriptor: ModuleDescriptor,
     installation: app_steamcmd::InstallCancellation,
     fresh_payload_recorded: AtomicBool,
+    require_verified_inventory: bool,
+}
+
+pub(in crate::commands) enum SteamAcquisition<G> {
+    Recorded(G),
+    MissingMetadata { guard: G, detail: String },
 }
 
 impl LibraryBaselineRecorder {
@@ -21,7 +27,13 @@ impl LibraryBaselineRecorder {
             descriptor: descriptor.clone(),
             installation: installation.clone(),
             fresh_payload_recorded: AtomicBool::new(false),
+            require_verified_inventory: false,
         }
+    }
+
+    pub(in crate::commands) fn require_verified_inventory(mut self) -> Self {
+        self.require_verified_inventory = true;
+        self
     }
 
     pub(in crate::commands) async fn prepare_fresh_payload(
@@ -91,6 +103,7 @@ impl LibraryBaselineRecorder {
         on_progress: impl FnMut(InstallVerificationProgress),
     ) -> Result<G, app_steamcmd::SteamCmdError> {
         let fresh_payload_recorded = self.fresh_payload_recorded.load(Ordering::Acquire);
+        let require_verified_inventory = self.require_verified_inventory;
         let descriptor = self.descriptor;
         let module_id = descriptor.summary.id.clone();
         run_baseline_worker(
@@ -102,21 +115,33 @@ impl LibraryBaselineRecorder {
                 if fresh_payload_recorded {
                     // Retained user data can replace shipped defaults at publication.
                     // Keep only the installer's allowlist that still matches afterwards.
-                    app_storage::retain_published_library_program_baseline_with_progress(
-                        &root,
-                        &descriptor,
-                        Some(cancellation),
-                        progress,
-                    )
-                    .map_err(|error| error.to_string())?;
+                    let verified =
+                        app_storage::retain_published_library_program_baseline_with_progress(
+                            &root,
+                            &descriptor,
+                            Some(cancellation),
+                            progress,
+                        )
+                        .map_err(|error| error.to_string())?;
+                    if !verified {
+                        return Err(
+                            "Published server program does not match its verified inventory."
+                                .into(),
+                        );
+                    }
                 } else if !source_was_empty && same_version {
-                    app_storage::retain_verified_library_program_baseline_with_progress(
+                    let verified = app_storage::retain_existing_program_baseline_with_progress(
                         &root,
                         &descriptor,
                         Some(cancellation),
                         progress,
                     )
                     .map_err(|error| error.to_string())?;
+                    if require_verified_inventory && !verified {
+                        return Err(
+                            "Server program repair did not restore its verified inventory.".into(),
+                        );
+                    }
                 } else {
                     app_storage::record_library_program_baseline_with_progress(
                         &root,
@@ -143,10 +168,50 @@ impl LibraryBaselineRecorder {
         steamcmd: PathBuf,
         app_id: u32,
         version: String,
-        mut on_progress: impl FnMut(InstallVerificationProgress),
+        on_progress: impl FnMut(InstallVerificationProgress),
     ) -> Result<G, app_steamcmd::SteamCmdError> {
+        let module_id = self.descriptor.summary.id.clone();
+        match self
+            .finish_steam_acquisition_for_creation(
+                guard,
+                root,
+                steamcmd,
+                app_id,
+                version,
+                on_progress,
+            )
+            .await?
+        {
+            SteamAcquisition::Recorded(guard) => Ok(guard),
+            SteamAcquisition::MissingMetadata { guard, detail } => {
+                drop(guard);
+                Err(
+                    app_steamcmd::SteamCmdError::InstallationVerificationFailed {
+                        module_id,
+                        operation: "recording original program inventory".into(),
+                        detail,
+                    },
+                )
+            }
+        }
+    }
+
+    /// Creation alone may continue into its existing fresh-root repair path
+    /// when official metadata is absent. No original files are certified then.
+    pub(in crate::commands) async fn finish_steam_acquisition_for_creation<G: Send + 'static>(
+        self,
+        guard: G,
+        root: PathBuf,
+        steamcmd: PathBuf,
+        app_id: u32,
+        version: String,
+        mut on_progress: impl FnMut(InstallVerificationProgress),
+    ) -> Result<SteamAcquisition<G>, app_steamcmd::SteamCmdError> {
         if self.fresh_payload_recorded.load(Ordering::Acquire) {
-            return self.finish(guard, root, false, false, on_progress).await;
+            return self
+                .finish(guard, root, false, false, on_progress)
+                .await
+                .map(SteamAcquisition::Recorded);
         }
         // The caller can cancel before any filesystem worker starts. Totals
         // become measurable after the official depot inventory has been read.
@@ -166,16 +231,18 @@ impl LibraryBaselineRecorder {
             on_progress,
             move |cancellation, progress| {
                 let mut evidence = app_storage::VerifiedProgramFiles::default();
-                let include_path = app_storage::program_package_path_filter(&descriptor)
+                let program_path = app_storage::program_package_path_filter(&descriptor)
                     .map_err(|error| error.to_string())?;
-                let verified = app_steamcmd::verify_installed_steam_package_with_progress(
+                let optional_path = |path: &str| !program_path(path);
+                let verified = match app_steamcmd::verify_installed_steam_package_with_progress(
                     &root,
                     &steamcmd,
                     app_id,
                     &version,
                     app_steamcmd::SteamPackageVerificationOptions {
                         cancellation: Some(cancellation),
-                        include_path: Some(&include_path),
+                        optional_path: Some(&optional_path),
+                        ..Default::default()
                     },
                     &mut *progress,
                     |relative, file, digest| {
@@ -183,8 +250,16 @@ impl LibraryBaselineRecorder {
                             .capture_large_verified_file(relative, file, digest)
                             .map_err(std::io::Error::other)
                     },
-                )
-                .map_err(|error| error.to_string())?;
+                ) {
+                    Ok(verified) => verified,
+                    Err(error) if app_steamcmd::steam_depot::steam_metadata_is_missing(&error) => {
+                        return Ok(SteamAcquisition::MissingMetadata {
+                            guard,
+                            detail: error.to_string(),
+                        });
+                    }
+                    Err(error) => return Err(error.to_string()),
+                };
                 app_storage::record_verified_library_program_baseline_with_progress(
                     &root,
                     &descriptor,
@@ -197,11 +272,137 @@ impl LibraryBaselineRecorder {
                     progress,
                 )
                 .map_err(|error| error.to_string())?;
-                Ok(guard)
+                Ok(SteamAcquisition::Recorded(guard))
             },
         )
         .await
     }
+
+    /// Older Steam inventories omitted shipped mutable defaults before the
+    /// original/copy inventories were separated. Recover their evidence locally
+    /// under the caller's program lease; no download or game process is started.
+    pub(in crate::commands) async fn restore_steam_initial_defaults<G: Send + 'static>(
+        self,
+        guard: G,
+        root: PathBuf,
+        steamcmd: PathBuf,
+        app_id: u32,
+        version: String,
+        mut on_progress: impl FnMut(InstallVerificationProgress),
+    ) -> Result<(G, bool), app_steamcmd::SteamCmdError> {
+        let descriptor = self.descriptor.clone();
+        let inspect_root = root.clone();
+        let inspect_steamcmd = steamcmd.clone();
+        let inspect_version = version.clone();
+        let defaults = run_baseline_worker(
+            &self.operation,
+            &self.installation,
+            &self.descriptor.summary.id,
+            &mut on_progress,
+            move |cancellation, progress| {
+                let files = verify_steam_original_defaults(
+                    &inspect_root,
+                    &inspect_steamcmd,
+                    &descriptor,
+                    app_id,
+                    &inspect_version,
+                    cancellation,
+                    progress,
+                )
+                .map_err(|error| error.to_string())?;
+                if !app_storage::library_reuse_preview_with_original_defaults(
+                    &inspect_root,
+                    &descriptor.summary.id,
+                    &files,
+                    Some(cancellation),
+                )
+                .map_err(|error| error.to_string())?
+                {
+                    return Ok(None);
+                }
+                let complete = app_storage::library_initial_program_matches_files(
+                    &inspect_root,
+                    &descriptor.summary.id,
+                    &files,
+                )
+                .map_err(|error| error.to_string())?;
+                Ok((!complete).then_some(files))
+            },
+        )
+        .await?;
+        let Some(defaults) = defaults else {
+            return Ok((guard, false));
+        };
+        let descriptor = self.descriptor;
+        let module_id = descriptor.summary.id.clone();
+        run_baseline_worker(
+            &self.operation,
+            &self.installation,
+            &module_id,
+            on_progress,
+            move |cancellation, progress| {
+                // Existing certified program hashes remain authoritative even
+                // after Steam prunes unrelated depot caches. Verify the whole
+                // merged inventory before publishing the recovered defaults.
+                app_storage::restore_library_initial_program_defaults_with_progress(
+                    &root,
+                    &descriptor,
+                    defaults,
+                    Some(cancellation),
+                    progress,
+                )
+                .map_err(|error| error.to_string())?;
+                Ok((guard, true))
+            },
+        )
+        .await
+    }
+}
+
+pub(in crate::commands) fn verify_steam_original_defaults(
+    root: &Path,
+    steamcmd: &Path,
+    descriptor: &ModuleDescriptor,
+    app_id: u32,
+    version: &str,
+    cancellation: &AtomicBool,
+    progress: &mut dyn FnMut(InstallVerificationProgress),
+) -> std::io::Result<std::collections::BTreeMap<String, String>> {
+    let program_path =
+        app_storage::program_package_path_filter(descriptor).map_err(std::io::Error::other)?;
+    let defaults = |path: &str| !program_path(path);
+    let mut verified = match app_steamcmd::verify_installed_steam_package_with_progress(
+        root,
+        steamcmd,
+        app_id,
+        version,
+        app_steamcmd::SteamPackageVerificationOptions {
+            cancellation: Some(cancellation),
+            include_path: Some(&defaults),
+            optional_path: Some(&defaults),
+            allow_missing_depots: true,
+        },
+        progress,
+        |_, _, _| Ok(()),
+    ) {
+        Ok(verified) => verified,
+        // This probe only improves a conservative copy plan. Missing, stale or
+        // invalid cached evidence cannot authorize direct reuse and must not
+        // block the existing clean-package copy checks. Cancellation and I/O
+        // failures still propagate; acquisition certification remains strict.
+        Err(error)
+            if matches!(
+                error.kind(),
+                std::io::ErrorKind::NotFound | std::io::ErrorKind::InvalidData
+            ) =>
+        {
+            return Ok(Default::default());
+        }
+        Err(error) => return Err(error),
+    };
+    // The verifier always checks ACFs; they are generation evidence, not defaults.
+    verified.files.retain(|path, _| defaults(path));
+    Ok(verified.files)
 }
 
 struct CancelBaselineOnDrop(Arc<AtomicBool>);

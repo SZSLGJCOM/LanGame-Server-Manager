@@ -27,6 +27,15 @@ pub struct SteamPackageVerificationOptions<'a> {
     /// Excluded files remain untouched and never enter the verified inventory.
     /// App manifests and their build/depot metadata are always verified.
     pub include_path: Option<&'a dyn Fn(&str) -> bool>,
+    /// Selected defaults are admitted only when their present bytes match an
+    /// official depot entry. Missing or modified defaults remain untouched.
+    /// Optional directories are recorded only as parents of admitted files.
+    pub optional_path: Option<&'a dyn Fn(&str) -> bool>,
+    /// Allow missing cached depot manifests only for incremental evidence of
+    /// original defaults. The result then proves only files in available declared
+    /// depots, never a complete installation. Normal acquisition keeps this false.
+    /// Corrupt manifests, ACF/build validation and other I/O errors remain strict.
+    pub allow_missing_depots: bool,
 }
 
 /// Call after successful native installation/validation, while retaining the
@@ -76,10 +85,20 @@ pub fn verify_installed_steam_package_with_progress(
             "Steam certification requires an app ID and build ID",
         ));
     }
-    let mut expected = read_inventory(root, steamcmd, app_id, true, true, cancellation)?;
+    let mut expected = read_inventory(
+        root,
+        steamcmd,
+        app_id,
+        !options.allow_missing_depots,
+        true,
+        cancellation,
+    )?;
     if let Some(include) = options.include_path {
         expected.files.retain(|path, _| include(path));
         expected.directories.retain(|path| include(path));
+    }
+    if let Some(optional) = options.optional_path {
+        expected.directories.retain(|path| !optional(path));
     }
     let main = format!("steamapps/appmanifest_{app_id}.acf");
     let app = parse_acf(
@@ -113,15 +132,32 @@ pub fn verify_installed_steam_package_with_progress(
     // Measure the selected installed files rather than inventing a transfer size.
     let mut sizes = BTreeMap::new();
     let mut total_bytes = 0_u64;
-    for relative in expected.files.keys() {
+    for (relative, entry) in &expected.files {
         cancelled(cancellation)?;
         let path = root.join(relative);
-        check_plain(&path, false)?;
-        let size = std::fs::metadata(path)?.len();
+        let required = options
+            .optional_path
+            .is_none_or(|optional| !optional(relative));
+        let size = if required {
+            check_plain(&path, false)?;
+            std::fs::metadata(path)?.len()
+        } else {
+            let Some(size) = optional_file_size(&path)? else {
+                continue;
+            };
+            let matches = expected.overlapping_files.get(relative).map_or_else(
+                || entry.size == size,
+                |items| items.iter().any(|item| item.entry.size == size),
+            );
+            if !matches {
+                continue;
+            }
+            size
+        };
         total_bytes = total_bytes
             .checked_add(size)
             .ok_or_else(|| invalid("Steam package size overflow"))?;
-        sizes.insert(relative.clone(), size);
+        sizes.insert(relative.clone(), (size, required));
     }
     for original in expected.acfs.values() {
         total_bytes = total_bytes
@@ -130,31 +166,37 @@ pub fn verify_installed_steam_package_with_progress(
     }
     let mut reporter = VerificationReporter::new(
         total_bytes,
-        (expected.files.len() + expected.acfs.len()) as u64,
+        (sizes.len() + expected.acfs.len()) as u64,
         &mut on_progress,
     );
     for (relative, entry) in &expected.files {
         cancelled(cancellation)?;
+        let Some(&(size, required)) = sizes.get(relative) else {
+            continue;
+        };
         let alternatives = expected.overlapping_files.get(relative);
         let candidates = alternatives
             .map(|items| items.iter().map(|item| &item.entry).collect::<Vec<_>>())
             .unwrap_or_else(|| vec![entry]);
         let mut file = open_read(&root.join(relative))?;
-        if file.metadata()?.len() != sizes[relative] {
+        if file.metadata()?.len() != size {
             return Err(invalid("Steam file size changed before verification"));
         }
         let digest = verify_file(
             &mut file,
             &root.join(relative),
             &candidates,
+            required,
             cancellation,
             &mut reporter,
         )
         .map_err(|error| io::Error::new(error.kind(), format!("{relative}: {error}")))?;
-        on_verified_file(relative, &file, &digest)?;
+        if let Some(digest) = digest {
+            on_verified_file(relative, &file, &digest)?;
+            verified.files.insert(relative.clone(), digest);
+            add_parents(&mut verified.directories, relative);
+        }
         reporter.file_completed();
-        verified.files.insert(relative.clone(), digest);
-        add_parents(&mut verified.directories, relative);
     }
     for relative in &expected.directories {
         cancelled(cancellation)?;
@@ -204,6 +246,24 @@ fn add_parents(directories: &mut BTreeSet<String>, relative: &str) {
     }
 }
 
+fn optional_file_size(path: &Path) -> io::Result<Option<u64>> {
+    match check_plain(path, false) {
+        Ok(()) => std::fs::metadata(path).map(|metadata| Some(metadata.len())),
+        Err(error) if error.kind() == io::ErrorKind::NotFound => {
+            // An absent leaf must not hide an existing linked or invalid parent.
+            for ancestor in path.ancestors().skip(1) {
+                match check_plain(ancestor, true) {
+                    Ok(()) => return Ok(None),
+                    Err(error) if error.kind() == io::ErrorKind::NotFound => {}
+                    Err(error) => return Err(error),
+                }
+            }
+            Ok(None)
+        }
+        Err(error) => Err(error),
+    }
+}
+
 #[derive(PartialEq, Eq)]
 struct Stamp {
     length: u64,
@@ -241,12 +301,17 @@ fn verify_file(
     file: &mut File,
     path: &Path,
     candidates: &[&Entry],
+    required: bool,
     cancellation: Option<&AtomicBool>,
     reporter: &mut VerificationReporter<'_>,
-) -> io::Result<String> {
+) -> io::Result<Option<String>> {
     let before = stamp(file)?;
     if !candidates.iter().any(|entry| entry.size == before.length) {
-        return Err(invalid("official Steam file size mismatch"));
+        return if required {
+            Err(invalid("official Steam file size mismatch"))
+        } else {
+            Ok(None)
+        };
     }
     let mut sha1 = Sha1::new();
     let mut sha256 = Sha256::new();
@@ -281,9 +346,13 @@ fn verify_file(
         .iter()
         .any(|entry| entry.size == size && entry.sha1 == digest)
     {
-        return Err(invalid("official Steam file SHA1 mismatch"));
+        return if required {
+            Err(invalid("official Steam file SHA1 mismatch"))
+        } else {
+            Ok(None)
+        };
     }
-    Ok(hex(&sha256.finalize()))
+    Ok(Some(hex(&sha256.finalize())))
 }
 
 struct VerificationReporter<'a> {

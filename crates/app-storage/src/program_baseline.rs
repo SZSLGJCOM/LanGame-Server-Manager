@@ -8,8 +8,9 @@ use app_modules::ModuleDescriptor;
 
 use super::verification::{self, PackageVerifier, VerifiedProgramFiles};
 use super::{
-    CLEAN_PACKAGE, CleanPackage, INITIAL_PACKAGE, excluded, package_exclusions, validate_manifest,
-    write_manifest, write_named_manifest,
+    CLEAN_PACKAGE, CleanPackage, INITIAL_PACKAGE, checked_relative, excluded, invalid,
+    package_exclusions, read_manifest, read_named_manifest, validate_manifest, write_manifest,
+    write_named_manifest,
 };
 use crate::StorageError;
 use crate::instance_creation_io::check_creation_cancelled;
@@ -137,6 +138,69 @@ pub fn record_verified_library_program_baseline_with_progress(
     publish_baseline(&root, descriptor, initial, cancellation, on_progress)
 }
 
+/// Restore shipped defaults omitted by an older copy-filtered inventory. The
+/// caller holds the program lifecycle lease and supplies only defaults proven
+/// against the current official package. Existing inventory is never replaced
+/// by a scan, and unknown files never acquire package ownership here.
+pub fn restore_library_initial_program_defaults_with_progress(
+    root: &Path,
+    descriptor: &ModuleDescriptor,
+    defaults: BTreeMap<String, String>,
+    cancellation: Option<&AtomicBool>,
+    on_progress: &mut dyn FnMut(InstallVerificationProgress),
+) -> Result<(), StorageError> {
+    check_creation_cancelled(cancellation)?;
+    let root = normalize_path(root)?;
+    let clean = read_manifest(&root)?
+        .ok_or_else(|| StorageError::CleanLibraryProgramRequired { path: root.clone() })?;
+    let mut initial = read_named_manifest(&root, INITIAL_PACKAGE)?.unwrap_or_else(|| clean.clone());
+    if clean.module_id != descriptor.summary.id || initial.module_id != descriptor.summary.id {
+        return Err(invalid(
+            &root,
+            "program inventory belongs to another module",
+        ));
+    }
+    if clean.archive_sha256 != initial.archive_sha256
+        || clean
+            .files
+            .iter()
+            .any(|(key, hash)| initial.files.get(key) != Some(hash))
+        || !clean.directories.is_subset(&initial.directories)
+    {
+        return Err(invalid(
+            &root,
+            "clean and original program inventories disagree",
+        ));
+    }
+    for (key, hash) in defaults {
+        check_creation_cancelled(cancellation)?;
+        let relative = checked_relative(&key)?;
+        if let Some(previous) = initial.files.get(&key)
+            && previous != &hash
+        {
+            return Err(invalid(
+                &root,
+                "official default conflicts with the existing program inventory",
+            ));
+        }
+        initial.files.insert(key, hash);
+        for parent in relative
+            .ancestors()
+            .skip(1)
+            .filter(|path| !path.as_os_str().is_empty())
+        {
+            initial
+                .directories
+                .insert(parent.to_string_lossy().replace('\\', "/"));
+        }
+    }
+    validate_manifest(&initial, &root)?;
+    let initial = PackageVerifier::new(&root, true, cancellation)
+        .verify_with_progress(Some(&descriptor.summary.id), Some(initial), on_progress)?
+        .ok_or_else(|| StorageError::CleanLibraryProgramRequired { path: root.clone() })?;
+    publish_baseline(&root, descriptor, initial, cancellation, on_progress)
+}
+
 fn publish_baseline(
     root: &Path,
     descriptor: &ModuleDescriptor,
@@ -170,8 +234,8 @@ fn publish_baseline(
             }
         }
     }
-    // Fresh archives may include original shipped defaults; Steam verification
-    // already excludes mutable configuration. Only the clean manifest feeds copies.
+    // Keep certified shipped defaults in the original inventory for first-use
+    // ownership. Only the filtered clean inventory feeds copies to other instances.
     validate_manifest(&initial, root)?;
     let manifest = CleanPackage {
         version: 1,
@@ -215,3 +279,7 @@ fn publish_baseline(
     on_progress(progress);
     Ok(())
 }
+
+#[cfg(test)]
+#[path = "program_baseline_restore_tests.rs"]
+mod restore_tests;

@@ -1,6 +1,7 @@
 use super::*;
 use crate::commands::commands_mods::mod_download::{
-    ModDownloadRequest, download_mod_site_file_with_limit_and_cancellation,
+    ModDownloadFailure, ModDownloadObserver, ModDownloadProgress, ModDownloadRequest,
+    download_mod_site_file_with_slow_transfer_budget,
 };
 
 struct TemporaryDirectory(PathBuf);
@@ -9,9 +10,21 @@ impl TemporaryDirectory {
     fn new() -> Result<Arc<Self>, String> {
         let path = std::env::temp_dir().join(format!("langame-nexus-{}", uuid::Uuid::new_v4()));
         fs::create_dir(&path)
-            .map_err(|error| format!("Could not create the Nexus download directory: {error}"))?;
+            .map_err(|error| download_io_error("create_download_directory", &error))?;
         Ok(Arc::new(Self(path)))
     }
+}
+
+fn download_io_error(step: &'static str, error: &std::io::Error) -> String {
+    // Only fixed operation labels and OS error categories leave this boundary.
+    // File paths, response text and short-lived website URLs are never included.
+    json!({
+        "code": "nexus_installation_failed",
+        "message": format!("Nexus local file operation {step} failed ({:?}, OS {:?}).", error.kind(), error.raw_os_error()),
+        "local_file_step": step,
+        "io_kind": format!("{:?}", error.kind()),
+        "os_error": error.raw_os_error(),
+    }).to_string()
 }
 
 impl Drop for TemporaryDirectory {
@@ -30,6 +43,151 @@ impl NexusDownloads {
     pub(in crate::commands) fn paths(&self) -> &[PathBuf] {
         &self.paths
     }
+}
+
+// Website-generated download URLs can contain short-lived authorization. They
+// remain memory-only and are never included in diagnostics or serialization.
+pub(in crate::commands) struct WebsiteDownload {
+    url: String,
+    file_name: String,
+    needs_archive_identification: bool,
+    observer: Option<WebsiteDownloadObserver>,
+}
+
+#[derive(Clone, Copy)]
+pub(in crate::commands) enum WebsiteDownloadProgress {
+    Downloading(ModDownloadProgress),
+    Verifying,
+}
+
+pub(in crate::commands) type WebsiteDownloadObserver =
+    Arc<dyn Fn(WebsiteDownloadProgress) + Send + Sync>;
+
+impl WebsiteDownload {
+    pub(in crate::commands) fn observe(mut self, observer: WebsiteDownloadObserver) -> Self {
+        self.observer = Some(observer);
+        self
+    }
+}
+
+pub(in crate::commands) fn prepare_website_download(
+    url: String,
+    file_name: String,
+    accepts: &[String],
+) -> Result<WebsiteDownload, String> {
+    if !official_download_url(&url) {
+        return Err(failure(
+            "nexus_file_unavailable",
+            "The website download must use an official Nexus HTTPS file server.",
+        ));
+    }
+    safe_filename(&file_name)?;
+    let needs_archive_identification = !accepted_filename(&file_name, accepts);
+    if needs_archive_identification
+        && !accepts.iter().any(|extension| {
+            extension
+                .trim()
+                .trim_start_matches('.')
+                .eq_ignore_ascii_case("zip")
+        })
+    {
+        return Err(failure(
+            "nexus_format_unsupported",
+            "This server does not accept this file type or archive imports.",
+        ));
+    }
+    Ok(WebsiteDownload {
+        url,
+        file_name,
+        needs_archive_identification,
+        observer: None,
+    })
+}
+
+pub(in crate::commands) async fn download_website_file(
+    download: WebsiteDownload,
+) -> Result<NexusDownloads, String> {
+    download_website_file_with_client(download, download_client()?).await
+}
+
+async fn download_website_file_with_client(
+    download: WebsiteDownload,
+    client: reqwest::Client,
+) -> Result<NexusDownloads, String> {
+    let directory = TemporaryDirectory::new()?;
+    let observer = download.observer;
+    let transfer_observer = observer.clone().map(|observer| {
+        Arc::new(move |progress| observer(WebsiteDownloadProgress::Downloading(progress)))
+            as ModDownloadObserver
+    });
+    let path = download_payload(
+        client,
+        directory.clone(),
+        0,
+        download.url,
+        download.file_name,
+        None,
+        transfer_observer,
+    )
+    .await?;
+    if let Some(observer) = observer {
+        observer(WebsiteDownloadProgress::Verifying);
+    }
+    let path = if download.needs_archive_identification {
+        let retained_directory = directory.clone();
+        tokio::task::spawn_blocking(move || {
+            let _owned_download = retained_directory;
+            identify_website_archive(path)
+        })
+        .await
+        .map_err(|_| {
+            failure(
+                "nexus_file_unavailable",
+                "The Nexus archive identification worker did not complete.",
+            )
+        })??
+    } else {
+        path
+    };
+    Ok(NexusDownloads {
+        directory,
+        paths: vec![path],
+    })
+}
+
+fn identify_website_archive(path: PathBuf) -> Result<PathBuf, String> {
+    // The website may suggest a display title such as "Camera Tweaks" instead
+    // of a filename. Only the downloaded archive proves its format.
+    if let Some(format) =
+        crate::commands::commands_mod_staging::archive_formats::inspect_additional_mod_archive(
+            &path,
+        )
+        .map_err(|error| failure("nexus_installation_failed", &error))?
+    {
+        return prepare_identified_archive(path, format.extension());
+    }
+    let invalid = || {
+        failure(
+            "nexus_format_unsupported",
+            "The downloaded file could not be identified as a supported archive.",
+        )
+    };
+    let file = crate::commands::commands_mod_staging::open_preflighted_mod_archive(&path)
+        .map_err(|_| invalid())?;
+    let archive = zip::ZipArchive::new(file).map_err(|_| invalid())?;
+    drop(archive);
+    prepare_identified_archive(path, "zip")
+}
+
+fn prepare_identified_archive(path: PathBuf, extension: &'static str) -> Result<PathBuf, String> {
+    // Use a short owned name rather than appending to a potentially full-length
+    // website suggestion. Entry validation and publication stay in normal staging.
+    let target = path.with_file_name(format!("payload.{extension}"));
+    if path != target {
+        fs::rename(&path, &target)
+            .map_err(|error| download_io_error("prepare_identified_archive", &error))?;
+    }
+    Ok(target)
 }
 
 struct CancelDownloadOnDrop(app_steamcmd::InstallCancellation);
@@ -162,6 +320,40 @@ fn download_client() -> Result<reqwest::Client, String> {
         })
 }
 
+fn payload_download_failure(error: ModDownloadFailure) -> String {
+    // The shared downloader already separates transport failures from HTTP and
+    // local validation/write failures. Never serialize its URL-bearing detail.
+    match error {
+        ModDownloadFailure::Network(_) | ModDownloadFailure::Interrupted(_) => failure(
+            "nexus_network_error",
+            "The Nexus file transfer failed. Check the connection and retry; no file was installed.",
+        ),
+        ModDownloadFailure::Http(_) => failure(
+            "nexus_file_unavailable",
+            "The Nexus file server did not accept this download request. Retry from the website; no file was installed.",
+        ),
+        ModDownloadFailure::SizeLimit { max_bytes, .. } => failure(
+            "nexus_installation_failed",
+            &format!(
+                "The Nexus website file exceeds the {} MiB automatic download limit. No file was installed.",
+                max_bytes / 1024 / 1024
+            ),
+        ),
+        ModDownloadFailure::TimeLimit => failure(
+            "nexus_installation_failed",
+            "The Nexus file transfer reached its four hour download limit. No file was installed.",
+        ),
+        ModDownloadFailure::Terminal(_) => failure(
+            "nexus_installation_failed",
+            "The Nexus download could not be validated or saved locally. No file was installed.",
+        ),
+        ModDownloadFailure::Cancelled => failure(
+            "nexus_installation_failed",
+            "The Nexus file download was cancelled before installation.",
+        ),
+    }
+}
+
 async fn download_one(
     client: reqwest::Client,
     directory: Arc<TemporaryDirectory>,
@@ -169,7 +361,29 @@ async fn download_one(
     url: String,
     file: api::NexusFile,
 ) -> Result<PathBuf, String> {
-    safe_filename(&file.file_name)?;
+    let expected_size = file.exact_size_bytes();
+    download_payload(
+        client,
+        directory,
+        index,
+        url,
+        file.file_name,
+        expected_size,
+        None,
+    )
+    .await
+}
+
+async fn download_payload(
+    client: reqwest::Client,
+    directory: Arc<TemporaryDirectory>,
+    index: usize,
+    url: String,
+    file_name: String,
+    expected_size: Option<u64>,
+    observer: Option<ModDownloadObserver>,
+) -> Result<PathBuf, String> {
+    safe_filename(&file_name)?;
     let cancellation = app_steamcmd::InstallCancellation::new();
     let _cancel_on_drop = CancelDownloadOnDrop(cancellation.clone());
     // The worker retains the owned directory until the shared stream writer is closed. Dropping
@@ -177,8 +391,8 @@ async fn download_one(
     let worker = tokio::spawn(async move {
         let root = directory.0.join(index.to_string());
         fs::create_dir(&root)
-            .map_err(|error| format!("Could not create a Nexus file staging directory: {error}"))?;
-        let path = download_mod_site_file_with_limit_and_cancellation(
+            .map_err(|error| download_io_error("create_file_directory", &error))?;
+        let path = download_mod_site_file_with_slow_transfer_budget(
             &client,
             ModDownloadRequest {
                 download_url: &url,
@@ -193,13 +407,13 @@ async fn download_one(
                 download_root: &root,
             },
             &cancellation,
-        ).await.map_err(|_| failure(
-            "nexus_network_error",
-            "The Nexus file download failed or was cancelled. Check the connection and available disk space; no file was installed.",
-        ))?;
-        if let Some(expected) = file.exact_size_bytes() {
+            observer,
+        )
+        .await
+        .map_err(payload_download_failure)?;
+        if let Some(expected) = expected_size {
             let received = fs::metadata(&path)
-                .map_err(|error| format!("Could not inspect the Nexus download: {error}"))?
+                .map_err(|error| download_io_error("inspect_download_size", &error))?
                 .len();
             if received != expected {
                 return Err(failure(
@@ -208,15 +422,14 @@ async fn download_one(
                 ));
             }
         }
-        let target = root.join(file.file_name);
-        fs::rename(&path, &target).map_err(|error| {
-            format!("Could not preserve the downloaded Nexus file name: {error}")
-        })?;
+        let target = root.join(file_name);
+        fs::rename(&path, &target)
+            .map_err(|error| download_io_error("restore_suggested_name", &error))?;
         Ok::<_, String>(target)
     });
     worker.await.map_err(|_| {
         failure(
-            "nexus_network_error",
+            "nexus_installation_failed",
             "The Nexus download task stopped unexpectedly.",
         )
     })?

@@ -42,7 +42,7 @@ Object.defineProperty(HTMLImageElement.prototype, "src", { configurable: true, g
 });
 Object.assign(window, { isTauri: true, __TAURI_INTERNALS__: { invoke: async (command: string, args: { input: ArkMapScope }) => {
   if (command === "read_ark_tools_install_progress") return null;
-  if (command === "read_ark_tools_status") return { installed: true, connected: true, canUninstall: true, issue: null };
+  if (command === "read_ark_tools_status") return { installed: true, updateAvailable: false, connected: true, canUninstall: true, issue: null };
   if (command === "read_ark_map") return { ...args.input, mapName, sampledAtUnixMs: Date.now(),
     projection: projection ? { minX: -400000, maxX: 400000, minY: -400000, maxY: 400000 } : null, artwork: null,
     players: [{ playerId: 123, name: "地图验收玩家", accountId: "fixture-account", team: 1000, x: -90000, y: 60000, z: 900 }]

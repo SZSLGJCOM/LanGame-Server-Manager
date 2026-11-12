@@ -76,6 +76,7 @@ import type {
   SteamNewsItem,
   SteamReviewSummary,
   SteamWorkshopDownloadResult,
+  SteamWorkshopPreparation,
   SteamWorkshopInstallationSnapshot,
   SteamWorkshopLookupItem,
   SteamWorkshopBrowseKind,
@@ -218,7 +219,15 @@ export const updateAuthenticatedInstanceProgram = (instanceId: string, validate:
   if (!canUseLocalDesktopApi()) return Promise.reject(new Error(JSON.stringify({ code: "steam_account_interactive_unsupported", message: "Steam account downloads require the local desktop." })));
   return invokeOrMock<ModuleInstallResult>("update_authenticated_instance_program", { instanceId, validate, accountName });
 };
-export const downloadSteamWorkshopItems = (instanceId: string, ids: string[], missingOnly = false, loginAccount?: string) => {
+export const prepareSteamWorkshopItems = (instanceId: string, ids: string[], attemptToken: string) =>
+  invokeOrMock<SteamWorkshopPreparation>("prepare_steam_workshop_items", { instanceId, ids, attemptToken, locale: readPreferredLocale() });
+export const commitSteamWorkshopItems = (instanceId: string, ticketId: string) =>
+  invokeOrMock<SteamWorkshopDownloadResult>("commit_steam_workshop_items", { instanceId, ticketId });
+export const discardSteamWorkshopPreparation = (instanceId: string, ticketId: string) =>
+  invokeOrMock<void>("discard_steam_workshop_preparation", { instanceId, ticketId });
+export const retainSteamWorkshopPreparation = (instanceId: string, ticketId: string) =>
+  invokeOrMock<void>("retain_steam_workshop_preparation", { instanceId, ticketId });
+export const downloadSteamWorkshopItems = (instanceId: string, ids: string[], missingOnly = false, loginAccount?: string, attemptToken?: string) => {
   if (loginAccount !== undefined && !canUseLocalDesktopApi()) {
     return Promise.reject(new Error(JSON.stringify({ code: "steam_account_interactive_unsupported", message: "Steam account downloads require the local desktop." })));
   }
@@ -228,6 +237,7 @@ export const downloadSteamWorkshopItems = (instanceId: string, ids: string[], mi
     ids,
     missingOnly,
     locale: readPreferredLocale(),
+    ...(attemptToken === undefined ? {} : { attemptToken }),
     ...(loginAccount === undefined ? {} : { accountName: loginAccount })
   });
 };

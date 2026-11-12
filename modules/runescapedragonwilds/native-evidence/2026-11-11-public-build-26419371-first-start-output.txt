@@ -1,0 +1,7 @@
+
+running 1 test
+test commands::tests::manual_runtime_tests::native_lifecycle_tests::dragonwilds_bootstrap::isolated_dragonwilds_first_start_applies_pending_world_settings ... NATIVE_LIFECYCLE module=runescapedragonwilds phase=instance_created elapsed_ms=2239 program_mode=Independent preparation=isolated_copy library=preserved ownership=verified effective_root=fixture/i\dragon-bootstrap-99dfe7ceff5dacb3\runtime creation_scope=storage
+DRAGONWILDS_BOOTSTRAP first_start=passed bootstrap_pid=54752 formal_pid=17436 bootstrap_native_exit=0 temporary_password_restored=true independent_save_sessions=2 custom_building=1.5 pre_change_backup=present auto_stop_backup=matched restart_existing_world=unchanged
+ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 3547 filtered out; finished in 126.72s

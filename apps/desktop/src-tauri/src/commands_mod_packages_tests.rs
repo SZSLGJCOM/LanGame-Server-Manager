@@ -36,6 +36,8 @@ impl Fixture {
             path,
             label: version.into(),
             identity: OnlineModIdentity {
+                display_name: None,
+                icon_url: None,
                 thunderstore_intent: None,
                 provider: "modrinth".into(),
                 project: project.into(),
@@ -61,6 +63,8 @@ impl Fixture {
             path,
             label: version.into(),
             identity: OnlineModIdentity {
+                display_name: None,
+                icon_url: None,
                 thunderstore_intent: None,
                 provider: "thunderstore".into(),
                 project: "Author-Plugin".into(),
@@ -76,6 +80,80 @@ impl Drop for Fixture {
     fn drop(&mut self) {
         let _ = fs::remove_dir_all(&self.root);
     }
+}
+
+#[test]
+fn online_mod_presentation_survives_install_reload_toggle_and_missing_metadata_update() {
+    const ICON: &str = "https://ccdn.thunderstore.io/live/repository/icons/Author-Plugin-1.0.0.png";
+    let fixture = Fixture::new();
+    let mut source = fixture.plugins("1.0.0", &[("Plugin.dll", "original")]);
+    source.identity.display_name = Some("A readable Mod name".into());
+    source.identity.icon_url = Some(ICON.into());
+    stage_online_mod_sources(fixture.target(), &[source]).unwrap();
+    let read =
+        || crate::commands::commands_mods::mod_inventory::read_inventory(fixture.target()).unwrap();
+    let assert_presentation = |inventory: &ManualModInventoryResult| {
+        let item = inventory
+            .items
+            .iter()
+            .find(|item| item.management.is_some())
+            .unwrap();
+        assert_eq!(item.display_name.as_deref(), Some("A readable Mod name"));
+        assert_eq!(item.icon_url.as_deref(), Some(ICON));
+        // Display metadata must never replace the filesystem/package identity.
+        assert_eq!(item.name, "thunderstore-Author-Plugin");
+    };
+    assert_presentation(&read());
+    let disabled =
+        management::manage_package(fixture.target(), "thunderstore-Author-Plugin", "disable")
+            .unwrap();
+    assert_presentation(&disabled.inventory);
+    assert_presentation(&read());
+    let enabled =
+        management::manage_package(fixture.target(), "thunderstore-Author-Plugin", "enable")
+            .unwrap();
+    assert_presentation(&enabled.inventory);
+    let replacement = fixture.plugins("2.0.0", &[("Plugin.dll", "updated")]);
+    stage_online_mod_sources(fixture.target(), &[replacement]).unwrap();
+    assert_presentation(&read());
+    assert_eq!(
+        fs::read_to_string(
+            fixture
+                .target()
+                .target_path
+                .join("thunderstore-Author-Plugin/Plugin.dll")
+        )
+        .unwrap(),
+        "updated"
+    );
+}
+
+#[test]
+fn old_online_mod_records_and_untrusted_icons_keep_inventory_available() {
+    let fixture = Fixture::new();
+    stage_online_mod_sources(
+        fixture.target(),
+        &[fixture.plugins("1.0.0", &[("Plugin.dll", "payload")])],
+    )
+    .unwrap();
+    let path = fixture.target().target_path.join(ONLINE_MOD_MANIFEST);
+    let mut json: serde_json::Value = serde_json::from_slice(&fs::read(&path).unwrap()).unwrap();
+    let package = &mut json["packages"]["thunderstore-Author-Plugin"];
+    assert!(package.get("display_name").is_none());
+    assert!(package.get("icon_url").is_none());
+    package["display_name"] = serde_json::json!("Existing Mod");
+    package["icon_url"] = serde_json::json!("https://untrusted.example/icon.png");
+    fs::write(path, serde_json::to_vec(&json).unwrap()).unwrap();
+    let inventory =
+        crate::commands::commands_mods::mod_inventory::read_inventory(fixture.target()).unwrap();
+    let item = inventory
+        .items
+        .iter()
+        .find(|item| item.management.is_some())
+        .unwrap();
+    assert_eq!(item.display_name.as_deref(), Some("Existing Mod"));
+    assert!(item.icon_url.is_none());
+    management::manage_package(fixture.target(), "thunderstore-Author-Plugin", "disable").unwrap();
 }
 
 #[test]
@@ -96,6 +174,8 @@ fn online_mod_replacement_respects_installed_consumers_and_preserves_rejected_st
     manifest.packages.insert(
         "thunderstore-Author-Unrelated".into(),
         InstalledPackage {
+            display_name: None,
+            icon_url: None,
             thunderstore_intent: None,
             routed_files: BTreeMap::new(),
             target_name: "thunderstore-Author-Unrelated".into(),

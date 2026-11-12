@@ -182,6 +182,7 @@ interface ServerListCardProps {
   jobs?: BackgroundJob[];
   onInstall: (moduleId: string, intent: ServerInstallationIntent) => void;
   onOpenModuleLibrary: (moduleId: string) => void;
+  onOpenInstanceMaintenance: (instanceId: string) => void;
 }
 
 function ServerListCard(props: ServerListCardProps) {
@@ -239,7 +240,7 @@ function ServerListCard(props: ServerListCardProps) {
                 onDismissOutside={() => props.worldReview?.respond(false)}
                 onConfirm={() => { returnToStart.current = true; props.worldReview?.respond(true); }} />}
               <InlineConfirmAction
-                wrapperClassName="server-list-card-confirm server-list-card-delete"
+                wrapperClassName="server-list-card-confirm server-list-card-delete server-list-card-confirm--primary"
                 type="button"
                 className="secondary-button danger server-list-card-icon-action"
                 disabled={deleteBlocked}
@@ -247,6 +248,9 @@ function ServerListCard(props: ServerListCardProps) {
                 confirmation={props.t("servers.details.deleteInstanceConfirm")}
                 prepareConfirmation={async () => formatInstanceRemovalPlan(await inspectInstanceRemoval(props.instance.id), props.t)}
                 confirmLabel={props.t("common.delete")}
+                confirmClassName="server-list-card-primary-action danger"
+                cancelIcon={<ShellIcon name="x" className="server-list-card-action-icon" />}
+                revealOnOpen
                 onConfirm={() => removeInstance("delete")}
                 aria-label={`${props.t("servers.details.deleteInstance")}: ${props.instance.name}`}
                 title={
@@ -257,11 +261,14 @@ function ServerListCard(props: ServerListCardProps) {
               >
                 <ShellIcon name="trash" className="server-list-card-action-icon" />
               </InlineConfirmAction>
-              <InlineConfirmAction wrapperClassName="server-list-card-confirm server-list-card-archive"
+              <InlineConfirmAction wrapperClassName="server-list-card-confirm server-list-card-archive server-list-card-confirm--primary"
                 type="button" className="secondary-button server-list-card-icon-action"
                 disabled={deleteBlocked || !archiveAvailable} scopeKey={`${props.instance.id}:${props.active}`}
                 confirmation={props.t("servers.details.archiveInstanceConfirm")}
                 confirmLabel={props.t("servers.details.archiveInstance")}
+                confirmClassName="server-list-card-primary-action danger"
+                cancelIcon={<ShellIcon name="x" className="server-list-card-action-icon" />}
+                revealOnOpen
                 onConfirm={() => removeInstance("archive")}
                 aria-label={`${props.t("servers.details.archiveInstance")}: ${props.instance.name}`}
                 title={props.t(!archiveAvailable ? "servers.details.archiveHostOnly" : actionModel.deleteBlocked
@@ -289,6 +296,7 @@ function ServerListCard(props: ServerListCardProps) {
                 else if (actionModel.action === "start") props.onStart(props.instance.id);
                 else if (actionModel.action === "install" || actionModel.action === "repair") props.onInstall(props.instance.module_id, actionModel.action);
                 else if (actionModel.action === "library") props.onOpenModuleLibrary(props.instance.module_id);
+                else if (actionModel.action === "maintenance") props.onOpenInstanceMaintenance(props.instance.id);
               }}
             >
               <ShellIcon name={actionModel.iconName} className="server-list-card-action-icon" />
@@ -380,6 +388,8 @@ export function ServersView(props: ServersViewProps) {
   const activeDetailTab = detailTabs.find((tab) => tab.id === requestedDetailTab)?.disabled
     ? "runtime" : requestedDetailTab;
   const selectedDetailsId = props.selectedDetails?.summary.id ?? null;
+  const [configurationTarget, setConfigurationTarget] = useState<{ instanceId: string; fieldKey: string } | null>(null);
+  useEffect(() => { setConfigurationTarget(null); }, [props.selectedInstanceId]);
   const steamAccount = useSteamWorkshopAccount(props.selectedInstanceId ? { kind: "instance", id: props.selectedInstanceId } : null);
   const [steamCmdSelected, setSteamCmdSelected] = useState(false);
   const [retainedSteamModInstanceId, setRetainedSteamModInstanceId] = useState<string | null>(null);
@@ -503,6 +513,15 @@ export function ServersView(props: ServersViewProps) {
     const request = { instanceId, moduleId, intent, selected: false };
     queuedInstallationRef.current = request; setQueuedInstallation(request);
     props.onSelectInstance(instanceId);
+  }
+
+  function openInstanceMaintenance(instanceId: string) {
+    queuedInstallationRef.current = null; setQueuedInstallation(null);
+    setSelectedDeletionId(null);
+    setSteamCmdSelected(false);
+    props.onSelectInstance(instanceId);
+    setActiveDetailTab("maintenance");
+    props.onWorkspaceSectionChange("overview");
   }
 
   useEffect(() => {
@@ -696,6 +715,7 @@ export function ServersView(props: ServersViewProps) {
                 jobs={props.jobs}
                 onInstall={(moduleId, intent) => queueInstallationAction(instance.id, moduleId, intent)}
                 onOpenModuleLibrary={props.onOpenModuleLibrary}
+                onOpenInstanceMaintenance={openInstanceMaintenance}
               />
             ))}
             {!hasInstances && pendingDeletions.length === 0 && <p className="server-list-notice">{t("servers.list.emptyNormal")}</p>}
@@ -724,7 +744,7 @@ export function ServersView(props: ServersViewProps) {
                 })}</p>
               </div>
             </div>
-          ) : props.selectedDetails ? (
+          ) : props.selectedDetails && props.selectedDetails.summary.id === props.selectedInstanceId ? (
             <div className="detail-stack detail-stack--server">
               <div className="server-detail-subheader">
                 <ServerDetailTabs tabs={detailTabs} activeTab={activeDetailTab}
@@ -738,6 +758,8 @@ export function ServersView(props: ServersViewProps) {
               {activeDetailTab === "settings" && props.selectedDetails ? (
                 <ConfigurationWorkspace
                   details={props.selectedDetails}
+                  requestedFieldKey={configurationTarget?.instanceId === selectedDetailsId ? configurationTarget.fieldKey : undefined}
+                  onFieldNavigationHandled={() => setConfigurationTarget(null)}
                   moduleDetails={props.selectedModuleDetails}
                   moduleDetailsError={props.selectedModuleDetailsError}
                   onRetryModuleDetails={props.onResumeAutoRefresh}
@@ -768,6 +790,12 @@ export function ServersView(props: ServersViewProps) {
                 <ModWorkbench
                   key={props.selectedDetails.summary.id}
                   details={props.selectedDetails}
+                  onOpenSettings={(fieldKey) => {
+                    if (!selectedDetailsId) return;
+                    setConfigurationTarget({ instanceId: selectedDetailsId, fieldKey });
+                    setActiveDetailTab("settings");
+                    props.onWorkspaceSectionChange?.("settings");
+                  }}
                   moduleDetails={props.selectedModuleDetails}
                   jobs={props.jobs}
                   launchPlan={props.launchPlan}

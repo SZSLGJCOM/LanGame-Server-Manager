@@ -35,6 +35,8 @@ LanGame Server Manager 是一款 Windows 桌面应用，用来安装、配置和
 
 同一局域网可直接联机，也可搭配 Radmin VPN、Hamachi 等组网工具；公网联机时应用会自动配置 Windows 防火墙规则，路由器端口映射需自行设置，详见[联机教程](https://langame.cn/networking/)。
 
+ASTRONEER 沿用“网络 → 玩家连接地址”，适配器自动同步游戏的公布地址；没有独立公网 IPv4 时可使用 Radmin，主机和玩家需加入同一网络并保持联网。留空自动选址时优先使用唯一可用的 Radmin 地址，不需要另选联机方式。
+
 ## 开发
 
 [从源码构建](docs/development.md#简体中文) · [贡献指南](CONTRIBUTING.md#简体中文) · [隐私说明](PRIVACY.md#简体中文)

@@ -26,6 +26,8 @@ fn cache_and_unknown_source_warnings_are_distinct_and_never_echo_provider_detail
         path: source,
         label: "Author-Plugin".into(),
         identity: OnlineModIdentity {
+            display_name: None,
+            icon_url: None,
             provider: "thunderstore".into(),
             project: "Author-Plugin".into(),
             version: "1.0.0".into(),

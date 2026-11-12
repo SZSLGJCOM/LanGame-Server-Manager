@@ -395,6 +395,7 @@ async fn smoke_dst_native_world_generation_save_and_reload()
                     mod_ids.clone(),
                     Some(true),
                     Some("en".into()),
+                    None,
                 )
                 .await,
             )?;

@@ -53,6 +53,7 @@ interface BoundaryHooks {
 }
 /** Replace only native IPC. Rendering, ownership rules, plans and saves remain real. */
 export function createModWorkbenchFixtureIpc(readState: () => State, hooks: BoundaryHooks) {
+  const preparations = new Map<string, { instanceId: string; ids: string[] }>();
   return async (command: string, payload?: unknown): Promise<unknown> => {
     const args = (payload ?? {}) as Record<string, unknown>;
     const state = readState();
@@ -90,6 +91,22 @@ export function createModWorkbenchFixtureIpc(readState: () => State, hooks: Boun
           { name: "difficulty", label: "Difficulty", default_value: { kind: "number", value: 1 },
             options: [1, 10].map((value) => ({ label: String(value), value: { kind: "number", value } })) }
         ] : [] }));
+      case "prepare_steam_workshop_items": {
+        hooks.check(args.instanceId === state.details.summary.id, "Preparation stays scoped to its instance");
+        hooks.download?.([...ids]);
+        preparations.set(String(args.attemptToken), { instanceId: String(args.instanceId), ids: [...ids] });
+        return { ticket_id: args.attemptToken, consumer_app_id: appId };
+      }
+      case "retain_steam_workshop_preparation": return;
+      case "discard_steam_workshop_preparation": preparations.delete(String(args.ticketId)); return;
+      case "commit_steam_workshop_items": {
+        const prepared = preparations.get(String(args.ticketId));
+        hooks.check(prepared?.instanceId === args.instanceId, "Deployment consumes its own preparation ticket");
+        preparations.delete(String(args.ticketId));
+        prepared!.ids.forEach((id) => state.cached.add(id));
+        return { consumer_app_id: appId, install_root: "fixture-instance", workshop_root: "fixture-cache",
+          items: prepared!.ids.map((item_id) => ({ item_id, expected_path: `fixture-cache/${item_id}`, expected_path_exists: true })) };
+      }
       case "download_steam_workshop_items":
         hooks.check(args.instanceId === state.details.summary.id, "Download stays scoped to its instance");
         hooks.download?.([...ids]);

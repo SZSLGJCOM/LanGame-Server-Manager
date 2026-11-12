@@ -183,7 +183,45 @@ where
     } else {
         Vec::new()
     };
-    let steam_app_id = steam_source.filter(|_| library);
+    let validate = if steam_source.is_some() && !source_was_empty && !validate {
+        let checked_root = root.to_owned();
+        let checked_descriptor = descriptor.clone();
+        run_baseline_worker(
+            operation,
+            cancellation,
+            &descriptor.summary.id,
+            |_| {},
+            move |cancel, _| {
+                app_storage::program_launch_files_match_baseline(
+                    &checked_root,
+                    &checked_descriptor,
+                    Some(cancel),
+                )
+                .map(|matches| matches == Some(false))
+                .map_err(|error| error.to_string())
+            },
+        )
+        .await?
+    } else {
+        validate
+    };
+    // Repairing an instance-owned legacy installation needs the same official
+    // inventory as a library acquisition. Ordinary starts of externally patched
+    // legacy programs must not turn missing copy metadata into forced validation.
+    let unused_library = if steam_source.is_some() && library && !validate && !source_was_empty {
+        let references =
+            app_storage::read_module_instance_installs(&storage.paths, &descriptor.summary.id)
+                .await
+                .map_err(|error| metadata_error(error.to_string()))?;
+        !references.iter().any(|binding| {
+            owner
+                .as_ref()
+                .is_some_and(|record| binding.install.id == record.id)
+        })
+    } else {
+        library
+    };
+    let steam_app_id = steam_source.filter(|_| unused_library || validate);
     if steam_app_id.is_some() && source_was_empty {
         // Keep acquisition ownership from the first attempt, including failures
         // after Steam has already written part of the server payload.
@@ -206,6 +244,11 @@ where
         .flatten();
     let previous_version = owner.and_then(|record| record.current_version);
     let baseline = LibraryBaselineRecorder::new(operation, descriptor, cancellation);
+    let baseline = if validate {
+        baseline.require_verified_inventory()
+    } else {
+        baseline
+    };
     let result = app_steamcmd::install_or_update_module_at_with_login_and_callbacks(
         app_steamcmd::SteamModuleInstallRequest {
             settings: &storage.settings,
@@ -255,6 +298,11 @@ where
     let same_version = previous_version
         .as_ref()
         .is_some_and(|version| result.current_version.as_ref() == Some(version));
+    let changed_version = previous_version
+        .as_ref()
+        .is_some_and(|version| result.current_version.as_ref() != Some(version));
+    let needs_steam_inventory = needs_steam_inventory
+        .or(steam_source.filter(|_| changed_version || (validate && previous_version.is_none())));
     let guard = if let Some(app_id) = needs_steam_inventory {
         let version = result
             .current_version

@@ -27,6 +27,17 @@ export interface ModEnabledRow {
   id: string;
 }
 
+export const ABIOTIC_OFFICIAL_MOD_ENTRY_KEY = "abiotic-official-mods";
+
+/** Keep invalid saved tokens visible so a list edit cannot silently discard them. */
+export function parseAbioticOfficialModIds(value: unknown): string[] {
+  return typeof value === "string" ? uniqueEntries(value.split(/[\s,;]+/)) : [];
+}
+
+export function isAbioticOfficialModId(id: string): boolean {
+  return /^[1-9]\d{0,19}$/.test(id) && BigInt(id) <= 18446744073709551615n;
+}
+
 export function workflowProviderFromModuleDetails(moduleDetails?: ModuleDetails | null): ModProviderKind {
   if (moduleDetails?.workshop?.provider === "steam") {
     return "steam";
@@ -161,6 +172,7 @@ function enabledEntryValues(entry: ModSourceEntry): string[] {
 
 export function canReorderEnabledRow(row: ModEnabledRow): boolean {
   return row.entry.key !== "dst-enabled" && row.entry.key !== "terraria-unmapped-names"
+    && (row.entry.key !== ABIOTIC_OFFICIAL_MOD_ENTRY_KEY || enabledEntryValues(row.entry).every(isAbioticOfficialModId))
     && !row.entry.key.endsWith("-disabled") && enabledEntryValues(row.entry).length > 1;
 }
 
@@ -170,6 +182,7 @@ export function reorderEnabledEntryValues(
   targetValue: string
 ): string[] | null {
   const values = enabledEntryValues(entry);
+  if (entry.key === ABIOTIC_OFFICIAL_MOD_ENTRY_KEY && !values.every(isAbioticOfficialModId)) return null;
   const sourceIndex = values.findIndex((value) => value === sourceValue);
   const targetIndex = values.findIndex((value) => value === targetValue);
   if (sourceIndex < 0 || targetIndex < 0 || sourceIndex === targetIndex) {
@@ -209,6 +222,11 @@ export function buildConfiguredEntries(
   inventoryItems?: readonly ManualModInventoryItem[] | null
 ): ModSourceEntry[] {
   const entries: Array<ModSourceEntry | null> = [];
+  if (moduleId === "abioticfactor") {
+    const official = buildEntry(ABIOTIC_OFFICIAL_MOD_ENTRY_KEY, "mod.io", "mod_ids", "game-mod",
+      parseAbioticOfficialModIds(settings.mod_ids));
+    return official ? [official] : [];
+  }
   const enablement = moduleDetails?.mods?.enablement;
   if (moduleId === "terraria") {
     const owned = readTerrariaOwnedWorkshopIds(settings);
@@ -343,6 +361,7 @@ export function canToggleModEnabledRow(
   moduleId: string,
   isManualEnablementModule: boolean
 ): boolean {
+  if (row.entry.key === ABIOTIC_OFFICIAL_MOD_ENTRY_KEY) return false;
   // Only these workflows retain an instance-owned entry after disabling it.
   return isManualEnablementModule || (moduleId === "dontstarve" &&
     (row.entry.key === "dst-enabled" || row.entry.key === "dst-disabled")) ||

@@ -45,10 +45,20 @@ void check_profile(const GameProfile& profile) {
     validate();
     native_save(reinterpret_cast<uintptr_t>(&save_boundary) - SAVE_RVA, system);
     assert(calls == 1 && received_system == reinterpret_cast<void*>(system) && received_force);
-    for (auto offset : {0x30, 0x798, 0x79a, 0x79b}) {
+    for (auto offset : std::array<uintptr_t, 4>{0x30, profile.entity_loading, profile.entity_saving, profile.entity_shutdown}) {
         auto previous = read<uint8_t>(system + offset);
         put<uint8_t>(system + offset, previous == 0 ? 1 : 0);
         rejects(validate, "entity_system_not_ready"); put<uint8_t>(system + offset, previous);
+    }
+    // Build 26593814 moved the three state bytes. Nonzero bytes at the other
+    // layout's offsets must not block this image's valid native state.
+    const uintptr_t other_layout = profile.entity_loading == 0x798 ? 0x7a8 : 0x798;
+    for (auto offset : {other_layout, other_layout + 2, other_layout + 3}) {
+        put<uint8_t>(system + offset, 1);
+    }
+    validate();
+    for (auto offset : {other_layout, other_layout + 2, other_layout + 3}) {
+        put<uint8_t>(system + offset, 0);
     }
     put<uint8_t>(mode + 0xf0, 1); rejects(validate, "world_authority"); put<uint8_t>(mode + 0xf0, 3);
     for (auto actor : {mode, state}) {

@@ -625,6 +625,78 @@ fn probe_terraria_cold_install_resolves_template_process_from_verification_paylo
 }
 
 #[test]
+fn probe_executable_fallback_never_selects_preserved_recovery_files() {
+    let temp_root = unique_test_root();
+    let games_root = temp_root.join("games");
+    let settings = AppSettings {
+        archives_root: String::new(),
+        servers_root: temp_root.join("instances").to_string_lossy().into_owned(),
+        games_root: games_root.to_string_lossy().into_owned(),
+        modules_root: temp_root.join("modules").to_string_lossy().into_owned(),
+        steamcmd_root: temp_root.join("steamcmd").to_string_lossy().into_owned(),
+    };
+    let install = InstallSpec {
+        shared_game_dir: String::from("terraria"),
+        download_url_windows: None,
+        download_integrity_windows: None,
+        source: None,
+        verification_path: Some(String::from("1458/Windows/TerrariaServer.exe")),
+        minecraft: None,
+    };
+    let mut process = ProcessSpec {
+        environment_template: Default::default(),
+        executable: String::new(),
+        args_template: vec![],
+        working_directory_template: None,
+        window_policy: app_core::ProcessWindowPolicy::Background,
+        host_surface: app_core::ProcessHostSurface::ManagedTerminal,
+        host_notes: None,
+    };
+    for recovery in [
+        ".langame-archive-recovery-00000000-0000-0000-0000-000000000000/files",
+        ".langame/minecraft-recovery/publication",
+    ] {
+        let root = games_root.join("terraria");
+        let recovered_entry = root.join(recovery).join("1458/Windows/TerrariaServer.exe");
+        fs::create_dir_all(recovered_entry.parent().unwrap()).unwrap();
+        fs::write(&recovered_entry, b"preserved damaged executable").unwrap();
+        mark_retained_install_data(&root).unwrap();
+        for executable in ["{{terraria.server_executable}}", "TerrariaServer.exe"] {
+            process.executable = executable.into();
+            let removed = probe_module_install_state(
+                &settings,
+                "terraria",
+                None,
+                Some(&install),
+                Some(&process),
+            );
+            assert!(!removed.executable_exists, "{recovery}: {removed:?}");
+            assert_eq!(removed.install_state, InstallState::NotInstalled);
+            let current_entry = root.join("1458/Windows/TerrariaServer.exe");
+            fs::create_dir_all(current_entry.parent().unwrap()).unwrap();
+            fs::write(&current_entry, b"current official executable").unwrap();
+            let installed = probe_module_install_state(
+                &settings,
+                "terraria",
+                None,
+                Some(&install),
+                Some(&process),
+            );
+            assert_eq!(installed.install_state, InstallState::Installed);
+            assert!(installed.executable_exists);
+            assert_eq!(PathBuf::from(installed.executable_path), current_entry);
+            fs::remove_file(current_entry).unwrap();
+            assert_eq!(
+                fs::read(&recovered_entry).unwrap(),
+                b"preserved damaged executable"
+            );
+        }
+        fs::remove_dir_all(&root).unwrap();
+    }
+    fs::remove_dir_all(temp_root).unwrap();
+}
+
+#[test]
 fn probe_module_install_state_marks_downloading_payload_incomplete() {
     let temp_root = unique_test_root();
     let games_root = temp_root.join("games");
@@ -1376,7 +1448,7 @@ fn direct_download_publish_script_keeps_rollback_until_rust_verification() {
 
     assert!(script.contains("throw 'Rollback path already exists.'"));
     let phase_write = script
-        .find("[IO.File]::WriteAllText($phase, 'rollback_pending')")
+        .find("[LanGameInstallFiles]::WriteAllText($phase, 'rollback_pending')")
         .expect("publish phase is recorded");
     let rollback_move = script
         .find("Move-InstallDirectory $root $rollback")

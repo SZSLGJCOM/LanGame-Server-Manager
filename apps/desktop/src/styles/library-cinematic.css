@@ -1168,6 +1168,14 @@
   border-radius: 18px;
 }
 
+/* Preserve the cover ratio while giving maximized layouts a modest size step. */
+@media (min-height: 801px) {
+  :root:has(.shell-header[data-window-maximized="true"]) .library-home-page--cinematic .library-catalog-tile {
+    flex-basis: clamp(196px, min(15vw, 20.8vh), 224px);
+    width: clamp(196px, min(15vw, 20.8vh), 224px);
+  }
+}
+
 @media (max-height: 800px) {
   .library-home-page--cinematic .library-catalog-tile {
     flex-basis: 180px;

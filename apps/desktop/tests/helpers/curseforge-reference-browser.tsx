@@ -1,5 +1,5 @@
 import { prepareBrowserLocaleCatalogs } from "./browser-locale-catalogs";
-import React, { act } from "react";
+import React, { act, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { mockIPC, mockWindows } from "@tauri-apps/api/mocks";
 import { Channel } from "@tauri-apps/api/core";
@@ -40,6 +40,7 @@ const sessions: Session[] = [], checks: string[] = [], errors: string[] = [], ev
 let stored: InstanceDetails, details: InstanceDetails, inventory: ManualModInventoryResult;
 let epoch = 0, saves = 0, resolutions = 0, inventoryReads = 0;
 let scenario = "", holdOpen = false, permittedSave = false;
+let cachedPresentation = false, holdPresentationRead = false;
 let locale = "en-US", capture: CaptureMode | null = null;
 let verificationSlot: Bounds | null = null;
 const originalError = console.error;
@@ -66,12 +67,14 @@ async function settle(predicate: () => boolean, label: string, timeout = 5000) {
 }
 function Workspace() {
   const { t } = useI18n();
+  const [visibleDetails, setVisibleDetails] = useState(details);
   return <ActivityNoticeTarget.Provider value={{ element: null, store: noticeStore, dismissLabel: t("servers.mods.closeToast") }}>
     <div style={{ flex: 1, minHeight: 0 }}>
-      <ModWorkbench key={`${epoch}:${details.summary.id}`} details={details} moduleDetails={moduleDetails} launchPlan={null}
+      <ModWorkbench key={`${epoch}:${details.summary.id}`} details={visibleDetails} moduleDetails={moduleDetails} launchPlan={null}
         onSaveSettings={async (input, options) => {
           const saved = await updateInstance(input, options?.expectedSettingsJson ?? "", options?.collectionRemoval);
           saves += 1;
+          setVisibleDetails(saved);
           return saved;
         }} />
     </div>
@@ -150,10 +153,20 @@ function checkBounds(bounds: Bounds | null) {
 function result(): ManualModReferenceResolveResult {
   return { instance_id: stored.summary.id, module_id: "arksurvivalascended", source_label: "CurseForge",
     setting_key: "mod_ids_csv", setting_label: "Mod IDs", resolved_ids: ["1346144"],
-    items: [{ reference: projectUrl, status: "resolved", resolved_id: "1346144", title: "DevKitLiveModTesting", message: null }] };
+    items: [{ reference: projectUrl, status: "resolved", resolved_id: "1346144", title: "DevKitLiveModTesting", icon_url: "/__mod_fixture_avatar.svg", message: null }] };
 }
 async function publish(session: Session) {
+  if (permittedSave) cachedPresentation = true;
   await act(async () => { events.push("result:" + session.id); session.resolution.resolve(result()); });
+}
+async function checkPresentation(includeMissing = true) {
+  await settle(() => [...fixture.querySelectorAll(".mw-entry-row")].some((row) =>
+    row.querySelector(".mw-entry-row-title")?.textContent === "DevKitLiveModTesting"
+      && row.querySelector<HTMLImageElement>("img")?.naturalWidth === 64), "Project name and decoded avatar did not reach My Mods");
+  if (!includeMissing) return;
+  const missing = [...fixture.querySelectorAll(".mw-entry-row")].find((row) => row.querySelector(".mw-entry-row-title")?.textContent === "Missing avatar example");
+  check(missing, "A project name remains available when its avatar cannot load");
+  await settle(() => Boolean(missing.querySelector(".mw-mod-thumb-placeholder")) && !missing.querySelector("img"), "Failed avatar did not fall back to the Mod placeholder");
 }
 async function absent(session: Session, previousSaves: number) {
   await settle(() => session.closed === 1 && !fixture.querySelector('[data-curseforge-browser="embedded"]'),
@@ -210,6 +223,13 @@ async function run() {
       return session.resolution.promise;
     }
     if (command === "read_manual_mod_inventory") inventoryReads += 1;
+    if (command === "resolve_manual_mod_references") {
+      check(args.references?.every((id) => /^\d+$/.test(id)), "Presentation refresh only reads numeric IDs without opening websites");
+      if (holdPresentationRead) return new Promise(() => {});
+      return { ...result(), resolved_ids: args.references, items: args.references.map((id) => ({ reference: id,
+        status: "resolved", resolved_id: id, title: cachedPresentation ? id === "1346144" ? "DevKitLiveModTesting" : "Missing avatar example" : null,
+        icon_url: cachedPresentation ? id === "1346144" ? "/__mod_fixture_avatar.svg" : "/__mod_fixture_missing.png" : null })) };
+    }
     return base(command, payload);
   }, { shouldMockEvents: true });
   Object.assign(window, { isTauri: true });
@@ -248,6 +268,8 @@ async function run() {
       check(element(".shell-activity-bar .shell-activity-notice.is-success").textContent?.includes("已识别 1 个 ID"),
         "The screenshot uses the actual Chinese recognition summary");
       check(!fixture.querySelector(".mw-manual-feedback .mw-chip--on"), "No permanent green recognition chip remains above the workbench");
+      await click(button("我的 Mod"));
+      await checkPresentation();
     }
     if (capture !== "verification") check(!fixture.querySelector(".mw-reference-browser"), "The photographed normal path never displays a webpage");
     await document.fonts.ready;
@@ -304,6 +326,7 @@ async function run() {
     && Boolean(fixture.querySelector(".shell-activity-notice-actions button")),
     "After the final page closes, the pending result stays cancellable in the activity bar without saving");
   permittedSave = true;
+  holdPresentationRead = true;
   await publish(success);
   await settle(() => saves === 1 && success.closed === 1 && !fixture.querySelector('[data-curseforge-browser="embedded"]'),
     "Successful recognition did not save and close its embedded host");
@@ -312,11 +335,15 @@ async function run() {
     "Resolved ID feedback is a dismissible success notice in the activity bar");
   check(!fixture.querySelector(".mw-manual-feedback .mw-chip--on"), "Resolved ID feedback leaves no permanent green chip");
   const successShownAt = performance.now();
+  await checkPresentation(false);
   await act(async () => { await new Promise((resolve) => setTimeout(resolve, 4200)); });
   check(successNotice.isConnected, "Success feedback remains available before its five-second expiry");
   await settle(() => !successNotice.isConnected && !fixture.querySelector(".shell-activity-notice.is-success"),
     "Success feedback did not disappear after five seconds", 2200);
   const successDuration = performance.now() - successShownAt;
+  await checkPresentation(false);
+  check(holdPresentationRead, "Imported name and avatar outlive the notice even while the optional cache read is pending");
+  holdPresentationRead = false;
   check(successDuration >= 4800 && successDuration < 6500, "Success feedback expires after five real seconds without changing the saved settings");
   const settings = JSON.parse(stored.settings_json);
   check(String(settings.mod_ids_csv).includes("1346144") && String(settings.mod_ids_csv).includes("101010")
@@ -335,6 +362,10 @@ async function run() {
   await absent(unmount, 1);
 
   await mount();
+  await click(button("My Mods"));
+  await checkPresentation();
+  check(sessions.length === 5 && saves === 1, "Reloading names and avatars opens no native website and performs no settings mutation");
+  await click(button("Store"));
   const late = await begin("late-open", ".mw-manual-pane > .mw-dropzone", true);
   check(!late.resolved && resolutions === 5, "Resolution waits for the native host to open");
   await act(async () => root.render(null));
@@ -345,6 +376,7 @@ async function run() {
     "A disposed late-open request never continues to resolution, verification display or saving");
   check(errors.length === 0, "No console errors or unhandled rejections");
   return { status: "passed", checks, saves, resolutions, sessions: sessions.map(({ scenario, closed, resolved }) => ({ scenario, closed, resolved })),
+    presentation_reloaded: true, missing_avatar_fallback: true,
     physical_bounds_checked: true, resize_checked: true, modal_occlusion_checked: true, hidden_by_default: true,
     batch_loading_hides_verification: true, completed_page_hidden_before_result: true,
     verification_slot: verificationSlot, success_auto_dismiss_ms: Math.round(successDuration), browser_errors: errors };

@@ -2,6 +2,11 @@ from __future__ import annotations
 
 
 AUDITED_SOURCES = {
+    "blake2-simd-mit": {
+        "path": "blake2-simd-47714dc3-LICENSE",
+        "sha256": "27e0387973d6b8507cb15f825f6f26e0278d4d5857082c1f56b49a7b39a90183",
+        "url": "https://github.com/oconnor663/blake2_simd/blob/47714dc3c424e82213d7f2eb4a833e3843017be5/LICENSE",
+    },
     "spdx-apache-2.0": {
         "path": "SPDX-Apache-2.0.txt",
         "sha256": "074e6e32c86a4c0ef8b3ed25b721ca23aca83df277cd88106ef7177c354615ff",
@@ -31,6 +36,19 @@ AUDITED_SOURCES = {
         "path": "webview2-b74dc5e2-LICENSE",
         "sha256": "0dcf41516e608bbcb6cdc5229feb7b86fe4a643b85e7df251133c93408fdac73",
         "url": "https://github.com/wravery/webview2-rs/blob/b74dc5e2b394044bea5191052868ce7a106c202c/LICENSE",
+    },
+}
+
+
+# Custom license-file declarations require review of the exact packaged text;
+# they must never be reduced to an SPDX license that omits an extra restriction.
+LICENSE_FILE_RULES = {
+    "unrar-rs@0.15.3": {
+        "license_file": "LICENSE",
+        "sha256": "97dfd1950dfb0901afbf6e51cae496e12281e97f670fdb2a2aab3252d2561086",
+        "repository": "https://github.com/scryer-media/rarpar",
+        "vcs_sha1": "71d56c86f620a67ce9428186adf46b524e5a3d06",
+        "selected_license": "Apache-2.0 with the additional UnRAR restriction (custom license)",
     },
 }
 
@@ -100,6 +118,14 @@ add_rule(
     repository="https://github.com/dropbox/rust-alloc-no-stdlib",
     vcs_sha1="0a81fd6928ea3b33c8cd484aa4575d50ffb98012",
     sources=[sibling("alloc-no-stdlib@3.0.0", "LICENSE")],
+)
+add_rule(
+    "blake2s_simd@1.0.5",
+    declared_license="MIT",
+    selected_license="MIT",
+    repository="https://github.com/oconnor663/blake2_simd",
+    vcs_sha1="47714dc3c424e82213d7f2eb4a833e3843017be5",
+    sources=[audited("blake2-simd-mit")],
 )
 add_rule(
     "cesu8@1.1.0",

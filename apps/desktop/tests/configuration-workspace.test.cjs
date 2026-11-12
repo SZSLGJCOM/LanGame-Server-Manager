@@ -43,9 +43,20 @@ function readRequired(filename, label) {
 
 const {
   focusConfigurationControl,
+  isConfigurationFieldNavigable,
   mergeConfigurationPatch,
   resolveConfigurationFieldNavigation
 } = require("../src/views/settings/configuration-workspace-state.ts");
+
+test("the shared address can be found without exposing internal derived fields as editors", () => {
+  const address = { fieldKey: "public_ip", owner: "instance_network", state: "derived", sectionId: "network" };
+  assert.equal(isConfigurationFieldNavigable(address), true);
+  for (const fieldKey of ["connection_mode", "bind_ip", "internal_token"]) {
+    assert.equal(isConfigurationFieldNavigable({ ...address, fieldKey }), false);
+  }
+  assert.deepEqual(resolveConfigurationFieldNavigation({ items: [address], actionableSectionIds: ["network"] },
+    "public_ip", "configuration-astroneer"), { sectionId: "network", inputId: "configuration-astroneer-public-ip-input" });
+});
 
 function settingsMountBlock(source) {
   const start = source.indexOf('{activeDetailTab === "settings"');

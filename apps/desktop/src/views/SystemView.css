@@ -49,7 +49,7 @@
   min-height: 0;
   height: 100%;
   grid-template-columns: minmax(380px, 0.95fr) repeat(2, minmax(0, 0.72fr));
-  grid-template-rows: 114px 114px minmax(0, 1fr) auto;
+  grid-template-rows: repeat(2, minmax(114px, max-content)) minmax(0, 1fr) auto;
   grid-template-areas:
   "core cpu memory"
   "core network disk"
@@ -102,6 +102,32 @@
   display: grid;
   min-height: 0;
   grid-template-rows: auto minmax(0, 1fr) auto;
+  container-type: inline-size;
+}
+
+@media (min-width: 1021px) {
+  .system-core-panel .system-panel-head {
+    padding-top: 12px;
+  }
+
+  .system-core-panel .system-panel-head > div:first-child {
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 4px 10px;
+  }
+
+  .system-core-panel .system-panel-head > div > span {
+    margin-top: 0;
+  }
+
+  .system-core-panel .system-resource-summary {
+    padding-block: 4px;
+  }
+
+  .system-core-panel .system-resource-headroom {
+    margin-top: 4px;
+  }
 }
 
 @media (max-width: 1180px) {
@@ -137,7 +163,7 @@
 
   .system-command-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    grid-template-rows: 114px 114px auto auto auto;
+    grid-template-rows: repeat(2, minmax(114px, max-content)) auto auto auto;
     grid-template-areas: "cpu memory" "network disk" "instance instance" "core core" "logs logs";
   }
 

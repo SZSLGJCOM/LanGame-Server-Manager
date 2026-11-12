@@ -9,7 +9,7 @@ export interface OfficialSourcePolicy {
   chinaOrigins?: string[];
   groups: {
     id: string; origins: string[]; pathPrefixes: string[]; exactPaths?: string[]; allowedQueryKeys?: string[]; purposes: string[];
-    purposePathPrefixes?: Record<string, string[]>; purposePathSuffixes?: Record<string, string[]>;
+    purposePathPrefixes?: Partial<Record<MediaPurpose, string[]>>; purposePathSuffixes?: Partial<Record<MediaPurpose, string[]>>;
   }[];
   exactResources: { id: string; urls: string[]; purposes: string[] }[];
 }

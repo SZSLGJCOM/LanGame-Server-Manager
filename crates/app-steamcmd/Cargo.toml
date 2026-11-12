@@ -5,6 +5,9 @@ edition.workspace = true
 license-file.workspace = true
 rust-version.workspace = true
 
+[features]
+test-support = []
+
 [dependencies]
 app-core = { path = "../app-core" }
 app-network = { path = "../app-network" }

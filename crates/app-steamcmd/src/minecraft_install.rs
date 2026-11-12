@@ -3,18 +3,38 @@ use super::minecraft_metadata::fetch_minecraft_version_details;
 use super::*;
 use app_core::InstallPhase;
 
-pub(super) async fn install_or_update_minecraft_java_module<F>(
-    settings: &AppSettings,
-    module: &ModuleDetails,
-    install: &InstallSpec,
-    process: &ProcessSpec,
-    operation: &str,
-    deadline: InstallDeadline,
+#[path = "minecraft_publication.rs"]
+mod publication;
+
+pub(super) struct MinecraftInstallRequest<'a> {
+    pub(super) settings: &'a AppSettings,
+    pub(super) module: &'a ModuleDetails,
+    pub(super) install: &'a InstallSpec,
+    pub(super) process: &'a ProcessSpec,
+    pub(super) operation: &'a str,
+    pub(super) deadline: InstallDeadline,
+    pub(super) revision_key: &'a str,
+}
+
+pub(super) async fn install_or_update_minecraft_java_module<F, C, Fut>(
+    request: MinecraftInstallRequest<'_>,
     on_progress: &mut F,
+    prepare_fresh_payload: &mut C,
 ) -> Result<ModuleInstallResult, SteamCmdError>
 where
     F: FnMut(InstallProgressUpdate),
+    C: FnMut(PathBuf) -> Fut,
+    Fut: std::future::Future<Output = Result<(), SteamCmdError>>,
 {
+    let MinecraftInstallRequest {
+        settings,
+        module,
+        install,
+        process,
+        operation,
+        deadline,
+        revision_key,
+    } = request;
     let install_root = PathBuf::from(&settings.games_root).join(&install.shared_game_dir);
     fs::create_dir_all(&install_root).map_err(|source| SteamCmdError::CreatePath {
         path: install_root.clone(),
@@ -26,6 +46,7 @@ where
         .manifest_url
         .clone()
         .unwrap_or_else(|| String::from(MINECRAFT_VERSION_MANIFEST_URL));
+    // Validate the configured relative path before allocating an owned payload.
     let server_jar_path =
         resolve_install_relative_path(&module.summary.id, &install_root, &minecraft.server_jar)?;
 
@@ -51,131 +72,6 @@ where
         }
     })?;
     let required_java_major = version_details.java_version.major_version;
-    on_progress(InstallProgressUpdate::stage(
-        InstallPhase::Preparing,
-        format!("Preparing Temurin Java {required_java_major} runtime..."),
-    ));
-    ensure_minecraft_jre(
-        &client,
-        &install_root,
-        required_java_major,
-        deadline,
-        on_progress,
-    )
-    .await?;
-    let java_executable = install_root.join("jre").join("bin").join("java.exe");
-
-    let existing_metadata = read_minecraft_install_metadata(&install_root).ok();
-    let existing_candidate = existing_metadata
-        .as_ref()
-        .map(|metadata| {
-            metadata.version_id == selected_version.id.as_str()
-                && metadata
-                    .server_sha1
-                    .eq_ignore_ascii_case(&server_download.sha1)
-                && metadata.required_java_major == required_java_major
-                && java_executable.is_file()
-                && server_jar_path.exists()
-        })
-        .unwrap_or(false);
-    let existing_matches = if existing_candidate {
-        on_progress(InstallProgressUpdate::stage(
-            InstallPhase::Verifying,
-            format!("Verifying Minecraft Java server {}...", selected_version.id),
-        ));
-        let path = server_jar_path.clone();
-        let cancellation = InstallCancellation::current();
-        tokio::task::spawn_blocking(move || sha1_file_hex(&path, deadline, cancellation))
-            .await
-            .map_err(|error| SteamCmdError::WriteMinecraftServerFile {
-                path: server_jar_path.clone(),
-                source: std::io::Error::other(format!(
-                    "artifact verification worker failed: {error}"
-                )),
-            })?
-            .map(|sha1| sha1.eq_ignore_ascii_case(&server_download.sha1))
-            .or_else(|error| match error {
-                error @ (SteamCmdError::InstallCancelled { .. }
-                | SteamCmdError::OperationTimedOut { .. }) => Err(error),
-                _ => Ok(false),
-            })?
-    } else {
-        false
-    };
-
-    if existing_matches {
-        let after = probe_module_install_state(
-            settings,
-            &module.summary.id,
-            module.summary.steam_app_id,
-            Some(install),
-            Some(process),
-        );
-        let excerpt = format!(
-            "Minecraft Java server {} is already current. server.jar verified with SHA1 {}.",
-            selected_version.id, server_download.sha1
-        );
-        on_progress(
-            InstallProgressUpdate::stage(
-                InstallPhase::Ready,
-                format!("Minecraft Java server {} is current", selected_version.id),
-            )
-            .with_output(excerpt.clone()),
-        );
-
-        return Ok(ModuleInstallResult {
-            module_id: module.summary.id.clone(),
-            steam_app_id: 0,
-            operation: String::from(operation),
-            install_root: after.install_root,
-            executable_path: after.executable_path,
-            executable_exists: after.executable_exists,
-            install_state: after.install_state,
-            current_version: Some(selected_version.id.clone()),
-            output_excerpt: excerpt,
-        });
-    }
-
-    let download_detail = format!(
-        "Downloading Minecraft Java server {}...",
-        selected_version.id
-    );
-    on_progress(InstallProgressUpdate::stage(
-        InstallPhase::Downloading,
-        &download_detail,
-    ));
-
-    let server = download_file_with_progress(
-        &client,
-        &server_download.url,
-        &server_jar_path,
-        DownloadIntegrity {
-            sha1: Some(&server_download.sha1),
-            size: Some(server_download.size),
-            ..Default::default()
-        },
-        deadline,
-        |bytes, total| {
-            on_progress(InstallProgressUpdate::download(
-                &download_detail,
-                bytes,
-                total.or(Some(server_download.size)),
-            ));
-        },
-    )
-    .await?;
-    // The verified jar and metadata publish synchronously as one commit region.
-    // Observe stop requests before entering it, never between its two writes.
-    deadline.check_cancelled()?;
-    on_progress(InstallProgressUpdate::stage(
-        InstallPhase::Installing,
-        format!(
-            "Publishing Minecraft Java server {}...",
-            selected_version.id
-        ),
-    ));
-    publish_minecraft_staging_file(&server_jar_path, server.path())?;
-
     let metadata = MinecraftInstallMetadata {
         version_id: selected_version.id.clone(),
         version_type: selected_version.version_type.clone(),
@@ -191,7 +87,101 @@ where
             .map(|duration| duration.as_millis())
             .unwrap_or(0),
     };
-    write_minecraft_install_metadata(&install_root, &metadata)?;
+    let publication = publication::MinecraftPublication::new(&install_root, &module.summary.id)?;
+    // This phase owns several large network/process futures. Keep its state on
+    // the heap instead of embedding it in every enclosing update/start future.
+    let preparation = Box::pin(async {
+        on_progress(InstallProgressUpdate::stage(
+            InstallPhase::Preparing,
+            format!("Preparing Temurin Java {required_java_major} runtime..."),
+        ));
+        // A version probe of an old JRE is not package provenance. This root is
+        // empty, so every inventoried Java file comes from the verified ZIP.
+        ensure_minecraft_jre(
+            &client,
+            &publication.stage,
+            required_java_major,
+            deadline,
+            on_progress,
+        )
+        .await?;
+        let staged_jar = resolve_install_relative_path(
+            &module.summary.id,
+            &publication.stage,
+            &minecraft.server_jar,
+        )?;
+        let detail = format!(
+            "Downloading Minecraft Java server {}...",
+            selected_version.id
+        );
+        on_progress(InstallProgressUpdate::stage(
+            InstallPhase::Downloading,
+            &detail,
+        ));
+        let server = download_file_with_progress(
+            &client,
+            &server_download.url,
+            &staged_jar,
+            DownloadIntegrity {
+                sha1: Some(&server_download.sha1),
+                size: Some(server_download.size),
+                ..Default::default()
+            },
+            deadline,
+            |bytes, total| {
+                on_progress(InstallProgressUpdate::download(
+                    &detail,
+                    bytes,
+                    total.or(Some(server_download.size)),
+                ))
+            },
+        )
+        .await?;
+        server.persist(&staged_jar)?;
+        write_minecraft_install_metadata(&publication.stage, &metadata)?;
+        deadline.check_cancelled()?;
+        on_progress(InstallProgressUpdate::stage(
+            InstallPhase::Verifying,
+            "Recording the original Minecraft package inventory...",
+        ));
+        prepare_fresh_payload(publication.stage.clone()).await?;
+        on_progress(InstallProgressUpdate::stage(
+            InstallPhase::Preparing,
+            "Preserving Minecraft configuration, worlds and operator files...",
+        ));
+        publication.merge_existing(deadline).await?;
+        on_progress(InstallProgressUpdate::stage(
+            InstallPhase::Installing,
+            format!(
+                "Publishing Minecraft Java server {}...",
+                selected_version.id
+            ),
+        ));
+        // All preceding work only touched the isolated stage. A failed source
+        // request or inventory callback must leave the old revision usable.
+        deadline.check_cancelled()?;
+        let revision =
+            begin_game_install_revision(Path::new(&settings.servers_root), revision_key)?;
+        publication
+            .publish(Path::new(&minecraft.server_jar), deadline)
+            .await?;
+        Ok(revision)
+    })
+    .await;
+    let revision = match preparation {
+        Ok(revision) => revision,
+        Err(error) => {
+            if !matches!(&error, SteamCmdError::InstallProcessCleanupFailed { .. }) {
+                publication.recover(false).await?;
+            }
+            return Err(error);
+        }
+    };
+
+    if let Err(error) = deadline.check_cancelled() {
+        publication.recover(true).await?;
+        return Err(error);
+    }
 
     on_progress(InstallProgressUpdate::stage(
         InstallPhase::Verifying,
@@ -205,12 +195,19 @@ where
         Some(process),
     );
     if !matches!(after.install_state, InstallState::Installed) || !after.executable_exists {
+        publication.recover(true).await?;
         return Err(SteamCmdError::InstallationVerificationFailed {
             module_id: module.summary.id.clone(),
             operation: String::from(operation),
             detail: format!("server artifact or Java {required_java_major} runtime is missing"),
         });
     }
+    if let Err(error) = deadline.check_cancelled() {
+        publication.recover(true).await?;
+        return Err(error);
+    }
+    complete_game_install_revision(Path::new(&settings.servers_root), revision_key, revision)?;
+    publication.finish();
 
     let excerpt = format!(
         "Minecraft Java server {} downloaded to {} and verified with SHA1 {}.",

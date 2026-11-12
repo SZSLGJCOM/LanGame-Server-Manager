@@ -44,7 +44,8 @@ macro_rules! register_commands {
 
         pub(crate) fn invoke_handler(invoke: tauri::ipc::Invoke<tauri::Wry>) -> bool {
             // Public pages have no application-command authority, including runtime forwarding.
-            if crate::curseforge_browser::is_browser_window(invoke.message.webview_ref().label()) {
+            if crate::curseforge_browser::is_browser_window(invoke.message.webview_ref().label())
+                || crate::nexus_browser::is_browser_window(invoke.message.webview_ref().label()) {
                 invoke.resolver.reject("Public project pages cannot invoke application commands");
                 return true;
             }
@@ -61,6 +62,7 @@ macro_rules! register_commands {
 }
 
 register_commands! {
+    (start_desktop_window_drag, [crate::desktop_window::drag], Desktop, Denied, Bounded),
     (set_tray_locale, [crate], Desktop, Denied, Bounded),
     (app_exit_status, [crate], Desktop, Denied, Bounded),
     (check_app_update, [crate::app_updates], Desktop, Denied, Bounded),
@@ -100,6 +102,10 @@ register_commands! {
     (update_instance_program, [crate::commands::commands_program_storage], Runtime, Allowed, Owned),
     (uninstall_module_game, [crate::commands], Runtime, Allowed, Bounded),
     (download_steam_workshop_items, [crate::commands], Runtime, Allowed, Owned),
+    (prepare_steam_workshop_items, [crate::commands::workshop_preparation], Runtime, Allowed, Owned),
+    (commit_steam_workshop_items, [crate::commands::workshop_preparation], Runtime, Allowed, Owned),
+    (discard_steam_workshop_preparation, [crate::commands::workshop_preparation], Runtime, Allowed, Owned),
+    (retain_steam_workshop_preparation, [crate::commands::workshop_preparation], Runtime, Allowed, Bounded),
     (start_steam_workshop_account_login, [crate::commands::commands_steam_workshop_account], Runtime, Denied, Bounded),
     (read_steam_workshop_account_login, [crate::commands::commands_steam_workshop_account], Runtime, Denied, Bounded),
     (send_steam_workshop_account_input, [crate::commands::commands_steam_workshop_account], Runtime, Denied, Bounded),
@@ -116,6 +122,15 @@ register_commands! {
     (nexus_clear_api_key, [crate::commands::commands_nexus_mods], Runtime, Denied, Bounded),
     (review_nexus_mod_references, [crate::commands::commands_nexus_mods], Runtime, Denied, Bounded),
     (install_nexus_mod_files, [crate::commands::commands_nexus_mods], Runtime, Denied, Owned),
+    (prepare_nexus_website_install, [crate::commands::commands_nexus_website], Runtime, Denied, Bounded),
+    (install_nexus_website_download, [crate::commands::commands_nexus_website], Runtime, Denied, Owned),
+    (open_nexus_website_host, [crate::nexus_browser::host], Desktop, Denied, Bounded),
+    (close_nexus_website_host, [crate::nexus_browser::host], Desktop, Denied, Bounded),
+    (install_nexus_website_mod, [crate::nexus_browser], Desktop, Denied, Owned),
+    (open_nexus_login_host, [crate::nexus_browser::host::login], Desktop, Denied, Bounded),
+    (update_nexus_login_host, [crate::nexus_browser::host::login], Desktop, Denied, Bounded),
+    (close_nexus_login_host, [crate::nexus_browser::host::login], Desktop, Denied, Bounded),
+    (read_nexus_website_auth_state, [crate::nexus_browser::auth], Desktop, Denied, Bounded),
     (read_manual_mod_inventory, [crate::commands], Runtime, Allowed, Bounded),
     (manage_manual_mod, [crate::commands::commands_file_mods], Runtime, Allowed, Owned),
     (read_instance_ark_map_availability, [crate::commands::commands_ark_map_availability], Runtime, Allowed, Bounded),

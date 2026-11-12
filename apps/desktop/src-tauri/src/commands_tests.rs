@@ -23,6 +23,9 @@ mod mod_game_boundaries_integration_tests;
 #[path = "commands_astroneer_public_ip_tests.rs"]
 mod astroneer_public_ip_tests;
 
+#[path = "commands_astroneer_startup_storage_tests.rs"]
+mod astroneer_startup_storage_tests;
+
 #[path = "commands_ark_tools_tests.rs"]
 mod ark_tools_tests;
 
@@ -710,6 +713,7 @@ pub(super) async fn register_smoke_stdin_capture_process(
         install_root: process_root.to_string_lossy().into_owned(),
         install_state: InstallState::Installed,
         uses_private_runtime: false,
+        can_update_before_start: false,
         working_directory: process_root.to_string_lossy().into_owned(),
         executable_path: powershell.to_string_lossy().into_owned(),
         executable_exists: powershell.exists(),

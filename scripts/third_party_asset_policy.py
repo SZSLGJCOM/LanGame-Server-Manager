@@ -47,6 +47,30 @@ THIRD_PARTY_REFERENCE_MEDIA = frozenset(REFERENCE_MEDIA_SHA256)
 REFERENCE_MEDIA_SHA256[ARK_MAP_ARTWORK_NOTICE] = "52bee1ff5d06036ff6c94dec39e40df803fc1cfbdca691136e5aa1975015a326"
 
 
+# Unchanged upstream test archives, not downloaded game mods. Exact package
+# paths and redistribution terms are recorded in the companion source ledger.
+ARCHIVE_FIXTURE_ROOT = "apps/desktop/src-tauri/src/test_fixtures/mod_archives"
+ARCHIVE_FIXTURE_SHA256 = {
+    f"{ARCHIVE_FIXTURE_ROOT}/lzma.7z": "570606adc4626105bd471b8dfb866e4fe8d06e73ea916a2b5ed365eeb030ce8b",
+    f"{ARCHIVE_FIXTURE_ROOT}/solid.7z": "f3baded396d9ce01a2c591585db5bc168916de70de4a83644a41273befd6ec20",
+    f"{ARCHIVE_FIXTURE_ROOT}/ppmd.7z": "58b8804b1b11d8c688b376858832cb047446023cfdd2e34f98f62d984cc49228",
+    f"{ARCHIVE_FIXTURE_ROOT}/encrypted.7z": "ea3e538426be3fe908ed804f31d169610322ec87a1a9ad4901a526a2d632a50e",
+    f"{ARCHIVE_FIXTURE_ROOT}/rar4.rar": "2c595ee9aaea2c837bd0e11a659b9b62b46251f18ab7b6675748da0fadd34460",
+    f"{ARCHIVE_FIXTURE_ROOT}/rar5-solid.rar": "23da48de916e4feb7a0f0fbd6ba520dae3492d04e98d061225b0e923668e48f4",
+    f"{ARCHIVE_FIXTURE_ROOT}/rar5-unicode.rar": "404c872a59c60f5040586065a4f0b30478139a405284154479cc9b57f7bf2815",
+    f"{ARCHIVE_FIXTURE_ROOT}/encrypted.rar": "3215288892bfae2e641786952ab2547ea72cdd58c9c544604cd63e242fa07318",
+}
+THIRD_PARTY_ARCHIVE_FIXTURES = frozenset(ARCHIVE_FIXTURE_SHA256)
+ARCHIVE_FIXTURE_COMPANION_SHA256 = {
+    f"{ARCHIVE_FIXTURE_ROOT}/README.md": "ec2269ab8f4afd804aeb73cd2f291068565015f98f613fd64f6c8379eb2f8473",
+    f"{ARCHIVE_FIXTURE_ROOT}/sources.json": "0922ca4b870eec325cc75bd017f9f2c5c94cbda7871523528f3816198256ded6",
+    f"{ARCHIVE_FIXTURE_ROOT}/LICENSE-sevenz-APACHE": "43070e2d4e532684de521b885f385d0841030efa2b1a20bafb76133a5e1379c1",
+    f"{ARCHIVE_FIXTURE_ROOT}/LICENSE-unrar-MIT": "23f18e03dc49df91622fe2a76176497404e46ced8a715d9d2b67a7446571cca3",
+    f"{ARCHIVE_FIXTURE_ROOT}/LICENSE-unrar-APACHE": "62c7a1e35f56406896d7aa7ca52d0cc0d272ac022b5d2796e7d6905db8a3636a",
+    f"{ARCHIVE_FIXTURE_ROOT}/LICENSE-unrar-rs": "97dfd1950dfb0901afbf6e51cae496e12281e97f670fdb2a2aab3252d2561086",
+}
+
+
 @dataclass(frozen=True)
 class ThirdPartyAssetFinding:
     rule: str
@@ -75,7 +99,16 @@ def verify_third_party_asset_bytes(
             "third-party-asset-notice", ARK_MAP_ARTWORK_NOTICE,
             "selected ARK reference map requires its upstream rights notice in the same snapshot",
         ))
-    reviewed_bytes = THIRD_PARTY_ASSET_SHA256 | REFERENCE_MEDIA_SHA256
+    if selected & THIRD_PARTY_ARCHIVE_FIXTURES:
+        for companion in sorted(ARCHIVE_FIXTURE_COMPANION_SHA256.keys() - selected):
+            findings.append(ThirdPartyAssetFinding(
+                "third-party-fixture-notice", companion,
+                "selected archive fixture requires its provenance and license files in the same snapshot",
+            ))
+    reviewed_bytes = (
+        THIRD_PARTY_ASSET_SHA256 | REFERENCE_MEDIA_SHA256
+        | ARCHIVE_FIXTURE_SHA256 | ARCHIVE_FIXTURE_COMPANION_SHA256
+    )
     for path in sorted(selected & reviewed_bytes.keys()):
         try:
             payload = read_source_payload(repository_root / path, repository_root=repository_root)

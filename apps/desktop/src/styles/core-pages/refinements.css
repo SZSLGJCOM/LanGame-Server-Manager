@@ -1148,7 +1148,7 @@
 .primary-button,
 .secondary-button,
 .ghost-button {
-  padding: 4px var(--control-padding-inline);
+  padding: var(--control-padding-block) var(--control-padding-inline);
   font-size: var(--text-body);
 }
 

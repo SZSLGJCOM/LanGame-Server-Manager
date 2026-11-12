@@ -40,6 +40,11 @@ for (const viewport of [{ width: 1560, height: 900 }, { width: 960, height: 600 
     assert.equal(report.status, "passed", report.error);
     assert.equal(failedModRequest, true, "The real lazy module request must exercise load failure recovery");
     assert.equal(report.deferred_loading_verified, true);
+    assert.equal(report.asa_platform_navigation_verified, true);
+    assert.equal(report.asa_platform_target_consumed, true);
+    assert.equal(report.asa_archive_read_only, true);
+    assert.equal(report.instance_maintenance_navigation_verified, true);
+    assert.equal(report.preview_failure_maintenance_verified, true);
     for (const name of workspaceModules) {
       assert.ok(workspaceRequests.some((entry) => new URL(entry).pathname.endsWith(`/${name}.tsx`)),
         `${name} must load through its real lazy request instead of being included in the initial bundle`);

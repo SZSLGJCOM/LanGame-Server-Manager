@@ -262,15 +262,28 @@ async fn isolated_dragonwilds_production_stop_backs_up_completed_autosave_and_re
     let mut details = initial;
     let mut previous_run = None;
     for pass in 0..2 {
-        let log_path = package
-            .root
-            .join(format!("dragon-compatibility-{pass}.log"));
+        let runtime_root = creation::program_root(&details)?.canonicalize()?;
+        assert!(runtime_root.starts_with(package.root.canonicalize()?));
+        let log_path = runtime_root.join("RSDragonwilds/Saved/Logs/RSDragonwilds.log");
+        // The production readiness probe watches this canonical path. Preserve
+        // the previous boot while stopped so its markers cannot pass this boot.
+        if log_path.try_exists()? {
+            let previous_log = package
+                .root
+                .join(format!("dragon-compatibility-before-{pass}.log"));
+            assert!(
+                !previous_log.try_exists()?,
+                "preserve each boot's native log"
+            );
+            fs::rename(&log_path, previous_log)?;
+        }
+        assert!(
+            !log_path.try_exists()?,
+            "each boot requires a fresh native log"
+        );
         settings.insert(
             "extra_launch_args".into(),
-            json!(format!(
-                "-MULTIHOME=127.0.0.1 -unattended -NoSplash -abslog=\"{}\"",
-                log_path.display()
-            )),
+            json!("-MULTIHOME=127.0.0.1 -unattended -NoSplash"),
         );
         app_storage::update_instance(
             &storage.paths,

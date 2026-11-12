@@ -22,7 +22,7 @@ SCRIPT_ROOT = Path(__file__).resolve().parent
 if str(SCRIPT_ROOT) not in sys.path:
     sys.path.insert(0, str(SCRIPT_ROOT))
 
-from rust_license_policy import AUDITED_SOURCES, MISSING_LICENSE_RULES
+from rust_license_policy import AUDITED_SOURCES, LICENSE_FILE_RULES, MISSING_LICENSE_RULES
 
 
 REPOSITORY_ROOT = SCRIPT_ROOT.parent
@@ -286,7 +286,12 @@ def parse_crate(package: dict[str, object], payload: bytes) -> CrateRecord:
         if metadata.get("name") != name or str(metadata.get("version")) != version:
             fail(f"packaged Cargo.toml does not match Cargo.lock for {name}@{version}")
         declared_license = metadata.get("license")
-        if not isinstance(declared_license, str) or not declared_license.strip():
+        license_file_rule = LICENSE_FILE_RULES.get(package_id(name, version))
+        if license_file_rule is not None:
+            if declared_license is not None or metadata.get("license-file") != license_file_rule["license_file"]:
+                fail(f"custom license declaration changed for {name}@{version}")
+            declared_license = f"license-file: {license_file_rule['license_file']} (custom terms)"
+        elif not isinstance(declared_license, str) or not declared_license.strip():
             fail(f"{name}@{version} has no SPDX license declaration")
         repository = metadata.get("repository")
         if repository is not None and not isinstance(repository, str):
@@ -315,9 +320,23 @@ def parse_crate(package: dict[str, object], payload: bytes) -> CrateRecord:
             if not isinstance(vcs_sha1, str) or not re.fullmatch(r"[0-9a-f]{40}", vcs_sha1):
                 fail(f"invalid Cargo VCS commit for {name}@{version}")
 
+        custom_license_members = []
+        if license_file_rule is not None:
+            if repository != license_file_rule["repository"] or vcs_sha1 != license_file_rule["vcs_sha1"]:
+                fail(f"custom license provenance changed for {name}@{version}")
+            custom_license_members = [
+                member for member in members
+                if member.name == f"{expected_root}/{license_file_rule['license_file']}"
+            ]
+            if len(custom_license_members) != 1:
+                fail(f"reviewed custom license file is missing for {name}@{version}")
+            if sha256(member_bytes(archive, custom_license_members[0])) != license_file_rule["sha256"]:
+                fail(f"reviewed custom license text changed for {name}@{version}")
+
         legal_members = [member for member in members if is_legal_filename(member.name)]
         notice_members = [member for member in members if is_notice_filename(member.name)]
         selected_members = legal_members + notice_members if legal_members else notice_members
+        selected_members += custom_license_members
         reviewed_member_names = {
             specification["member_name"]
             for specification in MISSING_LICENSE_RULES.get(package_id(name, version), {}).get(
@@ -358,6 +377,7 @@ def parse_crate(package: dict[str, object], payload: bytes) -> CrateRecord:
             source=str(package["source"]),
             vcs_sha1=vcs_sha1,
             version=version,
+            selected_license=license_file_rule["selected_license"] if license_file_rule else None,
         )
 
 
@@ -504,11 +524,14 @@ def render_document(records: list[CrateRecord]) -> str:
         "Each crate archive is accepted only after its SHA-256 matches Cargo.lock. License and",
         "notice texts are copied from that archive whenever present. Exact-version reviewed rules",
         "supply checksum-pinned upstream or repository-shared terms only for omitted license files.",
+        "Custom license-file declarations require an exact-version review of the packaged terms;",
+        "additional restrictions remain in full and are not replaced with a plain SPDX license.",
         "",
         "本清单有意收录 Cargo.lock 中全部 crates.io 软件包，因此可能包含未链接到 Windows",
         "可执行文件的目标平台、开发、构建或可选依赖；收录本身不表示实际链接。每个 crate",
         "归档均须先通过 Cargo.lock SHA-256 校验。发布包缺少许可证正文时，仅允许使用绑定",
         "精确版本的审计规则，以及经哈希校验的上游正文或同仓库共享许可证。",
+        "自定义 license-file 声明须审计精确版本内的完整条款；附加限制不能简化为普通 SPDX 许可。",
         "",
         "SOURCE AVAILABILITY / 对应源码获取",
         "Each Source archive URL below identifies the exact crates.io source package version.",
@@ -588,6 +611,9 @@ def generate(
                 temporary_path.write_bytes(payload)
             records.append(parse_crate(package, payload))
     apply_missing_license_rules(records)
+    stale_license_files = set(LICENSE_FILE_RULES) - {record.package_id for record in records}
+    if stale_license_files:
+        fail(f"reviewed custom-license rules are stale or unused: {sorted(stale_license_files)}")
     records.sort(key=lambda record: record.package_id)
     return GenerationResult(
         document=render_document(records),

@@ -179,6 +179,37 @@ pub(crate) fn unused_library_is_fresh(
     let Some(package) = crate::program_seed::read_package_inventory(root, module_id)? else {
         return Ok(false);
     };
+    Ok(crate::program_seed::only_package_files(
+        root,
+        &package.files,
+        &[
+            ".langame-clean-package.json",
+            ".langame-initial-package.json",
+        ],
+        cancellation,
+    )? && crate::program_seed::original_defaults_are_unchanged(root, module_id, cancellation)?)
+}
+
+/// Advisory equivalent of first-use inspection with locally verified official
+/// defaults that an older inventory omitted. Creation must publish and verify
+/// the complete original inventory under its program lease before binding.
+pub fn library_reuse_preview_with_original_defaults(
+    root: &Path,
+    module_id: &str,
+    defaults: &std::collections::BTreeMap<String, String>,
+    cancellation: Option<&AtomicBool>,
+) -> Result<bool, StorageError> {
+    if defaults.is_empty()
+        || library_was_exclusively_used(root)?
+        || crate::program_library_retention::retained_library_program_source(root, module_id)?
+        || !crate::program_seed::original_defaults_are_unchanged(root, module_id, cancellation)?
+    {
+        return Ok(false);
+    }
+    let Some(mut package) = crate::program_seed::read_package_inventory(root, module_id)? else {
+        return Ok(false);
+    };
+    package.files.extend(defaults.clone());
     crate::program_seed::only_package_files(
         root,
         &package.files,

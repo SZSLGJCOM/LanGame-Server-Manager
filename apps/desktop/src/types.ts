@@ -1004,6 +1004,7 @@ export interface InstanceRuntimeOverview {
 export interface LaunchPlan {
   install_state: InstallState;
   uses_private_runtime: boolean;
+  can_update_before_start: boolean;
   instance_id: string;
   instance_name?: string;
   module_id?: string;
@@ -1156,6 +1157,11 @@ export interface SteamWorkshopDownloadResult {
   output_excerpt?: string | null;
 }
 
+export interface SteamWorkshopPreparation {
+  ticket_id: string;
+  consumer_app_id: number;
+}
+
 export interface SteamWorkshopInstallationItemStatus {
   item_id: string;
   path: string;
@@ -1201,6 +1207,8 @@ export interface ManagedModState {
 
 export interface ManualModInventoryItem {
   name: string;
+  display_name?: string | null;
+  icon_url?: string | null;
   path: string;
   item_type: "directory" | "file";
   inferred_id?: string | null;
@@ -1233,6 +1241,7 @@ export interface ManualModReferenceItem {
   status: "resolved" | "failed";
   resolved_id?: string | null;
   title?: string | null;
+  icon_url?: string | null;
   message?: string | null;
 }
 

@@ -27,6 +27,17 @@ if (-not [string]::IsNullOrEmpty($archiveRoot)) {
         throw 'ARK build output must be outside the read-only archive directory.'
     }
 } else { $archiveRoot = $null }
+$archiveCacheRoot = if ($archiveRoot) { $null } else { $env:LANGAME_ARK_ARCHIVE_CACHE_DIR }
+if (-not [string]::IsNullOrEmpty($archiveCacheRoot)) {
+    if (-not [IO.Path]::IsPathRooted($archiveCacheRoot) -or [IO.Path]::GetPathRoot($archiveCacheRoot).Length -lt 3 -or
+        -not (Test-Path -LiteralPath $archiveCacheRoot -PathType Container)) {
+        throw 'LANGAME_ARK_ARCHIVE_CACHE_DIR must be an existing absolute directory.'
+    }
+    $archiveCacheRoot = [IO.Path]::GetFullPath($archiveCacheRoot)
+    if ($outputRoot -eq $archiveCacheRoot -or $outputRoot.StartsWith($archiveCacheRoot.TrimEnd('\', '/') + [IO.Path]::DirectorySeparatorChar, [StringComparison]::OrdinalIgnoreCase)) {
+        throw 'ARK build output must be outside the read-only archive cache directory.'
+    }
+} else { $archiveCacheRoot = $null }
 [IO.Directory]::CreateDirectory($outputRoot) | Out-Null
 $sourceRoot = Join-Path $projectRoot 'modules/ark-tools'
 Add-Type -AssemblyName System.Net.Http
@@ -40,9 +51,30 @@ function Get-ArchiveSha256([string]$Path) {
 }
 
 function Get-VerifiedArchive([string]$Name, [string]$Url, [string]$Sha256) {
-    $destination = Join-Path $(if ($archiveRoot) { $archiveRoot } else { $outputRoot }) $Name
-    if (-not (Test-Path -LiteralPath $destination -PathType Leaf)) {
-        if ($archiveRoot) { throw "Missing ARK archive in LANGAME_ARK_ARCHIVE_DIR: $Name" }
+    # An explicit offline input remains strict. Workstation caches are only hints:
+    # source updates can pin a different SDK while the synchronized ZIP stays old.
+    if ($archiveRoot) {
+        $archive = Join-Path $archiveRoot $Name
+        if (-not (Test-Path -LiteralPath $archive -PathType Leaf)) {
+            throw "Missing ARK archive in LANGAME_ARK_ARCHIVE_DIR: $Name"
+        }
+        if ((Get-ArchiveSha256 $archive) -ne $Sha256) {
+            throw "SHA-256 mismatch for offline ARK archive: $archive (expected $Sha256)"
+        }
+        return $archive
+    }
+    $destination = Join-Path $outputRoot $Name
+    if ((Test-Path -LiteralPath $destination -PathType Leaf) -and (Get-ArchiveSha256 $destination) -eq $Sha256) {
+        return $destination
+    }
+    if ($archiveCacheRoot) {
+        $cached = Join-Path $archiveCacheRoot $Name
+        if ((Test-Path -LiteralPath $cached -PathType Leaf) -and (Get-ArchiveSha256 $cached) -eq $Sha256) {
+            return $cached
+        }
+        Write-Host "[ARK] Cached $Name is missing or outdated; fetching the pinned version."
+    }
+    try {
         $partial = $destination + '.download'
         $client = [Net.Http.HttpClient]::new()
         $cancel = [Threading.CancellationTokenSource]::new([TimeSpan]::FromSeconds(120))
@@ -70,10 +102,14 @@ function Get-VerifiedArchive([string]$Name, [string]$Url, [string]$Sha256) {
         if ((Get-ArchiveSha256 $partial) -ne $Sha256) {
             throw "SHA-256 mismatch for $Name"
         }
-        Move-Item -LiteralPath $partial -Destination $destination
-    }
-    if ((Get-ArchiveSha256 $destination) -ne $Sha256) {
-        throw "SHA-256 mismatch for cached $Name"
+        # Keep the previous cache intact until the complete replacement verifies.
+        if (Test-Path -LiteralPath $destination -PathType Leaf) {
+            [IO.File]::Replace($partial, $destination, [NullString]::Value)
+        } else {
+            [IO.File]::Move($partial, $destination)
+        }
+    } finally {
+        if (Test-Path -LiteralPath $partial -PathType Leaf) { [IO.File]::Delete($partial) }
     }
     return $destination
 }
@@ -103,10 +139,10 @@ function Expand-Selected([string]$Archive, [string]$Prefix, [string]$Destination
     } finally { $zip.Dispose() }
 }
 
-$asaCommit = '08eef96decb0c626ff5f187dca18a98603b41a46'
+$asaCommit = 'bd376a0422291b0b1bf15a0b7868e7e275605da9'
 $aseCommit = '9459cb3941c2e62d4144cbb8294fe6c4c772d564'
 $loaderCommit = '4e04dc8982e1473920278f199638b29dc511d539'
-$asa = Get-VerifiedArchive 'AsaApi-sdk.zip' "https://codeload.github.com/ArkServerApi/AsaApi/zip/$asaCommit" '724e67648f73d003fdded2e17a3dbe420a27d285b666692daa43bf5f06c57e81'
+$asa = Get-VerifiedArchive 'AsaApi-sdk.zip' "https://codeload.github.com/ArkServerApi/AsaApi/zip/$asaCommit" 'e179b1de7037ea48e69531e4aac75e02126fa63a8054cc32236f818a20ea95bc'
 $loader = Get-VerifiedArchive 'AsaApiLoader-sdk.zip' "https://codeload.github.com/ArkServerApi/AsaApiLoader/zip/$loaderCommit" 'dd3c6ac17d2bdc9d072ca01c8e86f9451e6de909c2bf901bb5b2c63cb939e833'
 # MSVC still applies MAX_PATH to relative includes containing ../, even when
 # the normalized file exists. Keep the SDK's Public/Private relationship while
@@ -121,7 +157,7 @@ if ($ProxyOnly) {
     Expand-Selected $asa "AsaApi-$asaCommit/" $asaRoot @('AsaApi/Core/Public/json.hpp', 'LICENSE') 'AsaApi/Core/'
 } else {
     $ase = Get-VerifiedArchive 'AseApi-sdk.zip' "https://codeload.github.com/ArkServerApi/AseApi/zip/$aseCommit" '500cc0e0d46e75e3c67374a81914fe318ee1f88db8bca0c291f2e8a72ede3def'
-    $asaRelease = Get-VerifiedArchive 'asa-runtime.zip' 'https://github.com/ArkServerApi/AsaApi/releases/download/2.1/AsaApi_2.1.zip' '58d626b34c85e08e85d3dc076f1f18420150752802e1d227bed370182c84f3b6'
+    $asaRelease = Get-VerifiedArchive 'asa-runtime.zip' 'https://github.com/ArkServerApi/AsaApi/releases/download/2.11/AsaApi_2.11.zip' '64f5f1165ef73f3439bba3794e77e379489167cc385c0ac5c4717ca60ad3e88a'
     Expand-Selected $asa "AsaApi-$asaCommit/" $asaRoot @('AsaApi/Core/Public/', 'AsaApi/Core/Private/Ark/Globals.h', 'LICENSE') 'AsaApi/Core/'
     Expand-Selected $ase "AseApi-$aseCommit/" $aseRoot @('version/Core/Public/', 'version/Core/Private/Ark/Globals.h', 'out_lib/ArkApi.lib', 'LICENSE') 'version/Core/'
     Expand-Selected $asaRelease '' $asaRoot @('Lib/AsaApi.lib')

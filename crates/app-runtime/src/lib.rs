@@ -846,6 +846,7 @@ pub fn build_launch_plan_with_override(
         install_root: install_root.to_string_lossy().into_owned(),
         install_state: module.summary.install_state.clone(),
         uses_private_runtime: false,
+        can_update_before_start: false,
         working_directory: working_directory.to_string_lossy().into_owned(),
         executable_path: executable_path.to_string_lossy().into_owned(),
         executable_exists: executable_path.exists(),

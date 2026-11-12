@@ -1,5 +1,85 @@
 use super::*;
 
+#[tokio::test]
+async fn creation_missing_steam_metadata_repairs_a_fresh_root_and_preserves_existing_instances()
+-> TestResult {
+    for missing_acf in [true, false] {
+        let mut fixture = Fixture::for_module("minecraft").await?;
+        fixture.descriptor.summary.steam_app_id = Some(7);
+        let mut original = OriginalState::new(&fixture).await?;
+        fs::remove_file(fixture.original.join(".langame-clean-package.json"))?;
+        fs::create_dir_all(fixture.storage.paths.steamcmd_root.join("depotcache"))?;
+        fs::create_dir_all(fixture.original.join("steamapps"))?;
+        if !missing_acf {
+            fs::write(
+                fixture.original.join("steamapps/appmanifest_7.acf"),
+                r#""AppState" { "appid" "7" "StateFlags" "4" "buildid" "17" "TargetBuildID" "17" "InstalledDepots" { "7" { "manifest" "9" } } }"#,
+            )?;
+        }
+        sync_game_installs(
+            &fixture.storage.paths,
+            &[GameInstallSyncRecord {
+                module_id: fixture.descriptor.summary.id.clone(),
+                install_root: fixture.original.to_string_lossy().into_owned(),
+                install_state: InstallState::Installed,
+                current_version: Some("17".into()),
+                mark_verified: true,
+            }],
+        )
+        .await?;
+        original.program_files = snapshot(&fixture.original)?;
+        let guard = fixture.guard().await?;
+        let (operation, job) = fixture.operation()?;
+        let installed = std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false));
+        let called = installed.clone();
+        let expected = fixture.repair.clone();
+        let created = create_with_program_repair(
+            fixture.request(&operation, &guard, &job),
+            move |module, root, cancellation| {
+                assert_eq!(
+                    root, expected,
+                    "repair must not validate or overwrite the existing library"
+                );
+                called.store(true, std::sync::atomic::Ordering::Release);
+                install_fixture(module, root, cancellation)
+            },
+        )
+        .await?;
+        assert!(installed.load(std::sync::atomic::Ordering::Acquire));
+        original.assert_unchanged(&fixture).await?;
+        let old =
+            app_storage::read_program_install_owner(&fixture.storage.paths, &fixture.original)
+                .await?
+                .unwrap();
+        assert_eq!(old.id, original.binding.install.id);
+        assert_eq!(old.current_version.as_deref(), Some("17"));
+        let binding =
+            app_storage::read_instance_program_install(&fixture.storage.paths, &created.summary.id)
+                .await?
+                .unwrap();
+        assert_ne!(binding.install.id, old.id);
+        assert_ne!(
+            fs::canonicalize(&binding.install.install_root)?,
+            fs::canonicalize(&fixture.original)?
+        );
+        assert!(
+            !binding
+                .install
+                .install_root
+                .join("mods/plugin.dll")
+                .exists()
+        );
+        assert!(
+            !binding
+                .install
+                .install_root
+                .join("Saved/world.sav")
+                .exists()
+        );
+    }
+    Ok(())
+}
+
 async fn completed_instance_acquisition(
     fixture: &Fixture,
 ) -> TestResult<app_storage::ProgramInstallRecord> {

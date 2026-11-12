@@ -2,6 +2,10 @@ import type { MessageCatalog } from "../../i18n-config";
 
 export const ZH_CN_ABIOTIC_FACTOR_MESSAGES: MessageCatalog = {
   "abiotic.settings.mods.browseCatalog": "在 mod.io 浏览 Abiotic Factor 官方模组",
+  "abiotic.settings.mods.nextStart": "下次启动加载",
+  "abiotic.settings.mods.loadOrder": "加载顺序",
+  "abiotic.settings.mods.nextStartHelp": "服务器会在下次启动时下载并加载此 mod.io 模组。在「高级设置」中添加或编辑官方 ID；拖动列表条目可调整加载顺序。",
+  "abiotic.settings.mods.sideloadNextStartHelp": "服务器会在下次启动时从预下载目录加载此模组。在「高级设置」中添加或编辑官方 ID；拖动列表条目可调整加载顺序。",
   "settings.schema.abioticfactor.mod_ids.title": "官方模组 ID",
   "settings.schema.abioticfactor.mod_ids.description": "在“我的 Mod”中按加载顺序输入 mod.io 数字 ID，用换行、逗号或分号分隔。服务器将在下次启动时下载并加载这些模组。",
   "settings.schema.abioticfactor.modio_token.title": "mod.io 账户令牌",

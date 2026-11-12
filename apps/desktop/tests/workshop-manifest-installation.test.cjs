@@ -20,6 +20,7 @@ const { EN_US_EXTRA_MESSAGES } = require("../src/i18n-messages-en-extra.ts");
 const { requiresSteamWorkshopAccount } = require("../src/views/servers/steam-workshop-access-error.ts");
 const { restoreRemovedWorkshopIds, WorkshopInventoryControlError } = require("../src/views/servers/mod-workbench-workshop-inventory.ts");
 const { WorkshopDownloadOperations } = require("../src/views/servers/workshop-download-operations.ts");
+const { loadWorkshopDownloadExecution } = require("./helpers/workshop-download-execution.cjs");
 const filename = path.resolve(__dirname, "../src/views/servers/ModWorkbench.tsx");
 const source = fs.readFileSync(filename, "utf8");
 let handler, controlError;
@@ -38,11 +39,12 @@ function harness(moduleId, settings, installedIds = [], options = {}) {
   const calls = { downloads: [], saves: [], errors: [], messages: [], inventory: 0 };
   const installed = new Set(installedIds);
   const deployed = new Set();
+  const tickets = new Map();
   const tmodNames = { "111111": "CrystalTools", "222222": "ForestStorage" };
   const latestSettingsRef = { current: structuredClone(settings) };
   const downloads = new WorkshopDownloadOperations();
   downloads.subscribe(() => {
-    const error = downloads.snapshot("fixture-instance").error;
+    const error = downloads.snapshot("fixture-instance").requests.find((request) => request.status === "error")?.error;
     if (error && calls.errors.at(-1) !== error) calls.errors.push(error);
   });
   const exports = {};
@@ -50,9 +52,9 @@ function harness(moduleId, settings, installedIds = [], options = {}) {
     ...model, ...plans, ...enablement, ...dstPolicy, ...collections, ...controls, restoreRemovedWorkshopIds,
     WorkshopInventoryControlError, formatDesktopError, exports, Set, Map, Error,
     moduleId, settings, latestSettingsRef, expectedAppId: appId, steamAccount: undefined, requiresSteamWorkshopAccount,
-    locale: "en-US", downloadOperation: { begin: (request) => downloads.begin("fixture-instance", request) },
+    locale: "en-US", downloadOperation: { enqueue: (request, execute) => downloads.enqueue("fixture-instance", request, execute) },
     workflow: { steamDownloadMode: "steamcmd-cache" },
-    modMutationsDisabled: false, modWorkflowUnsupported: false,
+    workshopInstallsDisabled: false, modWorkflowUnsupported: false,
     lookupMap: items, props: { details: { summary: { id: "fixture-instance" } } },
     manualEnablement: moduleId === "palworld" ? { id_strategy: "palworld_package_name", setting_key: "mod_package_names" }
       : moduleId === "terraria" ? { id_strategy: "folder_name", setting_key: "tmodloader_workshop_item_ids" } : null,
@@ -69,17 +71,25 @@ function harness(moduleId, settings, installedIds = [], options = {}) {
       calls.inventory++;
       return { consumer_app_id: appId, items: requested.map(item_id => ({ item_id, installed: installed.has(item_id) })) };
     },
-    downloadSteamWorkshopItems: async (_instanceId, requested, missingOnly) => {
-      calls.downloads.push({ ids: [...requested], missingOnly });
+    prepareSteamWorkshopItems: async (_instanceId, requested, token) => {
+      calls.downloads.push({ ids: [...requested], missingOnly: true });
       options.onDownloadStarted?.();
       if (options.downloadBarrier) await options.downloadBarrier;
       if (options.failDownload) throw new Error("download failed");
+      tickets.set(token, requested);
+      return { ticket_id: token, consumer_app_id: appId };
+    },
+    commitSteamWorkshopItems: async (_instanceId, ticketId) => {
+      const requested = tickets.get(ticketId);
+      assert.ok(requested, "Deployment requires this request's native preparation ticket");
+      tickets.delete(ticketId);
       for (const id of requested) {
         installed.add(id);
         if (id !== options.incompleteId) deployed.add(id);
       }
       return { items: requested.map(item_id => ({ item_id, expected_path_exists: options.incompleteId !== item_id })) };
     },
+    discardSteamWorkshopPreparation: async (_instanceId, ticketId) => { tickets.delete(ticketId); },
     readManualModInventory: async () => ({ items: moduleId === "terraria"
       ? [...deployed].map(id => ({ name: id, path: `fixture/tmodloader/steamapps/workshop/content/1281930/${id}`,
         item_type: "directory", inferred_id: id, ...(id === options.unresolvedId ? {} : { tmodloader_mod_name: tmodNames[id] }) }))
@@ -90,6 +100,7 @@ function harness(moduleId, settings, installedIds = [], options = {}) {
     setWorkshopInstallationResult() {}, setResolvedLookupMap() {}, setManualInventory() {}, setManualInventoryError() {},
     setRetainedWorkshopIds() {}, setPzSnapshot() {}, setSelectedWorkshopIds() {}, setScanNonce() {}
   };
+  context.executeWorkshopDownload = loadWorkshopDownloadExecution(context);
   vm.runInNewContext(script, context, { filename });
   return {
     calls,

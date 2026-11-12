@@ -46,6 +46,17 @@ test("Tauri installs the Rust legal inventory as an explicit resource", () => {
   );
 });
 
+test("the RAR decoder retains its custom terms separately from permissive fixture licenses", () => {
+  const output = fs.readFileSync(outputPath, "utf8");
+  const unrar = output.split("Package / 软件包: unrar-rs@0.15.3\n")[1]?.split("\n---")[0];
+  assert.ok(unrar, "The locked RAR decoder must be present in the inventory.");
+  assert.match(unrar, /Declared license \/ 声明许可证: license-file: LICENSE \(custom terms\)/u);
+  assert.match(unrar, /Apache-2\.0 with the additional UnRAR restriction/u);
+  assert.match(output, /cannot be\nused to develop RAR \(WinRAR\) compatible archiver/u);
+  assert.match(output, /A binary distribution must include this file\./u);
+  assert.match(output, /Copyright \(c\) 2018 Jack O'Connor/u);
+});
+
 test("the public snapshot retains Rust license verification inputs", () => {
   const snapshotPolicy = fs.readFileSync(
     path.join(root, "scripts", "export_public_snapshot.py"),
@@ -55,7 +66,8 @@ test("the public snapshot retains Rust license verification inputs", () => {
   for (const requiredPath of [
     "apps/desktop/src-tauri/THIRD_PARTY_LICENSES-RUST.txt",
     "scripts/generate_rust_third_party_licenses.py",
-    "scripts/rust_license_policy.py"
+    "scripts/rust_license_policy.py",
+    "scripts/third_party_license_sources/rust/blake2-simd-47714dc3-LICENSE"
   ]) {
     assert.ok(snapshotPolicy.includes(`"${requiredPath}"`), requiredPath);
   }

@@ -360,8 +360,10 @@ export function ConfigurationField(props: ConfigurationFieldProps) {
       disabled={disabled} onChange={(event) => patchValue(event.target.checked)} />;
   } else if (props.field.control === "select") {
     const optionIndex = findEnumOptionIndex(props.field, props.value);
+    const hasUnknownValue = optionIndex < 0 && props.value !== undefined && props.value !== null;
     control = <select {...accessibility} className="settings-schema-input settings-schema-select"
-      value={props.field.preserveNativeWhenUnset && optionIndex < 0 ? "" : String(Math.max(optionIndex, 0))}
+      value={hasUnknownValue ? "-1"
+        : props.field.preserveNativeWhenUnset && optionIndex < 0 ? "" : String(Math.max(optionIndex, 0))}
       disabled={disabled}
       onChange={(event) => {
         if (props.field.preserveNativeWhenUnset && event.target.value === "") {
@@ -374,6 +376,7 @@ export function ConfigurationField(props: ConfigurationFieldProps) {
       {props.field.preserveNativeWhenUnset ? <option value="">
         {props.copy.preserveNativeWhenUnset ?? "Keep native setting (current value not read)"}
       </option> : null}
+      {hasUnknownValue ? <option value="-1" disabled>{String(props.value)}</option> : null}
       {props.field.enumOptions?.map((option, index) => <option key={`${props.field.key}-${index}`} value={index}>{option.label}</option>)}
     </select>;
   } else if (usesSecretInput) {

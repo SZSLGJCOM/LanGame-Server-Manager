@@ -174,6 +174,8 @@ mod commands_mod_staging;
 mod commands_mods;
 #[path = "commands_nexus_mods.rs"]
 pub(crate) mod commands_nexus_mods;
+#[path = "commands_nexus_website.rs"]
+pub(crate) mod commands_nexus_website;
 #[path = "commands_steam_app_account.rs"]
 pub(crate) mod commands_steam_app_account;
 #[path = "commands_workshop_collection_removal.rs"]
@@ -182,6 +184,8 @@ pub(crate) mod commands_workshop_collection_removal;
 mod dst_import_mods;
 #[path = "commands_mod_curseforge_reference.rs"]
 pub(crate) mod mod_curseforge_reference;
+#[path = "commands_mod_presentations.rs"]
+pub(crate) mod mod_presentations;
 #[path = "nexus_mods.rs"]
 pub(super) mod nexus_mods;
 pub use commands_workshop_collection_removal::remove_instance_workshop_collection;
@@ -301,6 +305,7 @@ use commands_dst_import::*;
 use commands_dst_import_validation::*;
 pub use commands_install_progress::cancel_installation_job;
 pub use commands_instance_isolation::read_instance_isolation;
+pub(crate) use commands_mods::workshop_preparation;
 #[path = "commands_astroneer_saves.rs"]
 pub mod commands_astroneer_saves;
 #[path = "commands_dragonwilds_world.rs"]
@@ -843,7 +848,7 @@ pub struct DstWorldImportResult {
     pub copied_total_bytes: u64,
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ManualModStageItem {
     pub source_path: String,
     pub target_path: String,
@@ -853,7 +858,7 @@ pub struct ManualModStageItem {
     pub total_bytes: u64,
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ManualModStageResult {
     pub instance_id: String,
     pub module_id: String,
@@ -869,6 +874,8 @@ pub struct ManualModStageResult {
 #[derive(Debug, Clone, Serialize)]
 pub struct ManualModInventoryItem {
     pub name: String,
+    pub display_name: Option<String>,
+    pub icon_url: Option<String>,
     pub path: String,
     pub item_type: String,
     pub inferred_id: Option<String>,
@@ -914,7 +921,15 @@ pub struct ManualModReferenceItem {
     pub status: String,
     pub resolved_id: Option<String>,
     pub title: Option<String>,
+    pub icon_url: Option<String>,
     pub message: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct ManualModPresentation {
+    pub id: String,
+    pub title: Option<String>,
+    pub icon_url: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -954,6 +969,10 @@ struct ThunderstoreCommunityListing {
 
 #[derive(Debug, Deserialize)]
 struct ThunderstorePackageVersion {
+    #[serde(default)]
+    name: Option<String>,
+    #[serde(default)]
+    icon: Option<String>,
     version_number: String,
     download_url: String,
     dependencies: Vec<String>,
@@ -1008,6 +1027,8 @@ struct DownloadedManualModSource {
 
 #[derive(Debug, Clone)]
 struct OnlineModIdentity {
+    display_name: Option<String>,
+    icon_url: Option<String>,
     thunderstore_intent: Option<commands_mod_staging::ThunderstoreInstallIntent>,
     provider: String,
     project: String,
@@ -1909,6 +1930,7 @@ pub async fn download_steam_workshop_items<R: tauri::Runtime>(
     ids: Vec<String>,
     missing_only: Option<bool>,
     locale: Option<String>,
+    attempt_token: Option<String>,
 ) -> Result<SteamWorkshopDownloadResult, String> {
     let operation = app_handle
         .state::<DesktopState>()
@@ -1921,6 +1943,7 @@ pub async fn download_steam_workshop_items<R: tauri::Runtime>(
             missing_only.unwrap_or(false),
             app_network::SourcePreference::from_locale(locale.as_deref()),
             None,
+            attempt_token,
         )
         .await
     })
@@ -1978,12 +2001,52 @@ pub async fn resolve_manual_mod_references(
     state: tauri::State<'_, DesktopState>,
     instance_id: String,
     references: Vec<String>,
+    presentations: Option<Vec<ManualModPresentation>>,
 ) -> Result<ManualModReferenceResolveResult, String> {
-    let _operation = state.begin_storage_context_operation("Mod reference resolution")?;
+    let operation = state.begin_storage_context_operation("Mod reference resolution")?;
     let storage = state.bootstrap_storage()?;
     let reference_count = references.len();
-    let result =
+    let mut result =
         resolve_manual_mod_references_inner(&storage, instance_id.clone(), references).await;
+    if let Ok(resolved) = &mut result
+        && resolved.module_id == "arksurvivalascended"
+    {
+        let data_root = storage.paths.app_data_root.clone();
+        let ids = resolved.resolved_ids.clone();
+        let entries = presentations.unwrap_or_default();
+        let cached = spawn_blocking_storage_context_task(&operation, move || {
+            let entries: Vec<_> = entries
+                .into_iter()
+                .filter(|entry| ids.contains(&entry.id))
+                .collect();
+            if !entries.is_empty() {
+                mod_presentations::remember_curseforge_presentations(&data_root, &entries)?;
+            }
+            mod_presentations::read_curseforge_presentations(&data_root)
+        })
+        .await
+        .map_err(|error| error.to_string())
+        .and_then(|result| result);
+        match cached {
+            Ok(cached) => {
+                for item in &mut resolved.items {
+                    if let Some(presentation) =
+                        item.resolved_id.as_ref().and_then(|id| cached.get(id))
+                    {
+                        item.title.clone_from(&presentation.title);
+                        item.icon_url.clone_from(&presentation.icon_url);
+                    }
+                }
+            }
+            Err(error) => commands_runtime_supervision::append_desktop_app_log(
+                &storage,
+                "warning",
+                "mod.presentation.cache.failed",
+                &error,
+                json!({ "instance_id": instance_id }),
+            ),
+        }
+    }
     let failures = match &result {
         Err(error) => vec![error.as_str()],
         Ok(result) => result

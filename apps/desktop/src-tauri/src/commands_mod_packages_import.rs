@@ -146,6 +146,7 @@ pub(in crate::commands::commands_mod_staging) fn prepare_local_mod_ownership(
     target: &ResolvedManualModTarget,
     transaction: &ManualModTransactionPaths,
     metadata: &BTreeMap<String, Option<LocalImportMetadata>>,
+    presentation: Option<&ManualModImportPresentation>,
 ) -> Result<(), String> {
     management::recover_management(target)?;
     let mut manifest = read_manifest(&target.target_path.join(ONLINE_MOD_MANIFEST))?;
@@ -234,11 +235,19 @@ pub(in crate::commands::commands_mod_staging) fn prepare_local_mod_ownership(
         files.retain(|relative, hash| current.get(relative) == Some(hash));
         files.extend(incoming);
         let evidence = metadata.get(&name.to_lowercase()).and_then(Option::as_ref);
+        let display_name = presentation
+            .and_then(|value| value.display_name.clone())
+            .or_else(|| previous.and_then(|package| package.display_name.clone()));
+        let icon_url = presentation
+            .and_then(|value| value.icon_url.clone())
+            .or_else(|| previous.and_then(|package| package.icon_url.clone()));
         let key = previous_key.unwrap_or_else(|| format!("local-{name}"));
         imported_keys.push(key.clone());
         manifest.packages.insert(
             key,
             InstalledPackage {
+                display_name,
+                icon_url,
                 thunderstore_intent: None,
                 routed_files: BTreeMap::new(),
                 target_name: name,

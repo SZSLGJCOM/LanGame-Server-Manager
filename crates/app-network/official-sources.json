@@ -22,6 +22,42 @@
       "evidence": ["https://ark.wiki.gg/wiki/File:The_Island_map_ASA.jpg"]
     },
     {
+      "id": "curseforge-asa-mod-icons",
+      "origins": ["https://83374.media.forgecdn.net"],
+      "pathPrefixes": ["/avatars/"],
+      "allowedQueryKeys": [],
+      "purposes": ["image"],
+      "purposePathSuffixes": {"image": [".png", ".jpg", ".jpeg", ".webp", ".gif"]},
+      "evidence": ["https://www.curseforge.com/ark-survival-ascended/mods/devkitlivemodtesting"]
+    },
+    {
+      "id": "thunderstore-mod-icons-ccdn",
+      "origins": ["https://ccdn.thunderstore.io"],
+      "pathPrefixes": ["/live/repository/icons/"],
+      "allowedQueryKeys": [],
+      "purposes": ["image"],
+      "purposePathSuffixes": {"image": [".png", ".jpg", ".jpeg", ".webp"]},
+      "evidence": ["https://thunderstore.io/api/experimental/package/ValheimModding/Jotunn/"]
+    },
+    {
+      "id": "thunderstore-mod-icons-gcdn",
+      "origins": ["https://gcdn.thunderstore.io"],
+      "pathPrefixes": ["/live/repository/icons/"],
+      "allowedQueryKeys": [],
+      "purposes": ["image"],
+      "purposePathSuffixes": {"image": [".png", ".jpg", ".jpeg", ".webp"]},
+      "evidence": ["https://thunderstore.io/c/lethal-company/p/MetalPipeSFX/ThunderstoreAPI/"]
+    },
+    {
+      "id": "nexus-mod-images",
+      "origins": ["https://staticdelivery.nexusmods.com"],
+      "pathPrefixes": ["/mods/"],
+      "allowedQueryKeys": [],
+      "purposes": ["image"],
+      "purposePathSuffixes": {"image": [".png", ".jpg", ".jpeg", ".webp", ".gif"]},
+      "evidence": ["https://www.nexusmods.com/skyrimspecialedition/mods/28401"]
+    },
+    {
       "id": "steam-store-images",
       "origins": ["https://shared.akamai.steamstatic.com", "https://shared.fastly.steamstatic.com", "https://shared.cdn.steamchina.queniuam.com"],
       "pathPrefixes": ["/store_item_assets/", "/steam/apps/"],

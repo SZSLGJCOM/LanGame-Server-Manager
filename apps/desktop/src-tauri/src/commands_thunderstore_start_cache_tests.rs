@@ -47,6 +47,8 @@ impl Fixture {
             path,
             label: project.into(),
             identity: OnlineModIdentity {
+                display_name: None,
+                icon_url: None,
                 provider: "thunderstore".into(),
                 project: project.into(),
                 historical_names: vec![project.into()],

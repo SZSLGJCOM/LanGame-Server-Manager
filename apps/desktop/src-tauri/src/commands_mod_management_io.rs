@@ -2,6 +2,8 @@
 //! reported failures roll back while retaining the journal if recovery is needed.
 use super::*;
 
+const MAX_MANAGEMENT_JOURNAL_BYTES: u64 = MAX_MANIFEST_BYTES * 2 + 65536;
+
 #[cfg(test)]
 thread_local! {
     static FAIL_NEXT_PUBLICATION: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
@@ -162,6 +164,10 @@ pub(super) struct ManagementTransaction {
     adopted: Option<InstalledPackage>,
     had_payload: bool,
     payload_files: BTreeMap<String, String>,
+    // The ownership record retains shipped bytes; only mutable Nexus
+    // configuration uses a current-byte snapshot for this operation.
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    protected_routed_files: BTreeMap<String, String>,
 }
 
 impl ManagementTransaction {
@@ -180,6 +186,7 @@ impl ManagementTransaction {
             adopted,
             had_payload: true,
             payload_files: BTreeMap::new(),
+            protected_routed_files: BTreeMap::new(),
         };
         transaction.validate()?;
         Ok(transaction)
@@ -204,18 +211,26 @@ impl ManagementTransaction {
         validate_component(&self.key)?;
         validate_component(&self.retained_name)?;
         validate_management_manifest(&self.original)?;
-        if self.action == "adopt" {
-            let adopted = self
-                .adopted
-                .as_ref()
-                .ok_or("Adoption journal has no ownership evidence")?;
+        if let Some(adopted) = &self.adopted {
             if self.key != format!("local-{}", adopted.target_name)
                 || self.original.packages.contains_key(&self.key)
                 || !adopted.enabled
+                || adopted.thunderstore_intent.is_some()
+                || !adopted.routed_files.is_empty()
+                || self.original.packages.values().any(|package| {
+                    package
+                        .target_name
+                        .eq_ignore_ascii_case(&adopted.target_name)
+                })
             {
                 return Err("Invalid adoption journal".into());
             }
-        } else if self.adopted.is_some() || !self.original.packages.contains_key(&self.key) {
+            // A first-action deletion has no package in its final manifest;
+            // validate its ownership evidence before cleanup can use it.
+            validate_management_manifest(&InstalledPackages {
+                packages: [(self.key.clone(), copy_package(adopted))].into(),
+            })?;
+        } else if self.action == "adopt" || !self.original.packages.contains_key(&self.key) {
             return Err("Invalid Mod management journal ownership".into());
         }
         validate_management_manifest(&self.desired())?;
@@ -224,6 +239,16 @@ impl ManagementTransaction {
         validate_management_manifest(&InstalledPackages {
             packages: [(self.key.clone(), payload_record)].into(),
         })?;
+        for (relative, hash) in &self.protected_routed_files {
+            if !protected_nexus_route(&self.key, relative)
+                || !self.package()?.routed_files.contains_key(relative)
+                || !routed::moves_with_package(&self.key, relative)
+                || hash.len() != 64
+                || !hash.bytes().all(|byte| byte.is_ascii_hexdigit())
+            {
+                return Err("Invalid protected Mod configuration snapshot".into());
+            }
+        }
         Ok(())
     }
 
@@ -449,12 +474,32 @@ pub(super) fn execute(
     serialized["had_payload"] = had_payload.into();
     serialized["payload_files"] =
         serde_json::to_value(payload_files).map_err(|error| error.to_string())?;
+    let mut protected_routed_files = BTreeMap::new();
+    for relative in transaction
+        .package()?
+        .routed_files
+        .keys()
+        .filter(|relative| {
+            protected_nexus_route(&transaction.key, relative)
+                && routed::moves_with_package(&transaction.key, relative)
+        })
+    {
+        let (source, _) = routed_locations(paths, transaction, relative)?;
+        let hash = fingerprint_tree(&source)?.remove("").ok_or_else(|| {
+            format!("Runtime Mod configuration {relative} is missing; files were preserved")
+        })?;
+        protected_routed_files.insert(relative.clone(), hash);
+    }
+    serialized["protected_routed_files"] =
+        serde_json::to_value(protected_routed_files).map_err(|error| error.to_string())?;
     let transaction: ManagementTransaction =
         serde_json::from_value(serialized).map_err(|error| error.to_string())?;
-    write_new_synced(
-        &paths.journal,
-        &serde_json::to_vec(&transaction).map_err(|error| error.to_string())?,
-    )?;
+    transaction.validate()?;
+    let bytes = serde_json::to_vec(&transaction).map_err(|error| error.to_string())?;
+    if bytes.len() as u64 > MAX_MANAGEMENT_JOURNAL_BYTES {
+        return Err("Mod recovery record exceeds its size limit; files were preserved".into());
+    }
+    write_new_synced(&paths.journal, &bytes)?;
     if let Err(error) = move_payload(paths, &transaction, false) {
         return match roll_back(paths, &transaction) {
             Ok(()) => Err(format!("{error}; the operation was rolled back")),
@@ -487,7 +532,7 @@ pub(super) fn recover(paths: &ManagementPaths) -> Result<(), String> {
     };
     if !metadata.is_file()
         || manual_mod_metadata_is_reparse(&metadata)
-        || metadata.len() > MAX_MANIFEST_BYTES * 2 + 65536
+        || metadata.len() > MAX_MANAGEMENT_JOURNAL_BYTES
     {
         return Err(
             "Unsafe or oversized Mod recovery record; existing files were preserved".into(),
@@ -496,7 +541,7 @@ pub(super) fn recover(paths: &ManagementPaths) -> Result<(), String> {
     let mut bytes = Vec::new();
     fs::File::open(&paths.journal)
         .and_then(|file| {
-            file.take(MAX_MANIFEST_BYTES * 2 + 65537)
+            file.take(MAX_MANAGEMENT_JOURNAL_BYTES + 1)
                 .read_to_end(&mut bytes)
         })
         .map_err(|error| error.to_string())?;
@@ -526,10 +571,15 @@ fn finish(
     let mut outcome = ManagementOutcome::default();
     if transaction.action == "delete" {
         for (relative, hash) in &transaction.package()?.routed_files {
-            if !routed::is_patcher(relative) {
+            if !routed::moves_with_package(&transaction.key, relative) {
                 continue;
             }
             let (_, retained) = routed_locations(paths, transaction, relative)?;
+            if nexus_routes::is_nexus_key(&transaction.key)
+                && nexus_routes::protected_route(&transaction.key, relative)
+            {
+                continue;
+            }
             if entry_exists(&retained)? && fingerprint_tree(&retained)?.get("") == Some(hash) {
                 fs::remove_file(&retained).map_err(|error| error.to_string())?;
                 outcome.removed_file_count += 1;
@@ -571,6 +621,20 @@ fn finish(
             outcome.preserved_path = Some(retained.to_string_lossy().into_owned());
             outcome.warnings.push("Configuration, modified, or unowned files were preserved outside the Mod loading directory".into());
         }
+        if nexus_routes::is_nexus_key(&transaction.key) {
+            let retained_root = paths
+                .root
+                .join("preserved")
+                .join(&transaction.retained_name);
+            let runtime_files = retained_root.join("runtime");
+            remove_empty_directories(&runtime_files)?;
+            if entry_exists(&runtime_files)? {
+                outcome.preserved_path = Some(retained_root.to_string_lossy().into_owned());
+                outcome.warnings.push(
+                    "Nexus Mod configuration was preserved outside the loading directories".into(),
+                );
+            }
+        }
     }
     fs::remove_file(&paths.journal).map_err(|error| {
         format!("Mod operation completed but its recovery record could not be cleared: {error}")
@@ -584,7 +648,7 @@ fn routed_locations(
     relative: &str,
 ) -> Result<(PathBuf, PathBuf), String> {
     let package = transaction.package()?;
-    let active = routed::runtime_root(&paths.target)?.join(relative);
+    let active = routed::package_runtime_root(&transaction.key, &paths.target)?.join(relative);
     let disabled = paths
         .root
         .join("disabled-routes")
@@ -615,9 +679,13 @@ fn move_routed_patchers(
     recovering: bool,
 ) -> Result<(), String> {
     for (relative, hash) in &transaction.package()?.routed_files {
-        if !routed::is_patcher(relative) {
+        if !routed::moves_with_package(&transaction.key, relative) {
             continue;
         }
+        let hash = transaction
+            .protected_routed_files
+            .get(relative)
+            .unwrap_or(hash);
         let (source, destination) = routed_locations(paths, transaction, relative)?;
         validate_manual_mod_existing_path_components(&source, false)?;
         validate_manual_mod_existing_path_components(&destination, false)?;
@@ -628,6 +696,7 @@ fn move_routed_patchers(
             && destination_exists
             && fingerprint_tree(&destination)?.get("") == Some(hash)
         {
+            nexus_routes::prune_route_parents(&transaction.key, &source, relative)?;
             continue;
         }
         if recovering && transaction.action == "delete" && !source_exists && !destination_exists {
@@ -635,7 +704,7 @@ fn move_routed_patchers(
         }
         if destination_exists || fingerprint_tree(&source)?.get("") != Some(hash) {
             return Err(format!(
-                "Patcher {relative} is missing, modified, or conflicts with another file; files were preserved"
+                "Runtime Mod file {relative} is missing, modified, or conflicts with another file; files were preserved"
             ));
         }
         fs::create_dir_all(
@@ -646,6 +715,7 @@ fn move_routed_patchers(
         .map_err(|error| error.to_string())?;
         validate_manual_mod_existing_path_components(&destination, false)?;
         fs::rename(&source, &destination).map_err(|error| error.to_string())?;
+        nexus_routes::prune_route_parents(&transaction.key, &source, relative)?;
     }
     Ok(())
 }
@@ -658,9 +728,13 @@ fn rollback_routed_patchers(
         return Ok(());
     }
     for (relative, hash) in transaction.package()?.routed_files.iter().rev() {
-        if !routed::is_patcher(relative) {
+        if !routed::moves_with_package(&transaction.key, relative) {
             continue;
         }
+        let hash = transaction
+            .protected_routed_files
+            .get(relative)
+            .unwrap_or(hash);
         let (source, destination) = routed_locations(paths, transaction, relative)?;
         // An untouched source proves this route was never moved. A conflicting
         // destination belongs to someone else and must not block other restores.

@@ -6,6 +6,9 @@ use std::path::{Path, PathBuf};
 mod fixture;
 use fixture::*;
 
+#[path = "dragonwilds_native_world_conversion_tests.rs"]
+mod native_conversion;
+
 #[tokio::test]
 async fn public_write_backs_up_original_and_reads_back_without_losing_unknown_data() {
     let fixture = Fixture::new(true).await;
@@ -191,7 +194,7 @@ async fn wrong_world_and_stale_revision_fail_before_backup_or_write() {
     let fixture = Fixture::new(true).await;
     let original = fs::read(&fixture.world).unwrap();
     let mut input = fixture.input(DragonwildsWorldMode::Custom, &[(BUILDING, 1.5)]);
-    input.world_file = "Different.sav".into();
+    input.world_file = Some("Different.sav".into());
     assert!(
         write_dragonwilds_world_settings(&fixture.paths, input)
             .await
@@ -600,3 +603,6 @@ async fn native_public_write_produces_a_server_reload_candidate_with_verified_ba
     assert_eq!(fs::read(&output).unwrap(), actual);
     assert_eq!(fs::read(&source).unwrap(), golden);
 }
+
+#[path = "dragonwilds_world_settings_pending_tests.rs"]
+mod pending_tests;

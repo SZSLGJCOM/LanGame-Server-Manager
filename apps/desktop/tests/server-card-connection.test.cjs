@@ -121,3 +121,77 @@ test("IPv6 join addresses use brackets while retaining the saved port", () => {
       "[2001:db8::1]:28000");
   }
 });
+
+
+const astroneerDetails = (settings, ports = [{ name: "game", protocol: "udp", port: 8777 }]) => details({
+  summary: { id: "astroneer-fixture", name: "Astroneer room", module_id: "astroneer", bind_ip: "0.0.0.0" },
+  settings_json: typeof settings === "string" ? settings : JSON.stringify(settings), ports
+});
+const astroneerCandidates = [
+  { address: "192.168.1.40", kind: "lan" },
+  { address: "8.8.4.4", kind: "public" },
+  { address: "26.10.20.30", kind: "overlay", family_name: "Radmin VPN", adapter_name: "Radmin VPN" }
+];
+
+test("ASTRONEER shares only the advertised Radmin address across card, copy and invitation", () => {
+  const value = astroneerDetails({ connection_mode: "radmin", public_ip: "26.10.20.30" }, [
+    { name: "console", protocol: "tcp", port: 1234 }, { name: "game", protocol: "udp", port: 18777 }
+  ]);
+  const endpoints = buildShareEndpoints(value, astroneerCandidates, "en-US", t);
+  assert.deepEqual(endpoints, [{ address: "26.10.20.30", endpoint: "26.10.20.30:18777", kind: "overlay", label: "Radmin VPN" }]);
+  for (const preference of [null, "192.168.1.40", "8.8.4.4"]) {
+    assert.equal(resolve(value, astroneerCandidates, preference).endpoint, "26.10.20.30:18777");
+  }
+  assert.equal(buildJoinEndpoint(value, astroneerCandidates, "en-US", t), "26.10.20.30:18777");
+  const invitation = buildInviteText(value, [], "en-US", t, astroneerCandidates);
+  assert.match(invitation, /26\.10\.20\.30:18777/);
+  assert.match(invitation, /same Radmin VPN network/);
+  assert.doesNotMatch(invitation, /192\.168\.1\.40|8\.8\.4\.4|:1234/);
+  assert.match(buildInviteText(value, [], "en-US", t, []), /same Radmin VPN network/);
+  assert.equal(buildShareEndpoints(value, [], "en-US", t)[0].label, "Radmin VPN");
+});
+
+test("ASTRONEER preserves an explicit legacy or forwarded endpoint absent from local adapters", () => {
+  for (const settings of [{ public_ip: "8.8.4.4" }, { connection_mode: "manual", public_ip: "8.8.4.4" }]) {
+    const value = astroneerDetails(settings);
+    assert.equal(resolve(value, [], "26.10.20.30").endpoint, "8.8.4.4:8777");
+    assert.equal(buildShareEndpoints(value, [], "en-US", t)[0].label, "Advertised address");
+  }
+  const updated = astroneerDetails({ connection_mode: "public", public_ip: "8.8.4.4" });
+  assert.equal(resolve(updated, astroneerCandidates, "26.10.20.30").endpoint, "8.8.4.4:8777");
+});
+
+test("ASTRONEER has no adapter fallback when its advertised address is missing or invalid", () => {
+  for (const settings of ["{}", "[]", "invalid", ...["", "0.0.0.0", "127.0.0.1", "26.10.20.30:8777", "260.1.2.3"]
+    .map((public_ip) => JSON.stringify({ public_ip }))]) {
+    const value = astroneerDetails(settings);
+    assert.deepEqual(buildShareEndpoints(value, astroneerCandidates, "en-US", t), []);
+    assert.equal(resolve(value, astroneerCandidates, "26.10.20.30"), null);
+    assert.equal(buildJoinEndpoint(value, astroneerCandidates, "en-US", t), "");
+    const invitation = buildInviteText(value, [], "en-US", t, astroneerCandidates);
+    assert.match(invitation, /Select the player join address/);
+    assert.doesNotMatch(invitation, /26\.10\.20\.30|8\.8\.4\.4|192\.168\.1\.40|:8777/);
+  }
+});
+
+test("ASTRONEER never substitutes its management port or an invalid game port", () => {
+  const invalidPorts = [[], [{ name: "console", protocol: "tcp", port: 1234 }],
+    [{ name: "game", protocol: "tcp", port: 8777 }],
+    ...[0, -1, 65536, 8777.5].map((port) => [{ name: "game", protocol: "udp", port }])];
+  for (const ports of invalidPorts) {
+    const value = astroneerDetails({ connection_mode: "radmin", public_ip: "26.10.20.30" }, ports);
+    assert.deepEqual(buildShareEndpoints(value, astroneerCandidates, "en-US", t), []);
+    assert.equal(resolve(value, astroneerCandidates), null);
+    assert.equal(buildJoinEndpoint(value, astroneerCandidates, "en-US", t), "");
+  }
+});
+
+
+test("ASTRONEER shares a persisted LAN or VPN endpoint without replacing it with another adapter", () => {
+  for (const address of ["192.168.1.40", "10.20.30.40", "100.64.1.2"]) {
+    const value = astroneerDetails({ connection_mode: "manual", public_ip: address });
+    assert.equal(buildShareEndpoints(value, astroneerCandidates, "en-US", t)[0].endpoint, `${address}:8777`);
+    assert.equal(resolve(value, astroneerCandidates, "26.10.20.30").endpoint, `${address}:8777`);
+    assert.match(buildInviteText(value, [], "en-US", t, astroneerCandidates), new RegExp(address.replaceAll(".", "\\.")));
+  }
+});

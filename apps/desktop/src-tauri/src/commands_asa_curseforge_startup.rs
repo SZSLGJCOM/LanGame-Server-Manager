@@ -80,6 +80,51 @@ impl Target {
     pub(super) fn validation_timeout(&self, message: String) -> String {
         curseforge_failure::validation_error(message, &self.log, false)
     }
+
+    fn observe(
+        &mut self,
+        mut matches: impl FnMut(u32, &ProcessIdentity) -> Result<bool, String>,
+    ) -> Result<(), String> {
+        let identity_failure = match matches(self.pid, &self.identity) {
+            Ok(true) => None,
+            Ok(false) => Some((
+                curseforge_failure::validation_error(
+                    "ASA process exited or changed identity before CurseForge validation.".into(),
+                    &self.log,
+                    true,
+                ),
+                true,
+            )),
+            Err(error) => Some((error, false)),
+        };
+        let reading = self.evidence.read(&self.log);
+        if let Some((fallback, exited)) = identity_failure {
+            // An exiting process can deny a new identity handle after writing
+            // its terminal native error. Only that current-launch failure may
+            // refine the diagnostic; logs cannot establish identity or exit.
+            let error = self
+                .evidence
+                .terminal_failure()
+                .map(|error| curseforge_failure::with_native_log(error, &self.log))
+                .unwrap_or(fallback);
+            return Err(self.failed_initialization(error, exited));
+        }
+        let matches_after = matches(self.pid, &self.identity);
+        if let Err(error) = reading {
+            let error = curseforge_failure::with_native_log(error, &self.log);
+            // Preserve an observed native failure if the subsequent identity
+            // inspection fails. Unknown identity does not prove process exit.
+            return Err(self.failed_initialization(error, matches!(matches_after, Ok(false))));
+        }
+        if !matches_after? {
+            return Err(curseforge_failure::validation_error(
+                "ASA process exited or changed identity during CurseForge validation.".into(),
+                &self.log,
+                true,
+            ));
+        }
+        Ok(())
+    }
 }
 
 /// File reads belong to a blocking worker, while each OS identity is checked
@@ -92,41 +137,17 @@ pub(super) async fn observe(targets: Vec<(usize, Target)>) -> Result<Vec<(usize,
     tokio::task::spawn_blocking(move || {
         let mut targets = targets;
         for (_, target) in &mut targets {
-            let matches = || {
-                app_runtime::process_matches_identity(target.pid, &target.identity)
+            target.observe(|pid, identity| {
+                app_runtime::process_matches_identity(pid, identity)
                     .map_err(|error| error.to_string())
-            };
-            if !matches()? {
-                let exited = curseforge_failure::validation_error(
-                    "ASA process exited or changed identity before CurseForge validation.".into(),
-                    &target.log,
-                    true,
-                );
-                // A stopped child may have emitted a terminal query failure
-                // since the last poll. Reading can refine failure diagnostics
-                // only; it never grants readiness to an exited/reused PID.
-                let error = target
-                    .evidence
-                    .read(&target.log)
-                    .err()
-                    .map(|error| curseforge_failure::with_native_log(error, &target.log))
-                    .unwrap_or(exited);
-                return Err(target.failed_initialization(error, true));
-            }
-            if let Err(error) = target.evidence.read(&target.log) {
-                let error = curseforge_failure::with_native_log(error, &target.log);
-                return Err(target.failed_initialization(error, !matches()?));
-            }
-            if !matches()? {
-                return Err(curseforge_failure::validation_error(
-                    "ASA process exited or changed identity during CurseForge validation.".into(),
-                    &target.log,
-                    true,
-                ));
-            }
+            })?;
         }
         Ok(targets)
     })
     .await
     .map_err(|error| format!("ASA CurseForge evidence worker failed: {error}"))?
 }
+
+#[cfg(test)]
+#[path = "commands_asa_curseforge_startup_tests.rs"]
+mod tests;

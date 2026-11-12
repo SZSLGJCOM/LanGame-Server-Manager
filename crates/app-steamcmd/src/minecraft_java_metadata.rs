@@ -18,6 +18,15 @@ pub(super) async fn fetch_java_package(
     required_major: u16,
     deadline: InstallDeadline,
 ) -> Result<JavaPackage, SteamCmdError> {
+    #[cfg(any(test, feature = "test-support"))]
+    if let Ok((link, checksum, size)) = super::PACKAGE_FIXTURE.try_with(Clone::clone) {
+        deadline.check_cancelled()?;
+        return Ok(JavaPackage {
+            link,
+            checksum,
+            size,
+        });
+    }
     // Adoptium's binary API redirects to the same GitHub asset; it is not an
     // independent binary mirror. Only release discovery has a second origin.
     // The fallback may expose a newer GA patch while Adoptium's index catches up.

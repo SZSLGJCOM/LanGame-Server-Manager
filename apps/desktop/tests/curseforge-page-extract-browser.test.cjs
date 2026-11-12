@@ -6,6 +6,8 @@ const { runBrowserFixture } = require("./helpers/runtime-browser-process.cjs");
 
 const extractor = fs.readFileSync(path.join(__dirname, "../src-tauri/src/curseforge_page_extract.js"), "utf8");
 const projectUrl = "https://www.curseforge.com/ark-survival-ascended/mods/devkitlivemodtesting";
+const iconUrl = "https://83374.media.forgecdn.net/avatars/thumbnails/1949/338/256/256/639208701457408935.png";
+const withIcon = (html, url = iconUrl) => html.replace("</head>", '<meta property="og:image" content="' + url + '"></head>');
 const details = (id) => [
   "<section><h3>Details</h3><dl><dt>Downloads</dt><dd>485</dd>",
   "<dt>Created</dt><dd><time>1 year ago</time></dd><dt>Updated</dt><dd><time>1 year ago</time></dd>",
@@ -18,6 +20,14 @@ const page = (body, canonical = projectUrl, title = "DevKitLiveModTesting - ARK 
   "</head><body><main><h1>DevKitLiveModTesting</h1>", body, "</main></body></html>",
 ].join("");
 const samples = [
+  { name: "project avatar", html: withIcon(page(details("1346144"))) },
+  { name: "avatar ignores unrelated page images", html: withIcon(page(details("1346144") + '<aside><img src="https://83374.media.forgecdn.net/avatars/other.png"></aside>')) },
+  { name: "missing avatar", html: page(details("1346144") + '<aside><img src="' + iconUrl + '"></aside>') },
+  { name: "untrusted avatar", html: withIcon(page(details("1346144")), "https://evil.example/avatar.png") },
+  { name: "avatar with secret query", html: withIcon(page(details("1346144")), iconUrl + "?token=synthetic-test-only") },
+  { name: "avatar with credentials", html: withIcon(page(details("1346144")), iconUrl.replace("https://", "https://user:fixture@")) },
+  { name: "download is not avatar", html: withIcon(page(details("1346144")), "https://83374.media.forgecdn.net/files/1234/56/package.zip") },
+  { name: "conflicting social avatars", html: withIcon(withIcon(page(details("1346144"))), "https://83374.media.forgecdn.net/avatars/other.png") },
   { name: "public project details", html: page(details("1346144") + [
     '<article class="project-description"><p>File 6614383 for mod 1346144, game 83374.</p>',
     "<dl><dt>Created</dt><dd>today</dd><dt>Updated</dt><dd>today</dd><dt>Project ID</dt><dd>999999</dd></dl></article>",
@@ -100,6 +110,15 @@ test("official project metadata extraction uses real DOM and rejects ambiguous i
     response.writeHead(200, { "Content-Type": "text/html; charset=utf-8" }).end(fixtureHtml());
   } });
   const results = new Map(report.results.map(({ name, result }) => [name, result]));
+  for (const name of ["project avatar", "avatar ignores unrelated page images"]) {
+    assert.equal(results.get(name).state, "ready");
+    assert.equal(results.get(name).iconUrl, iconUrl);
+  }
+  for (const name of ["missing avatar", "untrusted avatar", "avatar with secret query", "avatar with credentials", "download is not avatar", "conflicting social avatars"]) {
+    assert.equal(results.get(name).state, "ready", name);
+    assert.equal(results.get(name).projectId, "1346144", name);
+    assert.equal(results.get(name).iconUrl, null, name);
+  }
   for (const name of ["public project details", "file page keeps project identity", "query tokens stay private",
     "definition groups", "duplicate responsive metadata"]) {
     assert.equal(results.get(name).state, "ready", name);
@@ -126,9 +145,9 @@ test("official project metadata extraction uses real DOM and rejects ambiguous i
   assert.equal(report.hydration.after.projectId, "1346144");
   assert.equal(report.results.length, samples.length);
   for (const { result } of report.results) {
-    assert.deepEqual(Object.keys(result).sort(), ["canonicalUrl", "projectId", "state", "title", "url"]);
+    assert.deepEqual(Object.keys(result).sort(), ["canonicalUrl", "iconUrl", "projectId", "state", "title", "url"]);
     assert.ok(JSON.stringify(result).length < 5000);
-    assert.doesNotMatch(JSON.stringify(result), /synthetic-secret|cf-turnstile-response|<html>/);
+    assert.doesNotMatch(JSON.stringify(result), /synthetic-secret|synthetic-test-only|user:fixture@|cf-turnstile-response|<html>/);
   }
   assert.deepEqual(report.browser_errors, []);
   assert.equal(report.browser_exited, true);

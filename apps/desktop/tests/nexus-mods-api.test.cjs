@@ -23,10 +23,76 @@ test("every Nexus operation refuses LAN before sending a key, reference or reque
   const api = load(async () => { calls++; }, false);
   for (const operation of [() => api.readNexusAccountStatus(), () => api.storeNexusApiKey("synthetic-key"), () => api.clearNexusApiKey(),
     () => api.reviewNexusModReferences("instance", ["nxm://game/mods/123/files/456?key=private"]),
-    () => api.installNexusModFiles("instance", [{ reference: "123", file_id: "456" }])]) {
+    () => api.installNexusModFiles("instance", [{ reference: "123", file_id: "456" }]),
+    () => api.readNexusWebsiteAuthState(),
+    () => api.requestNexusCommand("open_nexus_login_host", { bounds: null }),
+    () => api.requestNexusCommand("update_nexus_login_host", { sessionId: "fixture-login", bounds: null }),
+    () => api.requestNexusCommand("close_nexus_login_host", { sessionId: "fixture-login" })]) {
     await assert.rejects(operation(), (error) => error.code === "nexus_local_desktop_required");
   }
   assert.equal(calls, 0);
+});
+
+test("website commands need only the local desktop and preserve safe website errors", async () => {
+  let received;
+  const local = load(async (command, args) => { received = { command, args }; return "website-session"; });
+  assert.equal(await local.requestNexusCommand("open_nexus_website_host"), "website-session");
+  assert.equal(received.command, "open_nexus_website_host");
+  assert.equal(received.args, undefined, "Background sessions have no presentation bounds");
+  let networkCalls = 0;
+  const lan = load(async () => { networkCalls++; }, false);
+  await assert.rejects(lan.requestNexusCommand("install_nexus_website_mod", { reference: "https://www.nexusmods.com/7daystodie/mods/123" }),
+    (error) => error.code === "nexus_local_desktop_required");
+  assert.equal(networkCalls, 0);
+  for (const code of ["nexus_browser_cancelled", "nexus_browser_page_unavailable", "nexus_format_unsupported"]) {
+    const failure = load(async () => { throw JSON.stringify({ code, message: "synthetic-private-download" }); });
+    await assert.rejects(failure.requestNexusCommand("install_nexus_website_mod"),
+      (error) => error.code === code && !String(error).includes("synthetic-private-download"));
+  }
+});
+test("website authentication reads only the native observation enum without opening a page", async () => {
+  for (const state of ["unknown", "signed_out", "signed_in"]) {
+    const calls = [];
+    const api = load(async (command, args) => { calls.push({ command, args }); return state; });
+    assert.equal(await api.readNexusWebsiteAuthState(), state);
+    assert.deepEqual(calls, [{ command: "read_nexus_website_auth_state", args: undefined }]);
+    assert.equal(api.canUseNexusApi(), false);
+  }
+  for (const invalid of [undefined, true, "logged_in", { state: "signed_in" }]) {
+    await assert.rejects(load(async () => invalid).readNexusWebsiteAuthState(), (error) => error.code === "nexus_invalid_response");
+  }
+});
+test("background download blockers retain their cause without exposing website messages", async () => {
+  for (const [code, zh, en] of [
+    ["nexus_website_login_required", /要求登录/, /requires sign-in/],
+    ["nexus_website_verification_required", /网站验证未完成/, /website verification did not finish/],
+    ["nexus_file_selection_required", /无法唯一确定/, /unambiguously/],
+    ["nexus_website_action_required", /人工操作/, /manual action/],
+    ["nexus_website_controls_unavailable", /下载控件/, /Download controls/],
+    ["nexus_website_file_quarantined", /被 Nexus 隔离/, /Nexus has quarantined this file/],
+  ]) {
+    const api = load(async () => { throw JSON.stringify({ code, message: "https://cf-files.nexusmods.com/private.zip?token=fixture-client-secret" }); });
+    const filename = path.resolve(__dirname, "../src/views/servers/nexus-mods-messages.ts"), module = { exports: {} };
+    vm.runInNewContext(transpileTypeScript(fs.readFileSync(filename, "utf8"), filename), { module, exports: module.exports,
+      require(name) { assert.equal(name, "../../nexus-mods-api"); return api; } });
+    await assert.rejects(api.requestNexusCommand("install_nexus_website_mod"), (error) => {
+      assert.equal(error.code, code);
+      assert.equal(error.safeMessage, undefined);
+      for (const [locale, reason] of [["zh-CN", zh], ["en", en]]) {
+        const text = module.exports.nexusErrorText(locale, error);
+        assert.match(text, reason);
+        assert.match(text, code === "nexus_website_file_quarantined"
+          ? locale === "zh-CN" ? /暂时无法下载/ : /cannot be downloaded right now/
+          : locale === "zh-CN" ? /未完成/ : /did not complete/);
+        assert.doesNotMatch(text, /fixture-client-secret|cf-files|token=|API Key/);
+        if (code === "nexus_website_login_required") {
+          assert.match(text, locale === "zh-CN" ? /商店.*Nexus 登录.*应用内.*关闭登录页.*重试/ : /Nexus sign-in in Store.*within LanGame.*close the page.*retry/);
+          assert.doesNotMatch(text, /default browser|external browser|系统浏览器|已登录/);
+        }
+      }
+      return true;
+    });
+  }
 });
 test("Nexus errors expose only allowlisted codes, never private keys or signed links", async () => {
   for (const rejection of ["synthetic-private-key", JSON.stringify({ code: "unknown", message: "nxm://private?key=secret" }),
@@ -43,6 +109,19 @@ test("explicitly safe staging errors retain actionable file-conflict context", a
   const api = load(async () => { throw JSON.stringify({ code: "nexus_installation_failed", message }); });
   await assert.rejects(api.installNexusModFiles("instance", [{ reference: "123", file_id: "42" }]),
     (error) => error.code === "nexus_installation_failed" && error.safeMessage === message && error.message === "nexus_installation_failed");
+});
+test("website preparation errors retain the local failure reason", async () => {
+  const message = "Install the server files before staging local mods";
+  const api = load(async () => { throw JSON.stringify({ code: "nexus_preparation_failed", message }); });
+  await assert.rejects(api.requestNexusCommand("install_nexus_website_mod"),
+    (error) => error.code === "nexus_preparation_failed" && error.safeMessage === message);
+});
+test("a missing native command reports an outdated desktop host", async () => {
+  for (const message of ["Command open_nexus_website_host not found", "unknown LanGame command: open_nexus_website_host"]) {
+    const api = load(async () => { throw message; });
+    await assert.rejects(api.requestNexusCommand("open_nexus_website_host"),
+      (error) => error.code === "nexus_desktop_update_required");
+  }
 });
 test("Nexus review validates the reference-index permutation and every selectable file", async () => {
   const file = { file_id: "42", name: "Server", file_name: "server.zip", version: "1", category: "MAIN", size_bytes: 12,

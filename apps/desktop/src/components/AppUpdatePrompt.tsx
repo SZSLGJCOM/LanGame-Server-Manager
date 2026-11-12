@@ -21,7 +21,6 @@ export function AppUpdatePrompt({ enabled, state, retryRequest, onCheck, onInsta
   const [openVersion, setOpenVersion] = useState<string | null>(null);
   const [downloadError, setDownloadError] = useState<string | null>(null);
   const [openingDownload, setOpeningDownload] = useState(false);
-  const seenVersions = useRef<string[]>([]);
   const lastRetryRequest = useRef(retryRequest);
   const submitted = useRef(false);
   const downloadRequest = useRef(0);
@@ -37,13 +36,8 @@ export function AppUpdatePrompt({ enabled, state, retryRequest, onCheck, onInsta
   const percent = state.contentLength || state.downloadPercent === 100 ? state.downloadPercent : undefined;
 
   useEffect(() => {
-    if (!actionable) { setOpenVersion(null); return; }
-    if (state.status === "available" && version && !seenVersions.current.includes(version)) {
-      // Session-only, bounded memory: repeated background checks do not reopen a dismissed release.
-      seenVersions.current = [...seenVersions.current.slice(-31), version];
-      setOpenVersion(version);
-    }
-  }, [actionable, state.status, version]);
+    setOpenVersion(null);
+  }, [actionable, version]);
 
   useEffect(() => {
     if (retryRequest === lastRetryRequest.current) return;
@@ -104,8 +98,16 @@ export function AppUpdatePrompt({ enabled, state, retryRequest, onCheck, onInsta
     }
   }
 
-  if (!open) return null;
-  return <dialog ref={dialog} className={`app-update-panel is-${state.status}`} aria-labelledby={titleId}
+  if (!actionable) return null;
+  const label = `${copy[state.status]} · ${version}${state.status === "downloading" && percent !== undefined ? ` · ${percent}%` : ""}`;
+  return <>
+    <button type="button" className={`app-update-trigger is-${state.status}`} data-no-window-drag="true"
+      aria-label={label} title={label} aria-haspopup="dialog" aria-expanded={open}
+      onClick={() => setOpenVersion(version)}>
+      <ShellIcon name="download" className="shell-small-icon" />
+      <span className="app-update-trigger-dot" aria-hidden="true" />
+    </button>
+    {open ? <dialog ref={dialog} className={`app-update-panel is-${state.status}`} aria-labelledby={titleId}
     aria-describedby={state.status === "available" ? detailId : undefined} data-no-window-drag="true"
     onCancel={(event) => { event.preventDefault(); close(); }}
     onKeyDown={(event) => { if (dialog.current) containAssistantFocus(event, dialog.current, document.activeElement); }}>
@@ -137,5 +139,6 @@ export function AppUpdatePrompt({ enabled, state, retryRequest, onCheck, onInsta
           onClick={state.status === "failed" ? onCheck : install}>{state.status === "failed" ? copy.retry : copy.install}</button>
       </> : null}
     </footer>
-  </dialog>;
+    </dialog> : null}
+  </>;
 }

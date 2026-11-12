@@ -38,7 +38,8 @@ test("a machine-cached Workshop item still needs the selected instance's install
     resolveStoreItemState: store.resolveWorkshopStoreItemState,
     moduleId: "dontstarve", expectedAppId: 322330,
     configuredSteamIdSet: new Set(), machineCachedSteamIdSet: new Set(["123456"]),
-    inspectedMachineSteamIdSet: new Set(["123456"]), installingWorkshopIds: new Set(),
+    inspectedMachineSteamIdSet: new Set(["123456"]), installingWorkshopIds: new Set(), queuedWorkshopIds: new Set(),
+    downloads: { byId: {} },
     workshopInstallationError: null, workflow: { steamDownloadMode: "steamcmd-cache" }
   };
   vm.runInNewContext(transpileTypeScript(

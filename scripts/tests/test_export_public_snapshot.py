@@ -201,7 +201,10 @@ class PublicSnapshotTests(unittest.TestCase):
         for path in (
             "start.bat",
             "scripts/start_langame_desktop_local.ps1",
+            "scripts/start_langame_desktop_session.ps1",
+            "scripts/desktop_development_session.local.psm1",
             "apps/desktop/tests/managed-desktop-launcher.test.cjs",
+            "apps/desktop/tests/desktop-development-session.test.cjs",
         ):
             with self.subTest(path=path):
                 self.assertEqual(exclusion_reason(Path(path), frozenset()), "internal-lifecycle")

@@ -8,7 +8,7 @@ import { buildModuleMediaItems, getLocalizedModuleStoreData } from "../../store-
 import type { ModuleSummary } from "../../types";
 import type { LibraryFocusTarget } from "./library-navigation-model";
 import { canConfirmLibraryCatalogPointerSelection, libraryCatalogOptionId } from "./library-navigation-model";
-import { formatProgramLocations } from "./library-shared";
+import { formatInstallState } from "./library-shared";
 
 const COVER_DECODE_RADIUS = 2;
 
@@ -57,7 +57,7 @@ interface LibraryCatalogTileProps extends LibraryCatalogTileModel {
 const LibraryCatalogTile = memo(function LibraryCatalogTile(props: LibraryCatalogTileProps) {
   const { t } = useI18n();
   const target = { moduleId: props.module.id } satisfies LibraryFocusTarget;
-  const status = formatProgramLocations(props.module, t);
+  const status = formatInstallState(props.module.install_state, t);
   const activeSinceRef = useRef<number | null>(props.active ? Date.now() : null);
 
   useEffect(() => {
@@ -158,7 +158,7 @@ export function LibraryCatalogPage(props: LibraryCatalogPageProps) {
     ? focusedEnglishStoreEntry.storeName
     : tiles.find((tile) => tile.module.id === focusedModule?.id)?.subtitle ?? "";
   const focusedInstalled = String(focusedModule?.install_state ?? "").toLowerCase() === "installed";
-  const focusedStatus = focusedModule ? formatProgramLocations(focusedModule, t) : "";
+  const focusedStatus = focusedModule ? formatInstallState(focusedModule.install_state, t) : "";
   const focusedTheme = getModuleArtTheme(focusedModule?.id ?? "library", focusedTitle);
   const focusStyle = {
     "--library-accent": focusedTheme.accent,

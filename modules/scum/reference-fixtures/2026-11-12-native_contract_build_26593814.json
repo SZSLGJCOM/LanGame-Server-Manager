@@ -1,0 +1,876 @@
+{
+  "schema_version": 1,
+  "observed_on": "2026-11-12",
+  "steam_app_id": 3792580,
+  "build_id": "26593814",
+  "game_version": "1.3.6.0.177121+0",
+  "official_announcement": "https://steamcommunity.com/games/513710/announcements/detail/694277269707817996",
+  "evidence_classification": "independent_static_analysis_generated_world_read_only_native_owner_registry_public_stopped_world_write_and_managed_lifecycle_verified",
+  "package": {
+    "source": "SteamCMD anonymous app_update 3792580 validate",
+    "state_flags": 4,
+    "update_result": 0,
+    "depot_id": "3792581",
+    "depot_manifest": "4510314708728724923",
+    "executable_relative_path": "SCUM/Binaries/Win64/SCUMServer.exe",
+    "executable_sha256": "805396516e64d17f1713f24ce97a7d525a6d761db46ce069f40cf63114add6d9",
+    "executable_bytes": 130652160,
+    "pdb_available": false
+  },
+  "static_save_contract": {
+    "abi": "void(EntitySystem*, bool force)",
+    "profile": {
+      "save": "0x1bcc000",
+      "save_prologue": "48895c2420574881ecb0000000488b05f48698054833c4488984249000000080",
+      "entity_class": "0x75c3e90",
+      "entity_vtable": "0x5f87490",
+      "get_world": "0x1555d10",
+      "entity_loading": "0x7a8",
+      "entity_saving": "0x7aa",
+      "entity_shutdown": "0x7ab"
+    },
+    "method": "Independent analysis of the exact new executable. PE x64 unwind chains bound complete functions; Capstone decodes every instruction. The AutoSave logging string identifies its unique entry; UE class registration, constructor vtable, accessor slot and native CreateEntity/Shutdown paths identify all pointers and state guards. Complete old-image equivalence is not claimed.",
+    "baseline_limit": "The previous EXE was unavailable locally. Anonymous official download of depot 3792581 manifest 7276695924733020807 returned 401; no other account or archive was used.",
+    "canonical_format": "JSON compact array of each unwind fragment [relative_begin, relative_end] followed by normalized instruction hex; only RIP displacements and external branch immediates zeroed. The current digest format is not asserted equal to the older evidence format.",
+    "functions": {
+      "AutoSave": {
+        "rva": "0x1bcc000",
+        "bytes": 515,
+        "chunks": [
+          [
+            "0x1bcc000",
+            "0x1bcc0b4"
+          ],
+          [
+            "0x1bcc0b4",
+            "0x1bcc0bc"
+          ],
+          [
+            "0x1bcc0bc",
+            "0x1bcc19b"
+          ],
+          [
+            "0x1bcc19b",
+            "0x1bcc1e2"
+          ],
+          [
+            "0x1bcc1e2",
+            "0x1bcc203"
+          ]
+        ],
+        "canonical_sha256": "f2ab0e58a0b2bdcfb2c99433df2d5dde74c419f3ce85565c8df93d1f646fd322",
+        "raw_sha256": "00f6e6e562d82009781050a912712d89530af54e09b44c6436ecb51140157c1e",
+        "analysis_sha256": "768bff2cfdd39b31dfde427f94617fc6d6a4e2871ea99c528b036a9419782bac"
+      },
+      "SaveGlobal": {
+        "rva": "0x1bdf360",
+        "bytes": 328,
+        "chunks": [
+          [
+            "0x1bdf360",
+            "0x1bdf4a8"
+          ]
+        ],
+        "canonical_sha256": "f3ea5251309f3682dc006bde646e82d49348227e39e01e4de9eba1e7143df7bd",
+        "raw_sha256": "1af6ab6efca4880adec16c6c47176e2319196e90017e12ef46696f1c588bdc75",
+        "analysis_sha256": "5a6d269f6db0e0710025d10ebd5889f45452f58079bc7a933e1e0fc5427440aa"
+      },
+      "SaveCoordinates": {
+        "rva": "0x1bccea0",
+        "bytes": 1191,
+        "chunks": [
+          [
+            "0x1bccea0",
+            "0x1bccee1"
+          ],
+          [
+            "0x1bccee1",
+            "0x1bccf05"
+          ],
+          [
+            "0x1bccf05",
+            "0x1bcd170"
+          ],
+          [
+            "0x1bcd170",
+            "0x1bcd320"
+          ],
+          [
+            "0x1bcd320",
+            "0x1bcd347"
+          ]
+        ],
+        "canonical_sha256": "1639df85dc10a3424d0d4e7f51b0bc15e77e3988b7092c35159f936a9fde6e99",
+        "raw_sha256": "5fdc2f1ee2996cfed66b017a1c5e05b1eeb30013ad0479d7afc4c8efe374a58e",
+        "analysis_sha256": "a13767bcac68324e8c536f680348f3651fbf06348a4cdbec33e9ac507d57c319"
+      },
+      "SaveEntities": {
+        "rva": "0x1bcc210",
+        "bytes": 2523,
+        "chunks": [
+          [
+            "0x1bcc210",
+            "0x1bcc264"
+          ],
+          [
+            "0x1bcc264",
+            "0x1bcc5f1"
+          ],
+          [
+            "0x1bcc5f1",
+            "0x1bccbeb"
+          ]
+        ],
+        "canonical_sha256": "4cfcb53827436e04074b8e29188b55057f5cff138b95977d81a73b6448c47e60",
+        "raw_sha256": "b89040e1950aaf6dd9d14c7dc500db6bcded561342640b8c257e4e67dced5159",
+        "analysis_sha256": "a179ab4f18bb06c2f9ce3f7319e445739a1e643afa6bbf04e7f51c5abd367b6f"
+      },
+      "EntityClassRegistration": {
+        "rva": "0x2842940",
+        "bytes": 178,
+        "chunks": [
+          [
+            "0x2842940",
+            "0x28429f2"
+          ]
+        ],
+        "canonical_sha256": "33f3becce6f30aa5a906694931e79f1b02000c6b442b7b9d9f499ff9a180454b",
+        "raw_sha256": "1822928448bc9f116731d71eab87ddeba41d2f1b439dbdf1031a8dc67acaf4fc",
+        "analysis_sha256": "820b416fd9b12c9f414b6bb92d905d9b33b4bdb3c85a5e788f954a1a1f65ad43"
+      },
+      "EntityConstructor": {
+        "rva": "0x2844640",
+        "bytes": 1664,
+        "chunks": [
+          [
+            "0x2844640",
+            "0x2844cc0"
+          ]
+        ],
+        "canonical_sha256": "cc88b182092cc47c7fc5211dc12f8732e495e32cdd03486d67eb77afb2717b1a",
+        "raw_sha256": "64b126ec0dfba2504a19bbf4206af3febdeaa0774fa3b6fdd88dd7805771fac1",
+        "analysis_sha256": "ceb730bcca94161d948770a0ec03fb73963497006b47da4288f6fb6c72f8ee95"
+      },
+      "CreateEntity": {
+        "rva": "0x1bd3000",
+        "bytes": 1791,
+        "chunks": [
+          [
+            "0x1bd3000",
+            "0x1bd310f"
+          ],
+          [
+            "0x1bd310f",
+            "0x1bd31b8"
+          ],
+          [
+            "0x1bd31b8",
+            "0x1bd36a2"
+          ],
+          [
+            "0x1bd36a2",
+            "0x1bd36de"
+          ],
+          [
+            "0x1bd36de",
+            "0x1bd36ff"
+          ]
+        ],
+        "canonical_sha256": "248fb412516a3ccb33d330802a43a201111ac7ffccb223695c958cabf9a58d4b",
+        "raw_sha256": "3deaa85ee0b0a957fb09a75862d14f1ac9b135cf479f786ec9cf88310ace760f",
+        "analysis_sha256": "e7dac2a6c2d9d50938fa24c91045f6410bdc27540746c8440a7030c3d7745496"
+      },
+      "Shutdown": {
+        "rva": "0x1be1cb0",
+        "bytes": 1876,
+        "chunks": [
+          [
+            "0x1be1cb0",
+            "0x1be1cdd"
+          ],
+          [
+            "0x1be1cdd",
+            "0x1be1ce1"
+          ],
+          [
+            "0x1be1ce1",
+            "0x1be1ce5"
+          ],
+          [
+            "0x1be1ce5",
+            "0x1be1fbf"
+          ],
+          [
+            "0x1be1fbf",
+            "0x1be213e"
+          ],
+          [
+            "0x1be213e",
+            "0x1be23f8"
+          ],
+          [
+            "0x1be23f8",
+            "0x1be2404"
+          ]
+        ],
+        "canonical_sha256": "646819a3973f0f3223f865ca49253e0129d6cdb464ff1bbb6a22f2bdcbb97f77",
+        "raw_sha256": "29bbd18dd10c854ee992ce78c9f161e8e0cfb9f210d3ad1bba6bda3bb3d1e428",
+        "analysis_sha256": "b28081df38518f17432ece34598b7ffe896559f41a0d1e0a883720e6934a8c31"
+      },
+      "EntityTick": {
+        "rva": "0x1c05f20",
+        "bytes": 646,
+        "chunks": [
+          [
+            "0x1c05f20",
+            "0x1c05f4d"
+          ],
+          [
+            "0x1c05f4d",
+            "0x1c05f68"
+          ],
+          [
+            "0x1c05f68",
+            "0x1c0605c"
+          ],
+          [
+            "0x1c0605c",
+            "0x1c0612b"
+          ],
+          [
+            "0x1c0612b",
+            "0x1c06186"
+          ],
+          [
+            "0x1c06186",
+            "0x1c061a6"
+          ]
+        ],
+        "canonical_sha256": "020a55f1c7444e03be46a8397f4a00c2de5986dac9d117360bfbb1809b8d6e91",
+        "raw_sha256": "44c424c35db2f8f254d16cc0345bef36e4a8db2fc32256fe09cf93507b1a9337",
+        "analysis_sha256": "ea9b723a514af4664d491a1eff379ab7c687ad0a0ba573ef91c4cab3d78c1dcc"
+      }
+    },
+    "stage_call_targets": {
+      "SaveGlobal": "0x1bdf360",
+      "SaveCoordinates": "0x1bccea0",
+      "SaveEntities": "0x1bcc210"
+    },
+    "entry_identification": {
+      "string": "UEntitySystem::AutoSave",
+      "string_rva": "0x5b042e8",
+      "string_reference_rva": "0x1bcc038",
+      "force_argument": "DL preserved in DIL at 0x1bcc023 and forwarded in EDX at 0x1bcc159 before the SaveEntities call at 0x1bcc162",
+      "return_semantics": "void; returning from AutoSave does not confirm asynchronous SQL or disk completion"
+    },
+    "owner_and_state_evidence": {
+      "class_registration": {
+        "function_rva": "0x2842940",
+        "class_name_rva": "0x5f84b52",
+        "singleton_rva": "0x75c3e90",
+        "native_object_size": "0x800"
+      },
+      "constructor": {
+        "rva": "0x2844640",
+        "vtable_reference_rva": "0x284465b",
+        "vtable_store_rva": "0x2844662"
+      },
+      "get_world": {
+        "vtable_slot": "0x160",
+        "rva": "0x1555d10",
+        "bytes": "488b49204885c9740a488b0148ffa06001000033c0c3",
+        "interpretation": "Reads UObject outer at +0x20 then tail-dispatches outer GetWorld at vtable+0x160"
+      },
+      "loading": {
+        "offset": "0x7a8",
+        "check_rva": "0x1bd30ca",
+        "error_string_rva": "0x5b033b0",
+        "error_string": "UEntitySystem::CreateEntity: cannot create entity while loading state"
+      },
+      "saving": {
+        "offset": "0x7aa",
+        "check_rva": "0x1bcc06b",
+        "set_rva": "0x1bcc0a8",
+        "clear_rva": "0x1bcc1db"
+      },
+      "shutdown": {
+        "offset": "0x7ab",
+        "check_rva": "0x1bd307c",
+        "set_rva": "0x1be1dcd",
+        "prior_forced_save_call_rva": "0x1be1dc1"
+      },
+      "previous_build_offsets": {
+        "loading": "0x798",
+        "saving": "0x79a",
+        "shutdown": "0x79b"
+      }
+    },
+    "entity_stage_change": {
+      "bytes": 2523,
+      "prior_build_bytes": 2524,
+      "virtual_slot": "0x90",
+      "native_direct_call_sites": [
+        "0x1bcc80f",
+        "0x1bcca77"
+      ],
+      "interpretation": "The new stage uses direct vtable+0x90 calls, whereas the previous evidence recorded a tail helper and a force-argument pointer. New SaveEntities still consumes DL and selects its force path from the saved boolean. No byte equivalence or populated-entity callee equivalence is claimed."
+    }
+  },
+  "generated_native_world": {
+    "source": "Separate ordinary package copy, freshly generated world; no user saves or UE4SS",
+    "requested_game_bind": "127.0.0.1",
+    "all_sockets_loopback_only": "not_claimed",
+    "native_readiness": true,
+    "database_user_version": 77,
+    "integrity_check": [
+      [
+        "ok"
+      ]
+    ],
+    "zone_schema": [
+      [
+        "index",
+        "index_on_custom_zone_configuration_for_map_id",
+        "custom_zone_configuration",
+        "CREATE INDEX index_on_custom_zone_configuration_for_map_id ON custom_zone_configuration(map_id)"
+      ],
+      [
+        "index",
+        "index_on_custom_zone_region_for_map_id",
+        "custom_zone_region",
+        "CREATE INDEX index_on_custom_zone_region_for_map_id ON custom_zone_region(map_id)"
+      ],
+      [
+        "index",
+        "sqlite_autoindex_custom_zone_configuration_1",
+        "custom_zone_configuration",
+        null
+      ],
+      [
+        "index",
+        "sqlite_autoindex_custom_zone_region_1",
+        "custom_zone_region",
+        null
+      ],
+      [
+        "table",
+        "custom_zone_configuration",
+        "custom_zone_configuration",
+        "CREATE TABLE custom_zone_configuration(\n\t\t\tid\t\t\t\t\t\tINTEGER NOT NULL,\n\t\t\tmap_id\t\t\t\t\tINTEGER NOT NULL,\n\t\t\tname\t\t\t\t\tCHAR(100),\n\t\t\tcolor_red\t\t\t\tREAL,\n\t\t\tcolor_green\t\t\t\tREAL,\n\t\t\tcolor_blue\t\t\t\tREAL,\n\t\t\thandling_methods\t\tBIGINT, settings INTEGER, user_id TEXT DEFAULT '', num_handling_methods INTEGER NOT NULL DEFAULT 0,\n\t\t\tPRIMARY KEY(id, map_id),\n\t\t\tFOREIGN KEY(map_id) REFERENCES map(id) ON DELETE CASCADE\n\t\t)"
+      ],
+      [
+        "table",
+        "custom_zone_configuration_damage_handling_methods",
+        "custom_zone_configuration_damage_handling_methods",
+        "CREATE TABLE custom_zone_configuration_damage_handling_methods\n\t\t(\n\t\t\tid\t\t\t\t\t\t\t\tINTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,\n\t\t\tcustom_zone_configuration_id\tINTEGER NOT NULL,\n\t\t\tmap_id\t\t\t\t\t\t\tINTEGER NOT NULL,\n\t\t\tdamage_actor_type\t\t\t\tINTEGER,\n\t\t\tdamage_handling_methods\t\t\tINTEGER, num_damage_handling_methods INTEGER NOT NULL DEFAULT 0,\n\n\t\t\tFOREIGN KEY(custom_zone_configuration_id, map_id) REFERENCES custom_zone_configuration(id, map_id) ON DELETE CASCADE\n\t\t)"
+      ],
+      [
+        "table",
+        "custom_zone_region",
+        "custom_zone_region",
+        "CREATE TABLE custom_zone_region(\n\t\t\tid\t\t\t\t\t\tINTEGER NOT NULL,\n\t\t\tmap_id\t\t\t\t\tINTEGER NOT NULL,\n\t\t\tname\t\t\t\t\tCHAR(100),\n\t\t\tlocation_x\t\t\t\tREAL,\n\t\t\tlocation_y\t\t\t\tREAL,\n\t\t\tsize_x\t\t\t\t\tREAL,\n\t\t\tsize_y\t\t\t\t\tREAL,\n\t\t\tconfiguration_index\t\tTINYINT, default_region_name CHAR(50), default_region_state TINYINT, user_id TEXT DEFAULT '',\n\t\t\tPRIMARY KEY(id, map_id),\n\t\t\tFOREIGN KEY(map_id) REFERENCES map(id) ON DELETE CASCADE\n\t\t)"
+      ]
+    ],
+    "zone_columns": {
+      "custom_zone_configuration": [
+        [
+          0,
+          "id",
+          "INTEGER",
+          1,
+          null,
+          1
+        ],
+        [
+          1,
+          "map_id",
+          "INTEGER",
+          1,
+          null,
+          2
+        ],
+        [
+          2,
+          "name",
+          "CHAR(100)",
+          0,
+          null,
+          0
+        ],
+        [
+          3,
+          "color_red",
+          "REAL",
+          0,
+          null,
+          0
+        ],
+        [
+          4,
+          "color_green",
+          "REAL",
+          0,
+          null,
+          0
+        ],
+        [
+          5,
+          "color_blue",
+          "REAL",
+          0,
+          null,
+          0
+        ],
+        [
+          6,
+          "handling_methods",
+          "BIGINT",
+          0,
+          null,
+          0
+        ],
+        [
+          7,
+          "settings",
+          "INTEGER",
+          0,
+          null,
+          0
+        ],
+        [
+          8,
+          "user_id",
+          "TEXT",
+          0,
+          "''",
+          0
+        ],
+        [
+          9,
+          "num_handling_methods",
+          "INTEGER",
+          1,
+          "0",
+          0
+        ]
+      ],
+      "custom_zone_region": [
+        [
+          0,
+          "id",
+          "INTEGER",
+          1,
+          null,
+          1
+        ],
+        [
+          1,
+          "map_id",
+          "INTEGER",
+          1,
+          null,
+          2
+        ],
+        [
+          2,
+          "name",
+          "CHAR(100)",
+          0,
+          null,
+          0
+        ],
+        [
+          3,
+          "location_x",
+          "REAL",
+          0,
+          null,
+          0
+        ],
+        [
+          4,
+          "location_y",
+          "REAL",
+          0,
+          null,
+          0
+        ],
+        [
+          5,
+          "size_x",
+          "REAL",
+          0,
+          null,
+          0
+        ],
+        [
+          6,
+          "size_y",
+          "REAL",
+          0,
+          null,
+          0
+        ],
+        [
+          7,
+          "configuration_index",
+          "TINYINT",
+          0,
+          null,
+          0
+        ],
+        [
+          8,
+          "default_region_name",
+          "CHAR(50)",
+          0,
+          null,
+          0
+        ],
+        [
+          9,
+          "default_region_state",
+          "TINYINT",
+          0,
+          null,
+          0
+        ],
+        [
+          10,
+          "user_id",
+          "TEXT",
+          0,
+          "''",
+          0
+        ]
+      ],
+      "custom_zone_configuration_damage_handling_methods": [
+        [
+          0,
+          "id",
+          "INTEGER",
+          1,
+          null,
+          1
+        ],
+        [
+          1,
+          "custom_zone_configuration_id",
+          "INTEGER",
+          1,
+          null,
+          0
+        ],
+        [
+          2,
+          "map_id",
+          "INTEGER",
+          1,
+          null,
+          0
+        ],
+        [
+          3,
+          "damage_actor_type",
+          "INTEGER",
+          0,
+          null,
+          0
+        ],
+        [
+          4,
+          "damage_handling_methods",
+          "INTEGER",
+          0,
+          null,
+          0
+        ],
+        [
+          5,
+          "num_damage_handling_methods",
+          "INTEGER",
+          1,
+          "0",
+          0
+        ]
+      ]
+    },
+    "zone_configurations": 2,
+    "zone_regions": 4,
+    "native_npc_packed_values": [
+      {
+        "configuration_id": 1000,
+        "packed": 341,
+        "slots": 5
+      },
+      {
+        "configuration_id": 1,
+        "packed": 682,
+        "slots": 5
+      }
+    ],
+    "source_files_sha256": {
+      "SCUM.db": "066325702debd1db28b2f537edc10fdbc5964827162a447a595018c893f4b883",
+      "SCUM.db-shm": "ea6e4abbf00ac7af066f6df6c61e00f47d05f13416092b0b56fe0e3af90ee5eb",
+      "SCUM.db-wal": "fff8d3a0a6a067de979f33cfc375f8f808bef8d892543a6aa629f44fd1b9c22a"
+    },
+    "source_db_and_wal_unchanged": true,
+    "generated_config_scum_key_count": 437,
+    "keys_match_current_ledger": true,
+    "focused_generated_values": {
+      "scum.ServerSettingsVersion": "7",
+      "scum.AnimalGlobalDensityMultiplier": "0.500000",
+      "scum.MaxNonVirtualAnimalsInWorld": "500"
+    },
+    "shutdown": {
+      "method": "CTRL_C in an owned hidden new console",
+      "exit_code_hex": "0xC000013A",
+      "normal_exit_zero": false,
+      "cleanup": "Owned Job reclaimed; no surviving task game process claimed by coordinator",
+      "interpretation": "Readiness and world generation passed; normal graceful exit was not established by this direct-launch probe."
+    }
+  },
+  "pending_native_checks": [],
+  "evidence_sha256": {
+    "derive_profile.py": "33983f2f5ba997b031fbcbf93a6600f19b16a6dac47de94b3fd3cbeba546c9d2",
+    "scan_new.py": "3a7ce9aecbde7b30151d9fb5f547404308e4c8a3bab5292170262230848e9b70",
+    "inspect_new.py": "7587cb353f243a11277348cd9b87e54950d4c179e607fa5af67505bc906e9640",
+    "world-contract-vanilla-01.json": "1e503ab4e2e5e2ced9ed50a217cf82313d148f615aba7266cf323af787ddedf1",
+    "old-exe-download.log": "ab3b184211a939bf5712557b8798f66fb12c1749c09830c6ee02536b0b951251",
+    "contract-04/result.json": "a128ebbf38d08cd3ec15ef622cfec97636f618f3cd7d855ab75d5a2ecb9feff9",
+    "contract-04/contract-reflection.log": "50aadaf99d58487a8c3ef40163b85ccdb79dc2fcb1098a26157096e1e4c5632f",
+    "contract_probe.lua": "2ea7ed2eb8fab2e2b96f3f5417dfe89a2b8f511120e014cca048267ffb0b4aaf",
+    "read_contract_owner.py": "484ae5b1fdc1ad3192de0e71359fb9ab3ff5a1f198ee2d14d702cd44a25a2f76",
+    "zone-native-layout-26593814.json": "e17803b133b8bf6f9eb864a52195b685204793752be1466c51011b03b682aa2f",
+    "zone-property-registration.json": "53df50ddbfeff6a575815438faf1451f182bf0a655290f83cfa2a9a58dc1875d",
+    "bridge-tests.log": "764454c3265c6d0b94e7aae07402bb1688e77a03f56a9a5a1e49593db92f330d",
+    "scum-zones-unit-05.log": "ad6c9debf27f703072b64191ead2e026321299a7123e575d761fbc2ef64df59d",
+    "scum-zones-native-05.log": "861f1b8c501b0809ef462ea62e5ff62c3880e3bca737b3e9441a9311706e1327",
+    "scum-zones-05-result.json": "a97f2e40365d2c20d88f427d0bc1e0c135538c8a6fc79ef6ecfef3fbcbfee9e7",
+    "scum-loader-tests-04.log": "5f8cab094337b06d8c9b472acb1f2c898f24064cdece02d7a940f06942e50c70",
+    "scum-prepare-04.log": "91634a6e552f03110b65ceec7bc35376a9f822718893e2f6eb604cf3cedff604",
+    "scum-native-01/native-output.txt": "11b6a123a037223ab222ce9b797548c94aaa48da5aca1ba098eb49e03ec7ea18",
+    "scum-native-01/result.json": "a0dcbdd99c4d1e6182600922387638492f8381d411e025eac8442b477fcc2e3b"
+  },
+  "limits": [
+    "No game-function or runtime-memory invocation occurred during static analysis.",
+    "Official server-setting notes corrected descriptions; generated focused defaults remain 0.500000 and 500.",
+    "No client combat, populated-player behavior, universal durable save completion or power-loss recovery is claimed.",
+    "The independent read-only runtime probe did not establish graceful shutdown: CTRL_C returned0xC000013A, and remaining owned descendants required Job cleanup."
+  ],
+  "runtime_owner_observation": {
+    "mode": "read_only_process_memory",
+    "native_save_invoked": false,
+    "image_base": "0x7ff602330000",
+    "checks": {
+      "entity_class_singleton_matches_reflection": true,
+      "entity_vtable_matches_static": true,
+      "entity_outer_matches_instance": true,
+      "world_instance_matches": true,
+      "world_game_mode_matches": true,
+      "world_game_state_matches": true,
+      "objects_alive": true,
+      "get_world_vtable_matches": true,
+      "get_world_bytes_match": true,
+      "save_prologue_matches": true,
+      "native_ready": true
+    },
+    "readiness_raw": {
+      "entity_0x30": 1,
+      "entity_loading_0x7a8": 0,
+      "entity_saving_0x7aa": 0,
+      "entity_shutdown_0x7ab": 0,
+      "game_mode_role_0xf0": 3,
+      "game_mode_actor_state_0x5c": 137,
+      "game_state_actor_state_0x5c": 137
+    },
+    "object_flags": {
+      "entity": 0,
+      "instance": 64,
+      "world": 2621451,
+      "game_mode": 72,
+      "game_state": 72
+    },
+    "custom_zone_registry": {
+      "source_actor": 5,
+      "receiver_actor": 11,
+      "source_actor_slots": 5,
+      "pairs_channel_receiver_handling": [
+        [
+          5,
+          1,
+          1
+        ],
+        [
+          4,
+          1,
+          1
+        ],
+        [
+          6,
+          11,
+          1
+        ],
+        [
+          5,
+          11,
+          1
+        ],
+        [
+          4,
+          11,
+          1
+        ]
+      ],
+      "editable_slots_zero_based": [
+        2,
+        3,
+        4
+      ],
+      "raw_pairs_hex": "050101040101060b01050b01040b01",
+      "fixed_array_metadata": {
+        "array_dim": 16,
+        "element_size": 16,
+        "offset_internal": 88,
+        "struct_size": 16
+      },
+      "pair_stride": 3,
+      "enum_values": {
+        "EDamageActorType::ArmedNPC": 5,
+        "EDamageActorType::Vehicle": 11,
+        "EDamageActorType::Count": 16,
+        "EDamageChannel::MeleeDamage": 6,
+        "EDamageChannel::MeleeWeaponDamage": 5,
+        "EDamageChannel::ProjectileDamage": 4,
+        "ECustomZoneEventHandlingMethod::Ignore": 0,
+        "ECustomZoneEventHandlingMethod::Allow": 1,
+        "ECustomZoneEventHandlingMethod::Block": 2
+      },
+      "live_metadata_matches_new_image_registration": true,
+      "registry_owned_by_current_game_state": true,
+      "memory_read_only": true
+    }
+  },
+  "custom_zone_native_layout": {
+    "build_id": "26593814",
+    "executable_sha256": "805396516e64d17f1713f24ce97a7d525a6d761db46ce069f40cf63114add6d9",
+    "classification": "independent new-image static layout; live metadata and actor5 validation required separately",
+    "damage_event_handling_method": {
+      "name_rva": "0x5f359d0",
+      "registration_record_rva": "0x5f35740",
+      "array_dim": 16,
+      "configuration_offset": 88,
+      "struct_factory_rva": "0x281ccd0",
+      "struct_params_rva": "0x72d3530",
+      "element_bytes": 16,
+      "alignment": 8,
+      "interpretation": "A native fixed array indexed by damage actor, not a Lua TArray. Its first-element accessor alone cannot identify actor5 slots. Each actor's struct contains DamageChannelsVsHandlingMethod TArray at offset0."
+    },
+    "channel_receiver_handling_pair": {
+      "struct_factory_rva": "0x281cd00",
+      "struct_params_rva": "0x72d3580",
+      "element_bytes": 3,
+      "alignment": 1,
+      "field_offsets": {
+        "damageChannel": 0,
+        "ReceiverDamageActorType": 1,
+        "HandlingMethod": 2
+      },
+      "interpretation": "Size is independently encoded in the new-image generated struct parameters. Live Lua reflection and consecutive element addresses must also agree before external process-memory readback."
+    },
+    "native_metadata_construction": {
+      "property_dispatch": "0x2e173f9 reads generated type; table0x2e18fac[25] selects the FStructProperty path0x2e18836.",
+      "array_dim": "0x2e18ebf reads registration+0x20; 0x2e18ed4 writes FProperty+0x38.",
+      "struct_pointer": "0x2e0a1ec writes the UScriptStruct pointer to FStructProperty+0x78.",
+      "element_size": "0x2e0a1f0 reads UScriptStruct+0x58; 0x2e0a1f8 writes FProperty+0x3c.",
+      "offset_internal": "0x2de0d19 writes the constructor offset argument to FProperty+0x4c.",
+      "scope": "Relevant native construction blocks were followed; no complete equivalence with a prior binary is asserted. The property dispatcher contains an embedded jump table and was inspected by bounded blocks, not falsely labeled a completely decoded contiguous function."
+    },
+    "readback_requirements": [
+      "CustomZoneRegistry must belong to the current game state, and reflected configuration and damage-data addresses must agree with reported offsets.",
+      "Live FProperty ArrayDim/ElementSize/Offset must be16/16/88, with struct size16; the current process's immutable generated registration and struct parameters must match.",
+      "First actor pair stride and live inner FStructProperty size must be3; reflected field offsets must be0/1/2.",
+      "Live enumerations must identify ArmedNPC5, Vehicle11, ProjectileDamage4, MeleeWeaponDamage5, MeleeDamage6 and Ignore/Allow/Block0/1/2.",
+      "Only the bounded actor5 array with five entries is read and compared against the prior five channel/receiver/handling triples. No memory write or game function is called."
+    ]
+  },
+  "runtime_probe_process": {
+    "task_run": "contract-04",
+    "pid": 14992,
+    "ready": true,
+    "native_save_invoked": false,
+    "read_only_observation": "passed",
+    "normal_shutdown": false,
+    "exit_code_hex": "0xC000013A",
+    "forced_cleanup": true,
+    "runner_error": "AssertionError('Owned descendants survived')",
+    "duration_seconds": 96.123,
+    "coordinator_confirmed_no_owned_scum_processes": true,
+    "scope": "Owner and registry readback succeeded before direct CTRL_C. The process exited with0xC000013A and the Job still held descendants, so the runner failed cleanup admission and reclaimed its owned Job. This is not an overall normal-exit probe pass."
+  },
+  "task_probe_corrections": [
+    "contract-01 failed its private-password preflight before creating a game process.",
+    "contract-02 used an unavailable task-only RegisterEngineTickPostHook and produced no registry evidence.",
+    "contract-03 reached partial reflection but failed inside native TArray:ForEach callbacks; actor0 alone was not accepted as actor5 evidence.",
+    "contract-04 uses the pinned production EngineTick dispatcher, non-nested property collection and bounded in-range array indexing, followed by read-only native fixed-array metadata and actor5 validation."
+  ],
+  "component_validation": {
+    "command": "modules/scum/control/Build.ps1 -RunComponents",
+    "exit_code": 0,
+    "profiles_checked": 4,
+    "dll_sha256": "4e30c436865a15295c863bfeb87548664f432f4920b733497d2838eb8198d520",
+    "test_sha256": "7af5375f29d0451c457725156e043299ad4d98583ef87668516bc0f6cf743a77",
+    "scope": "Synthetic ownership, lifecycle, state-byte rejection and single forced-save ABI checks for all four profiles, including old/new cross-layout noninterference. Not a native save invocation."
+  },
+  "storage_validation": {
+    "verified_on": "2026-11-12",
+    "test_binary_sha256": "408dffa1e3898a5cf576ede73c7f9cb5b0b265fb6cd867828564ce136bbc12dc",
+    "source_identity_sha256": "44d2418e16f3953519feead6e4a6b385b86495ae7fbaddb9037b004a812b4c27",
+    "unit_test_passed": 9,
+    "supported_synthetic_layouts": [
+      73,
+      75,
+      77
+    ],
+    "explicit_native_roundtrips_passed": 1,
+    "historical_other_build_native_roundtrips": 2,
+    "unit_log_sha256": "ad6c9debf27f703072b64191ead2e026321299a7123e575d761fbc2ef64df59d",
+    "native_log_sha256": "861f1b8c501b0809ef462ea62e5ff62c3880e3bca737b3e9441a9311706e1327",
+    "scope": "Real schema77 world copied to a fresh fixture; public exact-image/stopped-state read/write, selected three-slot reload, unrelated configuration/world retention, pre-change backup readback, and original source DB/WAL unchanged. No game process started by this test; no gameplay or edited-rule in-game reload claimed."
+  },
+  "native_database_roundtrip": {
+    "verified_on": "2026-11-12",
+    "test": "scum_custom_zones::tests::native_schema_roundtrip_on_owned_copy",
+    "test_binary_sha256": "408dffa1e3898a5cf576ede73c7f9cb5b0b265fb6cd867828564ce136bbc12dc",
+    "source_identity_sha256": "44d2418e16f3953519feead6e4a6b385b86495ae7fbaddb9037b004a812b4c27",
+    "source": "Stopped disposable vanilla-01 native world; public API works on its newly copied database/WAL and executable",
+    "configurations": 2,
+    "public_read_write_api": "passed",
+    "native_image_gate": "passed",
+    "pre_change_backup_readback": "passed",
+    "selected_rules_and_other_configurations_readback": "passed",
+    "source_db_wal_unchanged": true,
+    "game_server_started": false,
+    "client_combat_assessed": false,
+    "test_log_sha256": "861f1b8c501b0809ef462ea62e5ff62c3880e3bca737b3e9441a9311706e1327"
+  },
+  "loader_validation": {
+    "source_identity_sha256": "5548c78f775d514f6bc81cc585c7944b979876c4774f0c903ccb85ae877aa442",
+    "test_binary_sha256": "3d13b05e1c2c7b94dee17b0d4c4e9fbf86fb5273a99f0b80faeeee3562b18065",
+    "unit_test_passed": 25,
+    "owned_prepare_passed": 1,
+    "scope": "Exact-image admission and loader installation invariants. The ignored prepare helper installed the official loader into a marked isolated world but did not start it or invoke save."
+  },
+  "managed_lifecycle": {
+    "fixture": "2026-11-12-managed_lifecycle_build_26593814.json",
+    "four_cycles": "passed",
+    "manual_save_requests": 4,
+    "save_completion": "requested",
+    "native_write_confirmed": false,
+    "normal_exit_zero": true,
+    "backup_restore_files": 59,
+    "save_files_preserved_at_library_uninstall": 81,
+    "exact_checkpoint_readback": "not_claimed",
+    "max_ping_setting": "explicit400; frozen default200"
+  }
+}

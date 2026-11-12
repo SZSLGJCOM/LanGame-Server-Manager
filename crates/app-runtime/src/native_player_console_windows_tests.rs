@@ -127,6 +127,7 @@ fn native_console_owned_moria_empty_server_end_to_end() {
         install_root: root.to_string_lossy().into_owned(),
         install_state: app_core::InstallState::Installed,
         uses_private_runtime: true,
+        can_update_before_start: false,
         working_directory: root.to_string_lossy().into_owned(),
         executable_path: root.join("MoriaServer.exe").to_string_lossy().into_owned(),
         executable_exists: true,

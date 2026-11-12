@@ -1,6 +1,21 @@
 status = "best_effort_verified"
-last_verified = "2026-10-31"
-notes = "Public build 26335264 was statically compared and passed isolated native lifecycle validation on 2026-10-31. REF Version=39 and documented commands are unchanged from build 26172878; BackpackCleanup, WeaponDurabilityMulti and HeadshotOnlyMode remain optional controls that preserve native values until explicitly set. The new native evidence binds build02 source and artifact hashes and covers four readiness/save-request/normal-stop cycles, backup/restore, uninstall preservation, interrupted archive recovery and owned cleanup. Save receipts remain Requested; exact manual-save contents, real clients, GUI and network program maintenance were not verified. Historical evidence below retains its original build and scope. settings_extra and extra_launch_args remain available for version-specific keys."
+last_verified = "2026-11-12"
+notes = "Public build 26604244 (Hotfix 1.1Z) was acquired independently and passed isolated native lifecycle validation on 2026-11-12. REF Version=39, all 94 native keys, documented RCON commands and the Shipping executable are byte-identical to build 26335264, so the existing configuration and transport implementation is retained. The immutable native01 build and independently matched source manifest cover four readiness/save-request/normal-stop cycles, complete empty rosters, backup/restore, uninstall preservation, interrupted archive recovery and owned cleanup. Save receipts remain Requested; exact manual-save contents, real clients, GUI, external inbound connectivity and network program maintenance were not verified. Native logs retain non-elevated firewall and EOS initialization warnings; successful readiness does not establish a clean log or client admission. Historical evidence retains its original build and scope. settings_extra and extra_launch_args remain available for version-specific keys."
+
+[[sources]]
+id = "public_build_26604244_native_lifecycle"
+kind = "install_probe"
+path = "native-evidence/2026-11-12-public-build-26604244-native.json; native-evidence/2026-11-12-public-build-26604244-native-output.txt"
+authority = "isolated_native_production_lifecycle_with_source_and_artifact_identity"
+description = "2026-11-12: public app 2728330 build 26604244 passed native_package_lifecycle in 260.93 test seconds (262.49 seconds including its runner) using immutable native01 source identity 8ecd9d4866d8f0f204e3a30f378304100a7ac168ace58870e997327c72740c9a; 4655 source files were independently matched. Four runs passed declared readiness, complete empty rosters, one authenticated Requested save each and main exit 0 with no crash flag. The fixture restored 27 backup files, preserved 29 save and five native config files on library uninstall, recovered an interrupted archive commit and completed owned cleanup. Exact save-content readback, real clients, GUI, native A2S, inbound firewall admission and network install/update/repair were not established. Non-elevated firewall timeout and native EOS initialization warnings remain recorded."
+
+[[sources]]
+id = "public_reference_build_26604244_static"
+kind = "documentation"
+path = "native-evidence/2026-11-12-public-build-26604244-static.json"
+url = "https://steamcommunity.com/games/1766060/announcements/detail/694277726961401859"
+authority = "isolated_official_package_read_only_identity_and_reference_comparison"
+description = "2026-11-12: anonymous SteamCMD validate completed for app 2728330 public build 26604244, StateFlags 4, UpdateResult 0. REF_GameServerSettings.ini, RCONCommands.txt and the Shipping executable are byte-identical to build 26335264. The REF has Version 39 and 94 unique native keys, of which 92 editable keys remain covered; RConPort is owned by the port model and Version is not rendered. No configuration or documented RCON delta requires a behavior change. The official 1.1Z announcement removes Halloween content and fixes gameplay issues; 1.2 Experimental and UE5 migration are future work. This static comparison does not itself establish current native runtime behavior."
 
 [[sources]]
 id = "public_build_26335264_native_lifecycle"

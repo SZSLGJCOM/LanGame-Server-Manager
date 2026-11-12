@@ -24,3 +24,15 @@ pub(crate) fn read_world_metadata_info(body: &[u8]) -> Result<WorldMetadata, Str
         saved_at_ticks,
     })
 }
+
+/// Bootstrap ownership requires a GUID in addition to selection metadata. Keep
+/// this stronger requirement separate from ordinary world selection/import.
+/// The bootstrap caller also decodes the complete save to verify both GUID copies.
+pub(crate) fn read_world_guid_info(body: &[u8]) -> Result<[u32; 4], String> {
+    let info = parse_info(body)?;
+    let mut guid = [0; 4];
+    for (index, field) in ["GUID_A", "GUID_B", "GUID_C", "GUID_D"].iter().enumerate() {
+        guid[index] = super::scalar_u32(info.custom.field(field)?)?;
+    }
+    Ok(guid)
+}

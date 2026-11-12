@@ -20,9 +20,9 @@ mod package;
 #[cfg(test)]
 use package::{CLEAN_PACKAGE, MAX_MANIFEST_BYTES};
 pub(crate) use package::{
-    CleanCopyInventory, only_package_files, read_clean_package_copy_inventory,
-    read_clean_package_inventory, read_package_inventory, require_initial_package_tree,
-    retired_library_is_clean, write_clean_package_copy_inventory,
+    CleanCopyInventory, only_package_files, original_defaults_are_unchanged,
+    read_clean_package_copy_inventory, read_clean_package_inventory, read_package_inventory,
+    require_initial_package_tree, retired_library_is_clean, write_clean_package_copy_inventory,
 };
 use package::{
     CleanPackage, checked_relative, excluded, package_exclusions, read_manifest, validate_manifest,
@@ -30,11 +30,14 @@ use package::{
 };
 pub use package::{
     ProgramBaselineInventory, VerifiedProgramFiles, archive_program_has_baseline,
-    archive_program_is_current, library_program_is_pristine, merge_archive_program_update,
-    program_package_path_filter, program_update_retained_paths, record_library_program_baseline,
+    archive_program_is_current, library_initial_program_matches_files, library_program_is_pristine,
+    merge_archive_program_update, program_copy_requires_repair,
+    program_launch_files_match_baseline, program_package_path_filter,
+    program_update_retained_paths, record_library_program_baseline,
     record_library_program_baseline_with_progress, record_verified_library_program_baseline,
     record_verified_library_program_baseline_with_progress,
-    retain_published_library_program_baseline,
+    restore_library_initial_program_defaults_with_progress,
+    retain_existing_program_baseline_with_progress, retain_published_library_program_baseline,
     retain_published_library_program_baseline_with_progress,
     retain_verified_library_program_baseline,
     retain_verified_library_program_baseline_with_progress,

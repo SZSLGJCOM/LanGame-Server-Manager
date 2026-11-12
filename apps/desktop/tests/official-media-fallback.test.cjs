@@ -35,6 +35,56 @@ function timers() {
   };
 }
 
+test("website Mod icons enter the shared image cache without inventing equivalent resources", () => {
+  const curseforge = "https://83374.media.forgecdn.net/avatars/thumbnails/1949/338/256/256/639208701457408935.png";
+  const thunderstore = "https://ccdn.thunderstore.io/live/repository/icons/ValheimModding-Jotunn-2.30.2.png";
+  const nexus = "https://staticdelivery.nexusmods.com/mods/1059/images/9559/9559-1770000000-123456789.png";
+  for (const source of [curseforge, curseforge.replace("/256/256/", "/64/64/"), thunderstore,
+    thunderstore.replace("ccdn.", "gcdn."), `${thunderstore}.128x128_q95.png`, nexus, nexus.replace("/images/", "/images/thumbnails/")]) {
+    assert.equal(media.isOfficialMediaUrl(source, "image"), true, source);
+    assert.equal(media.isOfficialMediaUrl(source, "video"), false, source);
+    assert.deepEqual(media.officialMediaCandidates(source, "image"), [source]);
+  }
+  for (const source of [
+    curseforge.replace("/avatars/thumbnails/", "/attachments/"),
+    curseforge.replace(".png", ".zip"), curseforge.replace(".png", ".svg"),
+    curseforge.replace("https:", "http:"), curseforge.replace("https://", "https://user@"),
+    curseforge.replace(".net/", ".net:8443/"), curseforge.replace(".net/", ".net.evil.invalid/"),
+    `${curseforge}?token=private`, `${curseforge}#fragment`,
+    thunderstore.replace("/icons/", "/packages/"), thunderstore.replace(".png", ".zip"),
+    `${thunderstore}?token=private`, `${thunderstore}#fragment`,
+    thunderstore.replace("https://", "https://user@"), thunderstore.replace(".io/", ".io:8443/"),
+    "https://127.0.0.1/live/repository/icons/Author-Mod-1.0.0.png",
+    "https://cf-files.nexusmods.com/1059/9559/package.zip",
+    "https://avatars.nexusmods.com/1234/100.png",
+    nexus.replace(".png", ".zip"), nexus.replace(".png", ".svg"), `${nexus}?key=private`, `${nexus}#private`,
+    nexus.replace("https://", "https://user@"), nexus.replace(".com/", ".com:8443/"), nexus.replace(".com/", ".com.evil.invalid/"),
+  ]) assert.equal(media.isOfficialMediaUrl(source, "image"), false, source);
+  assert.equal(media.isOfficialMediaUrl("https://images.steamusercontent.com/ugc/123/preview.jpg", "image"), true);
+});
+
+test("website Mod icons use desktop and LAN cache endpoints and do not register arbitrary URLs", async () => {
+  const { cacheEnvironment } = require("./media-cache-test-support.cjs");
+  const sources = [
+    "https://83374.media.forgecdn.net/avatars/thumbnails/1949/338/256/256/639208701457408935.png",
+    "https://ccdn.thunderstore.io/live/repository/icons/ValheimModding-Jotunn-2.30.2.png",
+    "https://staticdelivery.nexusmods.com/mods/1059/images/9559/9559-1770000000-123456789.png",
+  ];
+  for (const tauri of [true, false]) {
+    const env = cacheEnvironment({ tauri });
+    for (const source of sources) {
+      const cached = await env.cache.resolveMediaCacheSource(source, "image", "zh-CN");
+      if (tauri) {
+        assert.equal(new URL(cached).hostname, "lgsm-media.localhost");
+        assert.equal(new URL(cached).searchParams.get("url"), source);
+      } else assert.equal(cached, "/__langame/media/opaque-fixture");
+      const untrusted = `${source}?token=private`;
+      assert.equal(await env.cache.resolveMediaCacheSource(untrusted, "image", "zh-CN"), untrusted);
+    }
+    assert.equal(env.calls.length, tauri ? 0 : sources.length);
+  }
+});
+
 test("official media alternates preserve path, query and identity and obey purpose and path scopes", () => {
   const policy = { schemaVersion: 1, groups: [{ id: "test", origins: ["https://one.invalid", "https://two.invalid"], pathPrefixes: ["/assets/"], allowedQueryKeys: ["version", "size"], purposes: ["image"] }], exactResources: [] };
   const source = "https://one.invalid/assets/a%20b.jpg?version=4&size=large";

@@ -48,7 +48,7 @@ const extensionStates = new Map<string, ArkToolsStatus>();
 let removeMode: "failure" | "invalid" | "deferred" = "failure";
 let resolveRemove: ((result: ArkToolsRemovalResult) => void) | undefined;
 const removals: string[] = [];
-const removed: ArkToolsRemovalResult = { installed: false, connected: false, canUninstall: false, issue: null, frameworkRetained: false };
+const removed: ArkToolsRemovalResult = { installed: false, updateAvailable: false, connected: false, canUninstall: false, issue: null, frameworkRetained: false };
 const player: ArkMapPlayer = { playerId: 12345, name: "测试玩家", accountId: "fixture-account", team: 1000, x: 100, y: 200, z: 300 };
 let props: React.ComponentProps<typeof ArkCreatureSpawner> = { instanceId: "ark-a", instanceName: "方舟测试服", moduleId: "arksurvivalascended", status: "Stopped", processKey: "main", runId: 7,
   selectedPlayer: null,
@@ -89,7 +89,7 @@ function result(input: ArkSpawnInput): ArkSpawnResult {
 Object.assign(window, { isTauri: true, __TAURI_INTERNALS__: { invoke: (command: string, args: { input: ArkSpawnInput & { operationId: string; locale: string; allowMatchingSymbolsDownload: boolean } }) => {
   if (command === "read_ark_tools_status") return holdStatus
     ? new Promise<ArkToolsStatus>(resolve => statusReplies.push(resolve))
-    : Promise.resolve(extensionStates.get(args.input.instanceId) ?? { installed, connected, canUninstall: installed, issue: installed ? null : "Prepare the ARK server extension while this instance is stopped" });
+    : Promise.resolve(extensionStates.get(args.input.instanceId) ?? { installed, updateAvailable: false, connected, canUninstall: installed, issue: installed ? null : "Prepare the ARK server extension while this instance is stopped" });
   if (command === "read_ark_tools_install_progress") return progressReadFailure ? Promise.reject(new Error("progress pipe unavailable")) : Promise.resolve(installProgress?.instanceId === args.input.instanceId
     && (args.input.operationId == null || installProgress.operationId === args.input.operationId) ? { ...installProgress } : null);
   if (command === "prepare_ark_tools") {
@@ -276,13 +276,21 @@ async function removalChecks() {
     && actionHelp(submit()).includes("安装服务端扩展"),
     "Remounting cannot resurrect cached installation success after uninstall");
 
-  const previousBuild = { installed: true, connected: false, canUninstall: true, issue: null };
+  const previousBuild = { installed: true, updateAvailable: true, connected: false, canUninstall: true, issue: null };
   const preparationsBeforeUpdate = installs.length;
   extensionStates.set("ark-previous-build", previousBuild);
   await render({ instanceId: "ark-previous-build" });
   check(!installationButton().disabled && !namedButton("卸载服务端扩展").disabled
     && installationButton().getAttribute("aria-label") === "检查并更新服务端扩展",
     "An intact previous build remains installed and can be explicitly updated before a runtime connection is available");
+  check(element(".ark-extension-feedback .is-info").textContent?.includes("已安装，有可用更新")
+    && actionHelp(installationButton()).includes("点击“检查并更新”")
+    && !fixture.querySelector(".ark-extension-feedback [role=alert]"),
+    "An intact previous build gets an actionable update notice without being reported as broken");
+  await render({ status: "Running" });
+  check(installationButton().disabled && element(".ark-extension-feedback .is-info").textContent?.includes("停止实例后"),
+    "The update notice explains that a running instance must be stopped before updating");
+  await render({ status: "Stopped" });
   await render({}, false);
   await render();
   check(!installationButton().disabled && !namedButton("卸载服务端扩展").disabled
@@ -290,7 +298,8 @@ async function removalChecks() {
     "Reentering the tool page recognizes an intact previous build without automatically updating it");
   await locale("en-US");
   check(installationButton().getAttribute("aria-label") === "Check and update server extension"
-    && actionHelp(installationButton()).includes("Check and update"), "Installed extension update labels are localized");
+    && actionHelp(installationButton()).includes("Select Update")
+    && element(".ark-extension-feedback .is-info").textContent?.includes("an update is available"), "Installed extension update labels and notice are localized");
   await locale("zh-CN");
   await click(installationButton());
   check(installs.length === preparationsBeforeUpdate + 1 && installs.at(-1)?.instanceId === "ark-previous-build"
@@ -301,17 +310,20 @@ async function removalChecks() {
   check(installs.length === preparationsBeforeUpdate + 1 && removals.length === 3,
     "An active update cannot be duplicated or overlap an uninstall");
   installProgress = { ...installProgress!, active: false, phase: "ready", elapsedSeconds: 2 };
-  await act(async () => resolveInstall!({ ...previousBuild, progress: installProgress! }));
+  const currentBuild = { ...previousBuild, updateAvailable: false };
+  extensionStates.set("ark-previous-build", currentBuild);
+  await act(async () => resolveInstall!({ ...currentBuild, progress: installProgress! }));
   check(!installationButton().disabled && !namedButton("卸载服务端扩展").disabled
-    && installationButton().getAttribute("aria-label") === "检查并更新服务端扩展",
-    "A successful preparation preserves installed status and allows a later deliberate update check");
+    && installationButton().getAttribute("aria-label") === "检查并更新服务端扩展"
+    && !fixture.querySelector(".ark-extension-feedback .is-info"),
+    "A successful update clears the update notice, preserves installed status and permits a later deliberate check");
   const protocolIssue = "ARK tool response does not match this request, game edition, or protocol.";
   extensionStates.set("ark-incompatible", { ...previousBuild, issue: protocolIssue });
   await render({ instanceId: "ark-incompatible", status: "Running" });
   check(submit().disabled && element(".ark-extension-feedback [role=alert]").textContent?.includes(protocolIssue),
     "An installed extension with a failed protocol handshake blocks spawning and exposes its connection diagnosis");
 
-  const repairExtension = { installed: false, connected: false, canUninstall: true, issue: "Managed extension file is missing" };
+  const repairExtension = { installed: false, updateAvailable: false, connected: false, canUninstall: true, issue: "Managed extension file is missing" };
   extensionStates.set("ark-repair-install", repairExtension);
   await render({ instanceId: "ark-repair-install", status: "Stopped" });
   check(!namedButton("卸载服务端扩展").disabled && !installationButton().disabled,
@@ -322,7 +334,7 @@ async function removalChecks() {
   check(namedButton("卸载服务端扩展").disabled, "Installing an update disables uninstall");
   await click(namedButton("卸载服务端扩展"));
   check(removals.length === 3, "No removal is dispatched while installation is active");
-  const ready = { installed: true, connected: false, canUninstall: true, issue: null };
+  const ready = { installed: true, updateAvailable: false, connected: false, canUninstall: true, issue: null };
   extensionStates.set("ark-repair-install", ready);
   installProgress = { ...installProgress!, active: false, phase: "ready", elapsedSeconds: 2 };
   await act(async () => resolveInstall!({ ...ready, progress: installProgress! }));
@@ -420,7 +432,7 @@ async function run() {
   check(installationButton().disabled, "Settings refresh retains the active installation lock");
   installed = true;
   installProgress = { ...installProgress, active: false, phase: "ready", elapsedSeconds: 8 };
-  await act(async () => resolveInstall!({ installed, connected, canUninstall: true, issue: null, progress: installProgress! }));
+  await act(async () => resolveInstall!({ installed, updateAvailable: false, connected, canUninstall: true, issue: null, progress: installProgress! }));
   check(!fixture.querySelector('[role="progressbar"]') && fixture.textContent?.includes("服务端扩展已安装"), "Verified installation closes progress with an inspectable result");
   check(element('.shell-activity-bar .shell-activity-notice-text').textContent?.includes('8 秒'),
     "The completion receipt replaces the last zero-second poll with the native eight-second duration");
@@ -434,10 +446,10 @@ async function run() {
   check(spawnCalls.length === 0, 'No player must never silently spawn at zero coordinates');
   await render({ selectedPlayer: player });
   check(!submit().disabled, 'Selecting a live player immediately enables spawning');
-  await render({ extensionStatus: { installed: true, connected: false, canUninstall: true, issue: null } });
+  await render({ extensionStatus: { installed: true, updateAvailable: false, connected: false, canUninstall: true, issue: null } });
   check(submit().disabled && actionHelp(submit()).includes('自动更新'),
     'An unavailable map handshake disables spawning while automatic connection checks continue');
-  await render({ extensionStatus: { installed: true, connected: true, canUninstall: true, issue: null } });
+  await render({ extensionStatus: { installed: true, updateAvailable: false, connected: true, canUninstall: true, issue: null } });
   check(!submit().disabled && !fixture.querySelector('[data-ark-tools-action="check"]'),
     'A recovered map handshake re-enables spawning without a manual connection action');
   await render({ extensionStatus: undefined });
@@ -512,8 +524,8 @@ async function run() {
   await render({ settingsJson: JSON.stringify({ ...JSON.parse(props.settingsJson), status_revision: 2 }) });
   const newReplies = statusReplies.slice(oldReplies.length);
   check(oldReplies.length === 2 && newReplies.length === 2, "Settings changes recheck both connection and extension controls");
-  await act(async () => { newReplies.forEach(reply => reply({ installed: true, connected: false, canUninstall: true, issue: "new disconnected state" })); });
-  await act(async () => { oldReplies.forEach(reply => reply({ installed: true, connected: true, canUninstall: true, issue: null })); });
+  await act(async () => { newReplies.forEach(reply => reply({ installed: true, updateAvailable: false, connected: false, canUninstall: true, issue: "new disconnected state" })); });
+  await act(async () => { oldReplies.forEach(reply => reply({ installed: true, updateAvailable: false, connected: true, canUninstall: true, issue: null })); });
   check(submit().disabled && actionHelp(submit()).includes("new disconnected state") && !fixture.textContent?.includes("服务端扩展已连接"),
     "An older handshake must not overwrite the current connection state");
   holdStatus = false;

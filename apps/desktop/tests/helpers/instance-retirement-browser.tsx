@@ -239,6 +239,52 @@ async function openRemoval(id: string, kind: "delete" | "archive") {
   await settleUntil(() => Boolean(card(id).querySelector(`.server-list-card-${kind} .inline-confirm-submit:not(:disabled)`)),
     "Removal confirmation must finish inspecting its scope");
 }
+async function checkRemovalConfirmation(id: string, kind: "delete" | "archive") {
+  const host = card(id);
+  const originalWidth = host.style.width;
+  const originalTheme = document.documentElement.dataset.theme;
+  for (const theme of ["dark", "light"]) for (const width of [220, 300]) {
+    document.documentElement.dataset.theme = theme;
+    host.style.width = `${width}px`;
+    const primary = cardControl(id, ".server-list-card-footer .server-list-card-primary-action");
+    const original = primary.getBoundingClientRect();
+    const originalCard = host.getBoundingClientRect();
+    await openRemoval(id, kind);
+    const submit = cardControl(id, `.server-list-card-${kind} .inline-confirm-submit`);
+    const cancel = cardControl(id, `.server-list-card-${kind} .inline-confirm-cancel`);
+    const submitted = submit.getBoundingClientRect();
+    const closed = cancel.getBoundingClientRect();
+    const shell = host.querySelector<HTMLElement>(".server-list-card-shell")!.getBoundingClientRect();
+    const message = host.querySelector<HTMLElement>(".inline-confirm-message")!.getBoundingClientRect();
+    const revealedCard = host.getBoundingClientRect();
+    for (const coordinate of ["x", "y", "width", "height"] as const) {
+      const scrollOffset = coordinate === "x" || coordinate === "y" ? revealedCard[coordinate] - originalCard[coordinate] : 0;
+      check(Math.abs(original[coordinate] + scrollOffset - submitted[coordinate]) < 1,
+        `${kind} confirmation must occupy the original primary button ${coordinate}`);
+    }
+    check(getComputedStyle(primary).visibility === "hidden", "Startup must be hidden while removal is being reviewed");
+    check(submit.textContent?.trim() === translate("zh-CN", kind === "delete" ? "common.delete" : "servers.details.archiveInstance"),
+      "The primary action must match the requested removal");
+    const background = getComputedStyle(host.querySelector(".is-confirming")!).backgroundColor;
+    check(/(?:,|\/)\s*0?\.\d+\)$/.test(background), "Confirmation must retain a translucent card background");
+    check(cancel.querySelector("svg") && cancel.getAttribute("aria-label") === translate("zh-CN", "common.cancel")
+      && Math.abs(closed.right - (shell.right - 10)) < 1 && Math.abs(closed.top - (shell.top + 8)) < 1,
+      "Cancellation must use an accessible close icon at the card's upper right");
+    check(message.top >= closed.bottom && message.bottom <= submitted.top && message.height > 60,
+      "The removal explanation must use the card body without overlapping either control");
+    check(submit.contains(document.elementFromPoint(submitted.x + submitted.width / 2, submitted.y + submitted.height / 2)),
+      "The original card footer must not intercept removal confirmation");
+    if (width === 220) await click(cancel);
+    else await act(async () => { cancel.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true })); await frame(); });
+    check(!host.querySelector(".is-confirming") && retirements.length === 0 && getComputedStyle(primary).visibility === "visible",
+      "Close and Escape must restore the normal card without removing anything");
+    check(document.activeElement === cardControl(id, `.server-list-card-${kind} > button`),
+      "Cancellation must return focus to the removal trigger");
+  }
+  host.style.width = originalWidth;
+  if (originalTheme === undefined) delete document.documentElement.dataset.theme;
+  else document.documentElement.dataset.theme = originalTheme;
+}
 async function submitRemoval(id: string, kind: "delete" | "archive") {
   const before = retirements.length;
   const submit = cardControl(id, `.server-list-card-${kind} .inline-confirm-submit`);
@@ -316,6 +362,8 @@ async function run() {
   await navigate("servers");
   await select(instances[0].id);
   const alpha = instances[0].id;
+  await checkRemovalConfirmation(alpha, "delete");
+  await checkRemovalConfirmation(alpha, "archive");
   await openRemoval(alpha, "delete");
   await holdCurrentPoll(alpha);
   const failed = await submitRemoval(alpha, "delete");

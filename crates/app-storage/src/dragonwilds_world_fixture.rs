@@ -218,9 +218,13 @@ impl Fixture {
 
     pub(super) fn context(&self) -> WorldContext {
         WorldContext {
+            install: self.instance.join("runtime"),
+            config: self.instance.join("config"),
+            inactive: true,
             saves: self.saves.clone(),
             writable: true,
             default_world_name: "Fixture World".into(),
+            world_password: String::new(),
         }
     }
 
@@ -231,7 +235,7 @@ impl Fixture {
     ) -> WriteDragonwildsWorldSettingsInput {
         WriteDragonwildsWorldSettingsInput {
             instance_id: ID.to_owned(),
-            world_file: "Fixture.sav".into(),
+            world_file: Some("Fixture.sav".into()),
             expected_revision: sha256(&fs::read(&self.world).unwrap()),
             world_mode: mode,
             values: values

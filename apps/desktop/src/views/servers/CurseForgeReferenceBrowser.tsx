@@ -4,8 +4,8 @@ import { resolveManualModReferences } from "../../api";
 import { invokeOrMock } from "../../api-transport";
 import { useI18n } from "../../i18n";
 import type { ManualModReferenceResolveResult } from "../../types";
+import { visibleEmbeddedBrowserBounds } from "./embedded-browser-bounds";
 
-type Bounds = { x: number; y: number; width: number; height: number };
 type Request = {
   instanceId: string;
   references: string[];
@@ -14,24 +14,6 @@ type Request = {
   reject: (error: unknown) => void;
 };
 const cancelled = () => new Error(JSON.stringify({ code: "curseforge_reference_failed", reason: "cancelled" }));
-
-// CSS pixels also change with WebView zoom. Send physical client coordinates
-// so the native child stays inside this exact DOM slot at any DPI/zoom level.
-function visibleBounds(element: HTMLElement): Bounds | null {
-  const rect = element.getBoundingClientRect();
-  if (document.hidden || rect.width < 2 || rect.height < 2 || rect.left < 0 || rect.top < 0
-    || rect.right > innerWidth || rect.bottom > innerHeight) return null;
-  for (const dialog of document.querySelectorAll('[role="dialog"][aria-modal="true"], [role="alertdialog"], dialog[open]')) {
-    if (dialog.getClientRects().length) return null;
-  }
-  for (const [x, y] of [[rect.left + 1, rect.top + 1], [rect.right - 1, rect.top + 1],
-    [rect.left + 1, rect.bottom - 1], [rect.right - 1, rect.bottom - 1],
-    [rect.left + rect.width / 2, rect.top + rect.height / 2]]) {
-    if (!element.contains(document.elementFromPoint(x, y))) return null;
-  }
-  const x = Math.round(rect.left * devicePixelRatio), y = Math.round(rect.top * devicePixelRatio);
-  return { x, y, width: Math.round(rect.right * devicePixelRatio) - x, height: Math.round(rect.bottom * devicePixelRatio) - y };
-}
 
 function EmbeddedBrowser({ request, finish }: {
   request: Request;
@@ -52,7 +34,7 @@ function EmbeddedBrowser({ request, finish }: {
     const track = () => {
       if (disposed || stopped) return;
       if (sessionId && !updating) {
-        const bounds = verification.current && slot.current ? visibleBounds(slot.current) : null, key = JSON.stringify(bounds);
+        const bounds = verification.current && slot.current ? visibleEmbeddedBrowserBounds(slot.current) : null, key = JSON.stringify(bounds);
         if (key !== lastBounds) {
           lastBounds = key;
           updating = true;

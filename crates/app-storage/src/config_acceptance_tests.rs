@@ -295,6 +295,40 @@ fn repository_config_acceptance_fixtures_match_storage_outputs() {
 }
 
 #[test]
+fn projectzomboid_scoreboard_accepts_boolean_strings_and_rejects_retired_admin_mode() {
+    let modules = app_modules::discover_modules(repository_root().join("modules")).unwrap();
+    let module = modules
+        .iter()
+        .find(|module| module.summary.id == "projectzomboid")
+        .unwrap();
+    for value in ["true", "false", "admin"] {
+        let input = serde_json::json!({ "steam_scoreboard": value })
+            .as_object()
+            .unwrap()
+            .clone();
+        let result = normalize_complete_instance_settings(
+            Some(module),
+            input,
+            "acceptance-projectzomboid",
+            CONFIG_ACCEPTANCE_INSTANCE_NAME,
+            app_core::INSTANCE_CREATION_DEFAULT_BIND_IP,
+        );
+        if value == "admin" {
+            assert!(matches!(
+                result.expect_err("the native boolean option rejects admin"),
+                crate::StorageError::InvalidModuleSetting { field, .. }
+                    if field == "steam_scoreboard"
+            ));
+        } else {
+            assert_eq!(
+                result.unwrap()["steam_scoreboard"],
+                serde_json::json!(value)
+            );
+        }
+    }
+}
+
+#[test]
 fn barotrauma_fractional_fixture_survives_schema_and_native_output() {
     let modules_root = repository_root().join("modules");
     let modules = app_modules::discover_modules(&modules_root).unwrap();

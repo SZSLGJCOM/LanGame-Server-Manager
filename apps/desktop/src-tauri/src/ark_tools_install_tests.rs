@@ -2,6 +2,8 @@ use super::*;
 
 #[path = "ark_tools_startup_tests.rs"]
 mod startup;
+#[path = "ark_tools_upgrade_tests.rs"]
+mod upgrade;
 
 pub(super) struct Fixture(pub(super) PathBuf, bool);
 

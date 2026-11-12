@@ -54,6 +54,8 @@ TypeScript 7 CLI 负责正式类型检查；`@typescript/typescript6` 为源码�
 
 构建 ARK 扩展时，可将 `LANGAME_ARK_ARCHIVE_DIR` 设为已存在的绝对目录，复用 `AsaApi-sdk.zip`、`AseApi-sdk.zip`、`asa-runtime.zip` 和 `AsaApiLoader-sdk.zip`。文件名、官方来源及固定 SHA-256 见 `scripts/build_ark_tools.ps1`。构建输出不能写入此只读目录；缺失文件或校验失败会直接停止，不回退联网。`LANGAME_PROXY_SOURCE_DIR` 同样接受只读绝对目录，按 `modules/runescapedragonwilds/extensions/proxy-sources.json` 的相对路径提供 32 个固定版本源码；Dragonwilds 与 Unreal loader 构建校验后复制到各自输出目录，再沿用短路径构建及 Git blob 校验。未设置这些变量时保持原有下载与验证流程。
 
+需要优先复用本地 ARK 缓存且允许下载当前固定版本时，使用 `LANGAME_ARK_ARCHIVE_CACHE_DIR`。缓存只有通过当前 SHA-256 校验才会复用；缺失或过期时从固定的官方 URL 下载到 Cargo 构建输出目录，完整验证后才替换旧构建缓存。下载失败不覆盖旧文件，缓存输入目录始终只读。显式的 `LANGAME_ARK_ARCHIVE_DIR` 优先级更高，仍严格禁止联网回退。
+
 从仓库根目录安装锁定的依赖并构建：
 
 ```powershell
@@ -133,6 +135,10 @@ Tauri、共享领域契约、游戏模块和迁移等生产边界变更仍运行
 模拟进程、浏览器组件与真实游戏验收是不同证据；报告实际执行的范围、环境和结果。需要游戏包、外部服务或真实凭据的可选验收应在获准的隔离环境中执行。
 
 真实生命周期使用 ignored 测试 `native_package_lifecycle`，单独以 `--ignored --test-threads=1 --nocapture` 执行。指定 `LANGAME_NATIVE_MODULE_ID` 和现有完整包的 `LANGAME_NATIVE_PACKAGE_ROOT`；测试复制输入，使用隔离数据库和实例，执行真实启动、停止、重启、归档、卸载及数据保留检查。`LANGAME_NATIVE_ACQUISITION=official_acquisition` 增加官方下载与生产创建流程；`LANGAME_NATIVE_PROGRAM_MAINTENANCE=update` 或 `validate` 在旧实例上运行真实更新或文件校验。网络模式使用测试自有 SteamCMD 目录；不指向现有 SteamCMD 或真实实例。跨主机复用测试可执行文件时，使用 `LANGAME_SMOKE_SOURCE_ROOT` 指定该二进制对应的独立源码快照，并记录两者的哈希；不覆盖远端开发工作树。
+
+跨游戏程序链路回归包括 `program_catalog_creation_tests`（全部模块的首份原位复用、第二份隔离及默认文件规则）、`program_launch_integrity_tests`（启动入口损坏与外部加载器修改的区别）和 `repair_tests::cross_module`（Steam、压缩包及 Minecraft Java 的生产更新流程，使用隔离安装器和本地下载端点）。这些测试使用真实模块描述符和存储路径，但不代表全部游戏已经实际开服。
+
+真实包启动修复验收可在 `official_acquisition` 模式另设 `LANGAME_NATIVE_ENTRY_REPAIR=true`。测试仅在自己的隔离目录中，先确认官方完整性，再对安装验证文件做等长字节破坏；启动完成后核对原版内容已恢复。首次官方实例还检查复用预览的新增占用为零和实际运行目录。输入包若保留历史使用标记，不会冒充干净首份；要验证重新下载后的首份复用，可指定受管临时区域内的空输入目录，由官方安装流程获取包。
 
 双实例运行选择完整测试名 `commands::tests::manual_runtime_tests::native_lifecycle_tests::native_two_instance_lifecycle`，以 `--exact --ignored --test-threads=1 --nocapture` 单独执行。沿用上述包与源码输入，将 `LANGAME_SMOKE_RUNTIME_ROOT` 指向仓库外独立临时根，在非管理员 Windows 交互会话运行。`LANGAME_NATIVE_MODULE_ID` 只接受 `terraria`、`valheim` 或 `minecraft`，并须设置 `LANGAME_NATIVE_INSTANCE_MODE=independent_pair` 和 `LANGAME_NATIVE_MANUAL_SAVE=true`。`independent_pair` 对应 `IndependentPair`，从可用的完整包创建两个独立程序实例；`second_private` 用于程序受损后的重新获取验收，不能代替并发运行模式。测试确认副实例在主实例启动、就绪、保存和正常停止期间保有相同运行身份及进程树，核对端口、配置和存档隔离，然后正常停止副实例并继续既有全生命周期。只有模块声明支持共享程序时，才可改用 `LANGAME_NATIVE_INSTANCE_MODE=shared_pair`。
 
@@ -245,6 +251,8 @@ Use Windows with Git, the MSVC C++ build tools, WebView2, Python 3.11 or later, 
 TypeScript 7 provides the production type checker; `@typescript/typescript6` supplies the stable compiler API used for syntax inspection and test fixtures. Keep `windows-core` COM types compatible with `webview2-com`: the current pair is pinned to `0.62.2` / `0.39.1` and must be evaluated together rather than upgraded independently by version number.
 
 For ARK extension builds, `LANGAME_ARK_ARCHIVE_DIR` can point to an existing absolute directory containing `AsaApi-sdk.zip`, `AseApi-sdk.zip`, `asa-runtime.zip` and `AsaApiLoader-sdk.zip`. Official sources and pinned SHA-256 values are defined in `scripts/build_ark_tools.ps1`. Build output must stay outside this read-only input directory; missing or invalid archives stop the build without a network fallback. `LANGAME_PROXY_SOURCE_DIR` similarly accepts a read-only absolute directory containing the 32 pinned source files at the relative paths in `modules/runescapedragonwilds/extensions/proxy-sources.json`. Dragonwilds and Unreal loader builds verify and copy these files into their own output directories, retaining short-path builds and Git blob checks. Leaving these variables unset preserves the normal download and verification flow.
+
+Use `LANGAME_ARK_ARCHIVE_CACHE_DIR` to prefer local ARK archives while allowing downloads of the currently pinned versions. Only matching SHA-256 hashes are reused. Missing or outdated archives are downloaded from the pinned official URLs into Cargo build output and fully verified before replacing an old build cache. Failed downloads preserve old files, and the input cache stays read-only. An explicit `LANGAME_ARK_ARCHIVE_DIR` takes precedence and still forbids network fallback.
 
 ### Change and verification
 

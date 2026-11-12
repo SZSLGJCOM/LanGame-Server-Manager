@@ -21,7 +21,7 @@ test("application update state bypasses the system dashboard", () => {
   }
 });
 
-test("the shell owns the update prompt without a header or assistant entry", () => {
+test("the shell supplies a header update entry without exposing updater state to the assistant", () => {
   for (const source of [appSource, shellSource]) {
     assert.match(source, /appUpdateState/);
     assert.match(source, /onInstallAppUpdate/);
@@ -31,6 +31,8 @@ test("the shell owns the update prompt without a header or assistant entry", () 
     assert.doesNotMatch(source, /AppUpdateState|appUpdateState|onCheckAppUpdate|onInstallAppUpdate|assistant-update/);
   }
   assert.match(shellSource, /<AppUpdatePrompt/);
+  assert.match(shellSource, /appUpdateAction=\{<AppUpdatePrompt/);
+  assert.match(headerSource, /className="shell-header-tools">\s*\{props\.appUpdateAction\}/);
   assert.match(shellSource, /appUpdateReleaseUrl\(props\.appUpdateState\.availableVersion\)/);
   assert.match(shellSource, /await openExternalUrl\(url\)/);
 });

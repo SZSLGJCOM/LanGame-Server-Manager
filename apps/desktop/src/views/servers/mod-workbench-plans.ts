@@ -9,12 +9,14 @@ import {
   buildConfigurableEntries,
   buildConfiguredEntries,
   isCanonicalWorkshopModId,
+  isAbioticOfficialModId,
   mergeProjectZomboidMapList,
   mergeTextList,
   mergeWorkshopList,
   isUnsupportedWorkshopItem,
   isIncompleteWorkshopCollection,
   parseLineOrSemicolonEntries,
+  parseAbioticOfficialModIds,
   readDstRemovedWorkshopModIds,
   readDisabledWorkshopModIds,
   removeTextListValues,
@@ -377,6 +379,30 @@ export function buildProjectZomboidEnablePlan(
   };
 }
 
+export function buildAbioticModRemovePlan(settings: SettingsObject, selectedIds: readonly string[]): ModSettingsRemovePlan {
+  const ids = parseAbioticOfficialModIds(settings.mod_ids);
+  const selected = new Set(selectedIds);
+  const removedIds = ids.filter((id) => selected.has(id));
+  if (!removedIds.length) {
+    return emptyRemovePlan("servers.mods.removeSummary.notConfigured", "This mod is not configured in the instance.");
+  }
+  const remaining = ids.filter((id) => !selected.has(id));
+  if (!remaining.every(isAbioticOfficialModId)) {
+    return emptyRemovePlan("abiotic.settings.validation.modIds", "Use positive mod.io numeric IDs separated by newlines, commas or semicolons.");
+  }
+  if (!remaining.length && settings.sideload_mods === true) {
+    return emptyRemovePlan("abiotic.settings.validation.sideloadIds", "Sideloaded Mods still require their mod.io IDs in the official Mod list.");
+  }
+  return {
+    canRemove: true,
+    summaryKey: "servers.mods.removeSummary.success",
+    summaryFallback: "Removed {count} mod entry(s) from this instance.",
+    params: { count: removedIds.length },
+    nextSettings: { ...settings, mod_ids: remaining.join("\n") },
+    removedIds
+  };
+}
+
 export function buildModSettingsRemovePlan(
   moduleId: string,
   settings: SettingsObject,
@@ -389,6 +415,7 @@ export function buildModSettingsRemovePlan(
   if (selectedIds.length === 0) {
     return emptyRemovePlan("servers.mods.removeSummary.empty", "Select a configured mod first.");
   }
+  if (moduleId === "abioticfactor") return buildAbioticModRemovePlan(settings, selectedIds);
   if (moduleId === "dontstarve" && hasDstRawModOverrides(settings)) {
     return emptyRemovePlan("dst.settings.modStatus.rawOverrideWarning", DST_RAW_MOD_WARNING);
   }

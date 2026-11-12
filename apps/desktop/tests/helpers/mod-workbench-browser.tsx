@@ -169,6 +169,7 @@ async function run() {
         return structuredClone(details);
       }
       case "download_steam_workshop_items": downloads += 1; throw new Error("Unexpected download in local enablement");
+      case "prepare_steam_workshop_items": downloads += 1; throw new Error("Unexpected preparation in local enablement");
       default: throw new Error(`Unexpected fixture command: ${command}`);
     }
   } } });

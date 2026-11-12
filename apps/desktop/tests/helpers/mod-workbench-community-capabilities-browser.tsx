@@ -103,7 +103,7 @@ async function runCommunity(template: InstanceDetails, id: string) {
   await mount();
   await settle(() => inventoryReads > readsBefore && Boolean(fixture.querySelector(".mw-dropzone")), "Community store did not initialize");
   noSteamControls();
-  const references = Boolean(moduleDetails.mods?.enablement || moduleDetails.mods?.source?.provider === "thunderstore");
+  const references = Boolean(moduleDetails.mods?.enablement || ["thunderstore", "nexus"].includes(moduleDetails.mods?.source?.provider ?? ""));
   independentStore(references);
   check(Boolean(fixture.querySelector(".mw-reference-input")) === references, "Only supported online/reference contracts expose an input");
   check(!fixture.querySelector("[data-nexus-auth-open],.mw-nexus-auth-btn"), "Community workflows do not expose a Nexus API key button");
@@ -136,10 +136,20 @@ async function runCommunity(template: InstanceDetails, id: string) {
   noSteamControls();
   const row = fixture.querySelector<HTMLElement>(".mw-entry-row")!;
   check(row.textContent?.includes(name), "Library displays the instance's persisted payload");
-  if (id !== "arksurvivalascended") {
-    check(!row.querySelector('input[type="checkbox"],.mw-entry-enabled-toggle'), "File-only module does not invent an enablement checkbox");
-    check(!row.querySelector(".mw-entry-remove-button"), "File-only module does not label unsupported removal as an action");
+  const fileManagement = !moduleDetails.mods?.enablement && id !== "astroneer" && id !== "satisfactory";
+  const externalInventory = id === "astroneer" || id === "satisfactory";
+  if (fileManagement) {
+    check(row.querySelector<HTMLInputElement>(".mw-entry-enabled-toggle")?.checked,
+      "Existing local Mods can be disabled directly in the shared list");
+    check(Boolean(row.querySelector(".mw-entry-remove-button")), "Existing local Mods expose a reviewed delete action");
+  } else if (externalInventory) {
+    check(!row.querySelector('input[type="checkbox"],.mw-entry-enabled-toggle,.mw-entry-remove-button'),
+      "External integration inventory stays read only without unsupported file actions");
+    const helpId = fixture.querySelector(".mw-source-open-btn")?.getAttribute("aria-describedby");
+    check(helpId && document.getElementById(helpId)?.textContent?.includes(id === "astroneer" ? "AstroModLoader Classic" : "Satisfactory Mod Manager"),
+      "External management guidance belongs to its source action instead of a permanent notice");
   }
+  check(!fixture.querySelector(".mw-managed-adopt"), "Local Mod controls need no separate registration step");
   await click(row.querySelector<HTMLButtonElement>(".mw-entry-row-select")!);
   if (id === "arksurvivalascended") {
     const configuration = fixture.querySelector(".mw-detail-config-col [data-asa-mod-config]");
@@ -177,7 +187,7 @@ async function runCommunity(template: InstanceDetails, id: string) {
   reports.push({ module: id, gate: true, store_library_switch: true, empty_inventory: true, persisted_inventory: true,
     independent_empty_store: true, independent_populated_store: true, source_entry_opens: true,
     independent_configured_store: id === "arksurvivalascended", selected_detail_stays_in_library: true,
-    no_steam_controls: true, file_only_controls_absent: id !== "arksurvivalascended", references });
+    no_steam_controls: true, direct_file_controls: fileManagement, external_inventory_read_only: externalInventory, references });
 }
 async function run() {
   await act(prepareBrowserLocaleCatalogs);

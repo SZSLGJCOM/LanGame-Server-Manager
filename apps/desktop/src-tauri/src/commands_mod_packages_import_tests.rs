@@ -175,6 +175,8 @@ fn local_root_configuration_reimport_preserves_existing_bytes_record_and_entire_
     manifest.packages.insert(
         "local-operator.cfg".into(),
         InstalledPackage {
+            display_name: None,
+            icon_url: None,
             thunderstore_intent: None,
             routed_files: BTreeMap::new(),
             target_name: "operator.cfg".into(),
@@ -270,6 +272,8 @@ fn local_thunderstore_archive_has_separate_payload_and_bounded_dependency_metada
             path: dependency,
             label: "dependency".into(),
             identity: OnlineModIdentity {
+                display_name: None,
+                icon_url: None,
                 thunderstore_intent: None,
                 provider: "thunderstore".into(),
                 project: "Author-Dependency".into(),
@@ -436,6 +440,8 @@ fn local_known_dependencies_reject_missing_disabled_and_wrong_versions_before_pu
                     path: source,
                     label: "dependency".into(),
                     identity: OnlineModIdentity {
+                        display_name: None,
+                        icon_url: None,
                         thunderstore_intent: None,
                         provider: "thunderstore".into(),
                         project: "Author-Dependency".into(),
@@ -491,6 +497,8 @@ fn local_batch_verifies_replacement_dependencies_against_the_complete_staged_sta
             path,
             label: name.into(),
             identity: OnlineModIdentity {
+                display_name: None,
+                icon_url: None,
                 thunderstore_intent: None,
                 provider: "thunderstore".into(),
                 project: format!("Author-{name}"),

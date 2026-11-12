@@ -73,7 +73,7 @@ test("Abiotic keeps admission and the protected token in Access and edits its di
   }
 });
 
-test("My Mods includes the bilingual native form and safe public catalog, keeping the saved credential out of the page", () => {
+test("My Mods keeps native settings in a closed secondary dialog and excludes the saved credential", () => {
   for (const [locale, catalog] of [["en-US", EN_US_ABIOTIC_FACTOR_MESSAGES], ["zh-CN", ZH_CN_ABIOTIC_FACTOR_MESSAGES]]) {
     const { t } = localized(locale, catalog);
     const markup = renderToStaticMarkup(React.createElement(I18nContext.Provider,
@@ -87,6 +87,9 @@ test("My Mods includes the bilingual native form and safe public catalog, keepin
       assert.ok(markup.includes(catalog[`settings.schema.abioticfactor.${key}.title`]));
     }
     assert.match(markup, /<textarea/);
+    assert.match(markup, /<button[^>]*class="mw-ghost-btn mw-source-settings-button"[^>]*aria-haspopup="dialog"/);
+    assert.match(markup, /<dialog[^>]*class="mw-collection-removal-dialog mw-source-settings-dialog"/);
+    assert.doesNotMatch(markup, /<dialog[^>]*\sopen(?:=|\s|>)|<details/);
     assert.ok(markup.includes(catalog["abiotic.settings.mods.browseCatalog"]));
     assert.match(markup, /href="https:\/\/mod\.io\/g\/abiotic-factor"/);
     assert.match(markup, /target="_blank"/);

@@ -80,6 +80,8 @@ node scripts/generate_npm_third_party_licenses.mjs --check
 
 The checked-in [`apps/desktop/src-tauri/THIRD_PARTY_LICENSES-RUST.txt`](apps/desktop/src-tauri/THIRD_PARTY_LICENSES-RUST.txt) provides the corresponding Rust inventory and legal texts. Tauri maps this file explicitly into the installed resources. The Rust generator verifies every crates.io archive against its `Cargo.lock` SHA-256 before reading package metadata and legal files. Published crates that omit a license file require an exact package/version/repository/VCS review rule with either a hash-pinned upstream text or a checksum-verified repository sibling; unknown omissions fail generation.
 
+Custom `license-file` declarations also require an exact-version review with the packaged license text pinned by SHA-256. In particular, `unrar-rs 0.15.3` uses Apache-2.0 **with an additional UnRAR restriction**, not plain Apache-2.0 or MIT. The complete text is included in the Rust inventory: it permits RAR handling but restricts developing a RAR-compatible archiver or recreating the RAR compression algorithm. LanGame uses this decoder for extraction. The separate 7z/RAR test archives retain their upstream package licenses and are registered with exact source and byte evidence in [`THIRD_PARTY_ASSETS/NOTICE`](THIRD_PARTY_ASSETS/NOTICE).
+
 The Rust inventory deliberately over-includes every crates.io entry in `Cargo.lock`, including target-specific, development, build, and optional packages that may not be linked into the Windows executable. Inclusion is conservative and does not establish actual linkage. After changing Rust dependencies, run:
 
 ```text
@@ -164,6 +166,8 @@ node scripts/generate_npm_third_party_licenses.mjs --check
 ```
 
 仓库中的 [`apps/desktop/src-tauri/THIRD_PARTY_LICENSES-RUST.txt`](apps/desktop/src-tauri/THIRD_PARTY_LICENSES-RUST.txt) 提供对应的 Rust 清单及法律文本。Tauri 会将该文件显式映射到安装资源。Rust 生成器在读取包元数据及法律文件前，会先根据 `Cargo.lock` 的 SHA-256 校验每个 crates.io 归档。若上游发布包未附带许可证文件，必须存在绑定精确包名、版本、仓库及 VCS 提交的审计规则，并使用哈希锁定的上游正文或已校验同仓库 sibling crate；未知缺失项会直接导致生成失败。
+
+自定义 `license-file` 声明同样须审计精确版本，并以 SHA-256 锁定包内许可正文。`unrar-rs 0.15.3` 使用的是 **Apache-2.0 加 UnRAR 附加限制**，不是单独的 Apache-2.0 或 MIT。Rust 清单保留完整原文：允许处理 RAR 归档，但限制开发兼容 RAR 的压缩器或重建 RAR 压缩算法；LanGame 仅使用该解码器解压。独立的 7z/RAR 测试样本保留各自上游包的许可，精确来源与字节证据登记在 [`THIRD_PARTY_ASSETS/NOTICE`](THIRD_PARTY_ASSETS/NOTICE)。
 
 Rust 清单有意过度收录 `Cargo.lock` 中的全部 crates.io 条目，包括可能未链接到 Windows 可执行文件的目标平台、开发、构建及可选依赖。该策略偏保守，收录本身不表示实际链接。修改 Rust 依赖后运行：
 

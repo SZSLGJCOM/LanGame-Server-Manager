@@ -12,12 +12,14 @@ for (const extension of [".ts", ".tsx"]) {
   require.extensions[extension] = (module, filename) =>
     module._compile(transpileTypeScript(fs.readFileSync(filename, "utf8"), filename), filename);
 }
-const { buildEnabledRows, canReorderEnabledRow, canToggleModEnabledRow } = require("../src/views/servers/mod-workbench-model.ts");
+const modModel = require("../src/views/servers/mod-workbench-model.ts");
+const { buildEnabledRows, canReorderEnabledRow, canToggleModEnabledRow } = modModel;
 const workshopControls = require("../src/views/servers/mod-workbench-workshop-controls.ts");
 const workshopInventory = require("../src/views/servers/mod-workbench-workshop-inventory.ts");
 const { ManualModInventoryList } = require("../src/views/servers/ManualModInventoryList.tsx");
 const { WorkshopStatus } = require("../src/views/servers/WorkshopStatus.tsx");
 const { WorkshopDownloadRows } = require("../src/views/servers/WorkshopDownloadRows.tsx");
+const { ConfigurationHelp } = require("../src/views/settings/ConfigurationFieldHelp.tsx");
 const { I18nContext } = require("../src/i18n-context.ts");
 const translation = { locale: "en-US", setLocale() {}, t: (key, _params, fallback) => fallback ?? key };
 
@@ -124,7 +126,7 @@ const stagedManualItem = { path: "instance/mods/staged", name: "Staged mod", inf
 function renderList(overrides = {}) {
   const actions = [];
   const context = {
-    ...workshopControls, ...workshopInventory, settings: {}, pzSnapshot: null, readOnly: false,
+    ...modModel, ...workshopControls, ...workshopInventory, settings: {}, pzSnapshot: null, readOnly: false,
     moduleId: "unturned", isArk: false, enabledRows: configuredRows, isManualEnablementModule: false,
     showsManualInventory: false, usesFileModManagement: false, unconfiguredInventoryItems: [], selectedInventoryItem: null,
     managedManualMods: {
@@ -132,12 +134,12 @@ function renderList(overrides = {}) {
       requestDelete: (item) => actions.push(["review-delete", item.path])
     },
     manualInventory: { items: [], target_exists: true, target_path: "instance/mods" }, manualInventoryError: null,
-    activeDetailSource: "enabled", selectedEnabledRow: configuredRows[0], lookupMap: {},
+    activeDetailSource: "enabled", selectedEnabledRow: configuredRows[0], lookupMap: {}, curseforgePresentations: {},
     draggedEnabledRow: null, enabledDropTargetKey: null,
     modEnablementDisabled: false, modMutationsDisabled: false,
-    ShellIcon: () => null, SteamWorkshopPreview: () => null, WorkshopStatus, ManualModInventoryList, WorkshopDownloadRows,
-    pendingWorkshopIds: [], installingWorkshopIds: new Set(), activeProgressPercent: null, downloadOperation: { state: { error: null } },
-    installingManualModIds: new Set(), installingInventoryPaths: new Set(),
+    ShellIcon: () => null, SteamWorkshopPreview: () => null, WorkshopStatus, ManualModInventoryList, WorkshopDownloadRows, ConfigurationHelp,
+    pendingWorkshopIds: [], installingWorkshopIds: new Set(), queuedWorkshopIds: new Set(), downloads: { errors: {}, byId: {} },
+    manualDownloads: {}, inventoryDownloads: {},
     t: translation.t,
     canReorderEnabledRow, canToggleModEnabledRow,
     handleSelectEnabledRow: (key) => actions.push(["select", key]),
@@ -188,6 +190,25 @@ test("Unturned configured rows have no misleading enable toggle and remove only 
   const lockedRemovals = locked.filter((node) => node.props.className === "mw-entry-remove-button");
   assert.equal(lockedRemovals.length, configuredRows.length);
   for (const control of lockedRemovals) assert.equal(control.props.disabled, true);
+});
+
+test("Abiotic official rows remain distinct from matching local files and unrelated Steam metadata", () => {
+  const id = "6472275";
+  const rows = buildEnabledRows(modModel.buildConfiguredEntries("abioticfactor", { mod_ids: id }));
+  const local = { ...stagedManualItem, name: id, inferred_id: id };
+  const { tree, actions } = renderList({ moduleId: "abioticfactor", enabledRows: rows, selectedEnabledRow: rows[0],
+    showsManualInventory: true, usesFileModManagement: true, unconfiguredInventoryItems: [local],
+    lookupMap: { [id]: { title: "Unrelated Steam Mod", preview_url: "https://fixture.invalid/workshop.png" } },
+    SteamWorkshopPreview() { assert.fail("Official mod.io rows cannot use a Steam image"); }
+  });
+  assert.deepEqual(rowKeys(tree), [rows[0].key, local.path]);
+  const official = elements(tree).find((node) => node.key === rows[0].key);
+  const controls = elements(official);
+  assert.equal(controls.some((node) => node.type === "input" || node.type === WorkshopStatus), false);
+  assert.equal(controls.find((node) => node.props.className?.includes("mw-entry-row-title")).props.children, id);
+  assert.ok(controls.some((node) => node.props.children === "abiotic.settings.mods.nextStart"));
+  controls.find((node) => node.props.className === "mw-entry-remove-button").props.onClick();
+  assert.deepEqual(actions, [["select", rows[0].key], ["remove", rows[0].key]]);
 });
 
 test("recoverable DST and manual configured rows retain their real disable control", () => {
@@ -271,8 +292,8 @@ test("staged manual rows remain unchecked, cannot drag, and enable only their se
 test("existing manual Workshop files show installation progress without adding duplicate rows", () => {
   const { tree } = renderList({
     enabledRows: [], isManualEnablementModule: true, showsManualInventory: true,
-    unconfiguredInventoryItems: [stagedManualItem], installingInventoryPaths: new Set([stagedManualItem.path]),
-    activeProgressPercent: 63, modMutationsDisabled: true
+    unconfiguredInventoryItems: [stagedManualItem], inventoryDownloads: { [stagedManualItem.path]: { state: "installing", progressPercent: 63 } },
+    modMutationsDisabled: true
   });
   assert.deepEqual(rowKeys(tree), [stagedManualItem.path]);
   const status = elements(tree).find((node) => node.type === WorkshopStatus);
@@ -283,8 +304,8 @@ test("existing manual Workshop files show installation progress without adding d
 
 test("configured package names share the progress of their Workshop source", () => {
   const { tree } = renderList({
-    isManualEnablementModule: true, installingManualModIds: new Set([configuredRows[0].id.toLowerCase()]),
-    activeProgressPercent: 63, modMutationsDisabled: true, modEnablementDisabled: true
+    isManualEnablementModule: true, manualDownloads: { [configuredRows[0].id.toLowerCase()]: { state: "installing", progressPercent: 63 } },
+    modMutationsDisabled: true, modEnablementDisabled: true
   });
   const status = elements(tree).find((node) => node.type === WorkshopStatus && node.props.state === "installing");
   assert.equal(status.props.progressPercent, 63);

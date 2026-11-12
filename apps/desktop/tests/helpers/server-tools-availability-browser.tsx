@@ -252,7 +252,7 @@ async function run() {
   let resolveSpawn: ((result: ArkSpawnResult) => void) | undefined;
   Object.assign(window, { isTauri: true, __TAURI_INTERNALS__: { invoke: (command: string, args: { input?: ArkSpawnInput }) => {
     if (command === "read_ark_tools_install_progress") return Promise.resolve(null);
-    if (command === "read_ark_tools_status") return Promise.resolve({ installed: true, connected: true, canUninstall: true, issue: null });
+    if (command === "read_ark_tools_status") return Promise.resolve({ installed: true, updateAvailable: false, connected: true, canUninstall: true, issue: null });
     if (command === "read_ark_map") return Promise.resolve({ ...args.input, mapName: "TheIsland", sampledAtUnixMs: Date.now(), projection: null, players: [], artwork: null });
     if (command === "spawn_ark_creature" && args.input) {
       spawnInput = args.input;

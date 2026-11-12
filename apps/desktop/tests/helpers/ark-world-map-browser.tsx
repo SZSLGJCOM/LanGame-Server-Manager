@@ -47,7 +47,7 @@ function receipt(input: ArkMapScope & { command: string }): InstanceRuntimeComma
 Object.assign(window, { isTauri: true, __TAURI_INTERNALS__: { invoke: async (command: string, args: { input: ArkMapScope & ArkSpawnInput & { command: string } }) => {
   const input = args.input;
   if (command === "read_ark_tools_install_progress") return null;
-  if (command === "read_ark_tools_status") { statusCalls++; return { installed, connected: installed, canUninstall: installed,
+  if (command === "read_ark_tools_status") { statusCalls++; return { installed, updateAvailable: false, connected: installed, canUninstall: installed,
     issue: installed ? null : "Prepare the ARK server extension while this instance is stopped" }; }
   if (command === "read_ark_map") {
     mapCalls.push(input); activeMaps++; maximumMaps = Math.max(maximumMaps, activeMaps);

@@ -352,12 +352,7 @@ pub(super) fn relay_events(app: tauri::AppHandle) {
                 Ok((readback, events)) => {
                     retry_delay = Duration::from_millis(250);
                     for event in events {
-                        if ![
-                            crate::runtime_log_stream::RUNTIME_LOG_STREAM_EVENT,
-                            "app-shutdown-failed",
-                        ]
-                        .contains(&event.name.as_str())
-                        {
+                        if !super::events::FORWARDED_EVENT_NAMES.contains(&event.name.as_str()) {
                             continue;
                         }
                         let _ = app.emit(&event.name, event.payload);

@@ -197,7 +197,7 @@
     "steam_scoreboard": {
       "type": "string",
       "title": "Steam Scoreboard",
-      "description": "Writes SteamScoreboard in Project Zomboid server.ini.",
+      "description": "Allow ordinary players to view Steam identities in the player list. Roles with scoreboard access can still view them when this is disabled.",
       "x-lsgm-section": "world",
       "x-lsgm-order": 108,
       "x-lsgm-source": "native_server_options_build_24909836",
@@ -206,8 +206,7 @@
       "default": "true",
       "enum": [
         "true",
-        "false",
-        "admin"
+        "false"
       ]
     },
     "mouse_over_to_see_display_name": {

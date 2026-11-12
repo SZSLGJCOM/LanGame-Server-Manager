@@ -25,6 +25,7 @@ mod lan_host;
 mod live_players;
 mod media_cache;
 mod native_control_publish;
+mod nexus_browser;
 mod project_zomboid_mods;
 mod runtime_astroneer_health;
 mod runtime_log_stream;
@@ -136,6 +137,10 @@ fn main() {
         return;
     }
     #[cfg(all(windows, feature = "desktop-reliability"))]
+    if nexus_browser::smoke::run_if_requested() {
+        return;
+    }
+    #[cfg(all(windows, feature = "desktop-reliability"))]
     if desktop_reliability::run_if_requested() {
         return;
     }
@@ -196,6 +201,9 @@ fn main() {
             app.manage(curseforge_browser::BrowserState::new(
                 storage_paths.logs_root.join("desktop-ui/active.jsonl"),
             ));
+            app.manage(nexus_browser::BrowserState::new(
+                storage_paths.logs_root.join("desktop-ui/active.jsonl"),
+            ));
             app.handle()
                 .plugin(tauri_plugin_updater::Builder::new().build())?;
             setup_tray(app)?;
@@ -251,6 +259,7 @@ fn main() {
             }
             if matches!(payload.event(), tauri::webview::PageLoadEvent::Started) {
                 curseforge_browser::close_active_host(webview.app_handle());
+                nexus_browser::close_active_host(webview.app_handle());
             }
             if matches!(payload.event(), tauri::webview::PageLoadEvent::Finished) {
                 #[cfg(windows)]

@@ -55,9 +55,12 @@ import { buildSavedConfigurationSchema } from "./saved-configuration-schema";
 import { useArkMapAvailability } from "./useArkMapAvailability";
 import { ArkMapAvailabilityNotice, ArkMapUnavailableWarning } from "./ArkMapAvailabilityNotice";
 import { arkMapSelectionErrorMessage, buildArkMapSelectionPatch } from "./ark-cluster-maps";
+import { astroneerNetworkDraftMatchesPersisted, readAstroneerAdvertisedAddress } from "../../astroneer-network-settings";
 
 export interface ConfigurationWorkspaceProps {
   details: InstanceDetails;
+  requestedFieldKey?: string;
+  onFieldNavigationHandled?: () => void;
   moduleDetails: ModuleDetails | null;
   moduleDetailsError: string | null;
   onRetryModuleDetails: () => void;
@@ -129,7 +132,14 @@ export function ConfigurationWorkspace(props: ConfigurationWorkspaceProps) {
     }
     return serializeSettingsObject(moduleDefinition.initializeSettings(parsed.value, moduleContext));
   });
-  const [requestedSectionId, setRequestedSectionId] = useState<string | null>(null);
+  const [observedSettingsJson, setObservedSettingsJson] = useState(props.details.settings_json);
+  if (moduleId === "astroneer" && observedSettingsJson !== props.details.settings_json) {
+    setObservedSettingsJson(props.details.settings_json);
+    // Startup discovers and persists the advertised address. Follow it only while the editor is clean.
+    if (settingsJson === observedSettingsJson) setSettingsJson(props.details.settings_json);
+  }
+  const [requestedSectionId, setRequestedSectionId] = useState<string | null>(() =>
+    !readOnly && moduleId === "astroneer" && !readAstroneerAdvertisedAddress(props.details.settings_json) ? "network" : null);
   const [mapSelectionError, setMapSelectionError] = useState<string | null>(null);
   const [requestedFocusId, setRequestedFocusId] = useState<string | null>(null);
   const [networkValidationBlocked, setNetworkValidationBlocked] = useState(false);
@@ -208,10 +218,18 @@ export function ConfigurationWorkspace(props: ConfigurationWorkspaceProps) {
     backupRetentionCount: String(props.details.backup_retention_count),
     settingsJson,
     ports,
+    adoptExternalWrites: moduleId === "astroneer" && settingsJson === props.details.settings_json,
     ready: !loading && !moduleMismatch && !props.moduleDetailsError &&
       !schema.parseError && !modelResult.error,
     disabled: saveBlocked,
-    onSave: props.onSave
+    onSave: props.onSave ? async (input, options) => {
+      const saved = await props.onSave!(input, options);
+      if (moduleId === "astroneer" && saved) {
+        // Storage may normalize JSON. Never replace edits made while this write was in flight.
+        setSettingsJson((current) => current === input.settings_json ? saved.settings_json : current);
+      }
+      return saved;
+    } : undefined
   });
 
   const selectedSectionId = model
@@ -238,6 +256,16 @@ export function ConfigurationWorkspace(props: ConfigurationWorkspaceProps) {
   useLayoutEffect(() => {
     setMapSelectionError(null);
   }, [props.details.summary.id, props.details.settings_json, locale]);
+
+  useLayoutEffect(() => {
+    if (!props.requestedFieldKey || !model || editorDisabled) return;
+    const target = resolveConfigurationFieldNavigation(model, props.requestedFieldKey, idPrefix, readOnly);
+    if (!target) return;
+    setNavigationOpen(false);
+    setRequestedSectionId(target.sectionId);
+    setRequestedFocusId(target.inputId);
+    props.onFieldNavigationHandled?.();
+  }, [props.requestedFieldKey, props.onFieldNavigationHandled, model, idPrefix, readOnly, editorDisabled]);
 
   useLayoutEffect(() => {
     if (requestedFocusId && focusConfigurationControl(requestedFocusId)) {
@@ -450,6 +478,12 @@ export function ConfigurationWorkspace(props: ConfigurationWorkspaceProps) {
               <InstanceConnectionSettingsPanel details={props.details} moduleDetails={localizedModuleDetails}
                 bindAddressCandidates={props.bindAddressCandidates} bindIp={bindIp} ports={ports}
                 defaultPorts={readOnly ? [] : defaultPorts} disabled={editorDisabled}
+                settings={settingsParseResult.value ?? undefined}
+                joinAddressInputId={buildConfigurationFieldIds("public_ip", idPrefix, readOnly).inputId}
+                onSettingsPatch={(patch) => commitSettings((current) => applyPatch(current, patch))}
+                networkSettingsUnsaved={moduleId === "astroneer" && (!settingsParseResult.value
+                  || !astroneerNetworkDraftMatchesPersisted(props.details.settings_json, settingsParseResult.value)
+                  || saveStatus.state === "failed" || saveStatus.state === "conflict")}
                 onBindIpChange={(value) => { if (!readOnly) setBindIp(value); }}
                 onPortsChange={(value) => { if (!readOnly) setPorts(value); }}
                 onValidationBlockedChange={setNetworkValidationBlocked} />

@@ -98,7 +98,7 @@ fn collect_executable_matches(search_root: &Path, file_name: &str, matches: &mut
         let path = entry.path();
 
         if path.is_dir() {
-            if is_steam_staging_directory(&path) {
+            if is_non_program_directory(&path) {
                 continue;
             }
             collect_executable_matches(&path, file_name, matches);
@@ -116,10 +116,24 @@ fn collect_executable_matches(search_root: &Path, file_name: &str, matches: &mut
     }
 }
 
-fn is_steam_staging_directory(path: &Path) -> bool {
+fn is_non_program_directory(path: &Path) -> bool {
     path.file_name()
         .and_then(|name| name.to_str())
-        .map(|name| name.eq_ignore_ascii_case("steamapps"))
+        .map(|name| {
+            // Recovery copies can deliberately retain the same executable
+            // name as the repaired program. They are never launch candidates,
+            // including when uninstall leaves only those preserved bytes.
+            name.eq_ignore_ascii_case("steamapps")
+                || name
+                    .to_ascii_lowercase()
+                    .starts_with(".langame-archive-recovery-")
+                || (name.eq_ignore_ascii_case("minecraft-recovery")
+                    && path
+                        .parent()
+                        .and_then(Path::file_name)
+                        .and_then(|name| name.to_str())
+                        .is_some_and(|name| name.eq_ignore_ascii_case(".langame")))
+        })
         .unwrap_or(false)
 }
 

@@ -113,7 +113,7 @@ These checks validate format, key identity, and copy consistency. They are **not
 
 Write the user-facing changes in a UTF-8 text file and pass it with `-NotesFile` when building or exporting. The script copies this text into `latest.json.notes`; Tauri exposes it as the update body and the prompt displays it as plain text with line breaks. Empty notes are omitted from the prompt. Use the same text for the GitHub Release description: the current preparation scripts do not create Releases or synchronize their descriptions. Editing only the GitHub page does not update the in-app notes.
 
-An enabled desktop build checks its configured manifest sources once after initialization and then every four hours while no update is already available, downloading or installing. A higher version triggers the prompt; dismissing a version suppresses repeated prompts during the session. This is polling, not immediate server push. An already-pending version remains selected until installation or another explicit check/restart, so editing its notes does not interrupt the current prompt. A valid response reporting no update does not prevent checking independent feeds, because a mirror may still be synchronizing.
+An enabled desktop build checks its configured manifest sources once after initialization and then every four hours while no update is already available, downloading or installing. A higher version shows a download button in the top-right header; update details open only when requested. This is polling, not immediate server push. An already-pending version remains selected until installation or another explicit check/restart, so editing its notes does not interrupt the current prompt. A valid response reporting no update does not prevent checking independent feeds, because a mirror may still be synchronizing.
 
 Publish the incremented version's installer, signature and matching manifest together. The release description and `latest.json.notes` use the same release notes. The feed, artifact URLs and frontend download-page URL must refer to the same repository and version.
 
@@ -125,7 +125,7 @@ During an application update, the same ten-second handoff budget also waits for 
 
 Passive updates reuse the saved installer language, or use the system language when none was saved. They never open a language selection dialog; interactive manual installation still offers the language selector. The installer guard test entry also runs eight isolated language-initialization cases, including the old updater's `/P /UPDATE /R /ARGS` invocation.
 
-An enabled build automatically prompts when a new version is found. Download opens that version's official GitHub Release page; Update in app starts the existing updater after the prompt explains saving, stopping and restarting. There is no header button or second confirmation screen. Dismissing the prompt does not install anything or cause repeated prompts for the same version during ordinary background checks.
+An enabled build keeps the header download button visible while an update is available. Clicking it opens the update details. Download opens that version's official GitHub Release page; Update in app starts the existing updater after the prompt explains saving, stopping and restarting. Dismissing the prompt leaves the header entry available to reopen the details, download progress or failure. Background checks do not open the prompt or start installation.
 
 ### Data locations and uninstallation
 
@@ -185,7 +185,7 @@ References: [Tauri updater and static JSON](https://v2.tauri.app/plugin/updater/
 6. 创建正式 `v<version>` Release，上传两包、两份 `.exe.sig`、`latest.json`、`SHA256SUMS` 和 `SHA256SUMS.offline`。核对上传后文件名、版本、哈希与匿名下载；本地计划和回执不上传。
 7. 核实本机镜像发布器的该版本记录为 `succeeded`，再核对官网地区清单和 GitCode 的完整版本指针。GitHub 镜像工作流保持禁用，确保只有一个发布者。
 
-客户端初始化后检查一次，空闲时每四小时检查；关闭某版本提示后，本次会话不重复提示。更新下载并验签完成后才协调停止后台及游戏进程。手动安装或卸载前使用应用的安全退出，关闭到托盘不等于退出。
+客户端初始化后检查一次，空闲时每四小时检查；发现新版本时在右上角 Header 显示下载按钮，点击后打开更新详情，不自动弹窗。关闭详情后入口保留，可再次查看版本、下载进度或失败原因。更新下载并验签完成后才协调停止后台及游戏进程。手动安装或卸载前使用应用的安全退出，关闭到托盘不等于退出。
 
 安装目录与游戏数据独立；卸载保留服务器配置、数据库、实例、存档、归档、备份和已保存的数据位置。可选界面数据清理仅重置 WebView/localStorage 设置。具体默认路径及旧数据兼容规则见[数据位置与卸载](#数据位置与卸载)。
 

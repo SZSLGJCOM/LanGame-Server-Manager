@@ -142,6 +142,7 @@ fn launch_routes_both_output_streams_through_the_owned_sink() {
             install_root: root.to_string_lossy().into_owned(),
             install_state: InstallState::Installed,
             uses_private_runtime: false,
+            can_update_before_start: false,
             working_directory: root.to_string_lossy().into_owned(),
             executable_path: std::env::current_exe()
                 .unwrap()

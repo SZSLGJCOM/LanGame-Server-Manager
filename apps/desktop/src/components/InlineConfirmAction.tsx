@@ -8,14 +8,17 @@ interface InlineConfirmActionProps extends Omit<ButtonHTMLAttributes<HTMLButtonE
   children: ReactNode;
   confirmation: string;
   confirmLabel?: string;
+  confirmClassName?: string;
   cancelLabel?: string;
+  cancelIcon?: ReactNode;
+  revealOnOpen?: boolean;
   onConfirm: () => void | Promise<void>;
   prepareConfirmation?: () => Promise<string>;
   scopeKey: string;
   wrapperClassName?: string;
 }
 
-export function InlineConfirmAction({ children, confirmation, confirmLabel, cancelLabel, onConfirm, prepareConfirmation,
+export function InlineConfirmAction({ children, confirmation, confirmLabel, confirmClassName, cancelLabel, cancelIcon, revealOnOpen, onConfirm, prepareConfirmation,
   scopeKey, wrapperClassName = "", disabled, ...buttonProps }: InlineConfirmActionProps) {
   const [review, setReview] = useState<{ scope: string; source: string; message: string; ready: boolean } | null>(null);
   const [preparing, setPreparing] = useState(false);
@@ -96,7 +99,8 @@ export function InlineConfirmAction({ children, confirmation, confirmLabel, canc
   }
 
   if (open) return <InlineConfirmReview wrapperClassName={wrapperClassName} containerRef={containerRef}
-    label={buttonProps["aria-label"] ?? confirmation} message={review.message} confirmLabel={confirmLabel} cancelLabel={cancelLabel}
+    label={buttonProps["aria-label"] ?? confirmation} message={review.message} confirmLabel={confirmLabel}
+    confirmClassName={confirmClassName} cancelLabel={cancelLabel} cancelIcon={cancelIcon} revealOnOpen={revealOnOpen}
     pending={pending} preparing={preparing} scrollable={Boolean(prepareConfirmation && review.ready)}
     onCancel={() => cancel(true)} onDismissOutside={() => cancel(false)}
     onConfirm={review.ready ? () => void confirm() : undefined}

@@ -5,23 +5,28 @@ export const ASA_MEMBERSHIP_KEYS = ["mod_ids_csv", "passive_mod_ids_csv", "curse
 export type AsaModAction = "enable" | "disable" | "remove" | "add" | "restore-files";
 export const ASA_RAW_MOD_WARNING = "Custom launch flags define Mod loading. Remove -mods and -passivemods there before using these controls.";
 
-/** Keep token boundaries and quoting aligned with native parse_custom_launch_flags. */
-export function hasAsaRawModFlags(settings: SettingsObject): boolean {
-  const raw = typeof settings.custom_launch_flags === "string" ? settings.custom_launch_flags : "";
-  const arguments_: string[] = [];
-  let current = "", single = false, double = false;
+/** Native token values plus original spans, so editing one option preserves every other byte. */
+export function parseAsaLaunchFlags(raw: string) {
+  const tokens: { value: string; start: number; end: number }[] = [];
+  let current = "", single = false, double = false, start = 0;
   for (let index = 0; index < raw.length; index += 1) {
     const character = raw[index];
     if (character === '"' && !single) double = !double;
     else if (character === "'" && !double) single = !single;
     else if (character === "\\" && double && (raw[index + 1] === '"' || raw[index + 1] === "\\")) current += raw[++index];
     else if (/\p{White_Space}/u.test(character) && !single && !double) {
-      if (current) arguments_.push(current);
-      current = "";
+      if (current) tokens.push({ value: current, start, end: index });
+      current = ""; start = index + 1;
     } else current += character;
   }
-  if (current) arguments_.push(current);
-  return arguments_.some((argument) => ["-mods", "-passivemods"].includes(argument.split("=")[0].toLowerCase()));
+  if (current) tokens.push({ value: current, start, end: raw.length });
+  return { tokens, balanced: !single && !double };
+}
+
+/** Keep token boundaries and quoting aligned with native parse_custom_launch_flags. */
+export function hasAsaRawModFlags(settings: SettingsObject): boolean {
+  const raw = typeof settings.custom_launch_flags === "string" ? settings.custom_launch_flags : "";
+  return parseAsaLaunchFlags(raw).tokens.some(({ value }) => ["-mods", "-passivemods"].includes(value.split("=")[0].toLowerCase()));
 }
 
 export function canonicalAsaModId(value: unknown): string | null {

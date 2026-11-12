@@ -31,7 +31,7 @@ pub async fn inspect_module_programs(
         let descriptors =
             discover_modules(&storage.paths.modules_root).map_err(|error| error.to_string())?;
         let descriptor = find_descriptor(&descriptors, &input.module_id)?;
-        app_storage::inspect_module_programs(
+        let mut inventory = app_storage::inspect_module_programs(
             &storage.paths,
             descriptor,
             input.program_mode,
@@ -40,7 +40,52 @@ pub async fn inspect_module_programs(
             input.include_archived_sources,
         )
         .await
-        .map_err(|error| error.to_string())
+        .map_err(|error| error.to_string())?;
+        if input.program_source == app_core::InstanceProgramSource::Verified
+            && input.program_mode != Some(app_core::InstanceProgramMode::Shared)
+            && inventory.creation.action == "independent_install"
+            && let Some(app_id) = descriptor.summary.steam_app_id.filter(|id| *id != 0)
+            && let Some(installation) = inventory.installations.iter().find(|installation| {
+                installation.scope == "library"
+                    && installation.used_by.is_empty()
+                    && !installation.pending_removal
+                    && installation.install_state == InstallState::Installed
+                    && installation.install_root == inventory.creation.program_path
+            })
+            && let Some(version) = installation.current_version.clone()
+        {
+            let root = PathBuf::from(&installation.install_root);
+            let steamcmd = storage.paths.steamcmd_root.clone();
+            let descriptor = descriptor.clone();
+            let cancellation = worker_operation.cancellation_token();
+            let reusable = spawn_blocking_storage_context_task(&worker_operation, move || {
+                let defaults = super::commands_program_storage::verify_steam_original_defaults(
+                    &root,
+                    &steamcmd,
+                    &descriptor,
+                    app_id,
+                    &version,
+                    &cancellation,
+                    &mut |_| {},
+                )
+                .map_err(|error| error.to_string())?;
+                app_storage::library_reuse_preview_with_original_defaults(
+                    &root,
+                    &descriptor.summary.id,
+                    &defaults,
+                    Some(&cancellation),
+                )
+                .map_err(|error| error.to_string())
+            })
+            .await
+            .map_err(|error| format!("Original program preview failed: {error}"))??;
+            if reusable {
+                inventory.creation.action = "existing_install".into();
+                inventory.creation.additional_bytes = Some(0);
+                inventory.creation.reason = None;
+            }
+        }
+        Ok(inventory)
     })
     .await
     .map_err(|error| format!("Program inventory task failed: {error}"))?

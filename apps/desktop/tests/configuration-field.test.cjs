@@ -67,6 +67,124 @@ function field(overrides = {}) {
   };
 }
 
+function selectFieldHarness(initialValue, fieldOverrides = {}) {
+  const patches = [];
+  const props = {
+    copy,
+    field: field({
+      key: "steam_scoreboard",
+      title: "Steam scoreboard",
+      control: "select",
+      defaultValue: "true",
+      enumOptions: [{ label: "Enabled", value: "true" }, { label: "Disabled", value: "false" }],
+      presentation: { state: "editable", owner: "configuration", behavior: "plain" },
+      ...fieldOverrides
+    }),
+    settings: initialValue === undefined ? {} : { steam_scoreboard: initialValue },
+    value: initialValue,
+    onPatch(patch) {
+      patches.push(patch);
+      Object.assign(props.settings, patch);
+      props.value = props.settings.steam_scoreboard;
+    }
+  };
+  function findSelect(node) {
+    if (!React.isValidElement(node)) return undefined;
+    if (node.type === "select") return node;
+    for (const child of React.Children.toArray(node.props.children)) {
+      const select = findSelect(child);
+      if (select) return select;
+    }
+    return undefined;
+  }
+  function render() {
+    let root;
+    function CaptureField() {
+      root = ConfigurationField(props);
+      return root;
+    }
+    const html = renderToStaticMarkup(React.createElement(CaptureField));
+    const select = findSelect(root);
+    assert.ok(select);
+    const options = React.Children.toArray(select.props.children);
+    const selected = options.find((option) => String(option.props.value) === select.props.value);
+    assert.ok(selected);
+    return { html, select, options, selected };
+  }
+  return { patches, props, render };
+}
+
+test("unknown saved enum values stay selected and visible without rewriting settings", () => {
+  const harness = selectFieldHarness("admin");
+  harness.props.validationMessage = "Choose an allowed value.";
+  const { html, select, selected } = harness.render();
+  assert.equal(selected.props.children, "admin");
+  assert.equal(selected.props.disabled, true);
+  assert.match(html, /<option(?=[^>]*disabled="")(?=[^>]*selected="")[^>]*>admin<\/option>/);
+  assert.match(html, /aria-invalid="true"/);
+  assert.match(html, /Choose an allowed value\./);
+  select.props.onChange({ target: { value: select.props.value } });
+  assert.deepEqual(harness.patches, []);
+  assert.deepEqual(harness.props.settings, { steam_scoreboard: "admin" });
+});
+
+test("legal string enums retain their exact value and selection", () => {
+  const harness = selectFieldHarness("false");
+  const { selected, options } = harness.render();
+  assert.equal(selected.props.children, "Disabled");
+  assert.notEqual(selected.props.disabled, true);
+  assert.equal(options.length, 2);
+  assert.equal(harness.props.value, "false");
+  assert.deepEqual(harness.patches, []);
+});
+
+test("only an explicit legal enum selection replaces an unknown saved value", () => {
+  for (const [index, value, label] of [[0, "true", "Enabled"], [1, "false", "Disabled"]]) {
+    const harness = selectFieldHarness("admin");
+    const { select } = harness.render();
+    assert.deepEqual(harness.patches, []);
+    select.props.onChange({ target: { value: String(index) } });
+    assert.deepEqual(harness.patches, [{ steam_scoreboard: value }]);
+    assert.equal(harness.props.value, value);
+    const updated = harness.render();
+    assert.equal(updated.selected.props.children, label);
+    assert.ok(updated.options.every((option) => option.props.children !== "admin"));
+    assert.equal(harness.patches.length, 1);
+  }
+});
+
+test("preserve-native enums distinguish unset values from unknown saved values", () => {
+  for (const value of [undefined, null]) {
+    const unset = selectFieldHarness(value, { preserveNativeWhenUnset: true });
+    assert.equal(unset.render().select.props.value, "");
+    assert.equal(unset.render().selected.props.children, "Keep native setting (current value not read)");
+    assert.deepEqual(unset.patches, []);
+  }
+
+  const unknown = selectFieldHarness("admin", { preserveNativeWhenUnset: true });
+  const { select, selected } = unknown.render();
+  assert.notEqual(select.props.value, "");
+  assert.equal(selected.props.children, "admin");
+  assert.equal(selected.props.disabled, true);
+  assert.deepEqual(unknown.patches, []);
+  select.props.onChange({ target: { value: "" } });
+  assert.deepEqual(unknown.patches, [{ steam_scoreboard: undefined }]);
+  assert.equal(unknown.render().select.props.value, "");
+});
+
+test("missing enum values keep their existing fallback and read-only values stay raw", () => {
+  const unset = selectFieldHarness(undefined);
+  assert.equal(unset.render().selected.props.children, "Enabled");
+  assert.deepEqual(unset.patches, []);
+  const unknown = selectFieldHarness("admin");
+  const html = renderToStaticMarkup(React.createElement(ConfigurationField, {
+    ...unknown.props, readOnly: true
+  }));
+  assert.match(html, /<textarea[^>]*readOnly=""[^>]*>admin<\/textarea>/);
+  assert.doesNotMatch(html, /<select/);
+  assert.deepEqual(unknown.patches, []);
+});
+
 function suggestionInputHarness(initialValue = "SURVIVAL_TOGETHER") {
   const filename = path.join(desktopRoot, "src", "views", "settings", "ConfigurationField.tsx");
   const hooks = [];

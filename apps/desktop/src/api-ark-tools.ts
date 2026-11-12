@@ -4,7 +4,7 @@ import type { InstanceRuntimeCommandResult } from "./types";
 import { readPreferredLocale } from "./locale-preference";
 import { parseArkToolsInstallProgress, type ArkToolsInstallProgress } from "./ark-tools-installation";
 
-export interface ArkToolsStatus { installed: boolean; connected: boolean; canUninstall: boolean; issue: string | null }
+export interface ArkToolsStatus { installed: boolean; updateAvailable: boolean; connected: boolean; canUninstall: boolean; issue: string | null }
 export interface ArkToolsPreparationResult extends ArkToolsStatus { progress: ArkToolsInstallProgress }
 export interface ArkToolsRemovalResult extends ArkToolsStatus { frameworkRetained: boolean }
 export interface ArkCreature {
@@ -27,14 +27,16 @@ function record(value: unknown): Record<string, unknown> {
 }
 function status(value: unknown): ArkToolsStatus {
   const response = record(value);
-  if (typeof response.installed !== "boolean" || typeof response.connected !== "boolean" || typeof response.canUninstall !== "boolean"
+  if (typeof response.installed !== "boolean" || typeof response.updateAvailable !== "boolean"
+    || typeof response.connected !== "boolean" || typeof response.canUninstall !== "boolean"
     || response.issue !== null && (typeof response.issue !== "string" || response.issue.length > 8192)
-    || response.connected && !response.installed) throw new Error("Invalid ARK extension status.");
+    || (response.connected || response.updateAvailable) && !response.installed) throw new Error("Invalid ARK extension status.");
   // The native installer reports ordinary absence as a message. Present that
   // prerequisite through localized action help; retain actual repair/connection diagnostics.
   const issue = !response.installed && response.issue === "Prepare the ARK server extension while this instance is stopped"
     ? null : response.issue as string | null;
-  return { installed: response.installed, connected: response.connected, canUninstall: response.canUninstall, issue };
+  return { installed: response.installed, updateAvailable: response.updateAvailable,
+    connected: response.connected, canUninstall: response.canUninstall, issue };
 }
 export async function readArkToolsStatus(instanceId: string, processKey = "main"): Promise<ArkToolsStatus> {
   requireHost();

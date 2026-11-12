@@ -11,6 +11,8 @@ use app_storage::{materialize_instance_configuration_for_start, update_instance_
 
 #[path = "commands_asa_mod_startup.rs"]
 mod asa_mod_startup;
+#[path = "commands_dragonwilds_lifecycle.rs"]
+mod dragonwilds_lifecycle;
 #[path = "commands_dst_lifecycle.rs"]
 pub(super) mod dst_lifecycle;
 #[path = "commands_runtime_log_stream.rs"]
@@ -144,6 +146,9 @@ pub(super) fn build_instance_launch_preview(
     .map_err(|error| error.to_string())?;
     plan.uses_private_runtime = super::commands_program_storage::program_mode(instance)?
         == app_storage::InstanceProgramMode::Independent;
+    plan.can_update_before_start = should_run_prestart_update(&module)
+        && app_core::InstanceProgramUpdatePolicy::from_settings_json(&instance.settings_json)?
+            == app_core::InstanceProgramUpdatePolicy::Automatic;
     Ok(plan)
 }
 
@@ -499,6 +504,21 @@ pub(super) async fn start_instance_process_after_reconcile_reserved(
         discover_modules(&storage.paths.modules_root).map_err(|error| error.to_string())?;
     let descriptor = find_descriptor(&descriptors, &instance.summary.module_id)?;
     ensure_instance_bind_policy_allowed(&instance, &descriptor.runtime.bind_address)?;
+    // Reject known network prerequisites before copying or updating the program.
+    // Keep both guards with the worker until any settings CAS/render completes.
+    let network_storage = storage.clone();
+    let network_reservation = runtime_start_reservation.clone();
+    let (instance_lock, shared_install_guard, instance) =
+        run_runtime_start_worker_to_completion(runtime_start_reservation, async move {
+            let instance = crate::astroneer_public_ip::prepare_for_start(
+                &network_storage,
+                &network_reservation,
+                instance,
+            )
+            .await?;
+            Ok((instance_lock, shared_install_guard, instance))
+        })
+        .await?;
     let (instance_lock, shared_install_guard) = super::commands_file_mods::recover_before_start(
         storage,
         runtime_start_reservation,
@@ -507,13 +527,31 @@ pub(super) async fn start_instance_process_after_reconcile_reserved(
         (instance_lock, shared_install_guard),
     )
     .await?;
+    let prestart_update_log_path = runtime_start_reservation
+        .startup_session()?
+        .map(|(_, session)| session.source_path);
+    let (program_guards, update_before_detach) = Box::pin(
+        super::commands_save_startup::repair_shared_program_before_detach(
+            state,
+            storage,
+            descriptor,
+            &instance,
+            runtime_start_reservation,
+            (instance_lock, shared_install_guard),
+            PrestartUpdateLogContext {
+                source,
+                console_log_path: prestart_update_log_path.as_deref(),
+            },
+        ),
+    )
+    .await?;
     let ((instance_lock, shared_install_guard), instance) =
         super::commands_save_startup::ensure_private_program(
             storage,
             descriptor,
             instance,
             runtime_start_reservation,
-            (instance_lock, shared_install_guard),
+            program_guards,
         )
         .await?;
     let port_groups =
@@ -553,31 +591,36 @@ pub(super) async fn start_instance_process_after_reconcile_reserved(
         Some(private_root.as_str()),
     );
     let startup_log_stamp = current_unix_ms();
-    let prestart_update_log_path = runtime_start_reservation
-        .startup_session()?
-        .map(|(_, session)| session.source_path);
     let install_guard = program_guards
         .1
         .take()
         .ok_or("startup program lifecycle lock is missing")?;
     // Keep the installer state machine out of nested confirmation/start frames
     // so the default Windows thread stack can enter automatic update checks.
-    let program_update = Box::pin(run_prestart_update_if_needed(
-        state,
-        storage,
-        PrestartUpdateRequest {
-            descriptor,
-            module: &module,
-            instance: &instance,
+    let program_update = match update_before_detach {
+        Some(warnings) => PrestartUpdateOutcome {
             install_guard,
-            reservation: runtime_start_reservation,
-            context: PrestartUpdateLogContext {
-                source,
-                console_log_path: prestart_update_log_path.as_deref(),
-            },
+            warnings,
         },
-    ))
-    .await?;
+        None => {
+            Box::pin(run_prestart_update_if_needed(
+                state,
+                storage,
+                PrestartUpdateRequest {
+                    descriptor,
+                    module: &module,
+                    instance: &instance,
+                    install_guard,
+                    reservation: runtime_start_reservation,
+                    context: PrestartUpdateLogContext {
+                        source,
+                        console_log_path: prestart_update_log_path.as_deref(),
+                    },
+                },
+            ))
+            .await?
+        }
+    };
     program_guards.1 = Some(program_update.install_guard);
     let install_guard = program_guards
         .1
@@ -620,7 +663,6 @@ pub(super) async fn start_instance_process_after_reconcile_reserved(
     start_warnings.extend(workshop_update.warnings);
     start_warnings.extend(thunderstore_update.warnings);
     let materialization_paths = storage.paths.clone();
-    let public_ip_storage = storage.clone();
     let materialization_instance_id = instance_id.clone();
     let query_reservation = runtime_start_reservation.clone();
     let query_log_path = prestart_update_log_path.clone();
@@ -629,12 +671,6 @@ pub(super) async fn start_instance_process_after_reconcile_reserved(
             // Keep both guards inside the worker through loader publication and
             // configuration rendering, including caller cancellation.
             let result = async {
-                let instance = crate::astroneer_public_ip::prepare_for_start(
-                    &public_ip_storage,
-                    &query_reservation,
-                    instance,
-                )
-                .await?;
                 super::commands_ark_tools::refresh_owned_asa_proxy_for_start(&instance).await?;
                 Box::pin(super::commands_dragonwilds_player_query::prepare(
                     &instance,
@@ -1011,6 +1047,103 @@ pub(super) async fn start_instance_process_after_reconcile_reserved(
                 _windrose_bootstrap_guard = Some(guard);
                 spawned_processes.push((plan, spawned));
                 failed_bind_message = Some(message);
+            }
+        }
+    }
+    let mut _dragonwilds_bootstrap_guard = None;
+    if instance.summary.module_id == "runescapedragonwilds" {
+        ensure_runtime_start_allowed(
+            state,
+            storage,
+            &instance_id,
+            source,
+            runtime_start_reservation,
+        )?;
+        let primary = launch_plans
+            .first()
+            .ok_or("Dragonwilds has no launch plan")?;
+        let paths = storage.paths.clone();
+        let id = instance_id.clone();
+        let (guards, prepared) =
+            spawn_storage_context_task(runtime_start_reservation, async move {
+                // Native INI materialization is complete. The bootstrap now
+                // owns its temporary password and recovery journal until stop.
+                let prepared = app_storage::prepare_dragonwilds_bootstrap(&paths, &id)
+                    .await
+                    .map_err(|error| error.to_string());
+                (program_guards, prepared)
+            })
+            .await
+            .map_err(|error| format!("Dragonwilds initialization preparation failed: {error}"))?;
+        program_guards = guards;
+        if let Some(prepared) = prepared? {
+            let (guards, outcome) = Box::pin(dragonwilds_lifecycle::initialize_if_required(
+                app_handle,
+                state,
+                &instance,
+                primary,
+                runtime_start_reservation,
+                &resource_group,
+                dragonwilds_lifecycle::BootstrapAdmission {
+                    prepared,
+                    program_guards,
+                },
+            ))
+            .await?;
+            program_guards = guards;
+            match outcome {
+                dragonwilds_lifecycle::BootstrapOutcome::Ready => {
+                    if save_preparation.available {
+                        let details = instance.clone();
+                        let (guards, environment) = spawn_blocking_storage_context_task(
+                            runtime_start_reservation,
+                            move || {
+                                let result =
+                                    crate::live_players::dragonwilds_control::startup_environment(
+                                        &details,
+                                    );
+                                (program_guards, result)
+                            },
+                        )
+                        .await
+                        .map_err(|error| {
+                            format!("Dragonwilds final save session preparation failed: {error}")
+                        })?;
+                        program_guards = guards;
+                        let (key, value) = environment?;
+                        for plan in &mut launch_plans {
+                            plan.launch_plan
+                                .environment
+                                .retain(|existing, _| !existing.eq_ignore_ascii_case(&key));
+                            plan.launch_plan
+                                .environment
+                                .insert(key.clone(), value.clone());
+                        }
+                    }
+                    let primary = launch_plans
+                        .first()
+                        .ok_or("Dragonwilds has no final launch plan")?;
+                    publish_pending_start_console_log_path(
+                        app_handle,
+                        state,
+                        &instance_id,
+                        &primary.log_path,
+                        Some(&primary.process_key),
+                        Some(&primary.display_name),
+                        None,
+                    )?;
+                }
+                dragonwilds_lifecycle::BootstrapOutcome::CleanupPending(pending) => {
+                    let dragonwilds_lifecycle::PendingBootstrapCleanup {
+                        plan,
+                        spawned,
+                        guard,
+                        message,
+                    } = *pending;
+                    _dragonwilds_bootstrap_guard = guard;
+                    spawned_processes.push((plan, spawned));
+                    failed_bind_message = Some(message);
+                }
             }
         }
     }

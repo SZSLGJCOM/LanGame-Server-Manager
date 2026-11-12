@@ -78,13 +78,14 @@
 
 .system-path-row {
   display: grid;
-  grid-template-columns: 20px minmax(0, 1fr);
+  grid-template-columns: 20px minmax(0, 1fr) auto;
+  grid-template-areas: "icon label label" "path path actions";
   align-content: start;
   align-items: center;
-  gap: 6px 8px;
+  gap: 3px 8px;
   min-width: 0;
   min-height: 47px;
-  padding: 6px 0;
+  padding: 1px 0;
   border-right: 1px solid var(--system-panel-border-soft);
   padding-right: 12px;
 }
@@ -95,6 +96,7 @@
 }
 
 .system-path-row-icon {
+  grid-area: icon;
   display: grid;
   place-items: center;
   width: 20px;
@@ -112,6 +114,7 @@
 }
 
 .system-runtime-label {
+  grid-area: label;
   color: var(--system-panel-text);
   font-size: var(--text-secondary);
   font-weight: var(--font-weight-medium);
@@ -119,7 +122,7 @@
 }
 
 .system-runtime-path {
-  grid-column: 1 / -1;
+  grid-area: path;
   min-width: 0;
   overflow: hidden;
   color: var(--system-panel-muted);
@@ -130,7 +133,7 @@
 }
 
 .system-runtime-path-actions {
-  grid-column: 1 / -1;
+  grid-area: actions;
   display: flex;
   align-items: center;
   justify-content: flex-end;
@@ -205,6 +208,23 @@
 .system-path-feedback.is-error {
   background: var(--theme-danger-bg);
   color: var(--theme-danger-text);
+}
+
+/* Keep the address beside its actions even in narrow windowed layouts. */
+@media (max-width: 1020px) {
+  .system-path-picker-button {
+    width: var(--control-height-compact);
+    min-width: 0;
+    padding: 0;
+  }
+
+  .system-path-picker-button > svg {
+    display: block;
+  }
+
+  .system-path-picker-button > span {
+    display: none;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

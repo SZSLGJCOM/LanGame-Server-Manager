@@ -1,0 +1,124 @@
+Portable excerpts from isolated build-26419371 acceptance. Full log hashes are recorded in the companion JSON.
+
+
+[desktop-dragonwilds-tests.log]
+test result: ok. 64 passed; 0 failed; 4 ignored; 0 measured; 3470 filtered out; finished in 4.32s
+
+
+[storage-dragonwilds-tests.log]
+test result: ok. 61 passed; 0 failed; 5 ignored; 0 measured; 1776 filtered out; finished in 5.65s
+
+
+[native-loader.log]
+Verified production bootstrap ownership, two nonce-matched empty snapshots, and stopped-process rejection.
+Verified production bootstrap ownership, two nonce-matched empty snapshots, and stopped-process rejection.
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 3537 filtered out; finished in 18.10s
+
+
+[native-manual-save.log]
+NATIVE_LIFECYCLE module=runescapedragonwilds phase=package_copy bytes=4607311232 elapsed_ms=1793 acquisition=existing_local_package creation_scope=storage source_provenance=unverified
+NATIVE_LIFECYCLE module=runescapedragonwilds phase=instance_created elapsed_ms=5126 program_mode=Independent preparation=isolated_copy library=preserved ownership=verified effective_root=fixture/n-b45be58fbac4a897\runtime creation_scope=storage
+NATIVE_LIFECYCLE module=runescapedragonwilds phase=prestart_update cycle=initial events=pinned persisted_evidence=verified download_bytes=not_measured
+NATIVE_LIFECYCLE module=runescapedragonwilds phase=started cycle=initial processes=1 bind=default firewall=non_elevated_policy elapsed_ms=57777
+NATIVE_LIFECYCLE module=runescapedragonwilds phase=native_ready cycle=initial declared_probes=passed variant=isolated
+NATIVE_MANUAL_SAVE module=runescapedragonwilds cycle=initial phase=receipt attempted_once=true retried=false instance_matches=true run_matches=true session_matches=true managed_generations_alive=true route=managed_process_generation response_present=true response_bytes=73 write_confirmation_pending=false save_completion=requested durable_write=not_assessed restart_readback=not_assessed
+NATIVE_SAVE_OBSERVATION module=runescapedragonwilds receipt=requested fresh_native_save=true save_family_changed=true periodic_autosave_excluded=true production_completion=not_claimed
+NATIVE_SAVE_CHECKPOINT module=runescapedragonwilds phase=captured run_id=1 files=2 captured_before_stop=true scope=isolated_world
+NATIVE_SAVE_CHECKPOINT_FILE relative=Ashenfall.sav bytes=64600 sha256=bd19a4d67fad143a6ac982771386b4191ddddf427889b8fda6fc4e6573ebf3ca
+NATIVE_SAVE_CHECKPOINT_FILE relative=Ashenfall.sav.backup bytes=64611 sha256=3e7b7826cb3c627b51e38b05d0cceb54a452b5607c143b58010a739f6e75e372
+NATIVE_STOP_RESULT module=runescapedragonwilds cycle=initial run_id=1 process=main exit_code=Some(0) crash_flag=false status=stopped
+NATIVE_SAVE_CHECKPOINT module=runescapedragonwilds phase=restored after_normal_stop=true shutdown_snapshot_excluded=true sha256_verified=true
+NATIVE_LIFECYCLE module=runescapedragonwilds phase=cycle_stopped cycle=initial run_id=1 active_run=none
+NATIVE_LIFECYCLE module=runescapedragonwilds phase=prestart_update cycle=restart events=pinned persisted_evidence=verified download_bytes=not_measured
+NATIVE_LIFECYCLE module=runescapedragonwilds phase=started cycle=restart processes=1 bind=default firewall=non_elevated_policy elapsed_ms=52745
+NATIVE_LIFECYCLE module=runescapedragonwilds phase=native_ready cycle=restart declared_probes=passed variant=isolated
+NATIVE_SAVE_READBACK module=runescapedragonwilds phase=verified initial_run=1 restart_run=2 exact_manual_checkpoint=true native_load=passed second_save_sent=false scope=isolated_world
+NATIVE_STOP_RESULT module=runescapedragonwilds cycle=restart run_id=2 process=main exit_code=Some(0) crash_flag=false status=stopped
+NATIVE_LIFECYCLE module=runescapedragonwilds phase=cycle_stopped cycle=restart run_id=2 active_run=none
+NATIVE_MANUAL_SAVE module=runescapedragonwilds phase=restarted fresh_managed_run=true native_readiness=passed content_readback=not_claimed
+NATIVE_LIFECYCLE module=runescapedragonwilds phase=complete scope=production_start_stop cleanup=passed gui=not_tested
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 3537 filtered out; finished in 131.29s
+
+
+[native-world-conversion.log]
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1841 filtered out; finished in 0.23s
+
+
+[native-custom-codec.log]
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1841 filtered out; finished in 0.00s
+
+
+[native-stop-backup-restart-fixed.log]
+NATIVE_LIFECYCLE module=runescapedragonwilds phase=instance_created elapsed_ms=2667 program_mode=Independent preparation=isolated_copy library=preserved ownership=verified effective_root=fixture/i\dragon-compat-9c4ec934540961dd\runtime creation_scope=storage
+DRAGONWILDS_COMPATIBILITY pass=0 production_start_stop=passed exit=0 native_pre_exit=true auto_backup=exact_bytes restart_same_world=true graceful_stop_requests_save=false
+DRAGONWILDS_COMPATIBILITY pass=1 production_start_stop=passed exit=0 native_pre_exit=true auto_backup=exact_bytes restart_same_world=true graceful_stop_requests_save=false
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 3537 filtered out; finished in 419.61s
+
+
+[quick-storage-tests.log]
+test result: ok. 358 passed; 0 failed; 1 ignored; 0 measured; 1483 filtered out; finished in 59.47s
+
+
+[native moderation ban]
+schema=1
+phase=ban
+nonce=3e6df24339ac42debf85ae466b250670
+boot=4907348940e352d7050f45574fcc2a44
+success=true
+invoked=true
+native_probe_ready=true
+pre_banned=false
+post_memory_banned=true
+post_ini_banned=true
+synthetic_only=true
+identity_valid=true
+identity_type=redpointeos
+known_count=1
+client_count=0
+elapsed_seconds=7
+error=
+
+
+[native moderation unban]
+schema=1
+phase=unban
+nonce=4cc5228046294dbe8de304c9d8f9ba0d
+boot=4acff4596e8c07cf385c096414e62a86
+success=true
+invoked=true
+native_probe_ready=true
+pre_banned=true
+post_memory_banned=false
+post_ini_banned=false
+synthetic_only=true
+identity_valid=true
+identity_type=redpointeos
+known_count=1
+client_count=0
+elapsed_seconds=7
+error=
+
+
+[native moderation verify_unbanned]
+schema=1
+phase=verify_unbanned
+nonce=fd26550e8820446aa8729d248e1aaf01
+boot=119716b017fcab576b710e9d1d4bac2d
+success=true
+invoked=false
+native_probe_ready=true
+pre_banned=false
+post_memory_banned=false
+post_ini_banned=false
+synthetic_only=true
+identity_valid=true
+identity_type=redpointeos
+known_count=1
+client_count=0
+elapsed_seconds=6
+error=
+
+
+[native PE binding]
+FAIL: build_26419371_rejected_by_native_bridge
+PASS: build 26419371 admission, PE call/layout bindings, unknown and changed-code rejection; no game code executed.

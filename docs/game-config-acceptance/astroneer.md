@@ -210,3 +210,60 @@
   }
 }
 ```
+
+## `2026-11-09-astroneer_connection_policy.json`
+
+- Evidence: `best_effort_verified` at `2026-11-09` (build `Deterministic manager configuration fixture with synthetic addresses, not a native capture. The separate Radmin 1.45.1.0 client-entry record covers the native route; desktop startup tests cover fresh adapter validation.`)
+- Sources: `astroneer_connection_policy`
+- Coverage: editable `0`, specialized `0`, derived `1`, generated `0`, excluded `0`
+
+### Lifecycle
+
+```json
+{
+  "pre_start": "Render the selected PublicIP and the game UDP port. The manager-only connection mode is not a native INI key. This fixture does not perform adapter enumeration, online registration or client entry.",
+  "save_stage": "The common player join address control persists public_ip and its derived internal source together. This fixture supplies the saved Radmin configuration to the real storage renderer; UI behavior is covered separately by workspace interaction tests."
+}
+```
+
+### Settings
+
+```json
+{
+  "connection_mode": "radmin",
+  "public_ip": "26.1.2.3"
+}
+```
+
+### Expected outputs
+
+```json
+{
+  "files": [
+    {
+      "format": "ini",
+      "keys": {
+        "/Script/Astro.AstroServerSettings.PublicIP": "26.1.2.3"
+      },
+      "path": "Astro/Saved/Config/WindowsServer/AstroServerSettings.ini",
+      "root": "install"
+    },
+    {
+      "format": "ini",
+      "keys": {
+        "URL.Port": "8777"
+      },
+      "path": "Astro/Saved/Config/WindowsServer/Engine.ini",
+      "root": "install"
+    }
+  ],
+  "launch": {
+    "arguments": [
+      "-log",
+      "-stdout",
+      "-FullStdOutLogOutput"
+    ],
+    "executable_suffix": "AstroServer.exe"
+  }
+}
+```

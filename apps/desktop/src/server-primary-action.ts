@@ -8,14 +8,14 @@ export interface ServerModuleInstallation {
 }
 
 export type ServerInstallationIntent = "install" | "repair";
-export type ServerPrimaryAction = "start" | "stop" | ServerInstallationIntent | "library" | "checking";
+export type ServerPrimaryAction = "start" | "stop" | ServerInstallationIntent | "library" | "maintenance" | "checking";
 
 export interface ServerPrimaryActionModel extends Omit<ServerRuntimeActionModel, "action" | "labelKey" | "iconName"> {
   action: ServerPrimaryAction;
   deleteBlocked: boolean;
-  iconName: ServerRuntimeActionModel["iconName"] | "package";
+  iconName: ServerRuntimeActionModel["iconName"] | "package" | "shield";
   labelKey: ServerRuntimeActionModel["labelKey"] | "servers.actions.install" | "servers.actions.repair"
-    | "servers.actions.openLibrary" | "servers.actions.checking" | "servers.actions.repairing"
+    | "servers.actions.openLibrary" | "servers.tabs.maintenance" | "servers.actions.checking" | "servers.actions.repairing"
     | "status.install.installing" | "status.install.updating" | "status.install.uninstalling";
 }
 
@@ -38,7 +38,10 @@ export function resolveServerPrimaryAction(input: {
   const library: ServerPrimaryActionModel = {
     ...base, action: "library", iconName: "package", labelKey: "servers.actions.openLibrary"
   };
-  if (input.launchFailed) return library;
+  const maintenance: ServerPrimaryActionModel = {
+    ...base, action: "maintenance", iconName: "shield", labelKey: "servers.tabs.maintenance"
+  };
+  if (input.launchFailed) return maintenance;
   const plan = input.launchPlan?.instance_id === input.instanceId ? input.launchPlan : null;
   const installState = String(plan?.uses_private_runtime
     ? plan.install_state
@@ -46,7 +49,9 @@ export function resolveServerPrimaryAction(input: {
 
   // Shared installation work must never replace a usable private runtime or claim
   // that downloading shared files repairs the private directory actually launched.
-  if (plan?.uses_private_runtime) return installState === "installed" ? base : library;
+  if (plan?.uses_private_runtime) {
+    return installState === "installed" || plan.can_update_before_start ? base : maintenance;
+  }
 
   const activeJob = input.jobs?.find((job) => job.target_id === input.moduleId
     && ["pending", "running"].includes(job.status.toLowerCase())
@@ -70,7 +75,7 @@ export function resolveServerPrimaryAction(input: {
     return { ...base, action: busyAction, disabled: true, ariaBusy: true, iconName: "refresh", labelKey: busyLabel,
       className: `${base.className} is-busy` };
   }
-  if (installState === "installed") return base;
+  if (installState === "installed" || plan?.can_update_before_start) return base;
 
   if (!plan || input.installation?.hasManagedInstallSource == null) {
     return { ...base, action: "checking", disabled: true, ariaBusy: true, iconName: "refresh",

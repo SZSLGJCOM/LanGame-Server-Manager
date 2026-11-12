@@ -17,6 +17,22 @@ pub(super) fn is_patcher(path: &str) -> bool {
     path.starts_with("BepInEx/patchers/")
 }
 
+pub(super) fn moves_with_package(key: &str, path: &str) -> bool {
+    if nexus_routes::is_nexus_key(key) {
+        nexus_routes::allowed_route(key, path)
+    } else {
+        is_patcher(path)
+    }
+}
+
+pub(super) fn package_runtime_root<'a>(key: &str, target: &'a Path) -> Result<&'a Path, String> {
+    if nexus_routes::is_nexus_key(key) {
+        nexus_routes::runtime_root(key, target)
+    } else {
+        runtime_root(target)
+    }
+}
+
 pub(super) fn is_metadata(path: &str) -> bool {
     !path.contains(['/', '\\'])
         && matches!(
@@ -42,16 +58,26 @@ pub(super) fn is_metadata(path: &str) -> bool {
 }
 
 pub(super) fn validate_routes(
+    key: &str,
     package: &InstalledPackage,
     seen: &mut HashSet<String>,
 ) -> Result<(), String> {
     if package.files.len() + package.routed_files.len() > MAX_PACKAGE_FILES {
         return Err("Mod ownership record contains too many routed files".into());
     }
+    let nexus = nexus_routes::is_nexus_key(key);
+    if nexus && (package.target_name != key || package.thunderstore_intent.is_some()) {
+        return Err("Invalid Nexus runtime ownership anchor".into());
+    }
     for (path, hash) in &package.routed_files {
         let normalized = normalize_manual_mod_relative_path(Path::new(path))?;
         if normalized.to_string_lossy().replace('\\', "/") != *path
-            || !(is_patcher(path) || path.starts_with("BepInEx/config/"))
+            || !(if nexus {
+                nexus_routes::allowed_route(key, path)
+            } else {
+                !key.starts_with("nexus-")
+                    && (is_patcher(path) || path.starts_with("BepInEx/config/"))
+            })
             || hash.len() != 64
             || !hash.bytes().all(|byte| byte.is_ascii_hexdigit())
             || !seen.insert(path.to_lowercase())
@@ -131,6 +157,16 @@ pub(in crate::commands::commands_mod_staging) fn prepare_thunderstore_mod_transa
             policy,
         )?;
         if let Some(package) = manifest.packages.get_mut(&key) {
+            package.display_name = source.identity.display_name.clone().or_else(|| {
+                previous
+                    .as_ref()
+                    .and_then(|value| value.display_name.clone())
+            });
+            package.icon_url = source
+                .identity
+                .icon_url
+                .clone()
+                .or_else(|| previous.as_ref().and_then(|value| value.icon_url.clone()));
             package.thunderstore_intent = thunderstore_intent::retained_intent(
                 previous.as_ref(),
                 source.identity.thunderstore_intent.as_ref(),
@@ -214,6 +250,8 @@ pub(in crate::commands::commands_mod_staging) fn finalize_thunderstore_transacti
         if let Some(dependencies) = &package.dependencies {
             if let Some(project) = key.strip_prefix("thunderstore-") {
                 identities.push(OnlineModIdentity {
+                    display_name: None,
+                    icon_url: None,
                     thunderstore_intent: package.thunderstore_intent.clone(),
                     provider: "thunderstore".into(),
                     project: project.into(),
@@ -224,6 +262,8 @@ pub(in crate::commands::commands_mod_staging) fn finalize_thunderstore_transacti
             } else {
                 // Local author identity is unknown; validate its declared requirements only.
                 identities.push(OnlineModIdentity {
+                    display_name: None,
+                    icon_url: None,
                     thunderstore_intent: package.thunderstore_intent.clone(),
                     provider: "thunderstore".into(),
                     project: format!("Local-{key}"),
@@ -422,9 +462,14 @@ fn prepare_package(
     }
     // Config-only/patcher-only packages still have a durable, empty plugin root
     // that inventory and the package journal can move together with patchers.
+    let previous = manifest.packages.get(key);
+    let display_name = previous.and_then(|package| package.display_name.clone());
+    let icon_url = previous.and_then(|package| package.icon_url.clone());
     manifest.packages.insert(
         key.into(),
         InstalledPackage {
+            display_name,
+            icon_url,
             thunderstore_intent: manifest
                 .packages
                 .get(key)

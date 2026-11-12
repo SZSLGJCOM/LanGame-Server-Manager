@@ -89,6 +89,8 @@ impl<R: tauri::Runtime> NativeRuntime<'_, '_, R> {
             None
         };
         let prestart_probe = prestart_probe::PrestartProbe::begin(storage, details, descriptor)?;
+        let repair_probe =
+            program_repair::EntryRepairProbe::prepare(details, descriptor, &package.root, cycle)?;
         package.cleanup_allowed.store(false, Ordering::SeqCst);
         let start_requested = Instant::now();
         // Keep the production startup future off the nested native test stack.
@@ -122,6 +124,9 @@ impl<R: tauri::Runtime> NativeRuntime<'_, '_, R> {
             }
         };
         prestart_probe.verify(storage, details, cycle)?;
+        if let Some(probe) = repair_probe {
+            probe.verify(descriptor)?;
+        }
         println!(
             "NATIVE_LIFECYCLE module={module_id} phase=started cycle={cycle} processes={} bind=default firewall={} elapsed_ms={}",
             started.process_count,

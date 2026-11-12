@@ -88,7 +88,9 @@ fn download_failure(
             Some(app_core::RuntimeModUpdateReason::Network)
         }
         ModDownloadFailure::Http(_) => Some(app_core::RuntimeModUpdateReason::Http),
-        ModDownloadFailure::Terminal(_) => None,
+        ModDownloadFailure::Terminal(_)
+        | ModDownloadFailure::SizeLimit { .. }
+        | ModDownloadFailure::TimeLimit => None,
         ModDownloadFailure::Cancelled => return preparation_cancelled(),
     };
     let message =
@@ -389,6 +391,12 @@ async fn prepare_thunderstore_install_inner(
             path,
             label: metadata.full_name.clone(),
             identity: OnlineModIdentity {
+                display_name: crate::commands::mod_presentations::normalize_display_name(
+                    metadata.latest.name.as_deref(),
+                ),
+                icon_url: crate::commands::mod_presentations::verified_icon_url(
+                    metadata.latest.icon.as_deref(),
+                ),
                 thunderstore_intent:Some(intents.get(&format!("thunderstore-{}",metadata.full_name)).cloned().unwrap_or(crate::commands::commands_mod_staging::ThunderstoreInstallIntent::Dependency)),
                 provider: "thunderstore".into(),
                 project: metadata.full_name.clone(),

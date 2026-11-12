@@ -4,6 +4,64 @@ use sha2::Digest;
 const MOD_DOWNLOAD_IDLE_TIMEOUT: Duration = Duration::from_secs(30);
 const MOD_DOWNLOAD_STARTUP_ALLOWANCE: Duration = Duration::from_secs(120);
 const MOD_DOWNLOAD_MIN_BYTES_PER_SECOND: u64 = 64 * 1024;
+const SLOW_MOD_DOWNLOAD_TOTAL_TIMEOUT: Duration = Duration::from_secs(4 * 60 * 60);
+
+#[derive(Clone, Copy)]
+enum TransferBudget {
+    Standard,
+    Slow { deadline: std::time::Instant },
+}
+
+impl TransferBudget {
+    fn slow() -> Self {
+        Self::Slow {
+            deadline: std::time::Instant::now() + SLOW_MOD_DOWNLOAD_TOTAL_TIMEOUT,
+        }
+    }
+
+    async fn expired(self) {
+        match self {
+            Self::Standard => std::future::pending().await,
+            Self::Slow { deadline } => {
+                tokio::time::sleep_until(tokio::time::Instant::from_std(deadline)).await
+            }
+        }
+    }
+
+    fn read_budget(
+        self,
+        now: std::time::Instant,
+        started: std::time::Instant,
+        idle_since: std::time::Instant,
+        received_bytes: u64,
+    ) -> Result<Duration, ModDownloadFailure> {
+        match self {
+            Self::Standard => download_read_budget(now.duration_since(started), received_bytes)
+                .map_err(ModDownloadFailure::Interrupted),
+            Self::Slow { deadline } => {
+                let remaining = deadline.saturating_duration_since(now);
+                if remaining.is_zero() {
+                    return Err(ModDownloadFailure::TimeLimit);
+                }
+                let idle = MOD_DOWNLOAD_IDLE_TIMEOUT.saturating_sub(now.duration_since(idle_since));
+                if idle.is_zero() {
+                    return Err(ModDownloadFailure::Interrupted(
+                        "mod package download stopped making progress".into(),
+                    ));
+                }
+                Ok(remaining.min(idle))
+            }
+        }
+    }
+
+    fn timeout_failure(self) -> ModDownloadFailure {
+        if matches!(self, Self::Slow { deadline } if std::time::Instant::now() >= deadline) {
+            ModDownloadFailure::TimeLimit
+        } else {
+            ModDownloadFailure::Interrupted("mod package download stopped making progress".into())
+        }
+    }
+}
 
 pub(in crate::commands) fn mod_package_client() -> Result<reqwest::Client, String> {
     reqwest::Client::builder()
@@ -196,12 +254,53 @@ pub(in crate::commands) struct ModDownloadRequest<'a> {
     pub(in crate::commands) download_root: &'a Path,
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(in crate::commands) struct ModDownloadProgress {
+    pub(in crate::commands) attempt: u32,
+    pub(in crate::commands) received_bytes: u64,
+    pub(in crate::commands) total_bytes: Option<u64>,
+}
+
+// Observation is synchronous and best effort. Callers must keep it nonblocking;
+// publishing an event must not turn a disconnected UI into a download failure.
+pub(in crate::commands) type ModDownloadObserver = Arc<dyn Fn(ModDownloadProgress) + Send + Sync>;
+
+struct DownloadProgressReporter<'a> {
+    observer: Option<&'a ModDownloadObserver>,
+    attempt: u32,
+    last_report: Option<std::time::Instant>,
+}
+
+impl DownloadProgressReporter<'_> {
+    fn report(&mut self, received_bytes: u64, total_bytes: Option<u64>, force: bool) {
+        let Some(observer) = self.observer else {
+            return;
+        };
+        let now = std::time::Instant::now();
+        if !force
+            && self
+                .last_report
+                .is_some_and(|last| now.duration_since(last) < Duration::from_secs(1))
+        {
+            return;
+        }
+        self.last_report = Some(now);
+        observer(ModDownloadProgress {
+            attempt: self.attempt,
+            received_bytes,
+            total_bytes,
+        });
+    }
+}
+
 #[derive(Debug)]
 pub(in crate::commands) enum ModDownloadFailure {
     Network(String),
     Interrupted(String),
     Http(String),
     Terminal(String),
+    SizeLimit { received_bytes: u64, max_bytes: u64 },
+    TimeLimit,
     Cancelled,
 }
 
@@ -212,6 +311,11 @@ impl ModDownloadFailure {
             | Self::Interrupted(value)
             | Self::Http(value)
             | Self::Terminal(value) => value,
+            Self::SizeLimit {
+                received_bytes,
+                max_bytes,
+            } => mod_download_size_limit_error(received_bytes, max_bytes),
+            Self::TimeLimit => "Mod package transfer exceeded its four hour download limit".into(),
             Self::Cancelled => "Mod package preparation was cancelled".into(),
         }
     }
@@ -227,7 +331,7 @@ pub(in crate::commands) async fn download_mod_site_file_with_limit(
     client: &reqwest::Client,
     request: ModDownloadRequest<'_>,
 ) -> Result<PathBuf, String> {
-    download_mod_site_file_with_limit_inner(client, request, None)
+    download_mod_site_file_with_limit_inner(client, request, None, TransferBudget::Standard, None)
         .await
         .map_err(ModDownloadFailure::message)
 }
@@ -237,7 +341,33 @@ pub(in crate::commands) async fn download_mod_site_file_with_limit_and_cancellat
     request: ModDownloadRequest<'_>,
     cancellation: &app_steamcmd::InstallCancellation,
 ) -> Result<PathBuf, ModDownloadFailure> {
-    download_mod_site_file_with_limit_inner(client, request, Some(cancellation)).await
+    download_mod_site_file_with_limit_inner(
+        client,
+        request,
+        Some(cancellation),
+        TransferBudget::Standard,
+        None,
+    )
+    .await
+}
+
+/// Nexus's free CDN can make steady progress below the normal package rate.
+/// Keep the same size, idle, disk and cancellation checks; bound all retries
+/// together instead of rejecting a valid slow stream for its average speed.
+pub(in crate::commands) async fn download_mod_site_file_with_slow_transfer_budget(
+    client: &reqwest::Client,
+    request: ModDownloadRequest<'_>,
+    cancellation: &app_steamcmd::InstallCancellation,
+    observer: Option<ModDownloadObserver>,
+) -> Result<PathBuf, ModDownloadFailure> {
+    download_mod_site_file_with_limit_inner(
+        client,
+        request,
+        Some(cancellation),
+        TransferBudget::slow(),
+        observer,
+    )
+    .await
 }
 
 async fn cancelled(cancellation: Option<&app_steamcmd::InstallCancellation>) {
@@ -251,18 +381,24 @@ async fn download_mod_site_file_with_limit_inner(
     client: &reqwest::Client,
     request: ModDownloadRequest<'_>,
     cancellation: Option<&app_steamcmd::InstallCancellation>,
+    budget: TransferBudget,
+    observer: Option<ModDownloadObserver>,
 ) -> Result<PathBuf, ModDownloadFailure> {
     if let Some(integrity) = request.integrity
         && let Some(max_bytes) = request.max_bytes
         && integrity.size > max_bytes
     {
-        return Err(mod_download_size_limit_error(integrity.size, max_bytes).into());
+        return Err(ModDownloadFailure::SizeLimit {
+            received_bytes: integrity.size,
+            max_bytes,
+        });
     }
     let candidates = app_network::official_url_candidates(
         request.download_url,
         app_network::SourcePreference::InternationalFirst,
     );
     let mut failures = Vec::new();
+    let mut attempt_number = 0;
     for candidate in &candidates {
         // Header retries already belong to app-network. Only an interrupted body
         // may restart once at a single source, without replaying terminal headers.
@@ -274,13 +410,25 @@ async fn download_mod_site_file_with_limit_inner(
             if cancellation.is_some_and(|cancellation| cancellation.is_cancelled()) {
                 return Err(ModDownloadFailure::Cancelled);
             }
-            match download_mod_file_from_source(client, attempt, cancellation).await {
+            attempt_number += 1;
+            match download_mod_file_from_source(
+                client,
+                attempt,
+                cancellation,
+                budget,
+                observer.as_ref(),
+                attempt_number,
+            )
+            .await
+            {
                 Ok(path) => {
                     app_network::record_success(candidate);
                     return Ok(path);
                 }
                 Err(
                     error @ (ModDownloadFailure::Terminal(_)
+                    | ModDownloadFailure::SizeLimit { .. }
+                    | ModDownloadFailure::TimeLimit
                     | ModDownloadFailure::Http(_)
                     | ModDownloadFailure::Cancelled),
                 ) => {
@@ -311,7 +459,20 @@ async fn download_mod_file_from_source(
     client: &reqwest::Client,
     request: ModDownloadRequest<'_>,
     cancellation: Option<&app_steamcmd::InstallCancellation>,
+    budget: TransferBudget,
+    observer: Option<&ModDownloadObserver>,
+    attempt: u32,
 ) -> Result<PathBuf, ModDownloadFailure> {
+    if matches!(budget, TransferBudget::Slow { deadline } if std::time::Instant::now() >= deadline)
+    {
+        return Err(ModDownloadFailure::TimeLimit);
+    }
+    let mut progress = DownloadProgressReporter {
+        observer,
+        attempt,
+        last_report: None,
+    };
+    progress.report(0, None, true);
     let ModDownloadRequest {
         download_url,
         package_name,
@@ -329,6 +490,7 @@ async fn download_mod_file_from_source(
     let response = tokio::select! {
         biased;
         _=cancelled(cancellation)=>return Err(ModDownloadFailure::Cancelled),
+        _=budget.expired()=>return Err(ModDownloadFailure::TimeLimit),
         result=app_network::send_with_retry(client,http_request,Duration::from_secs(20))=>result,
     };
     let mut response = response.map_err(|error| {
@@ -348,7 +510,10 @@ async fn download_mod_file_from_source(
         && let Some(max_bytes) = max_bytes
         && length > max_bytes
     {
-        return Err(mod_download_size_limit_error(length, max_bytes).into());
+        return Err(ModDownloadFailure::SizeLimit {
+            received_bytes: length,
+            max_bytes,
+        });
     }
 
     let source_filename = preferred_filename
@@ -371,6 +536,7 @@ async fn download_mod_file_from_source(
     let path = download_root.join(file_name);
     let writer_path = path.clone();
     let expected_bytes = response.content_length();
+    progress.report(0, expected_bytes, true);
     let (message_sender, message_receiver) = tokio::sync::mpsc::channel(2);
     let (ready_sender, ready_receiver) = tokio::sync::oneshot::channel();
     let writer = tokio::task::spawn_blocking(move || {
@@ -394,16 +560,18 @@ async fn download_mod_file_from_source(
 
     let mut received_bytes = 0u64;
     let started = std::time::Instant::now();
+    let mut idle_since = started;
     loop {
-        let wait_budget = match download_read_budget(started.elapsed(), received_bytes) {
+        let wait_budget = match budget.read_budget(
+            std::time::Instant::now(),
+            started,
+            idle_since,
+            received_bytes,
+        ) {
             Ok(budget) => budget,
             Err(error) => {
                 drop(message_sender);
-                return Err(settle_aborted_mod_download(
-                    writer,
-                    ModDownloadFailure::Interrupted(error),
-                )
-                .await);
+                return Err(settle_aborted_mod_download(writer, error).await);
             }
         };
         let received = tokio::select! {
@@ -430,15 +598,13 @@ async fn download_mod_file_from_source(
             }
             Err(_) => {
                 drop(message_sender);
-                return Err(settle_aborted_mod_download(
-                    writer,
-                    ModDownloadFailure::Interrupted(
-                        "mod package download stopped making progress".into(),
-                    ),
-                )
-                .await);
+                return Err(settle_aborted_mod_download(writer, budget.timeout_failure()).await);
             }
         };
+        if chunk.is_empty() {
+            // An empty decoder chunk is not download progress.
+            continue;
+        }
         let Some(total) = received_bytes.checked_add(chunk.len() as u64) else {
             drop(message_sender);
             return Err(settle_aborted_mod_download(
@@ -454,7 +620,10 @@ async fn download_mod_file_from_source(
             drop(message_sender);
             return Err(settle_aborted_mod_download(
                 writer,
-                mod_download_size_limit_error(received_bytes, max_bytes).into(),
+                ModDownloadFailure::SizeLimit {
+                    received_bytes,
+                    max_bytes,
+                },
             )
             .await);
         }
@@ -468,19 +637,28 @@ async fn download_mod_file_from_source(
             )
             .await);
         }
-        if message_sender
-            .send(ModDownloadWriteMessage::Chunk(chunk.to_vec()))
-            .await
-            .is_err()
-        {
+        let queued = tokio::select! {
+            biased;
+            _=cancelled(cancellation)=>Err(ModDownloadFailure::Cancelled),
+            _=budget.expired()=>Err(ModDownloadFailure::TimeLimit),
+            result=message_sender.send(ModDownloadWriteMessage::Chunk(chunk.to_vec()))=>
+                result.map_err(|_| ModDownloadFailure::Terminal(
+                    "mod package download writer stopped unexpectedly".into(),
+                )),
+        };
+        if let Err(error) = queued {
             drop(message_sender);
-            return Err(settle_aborted_mod_download(
-                writer,
-                String::from("mod package download writer stopped unexpectedly").into(),
-            )
-            .await);
+            return Err(settle_aborted_mod_download(writer, error).await);
         }
+        // Writer backpressure is not a network stall. Only positive chunks
+        // begin another idle read window; the overall deadline never resets.
+        idle_since = std::time::Instant::now();
+        progress.report(received_bytes, expected_bytes, false);
     }
+
+    // These are received and queued bytes, not a successful installation. The
+    // writer still verifies and flushes before ownership can be committed.
+    progress.report(received_bytes, expected_bytes, true);
 
     let (prepared_sender, prepared_receiver) = tokio::sync::oneshot::channel();
     let (commit_sender, commit_receiver) = std::sync::mpsc::channel();

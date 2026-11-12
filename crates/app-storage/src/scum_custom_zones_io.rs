@@ -12,6 +12,7 @@ use crate::managed_console_log::owned_fs::identity;
 pub(super) enum NativeLayout {
     Build25803875,
     Build26320224,
+    Build26593814,
 }
 
 impl NativeLayout {
@@ -19,6 +20,7 @@ impl NativeLayout {
         match self {
             Self::Build25803875 => 73,
             Self::Build26320224 => 75,
+            Self::Build26593814 => 77,
         }
     }
 
@@ -29,6 +31,9 @@ impl NativeLayout {
             }
             "a862d658271f26d082de5df7bba01e8af9c3d051cb9634e908bb94d8a9efbc7a" => {
                 Some(Self::Build26320224)
+            }
+            "805396516e64d17f1713f24ce97a7d525a6d761db46ce069f40cf63114add6d9" => {
+                Some(Self::Build26593814)
             }
             _ => None,
         }

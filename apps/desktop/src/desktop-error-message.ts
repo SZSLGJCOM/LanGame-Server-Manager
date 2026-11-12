@@ -3,6 +3,7 @@ import { formatLaunchValidationIssue } from "./launch-validation-message";
 import { formatSteamCmdError } from "./steamcmd-error-message";
 import { formatAsaCurseForgeError } from "./asa-curseforge-error-message";
 import { formatWindowsFirewallError } from "./windows-firewall-error-message";
+import { formatAstroneerNetworkError } from "./astroneer-network-error";
 
 const PROGRAM_CREATION_ERRORS = [
   ["服务器程序尚未下载完成，请先在游戏库完成安装或校验，再创建实例；本次没有启动下载。", "errors.creationDownloadIncomplete"],
@@ -44,6 +45,8 @@ export function formatDesktopError(t: TranslateFn, error: unknown): string {
   const installError = formatSteamCmdError(t, value);
   if (installError !== null) return installError;
   switch (value.code) {
+    case "astroneer_network_preflight_failed":
+      return formatAstroneerNetworkError(t, value) ?? original;
     case "curseforge_reference_failed":
       if (typeof value.reason === "string" && ["cancelled", "timeout", "invalid_page", "busy", "browser_unavailable", "desktop_required"].includes(value.reason)) {
         return t(`errors.curseforgeReference.${value.reason}`);

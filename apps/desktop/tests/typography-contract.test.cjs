@@ -38,7 +38,8 @@ test("dial fitting can shrink a declared text role but cannot replace or enlarge
     "min(var(--text-undefined), calc((100cqw - 5ch - 4px) * 1.8 / var(--core-value-length)))",
     "min(var(--text-display), calc((100cqw - 5ch - 4px) * 0 / var(--core-value-length)))",
     "min(var(--text-display), calc((100vw - 5ch - 4px) * 1.8 / var(--core-value-length)))",
-    "min(var(--text-display), calc((100cqw - 5ch - 4px) * 1.8 / var(--unrelated-length)))"
+    "min(var(--text-display), calc((100cqw - 5ch - 4px) * 1.8 / var(--unrelated-length)))",
+    "min(var(--text-display), calc((100cqw - 5ch - 4px * var(--core-scale)) * 1.8 / var(--core-value-length)))"
   ]) assert.equal(usesBoundedDialTextRole(value, roles), false, value);
 });
 
@@ -93,7 +94,7 @@ test("component typography uses declared roles instead of viewport-scaled or loc
       const [, property, value] = declaration;
       if (value === "inherit") continue;
       if (file === typographyPath && property === "font-size" && value === "16px") continue;
-      // Dial figures fit their numeric length inside a fixed visual instrument.
+      // Dial figures fit their numeric length within the instrument's text role.
       if (file === dialPath && property === "font-size" && usesBoundedDialTextRole(value, definedTokens)) continue;
       const token = /^var\((--[\w-]+)\)$/.exec(value)?.[1];
       assert.ok(token && definedTokens.has(token), `${relative}: ${property}: ${value} must use a declared typography role`);

@@ -127,6 +127,17 @@ impl Evidence {
         self.valid.len()
     }
 
+    pub(super) fn terminal_failure(&self) -> Option<String> {
+        self.failed.map(|failure| {
+            let unvalidated = if matches!(failure, Failure::Install | Failure::MissingMods) {
+                self.expected.difference(&self.valid).cloned().collect()
+            } else {
+                Vec::new()
+            };
+            failure.with_unvalidated_mod_ids(unvalidated)
+        })
+    }
+
     fn reset_cursor(&mut self) {
         self.offset = 0;
         self.pending.clear();
@@ -157,7 +168,7 @@ impl Evidence {
     }
 
     fn check_failed(&self) -> Result<(), String> {
-        self.failed.map_or(Ok(()), |failure| Err(failure.error()))
+        self.terminal_failure().map_or(Ok(()), Err)
     }
 
     fn consume(&mut self, bytes: &[u8]) {
@@ -183,6 +194,9 @@ impl Evidence {
     }
 
     fn observe_line(&mut self, line: &str) {
+        if self.failed.is_some() {
+            return;
+        }
         let Some((timestamp, message)) = app_storage::ark_native_log_message(line) else {
             return;
         };

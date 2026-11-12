@@ -24,7 +24,7 @@ const noOperation = () => {};
 const gib = 1024 ** 3;
 const scenarios = ["normal", "unknown", "stale", "staleUpdating", "unknownUpdating", "freshUpdating", "memoryPressure", "diskPressure", "diskWatch", "networkWithoutLink", "hardwareFallback", "hardwareUnmatched"] as const;
 type Scenario = typeof scenarios[number];
-type FixtureConfig = { locale: "zh-CN" | "en-US"; theme: "dark" | "light"; captureScenario: Scenario; captureOnly?: boolean };
+type FixtureConfig = { locale: "zh-CN" | "en-US"; theme: "dark" | "light"; captureScenario: Scenario; captureOnly?: boolean; maximized?: boolean };
 let checks = 0;
 let activeScenario: Scenario | "initializing" = "initializing";
 let phase = "bootstrap";
@@ -156,6 +156,21 @@ async function settleCoreDrawing(activeTone: string | null = null) {
 function assertCoreGeometry() {
   const buttons = [...document.querySelectorAll<HTMLElement>(".system-core-metric")];
   const center = element(".system-core-center").getBoundingClientRect();
+  const fontSize = (selector: string) => parseFloat(getComputedStyle(element(selector)).fontSize);
+  const readingFont = fontSize(".system-top-metric-value strong");
+  const detailFont = fontSize(".system-top-metric-channel");
+  for (const label of document.querySelectorAll<HTMLElement>(
+    ".system-core-metric-label, .system-core-metric-live, .system-core-center-kicker, .system-core-center-state"
+  )) {
+    check(Math.abs(parseFloat(getComputedStyle(label).fontSize) - detailFont) < 0.01,
+      "Dial labels must match the adjacent shared text role without another scale");
+  }
+  for (const reading of document.querySelectorAll<HTMLElement>(
+    ".system-core-metric-value strong, .system-core-center-value strong"
+  )) {
+    check(parseFloat(getComputedStyle(reading).fontSize) <= readingFont + 0.01,
+      "Dial readings, including selected channels, must stay within the shared display role");
+  }
   const overlaps = (left: DOMRect, right: DOMRect) =>
     Math.min(left.right, right.right) - Math.max(left.left, right.left) > 1
     && Math.min(left.bottom, right.bottom) - Math.max(left.top, right.top) > 1;
@@ -192,6 +207,26 @@ function assertCoreGeometry() {
   }
 }
 function assertResourceLayout() {
+  const cards = [...document.querySelectorAll<HTMLElement>(".system-top-metric")];
+  check(cards.length === 4, "All four hardware cards must remain visible");
+  for (const card of cards) {
+    const bounds = card.getBoundingClientRect();
+    for (const target of card.querySelectorAll<HTMLElement>(
+      ".system-top-metric-title, .system-top-metric-channel, .system-top-metric-detail"
+    )) {
+      const box = target.getBoundingClientRect();
+      check(box.top >= bounds.top && box.bottom <= bounds.bottom
+        && box.height >= parseFloat(getComputedStyle(target).lineHeight) - 0.5
+        && target.scrollHeight <= target.clientHeight + 1,
+      `Hardware card text must retain its full line height: ${JSON.stringify({
+        text: geometry(target), card: geometry(card)
+      })}`);
+    }
+    const detail = card.querySelector<HTMLElement>(".system-top-metric-detail")!.getBoundingClientRect();
+    const telemetry = card.querySelector<HTMLElement>(".system-top-metric-telemetry")!.getBoundingClientRect();
+    check(telemetry.top >= detail.bottom && telemetry.bottom <= bounds.bottom,
+      "Hardware telemetry must stay below the complete description line and inside its card");
+  }
   const panel = element(".system-core-panel");
   const summary = element(".system-resource-summary");
   const stage = element(".system-core-stage");
@@ -223,11 +258,29 @@ function assertResourceLayout() {
   const available = Math.min(stageBox.width - parseFloat(stageStyle.paddingLeft) - parseFloat(stageStyle.paddingRight),
     stageBox.height - parseFloat(stageStyle.paddingTop) - parseFloat(stageStyle.paddingBottom));
   const dial = element(".system-core-visual").getBoundingClientRect();
-  check(Math.abs(dial.width - available) <= 1 && Math.abs(dial.height - dial.width) <= 1,
-    `The core dial must fill the smaller stage dimension: ${JSON.stringify({ dial: dial.width, available })}`);
+  check(dial.width > 0 && dial.width <= available + 1 && Math.abs(dial.height - dial.width) <= 1,
+    `The core dial must fit its stage without stretching: ${JSON.stringify({ dial: dial.width, available })}`);
+  const preferredDiameter = innerWidth <= 1020 ? available : panel.clientWidth * 0.77;
+  check(Math.abs(dial.width - Math.min(preferredDiameter, available)) <= 1,
+    `The dial must retain its panel proportion until its stage constrains it: ${JSON.stringify({
+      dial: dial.width, available, preferredDiameter
+    })}`);
+  const metric = element(".system-core-metric").getBoundingClientRect();
+  const metricStyle = getComputedStyle(element(".system-core-metric"));
+  const centerStyle = getComputedStyle(element(".system-core-center"));
   const labelFont = parseFloat(getComputedStyle(element(".system-core-metric-label")).fontSize);
   return { panel_width: bounds.width, panel_height: bounds.height, footer_height: summaryBounds.height,
-    dial_size: dial.width, metric_label_font: labelFont };
+    dial_size: dial.width, dial_panel_ratio: dial.width / bounds.width,
+    metric_width: metric.width, metric_height: metric.height,
+    metric_center_x: (metric.left + metric.width / 2 - dial.left) / dial.width,
+    metric_center_y: (metric.top + metric.height / 2 - dial.top) / dial.height,
+    metric_padding: parseFloat(metricStyle.paddingLeft), metric_gap: parseFloat(metricStyle.rowGap),
+    center_padding: parseFloat(centerStyle.paddingLeft), center_gap: parseFloat(centerStyle.rowGap),
+    metric_label_font: labelFont,
+    adjacent_detail_font: parseFloat(getComputedStyle(element(".system-top-metric-channel")).fontSize),
+    adjacent_value_font: parseFloat(getComputedStyle(element(".system-top-metric-value strong")).fontSize),
+    metric_value_font: parseFloat(getComputedStyle(element(".system-core-metric-value strong")).fontSize),
+    center_value_font: parseFloat(getComputedStyle(element(".system-core-center-value strong")).fontSize) };
 }
 function assertNoScoreClaims() {
   const copy = text(".system-core-panel");
@@ -235,6 +288,46 @@ function assertNoScoreClaims() {
   check(!/适合继续开服|可以继续开服|ready to (?:start|launch)|room for more servers/i.test(copy),
     "Host resource state must not promise that more game servers can run");
   check(!/\d|%/.test(text(".system-core-center-value")), "Unselected center must be a resource state, not a numeric score");
+}
+
+async function assertWindowTypography() {
+  const header = element(".shell-header");
+  const original = header.dataset.windowMaximized!;
+  const sample = () => ({
+    label: parseFloat(getComputedStyle(element(".system-core-metric-label")).fontSize),
+    value: parseFloat(getComputedStyle(element(".system-core-metric-value strong")).fontSize),
+    center: parseFloat(getComputedStyle(element(".system-core-center-value strong")).fontSize),
+    adjacent: parseFloat(getComputedStyle(element(".system-top-metric-value strong")).fontSize),
+    hardware_card_height: element(".system-top-metric").getBoundingClientRect().height,
+    dial: element(".system-core-visual").getBoundingClientRect().width,
+  });
+  const observed = [];
+  for (const maximized of [false, true, false]) {
+    header.dataset.windowMaximized = String(maximized);
+    await settleCoreDrawing();
+    assertCoreGeometry();
+    assertResourceLayout();
+    observed.push(sample());
+  }
+  const [windowed, maximized, restored] = observed;
+  check(windowed.label === 12 && maximized.label === 14, "Maximized dial labels must use the shared metadata role");
+  // Larger shared text can make the header/footer taller at a fixed viewport.
+  // Fitted readings may shrink only in proportion to the remaining dial space.
+  const fittingRatio = Math.min(1, maximized.dial / windowed.dial);
+  for (const field of ["value", "center"] as const) {
+    check(maximized[field] >= windowed[field] * fittingRatio - 0.1 && maximized[field] <= windowed[field] + 6.01,
+      `Maximized readings must retain their width fitting and stay within their six-pixel heading increase: ${JSON.stringify({ field, windowed, maximized })}`);
+  }
+  check(maximized.hardware_card_height > windowed.hardware_card_height,
+    "Hardware cards must grow with the larger text instead of clipping their description");
+  for (const field of ["label", "value", "center", "adjacent", "hardware_card_height", "dial"] as const) {
+    check(Math.abs(restored[field] - windowed[field]) < 0.01, "Restoring must recover the original size without accumulating zoom");
+  }
+  check(windowed.adjacent === 28 && maximized.adjacent === 34,
+    "The shared display role must retain its hierarchy while the dial fits its stage");
+  header.dataset.windowMaximized = original;
+  await settleCoreDrawing();
+  return { windowed, maximized, restored };
 }
 
 async function mount() {
@@ -245,7 +338,7 @@ async function mount() {
       return response.json() as Promise<FixtureConfig>;
     })
     : { locale: query.get("locale") === "en-US" ? "en-US" : "zh-CN",
-      theme: query.get("theme") === "light" ? "light" : "dark", captureScenario: "normal" };
+      theme: query.get("theme") === "light" ? "light" : "dark", captureScenario: "normal", maximized: query.get("maximized") === "true" };
   localStorage.setItem("langame.locale", config.locale);
   document.documentElement.dataset.theme = config.theme;
   const bootstrap = await bootstrapApp({ includeSystemSnapshot: true });
@@ -284,6 +377,10 @@ async function mount() {
     await act(async () => { root.render(<StrictMode><I18nProvider><AppShell {...shellProps}>
       <SystemView key={scenario} {...props} snapshot={snapshot} systemRefreshing={refreshing} />
     </AppShell></I18nProvider></StrictMode>); });
+    await settleUntil(() => Boolean(document.querySelector(".shell-header")), "The header must mount before setting the fixture window state");
+    const header = element(".shell-header");
+    check(header.hasAttribute("data-window-maximized"), "The production header must expose its native maximize state");
+    header.dataset.windowMaximized = String(config.maximized ?? false);
     return snapshot;
   };
   if (!nonce) { await render(config.captureScenario); return; }
@@ -429,6 +526,7 @@ async function mount() {
     "The footer must not add unrelated explanatory prose");
   phase = "final capture";
   await settleCoreDrawing();
+  const windowTypography = await assertWindowTypography();
   assertCoreGeometry();
   const layout = assertResourceLayout();
   assertNoScoreClaims();
@@ -439,7 +537,7 @@ async function mount() {
   }
   check(browserErrors.length === 0, `Unexpected browser errors: ${browserErrors.join("; ")}`);
   checks++;
-  return { status: "passed", checks, ...config, scenarios: observed, layout,
+  return { status: "passed", checks, ...config, scenarios: observed, layout, window_typography: windowTypography,
     interaction: config.captureOnly ? null : { mouse_selection: true, keyboard_selection: true, escape_release: true },
     data_source: "synthetic snapshots rendered by production SystemView", browser_errors: browserErrors };
 }

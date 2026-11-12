@@ -204,6 +204,8 @@ fn identified_local_or_disabled_package_does_not_authorize_same_name_cache_adopt
     );
     inventory.items.push(ManualModInventoryItem {
         name: "LocalManualPackage".into(),
+        display_name: None,
+        icon_url: None,
         path: "unused/local".into(),
         item_type: "directory".into(),
         inferred_id: Some("FixtureMod".into()),

@@ -39,12 +39,17 @@ pub async fn read_instance_connection_info_from_storage(
             ports: projection.ports,
             settings_json: String::from("{}"),
         };
-        if matches!(projection.module_id.as_str(), "corekeeper" | "valheim") {
+        if matches!(
+            projection.module_id.as_str(),
+            "corekeeper" | "valheim" | "astroneer"
+        ) {
             let details = read_instance_details(&storage.paths, &connection.instance_id)
                 .await
                 .map_err(|error| error.to_string())?;
             connection.settings_json = if projection.module_id == "valheim" {
                 valheim_connection_settings(&details.settings_json)?
+            } else if projection.module_id == "astroneer" {
+                astroneer_connection_settings(&details.settings_json)?
             } else {
                 corekeeper_connection_settings(&details.settings_json)?
             };
@@ -54,6 +59,23 @@ pub async fn read_instance_connection_info_from_storage(
         connections.push(connection);
     }
     Ok(connections)
+}
+
+fn astroneer_connection_settings(settings_json: &str) -> Result<String, String> {
+    let settings: Value = serde_json::from_str(settings_json).map_err(|error| error.to_string())?;
+    let settings = settings
+        .as_object()
+        .ok_or("instance settings must be an object")?;
+    let mut connection = serde_json::Map::new();
+    for key in ["connection_mode", "public_ip"] {
+        if let Some(value) = settings.get(key) {
+            if !value.is_string() {
+                return Err(format!("invalid ASTRONEER connection setting `{key}`"));
+            }
+            connection.insert(key.to_owned(), value.clone());
+        }
+    }
+    serde_json::to_string(&connection).map_err(|error| error.to_string())
 }
 
 fn valheim_connection_settings(settings_json: &str) -> Result<String, String> {
@@ -96,6 +118,37 @@ fn corekeeper_connection_settings(settings_json: &str) -> Result<String, String>
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn astroneer_connection_info_only_exposes_advertised_route_without_credentials() {
+        let settings = astroneer_connection_settings(
+            r#"{"connection_mode":"radmin","public_ip":"26.10.20.30",
+                "server_password":"private","console_password":"private","owner_guid":"private"}"#,
+        )
+        .unwrap();
+        assert_eq!(
+            serde_json::from_str::<Value>(&settings).unwrap(),
+            json!({"connection_mode":"radmin","public_ip":"26.10.20.30"})
+        );
+        assert_eq!(astroneer_connection_settings("{}").unwrap(), "{}");
+        assert_eq!(
+            serde_json::from_str::<Value>(
+                &astroneer_connection_settings(r#"{"public_ip":"8.8.4.4"}"#).unwrap()
+            )
+            .unwrap(),
+            json!({"public_ip":"8.8.4.4"})
+        );
+        for input in [
+            r#"{"public_ip":42}"#,
+            r#"{"connection_mode":false}"#,
+            r#"{"public_ip":null}"#,
+            "[]",
+            "null",
+            "invalid",
+        ] {
+            assert!(astroneer_connection_settings(input).is_err(), "{input}");
+        }
+    }
 
     #[test]
     fn valheim_connection_info_only_exposes_typed_backend_selection() {

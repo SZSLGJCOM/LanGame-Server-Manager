@@ -561,7 +561,7 @@ const baseEnUs: MessageCatalog = {
   "servers.details.deleteInstance": "Delete Instance",
   "servers.details.deleteInstanceRequiresStop": "Stop the server before deleting the instance.",
   "servers.details.deleteInstanceConfirm":
-    "Permanently delete this instance, its saves and backups?\nDeleting this game's last instance also cleans up unused additional programs; the base library and required programs are kept.",
+    "Permanently delete this instance?\nIts saves and backups will also be deleted. This cannot be undone.",
   "servers.details.archiveInstance": "Archive instance",
   "servers.details.archiveInstanceRequiresStop": "Stop the server before archiving the instance.",
   "servers.details.archiveHostOnly": "Archive instances from LanGame on the server host.",

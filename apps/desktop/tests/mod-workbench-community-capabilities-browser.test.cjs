@@ -17,7 +17,8 @@ for (const viewport of [{ width: 1560, height: 900 }, { width: 960, height: 600 
     assert.equal(new Set(report.modules.map((entry) => entry.module)).size, 22);
     assert.equal(report.modules.filter((entry) => entry.gate === false).length, 7);
     assert.deepEqual(report.modules.filter((entry) => entry.mods_tab_disabled).map((entry) => [entry.module, entry.disabled_reason]), [["rimworld", true]]);
-    assert.equal(report.modules.filter((entry) => entry.file_only_controls_absent).length, 14);
+    assert.equal(report.modules.filter((entry) => entry.direct_file_controls).length, 12);
+    assert.deepEqual(report.modules.filter((entry) => entry.external_inventory_read_only).map((entry) => entry.module), ["astroneer", "satisfactory"]);
     assert.deepEqual(report.modules.filter((entry) => entry.independent_configured_store).map((entry) => entry.module), ["arksurvivalascended"]);
     assert.equal(report.modules.filter((entry) => entry.store_library_switch).length, 15);
     for (const entry of report.modules.filter((entry) => entry.store_library_switch)) {

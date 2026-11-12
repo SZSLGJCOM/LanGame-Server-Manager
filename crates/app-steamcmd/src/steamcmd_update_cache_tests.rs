@@ -130,6 +130,103 @@ async fn only_modern_windows_bootstrapper_skips_seeding() {
 
 #[cfg(windows)]
 #[tokio::test]
+async fn bootstrap_extraction_handles_long_paths_and_preserves_existing_executable_on_bad_zip() {
+    use std::os::windows::ffi::OsStrExt;
+
+    struct Fixture(PathBuf);
+    impl Drop for Fixture {
+        fn drop(&mut self) {
+            assert_eq!(self.0.parent(), Some(std::env::temp_dir().as_path()));
+            let _ = std::fs::remove_dir_all(&self.0);
+        }
+    }
+
+    let fixture = Fixture(temporary_root());
+    std::fs::create_dir(&fixture.0).unwrap();
+    let deadline = InstallDeadline::new("bootstrap long paths", std::time::Duration::from_secs(30));
+    // Build the ZIP in memory so fixture creation has no filesystem path limit.
+    let output = run_powershell(
+        r#"$ErrorActionPreference='Stop'
+Add-Type -AssemblyName System.IO.Compression
+$memory = [IO.MemoryStream]::new()
+try {
+  $zip = [IO.Compression.ZipArchive]::new($memory, [IO.Compression.ZipArchiveMode]::Create, $true)
+  try {
+    foreach ($name in @('steamcmd.exe', '../outside.txt')) {
+      $stream = $zip.CreateEntry($name).Open()
+      try {
+        $bytes = [Text.Encoding]::UTF8.GetBytes('MZ verified bootstrap')
+        $stream.Write($bytes, 0, $bytes.Length)
+      } finally { $stream.Dispose() }
+    }
+  } finally { $zip.Dispose() }
+  [BitConverter]::ToString($memory.ToArray()).Replace('-', '')
+} finally { $memory.Dispose() }
+"#,
+        Some(&fixture.0),
+        deadline,
+    )
+    .await
+    .unwrap();
+    assert!(
+        output.status.success(),
+        "{}",
+        crate::output_excerpt(&output.stdout, &output.stderr)
+    );
+    let hex = String::from_utf8(output.stdout).unwrap();
+    let hex = hex.trim();
+    assert_eq!(hex.len() % 2, 0);
+    let archive_bytes = (0..hex.len())
+        .step_by(2)
+        .map(|offset| u8::from_str_radix(&hex[offset..offset + 2], 16).unwrap())
+        .collect::<Vec<_>>();
+
+    let mut root = fixture.0.join("worker");
+    while root.as_os_str().encode_wide().count() <= 280 {
+        root.push("long-bootstrap-installation-directory");
+    }
+    std::fs::create_dir_all(root.join("package")).unwrap();
+    let root = std::fs::canonicalize(root).unwrap();
+    let archive = root.join("package/steamcmd_win64.zip.verified");
+    let executable = root.join("steamcmd.exe");
+    assert!(crate::command_path_string(&archive).encode_utf16().count() > 260);
+    assert!(
+        crate::command_path_string(&executable)
+            .encode_utf16()
+            .count()
+            > 260
+    );
+    std::fs::write(&archive, &archive_bytes).unwrap();
+    std::fs::write(&executable, b"previous bootstrap").unwrap();
+    install_bootstrapper(&root, &archive, deadline)
+        .await
+        .unwrap();
+    assert_eq!(
+        std::fs::read(&executable).unwrap(),
+        b"MZ verified bootstrap"
+    );
+    assert!(!root.parent().unwrap().join("outside.txt").exists());
+    assert_eq!(std::fs::read(&archive).unwrap(), archive_bytes);
+
+    std::fs::write(&archive, b"invalid ZIP").unwrap();
+    assert!(
+        install_bootstrapper(&root, &archive, deadline)
+            .await
+            .is_err()
+    );
+    assert_eq!(
+        std::fs::read(&executable).unwrap(),
+        b"MZ verified bootstrap"
+    );
+    assert_eq!(std::fs::read(&archive).unwrap(), b"invalid ZIP");
+    assert!(std::fs::read_dir(&root).unwrap().all(|entry| {
+        let name = entry.unwrap().file_name();
+        name == "package" || name == "steamcmd.exe"
+    }));
+}
+
+#[cfg(windows)]
+#[tokio::test]
 #[ignore = "downloads and executes official SteamCMD in an explicitly selected new diagnostic directory"]
 async fn live_direct_install_cache_reuse_and_cancel() {
     let root = PathBuf::from(

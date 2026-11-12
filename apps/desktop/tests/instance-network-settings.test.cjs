@@ -454,7 +454,7 @@ test("network panel keeps persisted endpoint and independent disabled contracts"
   assert.match(networkPanel, /instanceRuntimeOwnsNetworkSettings\(props\.details\)/);
   assert.match(networkPanel, /settings\.network\.runtimeLock/);
   assert.match(networkPanel, /localPortDraftDirty/);
-  assert.match(networkPanel, /copyDisabled=\{!networkPersisted \|\| localPortDraftDirty\}/);
+  assert.match(networkPanel, /copyDisabled=\{!networkPersisted \|\| localPortDraftDirty \|\| props\.networkSettingsUnsaved\}/);
   assert.match(networkPanel, /supportsStrictBindAddress \? \([\s\S]{0,300}?<ListenAddressSelect/);
   assert.match(networkPanel, /disabled=\{controlState\.bindDisabled\}/);
   assert.match(networkPanel, /disabled=\{controlState\.portsDisabled\}/);

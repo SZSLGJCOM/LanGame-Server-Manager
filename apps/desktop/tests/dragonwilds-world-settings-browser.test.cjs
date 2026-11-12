@@ -12,6 +12,7 @@ for (const width of [1280, 1024]) {
     assert.deepEqual(report.locales, ["en-US", "zh-CN"]);
     assert.ok(report.check_count >= 1200, "Peer navigation and complete native world rule behavior acceptance did not finish");
     assert.equal(report.loading_lifecycle_checks.length, 26, "StrictMode native read lifecycle acceptance did not finish in both languages");
+    assert.equal(report.first_start_checks.length, 40, "First-start preconfiguration acceptance did not finish in both languages");
     for (const outcome of ["immediate native success", "delayed native success clears loading", "delayed native failure clears loading",
       "late old-instance native success", "late old-instance native failure", "start await its unresolved read", "empty save leaves loading"]) {
       assert.equal(report.loading_lifecycle_checks.filter((check) => check.includes(outcome)).length, 2,

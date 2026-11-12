@@ -892,6 +892,10 @@ pub struct LaunchPlan {
     pub install_root: String,
     pub install_state: InstallState,
     pub uses_private_runtime: bool,
+    /// The instance's startup policy can update or repair this program before
+    /// the final launch checks. This does not certify the current files.
+    #[serde(default)]
+    pub can_update_before_start: bool,
     pub working_directory: String,
     pub executable_path: String,
     pub executable_exists: bool,

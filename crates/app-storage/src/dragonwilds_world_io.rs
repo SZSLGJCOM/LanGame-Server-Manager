@@ -84,6 +84,23 @@ pub(crate) fn latest_world(
 fn read_world_metadata(
     path: &Path,
 ) -> Result<crate::dragonwilds_save::metadata::WorldMetadata, StorageError> {
+    let info = read_world_info(path)?;
+    crate::dragonwilds_save::metadata::read_world_metadata_info(&info)
+        .map_err(|message| invalid(path, message))
+}
+
+pub(super) fn read_bootstrap_world_metadata(
+    path: &Path,
+) -> Result<(crate::dragonwilds_save::metadata::WorldMetadata, [u32; 4]), StorageError> {
+    let info = read_world_info(path)?;
+    let metadata = crate::dragonwilds_save::metadata::read_world_metadata_info(&info)
+        .map_err(|message| invalid(path, message))?;
+    let guid = crate::dragonwilds_save::metadata::read_world_guid_info(&info)
+        .map_err(|message| invalid(path, message))?;
+    Ok((metadata, guid))
+}
+
+fn read_world_info(path: &Path) -> Result<Vec<u8>, StorageError> {
     let mut file = open_world(path)?;
     let mut header = [0; 16];
     file.read_exact(&mut header)
@@ -125,8 +142,7 @@ fn read_world_metadata(
     let mut info = vec![0; info_length];
     file.read_exact(&mut info)
         .map_err(|error| invalid(path, error.to_string()))?;
-    crate::dragonwilds_save::metadata::read_world_metadata_info(&info)
-        .map_err(|message| invalid(path, message))
+    Ok(info)
 }
 
 fn open_world(path: &Path) -> Result<File, StorageError> {
@@ -192,4 +208,47 @@ pub(super) fn world_file_name(path: &Path) -> Result<String, StorageError> {
         .and_then(|name| name.to_str())
         .map(String::from)
         .ok_or_else(|| invalid(path, "World filename must be valid UTF-8."))
+}
+
+/// An uninitialized instance has no native save at all, including saves whose
+/// names differ from DefaultWorldName or whose contents cannot be decoded.
+pub(super) fn world_files(root: &Path) -> Result<Vec<PathBuf>, StorageError> {
+    if !root
+        .try_exists()
+        .map_err(|error| invalid(root, error.to_string()))?
+    {
+        return Ok(Vec::new());
+    }
+    let _guards = guard_directories(root)?;
+    let mut files = Vec::new();
+    for (index, entry) in fs::read_dir(root)
+        .map_err(|error| invalid(root, error.to_string()))?
+        .enumerate()
+    {
+        if index >= MAX_DIRECTORY_ENTRIES {
+            return Err(invalid(
+                root,
+                "Too many entries in the world save directory (maximum 256).",
+            ));
+        }
+        let path = entry
+            .map_err(|error| invalid(root, error.to_string()))?
+            .path();
+        if !path
+            .extension()
+            .is_some_and(|extension| extension.eq_ignore_ascii_case("sav"))
+        {
+            continue;
+        }
+        let metadata =
+            fs::symlink_metadata(&path).map_err(|error| invalid(&path, error.to_string()))?;
+        if !metadata.is_file() || is_link(&metadata) {
+            return Err(invalid(
+                &path,
+                "World saves must be ordinary files, without links or reparse points.",
+            ));
+        }
+        files.push(path);
+    }
+    Ok(files)
 }

@@ -15,8 +15,8 @@ export function checkStoragePathLayout(
     const path = entry.querySelector<HTMLElement>(".system-runtime-path");
     check(label && label.scrollWidth <= label.clientWidth + 1,
       "Every path label must fit its column without clipping");
-    check(path && path.clientWidth > 0 && path.title === path.textContent,
-      "Every path must retain visible space and its full-path tooltip");
+    check(path && path.clientWidth >= 48 && path.title === path.textContent,
+      "Every path must retain a readable prefix and its full-path tooltip");
     for (const button of entry.querySelectorAll<HTMLButtonElement>("button")) {
       const control = button.getBoundingClientRect();
       check(control.width >= 28 && control.height >= 28
@@ -24,6 +24,12 @@ export function checkStoragePathLayout(
         && control.top >= rect.top - 1 && control.bottom <= rect.bottom + 1
         && button.scrollWidth <= button.clientWidth + 1,
       `Path actions must fit their own column: ${button.getAttribute("aria-label")}`);
+      if (path) {
+        const address = path.getBoundingClientRect();
+        check(Math.abs(address.top + address.height / 2 - control.top - control.height / 2) <= 1
+          && control.left >= address.right + 3,
+        `Desktop path and actions must share one horizontal line: ${button.getAttribute("aria-label")}`);
+      }
     }
   }
 }

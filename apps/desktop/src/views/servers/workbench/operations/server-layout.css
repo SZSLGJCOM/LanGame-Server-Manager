@@ -14,7 +14,7 @@
   height: 100%;
   overflow: hidden;
   grid-template-rows: auto minmax(0, 1fr);
-  gap: 12px;
+  gap: calc(12px * var(--interface-density));
 }
 
 .servers-page--empty {
@@ -25,19 +25,157 @@
   min-height: 0;
 }
 
+/* Resolve the geometry scale before descendants enter the card's container. */
+@property --server-card-scale {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 1;
+}
+
+/* Preserve windowed layout and scale card geometry only while maximized.
+   Text inherits the shared maximized roles and cancels the card's geometry zoom. */
+:root:has(.shell-header[data-window-maximized="true"]) .servers-page {
+  --server-card-base-body: var(--text-body);
+  --server-card-base-section: var(--text-section-title);
+  --server-card-base-meta: var(--text-meta);
+  --server-card-base-secondary: var(--text-secondary);
+  --server-card-base-title: var(--text-page-title);
+  --server-card-base-control-height: var(--control-height);
+  --server-card-base-control-height-compact: var(--control-height-compact);
+  --server-card-base-control-padding: var(--control-padding-inline);
+  --server-card-base-control-padding-block: var(--control-padding-block);
+  --server-card-base-control-padding-compact: var(--control-padding-inline-compact);
+}
+
+:root:has(.shell-header[data-window-maximized="true"]) .servers-page :is(.workspace-metric, .server-list-card) {
+  --server-card-text-ratio: calc(1 / var(--server-card-scale));
+  --server-card-control-ratio: calc(1 / var(--server-card-scale));
+  --text-body: calc(var(--server-card-base-body) * var(--server-card-text-ratio));
+  --text-section-title: calc(var(--server-card-base-section) * var(--server-card-text-ratio));
+  --text-meta: calc(var(--server-card-base-meta) * var(--server-card-text-ratio));
+  --text-secondary: calc(var(--server-card-base-secondary) * var(--server-card-text-ratio));
+  --text-page-title: calc(var(--server-card-base-title) * var(--server-card-text-ratio));
+}
+
+/* Match enlarged controls to the shared density without stacking card zoom. */
+:root:has(.shell-header[data-window-maximized="true"]) .servers-page .workspace-metric-icon {
+  width: calc(28px * var(--interface-density) * var(--server-card-control-ratio));
+  height: calc(28px * var(--interface-density) * var(--server-card-control-ratio));
+}
+
+:root:has(.shell-header[data-window-maximized="true"]) .servers-page .workspace-metric-icon-svg {
+  width: calc(20px * var(--interface-density) * var(--server-card-control-ratio));
+  height: calc(20px * var(--interface-density) * var(--server-card-control-ratio));
+}
+
+:root:has(.shell-header[data-window-maximized="true"]) .servers-page .server-list-card .server-list-card-icon-action,
+:root:has(.shell-header[data-window-maximized="true"]) .servers-page .server-list-card-confirm--primary .inline-confirm-cancel {
+  width: calc(28px * var(--interface-density) * var(--server-card-control-ratio));
+  height: calc(28px * var(--interface-density) * var(--server-card-control-ratio));
+  min-height: calc(28px * var(--interface-density) * var(--server-card-control-ratio));
+  border-radius: calc(6px * var(--interface-density) * var(--server-card-control-ratio));
+}
+
+:root:has(.shell-header[data-window-maximized="true"]) .servers-page :is(.server-list-card-copy-action, .server-list-card-save-action) {
+  flex-basis: calc(28px * var(--interface-density) * var(--server-card-control-ratio));
+}
+
+:root:has(.shell-header[data-window-maximized="true"]) .servers-page .server-list-card-primary-action {
+  gap: calc(5px * var(--interface-density) * var(--server-card-control-ratio));
+  border-radius: calc(7px * var(--interface-density) * var(--server-card-control-ratio));
+}
+
+:root:has(.shell-header[data-window-maximized="true"]) .servers-page .server-list-card-action-icon {
+  width: calc(13px * var(--interface-density) * var(--server-card-control-ratio));
+  height: calc(13px * var(--interface-density) * var(--server-card-control-ratio));
+}
+
+:root:has(.shell-header[data-window-maximized="true"]) .servers-page .server-list-card-actions {
+  gap: calc(8px * var(--interface-density) * var(--server-card-control-ratio));
+}
+
+:root:has(.shell-header[data-window-maximized="true"]) .servers-page .server-list-card-network {
+  gap: calc(6px * var(--interface-density) * var(--server-card-control-ratio));
+}
+
+:root:has(.shell-header[data-window-maximized="true"]) .servers-page .server-list-card-status-dot {
+  width: calc(6px * var(--interface-density) * var(--server-card-control-ratio));
+  height: calc(6px * var(--interface-density) * var(--server-card-control-ratio));
+}
+
+:root:has(.shell-header[data-window-maximized="true"]) .servers-page .server-list-card .inline-confirm-buttons > button {
+  padding-block: calc(4px * var(--interface-density) * var(--server-card-control-ratio));
+}
+
+:root:has(.shell-header[data-window-maximized="true"]) .servers-page .server-list-card-confirm .inline-confirm-message {
+  line-height: var(--leading-compact);
+}
+
+:root:has(.shell-header[data-window-maximized="true"]) .servers-page .workspace-metrics {
+  container-type: inline-size;
+  grid-template-columns: minmax(240px, 25%) repeat(3, minmax(0, 1fr));
+}
+
+:root:has(.shell-header[data-window-maximized="true"]) .servers-page .workspace-metric {
+  --server-card-scale: max(1, calc(100cqw / 1500px));
+  height: auto;
+  max-height: none;
+  zoom: var(--server-card-scale);
+}
+
+:root:has(.shell-header[data-window-maximized="true"]) .servers-page .server-list-panel > .table-list {
+  container-type: inline-size;
+}
+
+:root:has(.shell-header[data-window-maximized="true"]) .servers-page .server-list-card {
+  --server-card-scale: max(1, calc(100cqw / 323px));
+  /* Reserve two title lines and the action row even when card zoom is only 1. */
+  --server-list-card-height: calc(var(--server-list-card-cover-height) + max(84px,
+    calc(var(--text-section-title) * var(--leading-heading) * 2 + max(32px, var(--control-height)) + 18px)));
+  --server-list-card-action-width: calc(88px * var(--interface-density) * var(--server-card-control-ratio));
+  --control-height: calc(var(--server-card-base-control-height) * var(--server-card-control-ratio));
+  --control-height-compact: calc(var(--server-card-base-control-height-compact) * var(--server-card-control-ratio));
+  --control-padding-inline: calc(var(--server-card-base-control-padding) * var(--server-card-control-ratio));
+  --control-padding-block: calc(var(--server-card-base-control-padding-block) * var(--server-card-control-ratio));
+  --control-padding-inline-compact: calc(var(--server-card-base-control-padding-compact) * var(--server-card-control-ratio));
+  width: auto;
+  zoom: var(--server-card-scale);
+}
+
+:root:has(.shell-header[data-window-maximized="true"]) .server-list-card-footer {
+  grid-template-rows: minmax(0, 1fr) max(32px, var(--control-height));
+}
+
+/* Give instance names a heading role; keep connection details subordinate. */
+:root:has(.shell-header[data-window-maximized="true"]) .server-list-card-copy .row-title {
+  font-size: var(--text-section-title);
+}
+
+:root:has(.shell-header[data-window-maximized="true"]) .servers-page:not(.servers-page--empty) .server-layout-grid {
+  grid-template-columns: minmax(240px, 25%) minmax(0, 1fr);
+}
+
+:root:has(.shell-header[data-window-maximized="true"]) .servers-page:not(.servers-page--empty) .server-list-panel {
+  grid-column: 1;
+}
+
+:root:has(.shell-header[data-window-maximized="true"]) .servers-page:not(.servers-page--empty) .server-detail-panel {
+  grid-column: 2;
+}
+
 .server-layout-grid {
   min-height: 0;
   height: 100%;
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 10px;
+  gap: calc(10px * var(--interface-density));
   align-items: stretch;
   overflow: hidden;
 }
 
 .servers-page .server-layout-grid {
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 10px;
+  gap: calc(10px * var(--interface-density));
 }
 
 .servers-page .server-list-panel {
@@ -68,7 +206,7 @@
   grid-template-columns: minmax(0, 1fr);
   grid-template-rows: auto minmax(0, 1fr);
   min-width: 0;
-  padding: 12px;
+  padding: calc(12px * var(--interface-density));
   border: 1px solid var(--shell-line);
   border-radius: 12px;
   background: var(--theme-card-surface);
@@ -203,7 +341,7 @@
   height: 100%;
   display: grid;
   grid-template-rows: auto minmax(0, 1fr);
-  gap: 10px;
+  gap: calc(10px * var(--interface-density));
   overflow: hidden;
 }
 
@@ -219,8 +357,20 @@
   align-content: start;
   overflow-y: auto;
   overflow-x: hidden;
-  padding-right: 4px;
-  scrollbar-gutter: stable;
+  padding: 0;
+  border: 1px solid var(--shell-line);
+  border-radius: 12px;
+  background: var(--theme-card-surface);
+  scrollbar-gutter: auto;
+}
+
+/* The shared tab panel owns the outer frame, including workspaces with their
+   own standalone card styling. Local scroll areas stay inside that frame. */
+.server-detail-scroll--mods .mw-workbench,
+.server-detail-scroll--runtime .server-runtime-console-card {
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
 }
 
 .server-detail-scroll--mods {
@@ -293,7 +443,7 @@
   grid-auto-flow: column;
   grid-auto-columns: minmax(max-content, 1fr);
   align-items: center;
-  gap: 4px;
+  gap: calc(4px * var(--interface-density));
   min-width: 0;
   overflow-x: auto;
   scrollbar-width: thin;
@@ -303,10 +453,10 @@
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
   align-items: center;
-  gap: 5px;
+  gap: calc(5px * var(--interface-density));
   min-width: 0;
-  min-height: 32px;
-  padding: 4px 6px;
+  min-height: calc(32px * var(--interface-density));
+  padding: calc(4px * var(--interface-density)) calc(6px * var(--interface-density));
   border: 1px solid transparent;
   border-radius: 8px;
   background: transparent;
@@ -358,8 +508,8 @@
 }
 
 .server-detail-tab-icon {
-  width: 13px;
-  height: 13px;
+  width: calc(13px * var(--interface-density));
+  height: calc(13px * var(--interface-density));
   flex-shrink: 0;
   color: currentColor;
 }
@@ -683,6 +833,42 @@
 .server-list-card-confirm .inline-confirm-buttons {
   flex: 0 0 auto;
   flex-wrap: nowrap;
+}
+
+.server-list-card-toolbar:has(.server-list-card-confirm--primary.is-confirming) {
+  position: static;
+}
+
+.server-list-card-overlay:has(.server-list-card-confirm--primary.is-confirming) .server-list-card-footer {
+  visibility: hidden;
+}
+
+.server-list-card-confirm--primary.is-confirming {
+  z-index: 1;
+  padding-top: 42px;
+}
+
+.server-list-card-confirm--primary .inline-confirm-message {
+  flex: 1;
+}
+
+.server-list-card-confirm--primary .inline-confirm-buttons {
+  min-height: 32px;
+  align-items: center;
+}
+
+.server-list-card-confirm--primary .inline-confirm-cancel {
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  min-height: 28px;
+  padding: 0;
+  border-radius: 6px;
 }
 
 .inline-confirm-action.server-list-card-new-world .inline-confirm-review .inline-confirm-submit {

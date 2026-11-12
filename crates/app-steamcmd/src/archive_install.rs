@@ -165,7 +165,7 @@ where
         format!("Extracting {} package...", module.summary.name),
     ));
     let preparation = async {
-        let output = run_powershell(&script, Some(install_parent), deadline).await?;
+        let output = run_powershell(&script, None, deadline).await?;
         if !output.status.success() {
             return Err(SteamCmdError::DirectDownloadFailed {
                 output_excerpt: output_excerpt(&output.stdout, &output.stderr),
@@ -192,7 +192,7 @@ where
         // any failure after this point still leaves the generation pending.
         let revision =
             begin_game_install_revision(Path::new(&settings.servers_root), revision_key)?;
-        run_powershell(&publish, Some(install_parent), deadline)
+        run_powershell(&publish, None, deadline)
             .await
             .map(|output| (output, revision))
     }

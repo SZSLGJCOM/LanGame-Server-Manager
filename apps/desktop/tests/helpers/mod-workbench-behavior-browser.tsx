@@ -197,7 +197,16 @@ async function fileInventoryScenario(moduleId: string, record = true) {
   assert(!moduleDetails.mods?.enablement, `${moduleId} exposes file inventory without an enablement list`);
   await click(button("My Mods"));
   await settle(() => Boolean(modRow(names[moduleId])), `${moduleId} inventory did not appear`);
-  assert(!fixture.querySelector(".mw-entry-enabled-toggle"), `${moduleId} file inventory has no false enablement toggle`);
+  const fileRow = modRow(names[moduleId])!;
+  if (moduleId === "squad") {
+    assert(!fileRow.querySelector(".mw-entry-enabled-toggle,.mw-entry-remove-button"),
+      "Squad inventory does not invent generic file management outside its Workshop contract");
+  } else {
+    assert(fileRow.querySelector<HTMLInputElement>(".mw-entry-enabled-toggle")?.checked
+      && Boolean(fileRow.querySelector(".mw-entry-remove-button")),
+      `${moduleId} exposes direct file enablement and reviewed deletion in My Mods`);
+    assert(!fixture.querySelector(".mw-managed-adopt"), `${moduleId} requires no separate registration action`);
+  }
   await click(modRow(names[moduleId])!.querySelector<HTMLButtonElement>(".mw-entry-row-select")!);
   await click(button("Open Mod folder"));
   assert(openedPaths.at(-1) === target, `${moduleId} opens its own inventory target directory`);

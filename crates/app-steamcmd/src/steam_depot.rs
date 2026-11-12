@@ -21,6 +21,48 @@ pub const MAX_ACF: usize = 4 * 1024 * 1024;
 pub const MAX_FILES: usize = 500_000;
 pub const MAX_BYTES: u64 = 2 * 1024 * 1024 * 1024 * 1024;
 type Result<T> = io::Result<T>;
+
+#[derive(Debug)]
+struct MissingSteamMetadata {
+    context: String,
+    source: io::Error,
+}
+
+impl std::fmt::Display for MissingSteamMetadata {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(formatter, "{}: {}", self.context, self.source)
+    }
+}
+
+impl std::error::Error for MissingSteamMetadata {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        Some(&self.source)
+    }
+}
+
+/// Missing official metadata permits a fresh acquisition, never certification
+/// of existing bytes. Missing payloads and all other I/O failures remain errors.
+pub fn steam_metadata_is_missing(error: &io::Error) -> bool {
+    error.kind() == io::ErrorKind::NotFound
+        && error
+            .get_ref()
+            .is_some_and(|inner| inner.is::<MissingSteamMetadata>())
+}
+
+fn metadata_error(context: String, error: io::Error) -> io::Error {
+    if error.kind() == io::ErrorKind::NotFound {
+        io::Error::new(
+            error.kind(),
+            MissingSteamMetadata {
+                context,
+                source: error,
+            },
+        )
+    } else {
+        io::Error::new(error.kind(), format!("{context}: {error}"))
+    }
+}
+
 pub fn invalid(message: impl std::fmt::Display) -> io::Error {
     io::Error::new(io::ErrorKind::InvalidData, message.to_string())
 }
@@ -202,9 +244,9 @@ pub(crate) fn read_inventory(
                 continue;
             }
             Err(error) => {
-                return Err(io::Error::new(
-                    error.kind(),
-                    format!("Steam depot manifest {}: {error}", path.display()),
+                return Err(metadata_error(
+                    format!("Steam depot manifest {}", path.display()),
+                    error,
                 ));
             }
         };
@@ -367,7 +409,12 @@ fn read_acf(root: &Path, id: u32, acfs: &mut BTreeMap<String, String>) -> Result
         return Err(invalid("too many dependency ACF files"));
     }
     let relative = format!("steamapps/appmanifest_{id}.acf");
-    let bytes = bounded(&root.join(&relative), MAX_ACF)?;
+    let bytes = bounded(&root.join(&relative), MAX_ACF).map_err(|error| {
+        metadata_error(
+            format!("Steam app manifest {}", root.join(&relative).display()),
+            error,
+        )
+    })?;
     let app = parse_acf(&bytes, id)?;
     acfs.insert(relative, String::from_utf8(bytes).map_err(invalid)?);
     Ok(app)

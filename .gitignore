@@ -131,6 +131,9 @@ Desktop.ini
 # Managed workstation entry points; public setup is documented in README.md
 /start.bat
 /scripts/start_langame_desktop_local.ps1
+/scripts/start_langame_desktop_session.ps1
+/scripts/desktop_development_session.local.psm1
 /scripts/desktop_runtime_service*.psm1
 /scripts/tests/test_desktop_runtime_service*.ps1
 /apps/desktop/tests/managed-desktop-launcher.test.cjs
+/apps/desktop/tests/desktop-development-session.test.cjs

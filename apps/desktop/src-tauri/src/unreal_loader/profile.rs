@@ -32,7 +32,8 @@ impl Profile {
             (
                 "scum",
                 "070fcad918ba04eb9797db29674cadbd6691427b936fe354bca23b008c8c9971"
-                | "a862d658271f26d082de5df7bba01e8af9c3d051cb9634e908bb94d8a9efbc7a",
+                | "a862d658271f26d082de5df7bba01e8af9c3d051cb9634e908bb94d8a9efbc7a"
+                | "805396516e64d17f1713f24ce97a7d525a6d761db46ce069f40cf63114add6d9",
             ) => Ok(None),
             _ => Err("This game build is outside the verified native save contract; no files were changed.".into()),
         }

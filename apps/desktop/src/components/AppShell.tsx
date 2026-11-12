@@ -172,6 +172,8 @@ function AppShellContent(props: AppShellProps) {
         <AppHeader
           activeView={props.activeView}
           aiSettings={props.aiSettings}
+          appUpdateAction={<AppUpdatePrompt enabled={props.appUpdatesEnabled} state={props.appUpdateState} retryRequest={updateRetryRequest}
+            onCheck={props.onCheckAppUpdate} onInstall={props.onInstallAppUpdate} onDownloadInstaller={downloadAppInstaller} />}
           assistant={props.assistant}
           assistantDraft={props.assistantDraft}
           assistantInput={props.assistantInput}
@@ -203,8 +205,6 @@ function AppShellContent(props: AppShellProps) {
           <div className="shell-content-body">{props.children}</div>
         </main>
 
-        <AppUpdatePrompt enabled={props.appUpdatesEnabled} state={props.appUpdateState} retryRequest={updateRetryRequest}
-          onCheck={props.onCheckAppUpdate} onInstall={props.onInstallAppUpdate} onDownloadInstaller={downloadAppInstaller} />
         {props.appUpdatesEnabled ? <AppUpdateActivity state={props.appUpdateState} onCheck={retryAppUpdate} /> : null}
 
         <footer className="shell-activity-bar" role="status" aria-live="polite" aria-atomic="false">

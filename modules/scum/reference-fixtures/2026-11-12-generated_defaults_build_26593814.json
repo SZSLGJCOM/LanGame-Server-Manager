@@ -1,0 +1,159 @@
+{
+  "module_id": "scum",
+  "verified_on": "2026-11-12",
+  "steam_app_id": 3792580,
+  "build_id": "26593814",
+  "game_version": "1.3.6.0.177121+0",
+  "depot_manifest": "4510314708728724923",
+  "executable_sha256": "805396516e64d17f1713f24ce97a7d525a6d761db46ce069f40cf63114add6d9",
+  "source": "A fresh ordinary copy of the official dedicated-server package generated ServerSettings.ini on an isolated Windows host, without the manager loader or native save bridge.",
+  "source_ini_sha256": "e049e6ebba5b38765898c19f6f1252bbb29c918f35019c4eba4c9eab7bdc9b9c",
+  "generated_key_count": 437,
+  "compared_unconfigured_defaults": 434,
+  "excluded_explicit_fixture_settings": [
+    "scum.MaxPlayers",
+    "scum.ServerName",
+    "scum.ServerPassword"
+  ],
+  "missing_modeled_keys": [],
+  "differences_from_previous_inventory": [
+    {
+      "key": "scum.ServerDescription",
+      "previous": "Managed by LanGame Server Manager.",
+      "generated": "Server Description",
+      "action": "Keep the existing manager wording."
+    },
+    {
+      "key": "scum.WelcomeMessage",
+      "previous": "Welcome to this SCUM server.",
+      "generated": "Welcome to our SCUM Server",
+      "action": "Keep the existing manager wording."
+    },
+    {
+      "key": "scum.MaxPing",
+      "previous": "200.000000",
+      "generated": "400.000000",
+      "action": "Set inventory default/nativeDefault and the generated schema default to 400. Explicit saved values retain precedence in the existing renderer."
+    }
+  ],
+  "historical_boundary": "The 2026-09-30 static registration and packaged-default review for build 25247308 explicitly established an uncustomized multiplayer MaxPing default of 200. No manager policy deliberately retaining 200 was found. This new generated-world evidence establishes drift since that baseline; it does not date the change to the 2026-11-12 patch.",
+  "focused_generated_values": {
+    "scum.ServerSettingsVersion": "7",
+    "scum.AnimalGlobalDensityMultiplier": "0.500000",
+    "scum.MaxNonVirtualAnimalsInWorld": "500"
+  },
+  "comparison_artifact_sha256": "608394eafe0c4f0663433ebd7c808ad5382ae6fc87c1b5891a5baac3be032069",
+  "limits": [
+    "The three explicitly configured fixture settings are not pristine-default observations.",
+    "String presentation and semantic equality of numeric/Boolean values were compared; gameplay effects and every allowable value were not tested.",
+    "No existing user configuration was migrated or overwritten.",
+    "The generation probe reached readiness but direct CTRL_C returned 0xC000013A; it does not prove normal shutdown."
+  ],
+  "validation": {
+    "verified_on": "2026-11-12",
+    "source_identity_sha256": "22a5b8f0a0e3c50a0279a4cef06c3dcd7949a3d3933b695281a80b1b6628013d",
+    "source_manifest_sha256": "e699ab2a7e0c6656d959a5e37e340a6ed00e7f5863b3e991ee4ccb6155fdc8d9",
+    "source_manifest_file_count": 4673,
+    "coordinator_independently_rehashed_frozen_source_files": 4673,
+    "frozen_source_mismatch_count": 0,
+    "locally_rechecked_current_and_frozen_sources_sha256": {
+      "modules/scum/server-settings-v7/general.json": "e0cd097a5aee9308f503cb3ce18602a6a2f5140ca49800fdbf89a886785745ac",
+      "modules/scum/schema.json": "ecb9756ccae076f486ced4c4a1872ed048cf4cd663bc9fcd9d46526eeeac549d",
+      "crates/app-storage/src/templates_render_scum.rs": "2ec873a582026a7a2b7b5e21f1fc4bb1ad56d10fe6f0387a62230a7db6b04cab",
+      "crates/app-storage/src/templates_render_scum_tests.rs": "8f9dd01022caa7b0393fa3dffc3cb81af7fb61961bdcb079a6a9767813213ccf",
+      "crates/app-storage/src/scum_custom_zones_io.rs": "f5cdf2eb1c0406575f3019f02a4f9ee73e04f77a98ff2b54ef4680b65b5afcb9",
+      "crates/app-storage/src/scum_custom_zones_tests.rs": "19239128159f1851c8c39a2532cb41a671618bd8f80c8a0ebe6b151395d283cc"
+    },
+    "test_binary_sha256": "3cc00a682ddf68aaa781da7691c67fc129b4a516bc0bdb2fc6753471c35de542",
+    "test_binary_size_bytes": 61281280,
+    "build_captured_at_utc": "2026-11-12T04:09:55.9693131Z",
+    "cargo_command": "test",
+    "cargo_arguments": [
+      "-p",
+      "app-core",
+      "-p",
+      "app-modules",
+      "-p",
+      "app-knowledge",
+      "-p",
+      "app-storage",
+      "--lib",
+      "--all-features",
+      "--locked",
+      "--no-run"
+    ],
+    "canonical_entry_point_sha256_from_receipt": "a49fe85bfed0b558354bc5a605e84b5a2f9a30c251c2bc57ff4ddc51503223b2",
+    "actual_task_entry_point_sha256": "910f6df183329c9ff55c9f006e8a45b864db0015da4044af4c491f6c84412c2e",
+    "task_invocation_audited_at_utc": "2026-11-12T04:01:08.4179416Z",
+    "minimum_build_memory_gib": 12,
+    "max_compiler_jobs": 2,
+    "host_reserve_gib": 8,
+    "global_policy_modified": false,
+    "compiled_inventory_default": 400.0,
+    "compiled_inventory_native_default": "400.000000",
+    "compiled_schema_default": 400.0,
+    "embedded_source_bytes": [
+      {
+        "source": "modules/scum/server-settings-v7/general.json",
+        "source_sha256": "e0cd097a5aee9308f503cb3ce18602a6a2f5140ca49800fdbf89a886785745ac",
+        "full_source_bytes": 14518,
+        "full_source_bytes_found_in_test_binary": true,
+        "binary_file_offset": 47011727
+      },
+      {
+        "source": "modules/scum/schema.json",
+        "source_sha256": "ecb9756ccae076f486ced4c4a1872ed048cf4cd663bc9fcd9d46526eeeac549d",
+        "full_source_bytes": 154646,
+        "full_source_bytes_found_in_test_binary": true,
+        "binary_file_offset": 49130592
+      }
+    ],
+    "scum_regressions": {
+      "filter": "scum",
+      "passed": 18,
+      "failed": 0,
+      "ignored": 1,
+      "filtered_out": 1903,
+      "exit_code": 0,
+      "duration_seconds": 2.36,
+      "log_sha256": "3a0a774ba5b91e2205f1198b108b2e68e198680aa14c12212dd5eff6a968b5fc",
+      "scope": "Existing cases cover empty-settings rendering of all 436 editable keys, explicit structured values, native schema validation, save scope, creation, wipe guards and custom-zone invariants. They do not specifically assert the rendered MaxPing value. The native database roundtrip is opt-in and was independently executed with storage-build-05."
+    },
+    "validation_boundary": "Exact default400 inventory and schema bytes are present in this compiled storage test binary. Existing renderer regressions passed; byte embedding alone does not prove a particular runtime rendering result. This is separate from the native-build-04 managed lifecycle, whose frozen default remains200 and whose test explicitly configured400.",
+    "broader_run": {
+      "overall_state": "failed",
+      "retained_data_tests_passed": 357,
+      "retained_data_tests_failed": 1,
+      "failure_test": "tests::instance_creation_clean_tests::exclusive::official_excluded_defaults_allow_direct_use_but_modified_defaults_do_not",
+      "failure_module": "dontstarve",
+      "scope": "The broader retained-data selection has an unrelated failure and is not described as an overall passing pipeline."
+    },
+    "artifacts": [
+      {
+        "name": "storage-build-08-receipt.json",
+        "sha256": "43a434e1c5abad8b0df5d987750dcceb12becb62eb979f66f3f9d5ce0fbb557c",
+        "size_bytes": 1627
+      },
+      {
+        "name": "storage-build-08-source-proof.json",
+        "sha256": "22e74a2032b25dd46ff4a78440589cc6bf5e017bf172912cf63f19c4ee30dbf2",
+        "size_bytes": 1268
+      },
+      {
+        "name": "storage08-task-cargo-invocation.json",
+        "sha256": "bdffc741ecd20442b2a010065e7a872174699e55919acedb22f660382098f7da",
+        "size_bytes": 981
+      },
+      {
+        "name": "rust-final-tests-08-result.json",
+        "sha256": "0189591266505eec624a1b6b1c09f2712497e6fa26f01da65f6f0b4c13efd031",
+        "size_bytes": 2597
+      },
+      {
+        "name": "app_storage-scum.log",
+        "sha256": "3a0a774ba5b91e2205f1198b108b2e68e198680aa14c12212dd5eff6a968b5fc",
+        "size_bytes": 2095
+      }
+    ]
+  }
+}

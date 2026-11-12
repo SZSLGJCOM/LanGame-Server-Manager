@@ -1,0 +1,58 @@
+[
+  {
+    "fixture": "lzma.7z",
+    "package": "sevenz-rust2-0.23.0",
+    "source_path": "tests/resources/two_files_with_content_lzma.7z",
+    "bytes": 210,
+    "sha256": "570606adc4626105bd471b8dfb866e4fe8d06e73ea916a2b5ed365eeb030ce8b"
+  },
+  {
+    "fixture": "solid.7z",
+    "package": "sevenz-rust2-0.23.0",
+    "source_path": "tests/resources/solid.7z",
+    "bytes": 2419,
+    "sha256": "f3baded396d9ce01a2c591585db5bc168916de70de4a83644a41273befd6ec20"
+  },
+  {
+    "fixture": "ppmd.7z",
+    "package": "sevenz-rust2-0.23.0",
+    "source_path": "tests/resources/ppmd.7z",
+    "bytes": 3364,
+    "sha256": "58b8804b1b11d8c688b376858832cb047446023cfdd2e34f98f62d984cc49228"
+  },
+  {
+    "fixture": "encrypted.7z",
+    "package": "sevenz-rust2-0.23.0",
+    "source_path": "tests/resources/encrypted.7z",
+    "bytes": 2736,
+    "sha256": "ea3e538426be3fe908ed804f31d169610322ec87a1a9ad4901a526a2d632a50e"
+  },
+  {
+    "fixture": "rar4.rar",
+    "package": "unrar-0.5.8",
+    "source_path": "data/version.rar",
+    "bytes": 87,
+    "sha256": "2c595ee9aaea2c837bd0e11a659b9b62b46251f18ab7b6675748da0fadd34460"
+  },
+  {
+    "fixture": "rar5-solid.rar",
+    "package": "unrar-0.5.8",
+    "source_path": "data/solid.rar",
+    "bytes": 100,
+    "sha256": "23da48de916e4feb7a0f0fbd6ba520dae3492d04e98d061225b0e923668e48f4"
+  },
+  {
+    "fixture": "rar5-unicode.rar",
+    "package": "unrar-0.5.8",
+    "source_path": "data/unicode-entry.rar",
+    "bytes": 98,
+    "sha256": "404c872a59c60f5040586065a4f0b30478139a405284154479cc9b57f7bf2815"
+  },
+  {
+    "fixture": "encrypted.rar",
+    "package": "unrar-0.5.8",
+    "source_path": "data/crypted.rar",
+    "bytes": 109,
+    "sha256": "3215288892bfae2e641786952ab2547ea72cdd58c9c544604cd63e242fa07318"
+  }
+]

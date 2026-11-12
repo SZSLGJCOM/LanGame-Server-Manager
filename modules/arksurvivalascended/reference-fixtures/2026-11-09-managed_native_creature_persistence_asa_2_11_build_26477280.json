@@ -1,0 +1,262 @@
+{
+  "schema_version": 1,
+  "module_id": "arksurvivalascended",
+  "evidence_classification": "isolated_managed_backend_native_game_tools_and_creature_persistence",
+  "attempted_on": "2026-11-09",
+  "verification_timezone": "Asia/Shanghai",
+  "status": "passed",
+  "package": {
+    "steam_app_id": 2430930,
+    "steam_build_id": "26477280",
+    "executable_sha256": "8cd7d552c22c7fac118e798e891d6167efc0045bc1f31d6bf19d9a557a73d579",
+    "copied_payload_bytes": 12314762895,
+    "acquisition": "retained isolated package; no new SteamCMD acquisition in this run"
+  },
+  "framework": {
+    "version": "AsaApi 2.11",
+    "release_url": "https://github.com/ArkServerApi/AsaApi/releases/tag/2.11",
+    "source_commit": "bd376a0422291b0b1bf15a0b7868e7e275605da9",
+    "runtime_archive_sha256": "64f5f1165ef73f3439bba3794e77e379489167cc385c0ac5c4717ca60ad3e88a",
+    "sdk_archive_sha256": "e179b1de7037ea48e69531e4aac75e02126fa63a8054cc32236f818a20ea95bc",
+    "minimum_api_version": 2.11,
+    "installed_files": [
+      {
+        "path": "ArkApi/AsaApi.dll",
+        "bytes": 7351808,
+        "sha256": "f7fed1b8e6921a5f63eda1f83369fc147c56c5bdd3c74b122242bc636a3e75a4"
+      },
+      {
+        "path": "version.dll",
+        "bytes": 419328,
+        "sha256": "1d0fe2410e4aaba3b45a318891256ee983b5fa1cdf60dd8383bcf7a47d9791a7"
+      },
+      {
+        "path": "ArkApi/Plugins/LgsmArkTools/LgsmArkTools.dll",
+        "bytes": 139264,
+        "sha256": "01e66239e4bc856100fec53b9f1808d65f3612bfa8b606a6f76cb72d9220251c"
+      },
+      {
+        "path": "ArkApi/Plugins/LgsmArkTools/PluginInfo.json",
+        "bytes": 205,
+        "sha256": "06747822be770d895c490ad7ccb2314e3a954ca1be67771b5a9c89fa77c0c47d"
+      },
+      {
+        "path": "ArkApi/Cache/cached_key.cache",
+        "bytes": 232,
+        "sha256": "43a0f3798c0be27461c77cf6501e549c3116a641a2b2687f56915cba8c6a7413"
+      }
+    ],
+    "cache_selection": {
+      "version": 1,
+      "executable_hash": "8cd7d552c22c7fac118e798e891d6167efc0045bc1f31d6bf19d9a557a73d579",
+      "last_modified": "",
+      "cache_directory": "generations/8cd7d552c22c7fac118e798e891d6167efc0045bc1f31d6bf19d9a557a73d579-17360-0-794930501"
+    }
+  },
+  "build": {
+    "cargo_command": "test",
+    "cargo_arguments": [
+      "-p",
+      "langame-desktop",
+      "--bin",
+      "langame-desktop",
+      "--features",
+      "custom-protocol",
+      "--locked",
+      "--no-run"
+    ],
+    "exit_code": 0,
+    "entry_point": "invoke-codex-cargo.ps1",
+    "entry_point_sha256": "a49fe85bfed0b558354bc5a605e84b5a2f9a30c251c2bc57ff4ddc51503223b2",
+    "source_identity_sha256": "10b0933cb439fdb2b455b7497c1c09e9be17f91c4d4972940eab7af84a54eb7d",
+    "source_manifest_sha256": "32980966b09fdd8b92bd8e2eb040db2a4d45f829c123456f7a1dca90b6e189d4",
+    "source_files_verified": 4525,
+    "test_binary_sha256": "b0199920b75770fde0f51cc7dc825c656b6a4e8a5c6901e24f31307078a594c4",
+    "test_binary_bytes": 208176128,
+    "gm_commands_sha256": "4b4148623e8bb40a52a1bb7bdffc5b552d97cee493f054dc9fe381553c1e562a"
+  },
+  "test": {
+    "selector": "commands::tests::manual_runtime_tests::native_lifecycle_tests::native_game_tools",
+    "started_utc": "2026-11-09T02:10:13Z",
+    "completed_utc": "2026-11-09T02:18:59Z",
+    "duration_seconds": 522.98,
+    "exit_code": 0,
+    "tests_passed": 1,
+    "tests_failed": 0,
+    "settings": {
+      "dino_resistance_multiplier": 0,
+      "dino_damage_multiplier": 0,
+      "program_update": {
+        "policy": "pinned"
+      },
+      "num_gachas_per_tribe_for_penalty": -1,
+      "gachas_over_tribe_limit_penalty": 2,
+      "limit_replicators_per_saddle": 0,
+      "limit_cloning_chambers_range": 7500,
+      "limit_cloning_chambers_in_range_num": -1,
+      "limit_cloning_chambers_in_tribe_num": 45
+    },
+    "assertions": {
+      "oneTestPassed": true,
+      "extensionInstalled": true,
+      "extensionHandshake": true,
+      "mapSnapshotValidated": true,
+      "enigmasaurReadback": true,
+      "primaryWorldWritten": true,
+      "threePersistedCreatures": true,
+      "persistenceComplete": true,
+      "twoNormalStops": true,
+      "nativeCleanup": true,
+      "gmCatalogPassed": true,
+      "framework211": true,
+      "minimumApi211": true,
+      "noOwnedNativeProcessRemains": true
+    },
+    "capture_errors": [],
+    "native_markers": [
+      "NATIVE_GM_CATALOG module=arksurvivalascended phase=begin",
+      "NATIVE_LIFECYCLE module=arksurvivalascended phase=package_copy bytes=12314762895 elapsed_ms=16974 acquisition=existing_local_package creation_scope=storage source_provenance=unverified",
+      "NATIVE_LIFECYCLE module=arksurvivalascended phase=instance_created elapsed_ms=21620 program_mode=Independent preparation=isolated_copy library=preserved ownership=verified effective_root=fixture/n-bd5709afef9e1b8d\\runtime creation_scope=storage",
+      "NATIVE_ARK_CREATURE module=arksurvivalascended phase=extension_installed isolated=true",
+      "NATIVE_LIFECYCLE module=arksurvivalascended phase=prestart_update cycle=initial events=pinned persisted_evidence=verified download_bytes=not_measured",
+      "NATIVE_LIFECYCLE module=arksurvivalascended phase=started cycle=initial processes=1 bind=default firewall=non_elevated_policy elapsed_ms=201778",
+      "NATIVE_LIFECYCLE module=arksurvivalascended phase=native_ready cycle=initial declared_probes=passed variant=isolated",
+      "NATIVE_GM module=arksurvivalascended phase=rcon_endpoint ownership=verified",
+      "NATIVE_GM module=arksurvivalascended phase=read_only_rcon_preflight elapsed_ms=125 outcome=passed",
+      "NATIVE_GM module=arksurvivalascended tool=ark_set_time phase=begin",
+      "NATIVE_GM module=arksurvivalascended tool=ark_set_time outcome=passed evidence=native_rcon_response_no_client_world_observation",
+      "NATIVE_GM module=arksurvivalascended tool=ark_destroy_wild_dinos phase=begin",
+      "NATIVE_GM module=arksurvivalascended tool=ark_destroy_wild_dinos outcome=passed evidence=native_rcon_response_no_client_world_observation",
+      "NATIVE_ARK_CREATURE module=arksurvivalascended phase=handshake_verified evidence=native_protocol",
+      "NATIVE_ARK_MAP module=arksurvivalascended phase=snapshot_validated evidence=native_world",
+      "NATIVE_ARK_CREATURE module=arksurvivalascended phase=spawn_readback class=Dodo_Character_BP_C level=37 id1=486125179 id2=402826828 x=0 y=0 z=10000 evidence=native_entity",
+      "NATIVE_ARK_CREATURE module=arksurvivalascended phase=default_creature class=Rex_Character_BP_C level=150 id1=384329683 id2=82399040 evidence=native_entity",
+      "NATIVE_ARK_CREATURE module=arksurvivalascended phase=enigmasaur_readback class=Chameleon_Character_BP_C level=73 wild=true id1=112108281 id2=329480704 x=0 y=0 z=10000 evidence=native_entity",
+      "NATIVE_ARK_CREATURE module=arksurvivalascended phase=complete duplicate=one_entity unknown_class=rejected missing_owner=rejected tamed_live_player=not_available",
+      "NATIVE_ARK_PERSISTENCE module=arksurvivalascended phase=primary_world_written creatures=3 bytes=16539648 sha256=64cdcabdb0373d254c332ff36110df436c4663fde0483a48e1d5d6ab004fe38e save_receipt=Some(Requested) content_readback=pending_restart",
+      "NATIVE_STOP_RESULT module=arksurvivalascended cycle=initial run_id=1 process=main exit_code=Some(0) crash_flag=false status=stopped",
+      "NATIVE_LIFECYCLE module=arksurvivalascended phase=cycle_stopped cycle=initial run_id=1 active_run=none",
+      "NATIVE_LIFECYCLE module=arksurvivalascended phase=prestart_update cycle=restart events=pinned persisted_evidence=verified download_bytes=not_measured",
+      "NATIVE_LIFECYCLE module=arksurvivalascended phase=started cycle=restart processes=1 bind=default firewall=non_elevated_policy elapsed_ms=141780",
+      "NATIVE_LIFECYCLE module=arksurvivalascended phase=native_ready cycle=restart declared_probes=passed variant=isolated",
+      "NATIVE_ARK_PERSISTENCE module=arksurvivalascended phase=restart_readback class=Dodo_Character_BP_C level=37 tamed=false team=1 id1=486125179 id2=402826828 evidence=native_entity spawn_replayed=false",
+      "NATIVE_ARK_PERSISTENCE module=arksurvivalascended phase=restart_readback class=Rex_Character_BP_C level=150 tamed=false team=7 id1=384329683 id2=82399040 evidence=native_entity spawn_replayed=false",
+      "NATIVE_ARK_PERSISTENCE module=arksurvivalascended phase=restart_readback class=Chameleon_Character_BP_C level=73 tamed=false team=5 id1=112108281 id2=329480704 evidence=native_entity spawn_replayed=false",
+      "NATIVE_STOP_RESULT module=arksurvivalascended cycle=restart run_id=2 process=main exit_code=Some(0) crash_flag=false status=stopped",
+      "NATIVE_LIFECYCLE module=arksurvivalascended phase=cycle_stopped cycle=restart run_id=2 active_run=none",
+      "NATIVE_ARK_PERSISTENCE module=arksurvivalascended phase=complete fresh_managed_run=true normal_stop=true",
+      "NATIVE_LIFECYCLE module=arksurvivalascended phase=complete scope=production_start_stop cleanup=passed gui=not_tested",
+      "NATIVE_GM_CATALOG module=arksurvivalascended phase=passed elapsed_ms=522951"
+    ]
+  },
+  "creatures_reloaded": [
+    {
+      "class_name": "Dodo_Character_BP_C",
+      "level": 37,
+      "tamed": false,
+      "team": 1,
+      "id1": 486125179,
+      "id2": 402826828,
+      "spawn_replayed": false
+    },
+    {
+      "class_name": "Rex_Character_BP_C",
+      "level": 150,
+      "tamed": false,
+      "team": 7,
+      "id1": 384329683,
+      "id2": 82399040,
+      "spawn_replayed": false
+    },
+    {
+      "class_name": "Chameleon_Character_BP_C",
+      "level": 73,
+      "tamed": false,
+      "team": 5,
+      "id1": 112108281,
+      "id2": 329480704,
+      "spawn_replayed": false
+    }
+  ],
+  "world_save": {
+    "map": "TheIsland_WP",
+    "first_observed_primary_change": {
+      "bytes": 16539648,
+      "sha256": "64cdcabdb0373d254c332ff36110df436c4663fde0483a48e1d5d6ab004fe38e"
+    },
+    "save_receipt": "requested",
+    "durable_entity_evidence": "original native DinoID1/DinoID2 read back in a new managed run without replaying Spawn or DestroyWildDinos"
+  },
+  "regression": {
+    "ark_backend_tests_passed": 88,
+    "ark_backend_tests_failed": 0,
+    "legacy_installer_versions": [
+      "2.03",
+      "2.1"
+    ],
+    "legacy_installer_scope": "receipt recognition, modified-file rejection, missing-dependency rollback and retry; no live old-archive migration in this native run",
+    "quick_gate": "passed: policy, frontend tests and build, Rust formatting/Clippy, core and retained-data tests"
+  },
+  "domestic_mirror": {
+    "tag": "ark-tools-dependencies-ase-3.56-asa-2.11",
+    "status": "prepared_not_published",
+    "prepared_assets": 7,
+    "prepared_inventory_sha256": "46458aef73783630803b21f1ed0cbb16650297dcf9ab8f20e5c50cdb4cb13fad"
+  },
+  "cleanup": {
+    "remaining_owned_native_processes": 0,
+    "remaining_scheduled_tasks": 0,
+    "native_harness_cleanup": "passed"
+  },
+  "artifacts": [
+    {
+      "name": "result.json",
+      "bytes": 1891,
+      "sha256": "f30bf03c6f7dbbfe1710a47e5172cd0870ebe5b88450b9b744ca190d336a7b8c"
+    },
+    {
+      "name": "native.stdout",
+      "bytes": 4660,
+      "sha256": "519b22e0091cee2871ae15bcfc58b5949207d057a4153e3d3d1004e55f19dd23"
+    },
+    {
+      "name": "native.stderr",
+      "bytes": 58666,
+      "sha256": "f1e9685b299b2522c34fb9b8a2f3620d773e88bc08e1fa3212aa8136b688403c"
+    },
+    {
+      "name": "installed-payload.json",
+      "bytes": 1399,
+      "sha256": "c683d90f3d3cd470aacbdc66a9461e20d7f815cb51d277402e61ff14e7626465"
+    },
+    {
+      "name": "ark-creature-persistence.json",
+      "bytes": 909,
+      "sha256": "e466a6690cd6797b580f88107470e5421fb94b8e278a2e18f96b2ab5fa3115b9"
+    },
+    {
+      "name": "preflight.json",
+      "bytes": 1990,
+      "sha256": "c2bbd048701749ccbd20df612596a8450bb4ff2e231e4fb8f6ec53fe437e68b1"
+    },
+    {
+      "name": "native-exit.json",
+      "bytes": 64,
+      "sha256": "1e85943d62e2b6a55bbaa8c1e703c7df1126a341e700ffd74873196c0e79fc86"
+    },
+    {
+      "name": "cleanup.json",
+      "bytes": 316,
+      "sha256": "92d06b158cde66466740cad6e5cc477d1d907de7f89e0bcdc61c6470dfb63873"
+    }
+  ],
+  "scope_limits": [
+    "Fresh isolated world and new extension installation; no migration of populated saves.",
+    "GM results establish native RCON responses, not client-observed gameplay or external connectivity.",
+    "Only the three recorded wild creatures were checked; no live-player taming or tamed-creature persistence was exercised.",
+    "Normal save/stop/restart was tested, not a crash or power loss.",
+    "Zero dino damage/resistance multipliers belong to this fixture; gameplay defaults were not verified.",
+    "No desktop release or dependency mirror publication was performed.",
+    "Historical fixtures and settings/default last_verified dates remain unchanged."
+  ]
+}

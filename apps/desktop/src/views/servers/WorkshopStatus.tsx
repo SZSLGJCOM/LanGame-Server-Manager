@@ -12,6 +12,7 @@ export function WorkshopStatus({ state, progressPercent }: {
   const label = t(`servers.mods.lifecycle.${state}`, undefined, state);
   return <span className={`mw-chip mw-chip--lifecycle mw-chip--lifecycle-${state}`}>
     {state === "checking" ? <ShellIcon name="loader" className="mw-btn-icon mw-btn-icon--spin" /> : null}
-    {label}{state === "installing" && progressPercent != null ? ` ${progressPercent}%` : ""}
+    {state === "queued" || state === "ready" ? <ShellIcon name="clock" className="mw-btn-icon" /> : null}
+    {label}{(state === "installing" || state === "applying") && progressPercent != null ? ` ${progressPercent}%` : ""}
   </span>;
 }

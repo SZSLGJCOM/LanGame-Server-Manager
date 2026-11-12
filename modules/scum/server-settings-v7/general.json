@@ -13,7 +13,7 @@
   {"default":5,"key":"min_server_tick_rate","nativeDefault":"5","nativeKey":"scum.MinServerTickRate","presentation":"specialized","section":"General","title":"Min Server Tick Rate","type":"integer"},
   {"default":30,"key":"max_server_tick_rate","nativeDefault":"30","nativeKey":"scum.MaxServerTickRate","presentation":"specialized","section":"General","title":"Max Server Tick Rate","type":"integer"},
   {"default":true,"key":"max_ping_check_enabled","nativeDefault":"True","nativeKey":"scum.MaxPingCheckEnabled","presentation":"specialized","section":"General","title":"Max Ping Check Enabled","type":"boolean"},
-  {"default":200.0,"key":"max_ping","nativeDefault":"200.000000","nativeKey":"scum.MaxPing","presentation":"specialized","section":"General","title":"Max Ping","type":"number"},
+  {"default":400.0,"key":"max_ping","nativeDefault":"400.000000","nativeKey":"scum.MaxPing","presentation":"specialized","section":"General","title":"Max Ping","type":"number"},
   {"default":5,"key":"max_number_of_consecutive_high_ping_readings","nativeDefault":"5","nativeKey":"scum.MaxNumberOfConsecutiveHighPingReadings","presentation":"specialized","section":"General","title":"Max Number Of Consecutive High Ping Readings","type":"integer"},
   {"default":60.0,"key":"logout_timer","nativeDefault":"60.000000","nativeKey":"scum.LogoutTimer","presentation":"specialized","section":"General","title":"Logout Timer","type":"number"},
   {"default":120.0,"key":"logout_timer_while_captured","nativeDefault":"120.000000","nativeKey":"scum.LogoutTimerWhileCaptured","presentation":"specialized","section":"General","title":"Logout Timer While Captured","type":"number"},

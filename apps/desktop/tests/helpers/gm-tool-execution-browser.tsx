@@ -39,7 +39,7 @@ function response(request: Request, text = "Unknown command: native diagnostic",
 // forms, builders, API envelope and async execution lifecycle run unchanged.
 Object.assign(window, { isTauri: true, __TAURI_INTERNALS__: { invoke: (command: string, args: { input?: Request }) => {
   if (command === "read_ark_tools_install_progress") return Promise.resolve(null);
-  if (command === "read_ark_tools_status") return Promise.resolve({ installed: true, connected: true, canUninstall: true, issue: null });
+  if (command === "read_ark_tools_status") return Promise.resolve({ installed: true, updateAvailable: false, connected: true, canUninstall: true, issue: null });
   if (command === "read_ark_map") return Promise.resolve({ ...args.input,
     mapName: args.input?.processKey === "map-desert" ? "ScorchedEarth_P" : "TheIsland",
     sampledAtUnixMs: Date.now(), projection: null, players: [], artwork: null });

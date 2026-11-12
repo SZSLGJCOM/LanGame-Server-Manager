@@ -223,7 +223,7 @@ export function StoragePathsPanel(props: StoragePathsPanelProps) {
                   disabled={pathOperationBusy || !migration.available}
                   onClick={() => void handlePickPath(entry.key)}
                 >
-                  <ShellIcon name="folder" />
+                  <ShellIcon name="edit-3" />
                   <span>{pathBusyKey === entry.key && pathAction === "choose" ? copy.browsing : copy.browse}</span>
                 </button> : null}
               </div>

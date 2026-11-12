@@ -25,6 +25,7 @@ if (!fixture) throw new Error("Fixture root is missing");
 const root = createRoot(fixture);
 const checks: string[] = [];
 const loadingLifecycleChecks: string[] = [];
+const firstStartChecks: string[] = [];
 const errors: string[] = [];
 const overflowViolations: string[] = [];
 const calls: Array<{ command: string; args: Record<string, unknown> }> = [];
@@ -122,10 +123,14 @@ function initialSnapshot(mode: DragonwildsWorldMode = "Normal"): DragonwildsWorl
     world_mode: mode, revision: `fixture-revision-${++revision}`, values: effectiveValues(mode, overrides), overrides,
     definitions, writable: true, message: null, backup_id: null };
 }
+function newSnapshot(): DragonwildsWorldSettingsSnapshot {
+  return { ...initialSnapshot(), status: "new", world_file: null, world_name: "Retained",
+    values: effectiveValues("Normal", {}), overrides: {} };
+}
 function writeInput(args: Record<string, unknown>): WriteDragonwildsWorldSettingsInput {
   const input = args.input;
   if (!input || typeof input !== "object" || !("instance_id" in input) || typeof input.instance_id !== "string" ||
-    !("world_file" in input) || typeof input.world_file !== "string" || !("expected_revision" in input) ||
+    !("world_file" in input) || (input.world_file !== null && typeof input.world_file !== "string") || !("expected_revision" in input) ||
     typeof input.expected_revision !== "string" || !("world_mode" in input) || !("values" in input) ||
     !input.values || typeof input.values !== "object" || Array.isArray(input.values)) throw new Error("Invalid native write input");
   const mode = modes.find((value) => value === input.world_mode);
@@ -176,7 +181,7 @@ Object.assign(window, { isTauri: true, __TAURI_INTERNALS__: { invoke: async (com
   const overrides = current.world_mode !== "Custom" && input.world_mode === "Custom"
     ? { ...current.overrides, ...current.values, ...input.values } : { ...current.overrides, ...input.values };
   current = { ...current, world_mode: input.world_mode, overrides, values: effectiveValues(input.world_mode, overrides),
-    revision: `fixture-revision-${++revision}`, backup_id: `world-rule-backup-${revision}` };
+    revision: `fixture-revision-${++revision}`, backup_id: current.status === "new" ? null : `world-rule-backup-${revision}` };
   return structuredClone(current);
 } } });
 function Workspace({ archive }: { archive?: InstanceArchiveDetails }) {
@@ -454,12 +459,94 @@ async function verifyReadLifecycle(locale: string) {
     "all read lifecycle scenarios produce zero native or instance writes");
 }
 
+async function verifyFirstStart(locale: string) {
+  function firstStart(condition: unknown, description: string) {
+    check(condition, `${locale}: ${description}`);
+    firstStartChecks.push(`${locale}: ${description}`);
+  }
+  details = structuredClone(initialInstance);
+  current = newSnapshot();
+  const untouchedWrites = writeCalls().length;
+  await draw(`${locale}-new-world`);
+  await section("world");
+  firstStart(modeSelect().value === "Normal" && !modeSelect().disabled &&
+    !panel().querySelector("p.form-note[role=status]"),
+    "fresh instance exposes editable defaults without a persistent guidance note");
+  for (const id of ["world", ...categories.map((category) => `world_${category}`)]) {
+    await section(id);
+    const expected = editableDefinitions.filter((entry) => expectedSection(entry.tag) === id);
+    firstStart(primaryControls().length === expected.length && primaryControls().every((input) => !input.disabled),
+      `fresh instance edits every supported rule in ${id}`);
+  }
+  firstStart(writeCalls().length === untouchedWrites, "reading fresh defaults does not fabricate a saved-world write");
+  await section("world_crafting");
+  await setValue(control(processing), "0.8");
+  await flush();
+  const draftWrite = writeInput(writeCalls().at(-1)!.args);
+  firstStart(current.status === "new" && draftWrite.world_file === null && Boolean(draftWrite.expected_revision) &&
+    current.world_mode === "Custom" && current.values[processing] === 0.8 && current.backup_id === null,
+    "fresh rules persist as a revision-checked draft without inventing a world or backup");
+  const key = `${locale}-new-reopened`;
+  await draw(key);
+  await section("world_crafting");
+  firstStart(control(processing).value === "0.8", "reopening a fresh instance restores its saved rules");
+  details = { ...details, settings_json: JSON.stringify({ ...JSON.parse(details.settings_json), default_world_name: "Renamed world" }) };
+  current = { ...current, world_name: "Renamed world" };
+  await draw(key);
+  await until(() => panel().querySelector("h4")?.textContent === "Renamed world" && panel().getAttribute("aria-busy") === "false",
+    "Persisted world name did not refresh automatically");
+  firstStart(control(processing).value === "0.8", "renaming a fresh world retains its pending rules");
+  let releaseWrite: () => void = () => { throw new Error("Missing pending write gate"); };
+  nextWriteGate = new Promise<void>((resolve) => { releaseWrite = resolve; });
+  await setValue(control(processing), "1.3");
+  let startAllowed = false;
+  let barrier = Promise.resolve();
+  await act(async () => { barrier = flushSettings().then(() => { startAllowed = true; }); await frame(); });
+  await until(() => panel().getAttribute("aria-busy") === "true", "Start barrier did not start the pending draft write");
+  firstStart(!startAllowed, "first start waits for the last pending rules write");
+  await act(async () => { releaseWrite(); await barrier; await frame(); });
+  firstStart(startAllowed && current.values[processing] === 1.3, "one start barrier finishes the latest preconfigured rules");
+  current = { ...current, writable: false };
+  details = { ...details, summary: { ...details.summary, status: "Starting" } };
+  await draw(key);
+  await until(() => panel().getAttribute("aria-busy") === "false", "Initializing rules did not finish their read");
+  firstStart(primaryControls().every((input) => input.disabled) &&
+    panel().textContent?.includes(locale === "zh-CN" ? "会自动继续启动服务器" : "continue starting automatically") &&
+    !panel().textContent?.includes(locale === "zh-CN" ? "请先停止" : "Stop this server"),
+    "initialization explains automatic progress without requesting a manual stop");
+  current = { ...current, status: "ready", world_file: "Renamed world.sav", writable: false,
+    revision: `fixture-native-${++revision}` };
+  details = { ...details, summary: { ...details.summary, status: "Running", active_process_count: 1 }, active_run: { run_id: 21, pid: 2101 } };
+  await draw(key);
+  await until(() => panel().getAttribute("aria-busy") === "false" &&
+    !panel().textContent?.includes(locale === "zh-CN" ? "首次启动正在创建世界" : "first start is creating the world"),
+    "Completed first start did not refresh the saved-world snapshot");
+  firstStart(control(processing).value === "1.3" && primaryControls().every((input) => input.disabled),
+    "completed first start automatically displays applied rules and locks running edits");
+  current = { ...current, writable: true };
+  details = { ...details, summary: { ...details.summary, status: "Stopped", active_process_count: 0 }, active_run: null };
+  await draw(key);
+  await until(() => primaryControls().every((input) => !input.disabled), "Stopped world rules did not refresh automatically");
+  firstStart(control(processing).value === "1.3", "stopping after initialization restores editing without manual refresh");
+
+  details = structuredClone(initialInstance);
+  current = newSnapshot();
+  await draw(`${locale}-new-conflict`);
+  await section("world_crafting");
+  await setValue(control(processing), "0.7");
+  current.revision = `externally-changed-${++revision}`;
+  firstStart((await flushError()).includes("World settings conflict") && control(processing).value === "0.7",
+    "failed preconfiguration blocks first start and preserves the unsaved draft");
+  await clickRefresh();
+}
+
 async function run() {
   await act(prepareBrowserLocaleCatalogs);
   check(definitions.length === 66 && editableDefinitions.length === 63, "Fixture uses the full native contract without creation-only controls");
   for (const locale of locales) {
     localStorage.setItem("langame.locale", locale);
     await verifyReadLifecycle(locale);
+    await verifyFirstStart(locale);
     details = structuredClone(initialInstance);
     current = initialSnapshot();
     const firstWriteCount = writeCalls().length;
@@ -641,7 +728,7 @@ async function run() {
     await draw(`${locale}-empty`);
     await section("world");
     check(!panel().querySelector("[data-dragonwilds-setting],select,button.primary-button") &&
-      panel().textContent?.includes(locale === "zh-CN" ? "启动一次" : "Start the server once"), `${locale}: empty world shows initialization guidance without fabricated controls`);
+      panel().textContent?.includes(locale === "zh-CN" ? "检查世界名称" : "Check the world name"), `${locale}: unreadable world explains recovery without fabricating fresh controls`);
     current = initialSnapshot();
     // StrictMode replays initial reads; both transport requests encounter the
     // same failing save rather than failing only the already discarded read.
@@ -668,13 +755,14 @@ async function run() {
       current.overrides[unknownRule] === 19, `${locale}: rapid preset-to-Custom changes persist the retained preview without losing unknown rules`);
   }
   details = structuredClone(initialInstance);
-  current = initialSnapshot("Custom");
+  current = { ...newSnapshot(), world_mode: "Custom", overrides: { [processing]: 0.8 }, values: effectiveValues("Custom", { [processing]: 0.8 }) };
   await draw("zh-CN-final-preview");
   await section("world_crafting");
   verifyLabelsAndLayout("zh-CN");
   check(errors.length === 0, "Browser and React report no console errors");
   Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: false });
   return { status: "passed", locales, check_count: checks.length, checks: checks.slice(-20), loading_lifecycle_checks: loadingLifecycleChecks,
+    first_start_checks: firstStartChecks,
     browser_errors: errors, overflow_violations: overflowViolations };
 }
 Object.assign(window, { __reliabilityFixtureCleanup: async () => {
@@ -685,5 +773,5 @@ Object.assign(window, { __reliabilityFixtureCleanup: async () => {
   return { browser_errors: errors, native_dialogs: 0 };
 } });
 void run().catch((cause) => ({ status: "failed", error: String(cause?.stack ?? cause), check_count: checks.length, checks: checks.slice(-40),
-  loading_lifecycle_checks: loadingLifecycleChecks, browser_errors: errors, overflow_violations: overflowViolations }))
+  loading_lifecycle_checks: loadingLifecycleChecks, first_start_checks: firstStartChecks, browser_errors: errors, overflow_violations: overflowViolations }))
   .then((report) => fetch(`/__reliability_result/${nonce}`, { method: "POST", body: JSON.stringify(report) }));

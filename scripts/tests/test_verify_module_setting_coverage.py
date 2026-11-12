@@ -1250,6 +1250,40 @@ class WindroseMaterializedSettingsCoverageVerifierTests(unittest.TestCase):
         self.assertNotIn("world_name", materialized)
 
 
+
+class AstroneerStartupSettingsCoverageVerifierTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.startup = (verifier.DESKTOP_TAURI_COMMANDS_RS.parent / "astroneer_public_ip.rs").read_text(encoding="utf-8-sig")
+        cls.commands = verifier.read_desktop_tauri_commands_rs()
+
+    def test_accepts_connection_mode_consumed_by_real_startup(self) -> None:
+        self.assertIn("connection_mode", verifier.materialized_settings(
+            "astroneer", verifier.read_schema_properties("astroneer")
+        ))
+
+    def test_rejects_a_removed_or_commented_connection_policy_read(self) -> None:
+        marker = 'settings.get("connection_mode")'
+        self.assertIn(marker, self.startup)
+        for replacement in ('settings.get("removed_mode")', f'/* {marker} */ None'):
+            with self.subTest(replacement=replacement):
+                result = verifier.astroneer_startup_settings(self.startup.replace(marker, replacement, 1), self.commands)
+                self.assertNotIn("connection_mode", result)
+
+    def test_rejects_an_unreachable_startup_consumer(self) -> None:
+        for marker in ("prepare_with_sources(", "connection_mode(&prepared_settings,"):
+            self.assertIn(marker, self.startup)
+            with self.subTest(marker=marker):
+                self.assertEqual(verifier.astroneer_startup_settings(
+                    self.startup.replace(marker, "removed_consumer(", 1), self.commands
+                ), set())
+        marker = "astroneer_public_ip::prepare_for_start("
+        self.assertIn(marker, self.commands)
+        self.assertEqual(verifier.astroneer_startup_settings(
+            self.startup, self.commands.replace(marker, "astroneer_public_ip::removed_startup(")
+        ), set())
+
+
 class SatisfactoryMaterializedSettingsCoverageVerifierTests(unittest.TestCase):
     def test_accepts_settings_merged_into_the_native_integer_map(self) -> None:
         materialized = verifier.materialized_settings(

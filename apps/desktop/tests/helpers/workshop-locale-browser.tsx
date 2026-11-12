@@ -106,9 +106,13 @@ async function run() {
   details = { ...template, summary: { ...template.summary, id: "fixture-workshop-locale", status: "Stopped", active_process_count: 0 }, active_run: null,
     settings_json: JSON.stringify({ shared_workshop_mod_ids: configuredId, master_enabled_workshop_mod_ids: configuredId }) };
   mockWindows("workshop-locale");
+  let fallbackLocale = "en-US";
+  const baseIpc = createModWorkbenchFixtureIpc(() => ({ details, moduleDetails, catalog: catalog(fallbackLocale), cached }), {
+    check: assert, save: (saved) => { details = saved; writes += 1; }, download: () => { downloads += 1; }
+  });
   mockIPC(async (command, payload) => {
     const args = (payload ?? {}) as Record<string, unknown>, locale = String(args.locale), ids = (args.ids ?? (args.id ? [args.id] : [])) as string[];
-    if (command === "download_steam_workshop_items" && holdDownload) {
+    if (command === "prepare_steam_workshop_items" && holdDownload) {
       await new Promise<void>((release) => pending.push({ command, locale, ids: [...ids], release }));
     }
     if (["lookup_steam_workshop_items", "read_steam_workshop_item_details", "search_steam_workshop_items"].includes(command)) {
@@ -131,9 +135,8 @@ async function run() {
         description: locale === "zh-CN" ? "已恢复当前语言的工坊说明。" : "Recovered Workshop description in the selected language.",
         localization_warning: null };
     }
-    return createModWorkbenchFixtureIpc(() => ({ details, moduleDetails, catalog: catalog(command === "lookup_steam_workshop_items" ? "en-US" : locale), cached }), {
-      check: assert, save: (saved) => { details = saved; writes += 1; }, download: () => { downloads += 1; }
-    })(command, payload);
+    fallbackLocale = command === "lookup_steam_workshop_items" ? "en-US" : locale;
+    return baseIpc(command, payload);
   }, { shouldMockEvents: true });
   Object.assign(window, { isTauri: true });
   await act(async () => { await prepareBrowserLocaleCatalogs(); draw(); });
@@ -232,11 +235,11 @@ async function run() {
   assert(requests.slice(requestCount).filter((request) => request.command === "lookup_steam_workshop_items").every((request) => request.locale === "en-US"),
     "Rechecking the preserved manifest sends the active locale for every lookup batch");
   holdDownload = true; await click(button("Download missing and enable"));
-  await settle(() => pending.some((request) => request.command === "download_steam_workshop_items"), "Manifest installation was not held");
+  await settle(() => pending.some((request) => request.command === "prepare_steam_workshop_items"), "Manifest installation was not held");
   await language("中文");
   assert(element<HTMLTextAreaElement>(".mw-manifest-input").disabled && button("核对清单").disabled,
     "A locale change keeps the pending installation locked until its own operation finishes");
-  holdDownload = false; await releaseWhere((request) => request.command === "download_steam_workshop_items");
+  holdDownload = false; await releaseWhere((request) => request.command === "prepare_steam_workshop_items");
   await settle(() => writes === 1 && !element<HTMLTextAreaElement>(".mw-manifest-input").disabled, "Manifest installation did not save and release its own lock");
   assert(downloads === 1 && pending.length === 0, "Language switching neither duplicates installation nor leaves held requests");
   await click(element('[role="group"] button:last-child'));

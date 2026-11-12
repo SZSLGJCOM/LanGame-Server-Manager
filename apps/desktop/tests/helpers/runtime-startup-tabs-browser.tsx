@@ -3,7 +3,7 @@ import React, { act, StrictMode, useState, type ComponentProps } from "react";
 import { createRoot } from "react-dom/client";
 import { mockIPC } from "@tauri-apps/api/mocks";
 import { I18nProvider } from "../../src/i18n";
-import { bootstrapApp, readInstanceDetails, readInstanceRuntime, readModuleDetails } from "../../src/api";
+import { bootstrapApp, previewInstanceLaunch, readInstanceDetails, readInstanceRuntime, readModuleDetails, startInstance } from "../../src/api";
 import { invokeMock } from "../../src/api-mock";
 import { createDefaultAiSettings } from "../../src/ai-settings";
 import { ServersView } from "../../src/views/ServersView";
@@ -81,6 +81,9 @@ async function run() {
   const other = { ...instance, id: "fixture-tabs-b", name: "Startup navigation B" };
   const otherDetails = { ...details, summary: other };
   const moduleDetails = await readModuleDetails(instance.module_id);
+  const launchPlan = { ...await previewInstanceLaunch(instance.id), install_state: "Corrupted" as const,
+    uses_private_runtime: true, can_update_before_start: true, executable_exists: false, ready_to_launch: false,
+    validation_issues: [{ code: "launch_executable_missing", severity: "error", message: "The startup update must repair this program.", context: {} }] };
   const runtime = { ...await readInstanceRuntime(instance.id), recent_runs: [],
     log_tail: snapshot("fixture/tabs-previous.log", ["PREVIOUS_RUN_OUTPUT"]) };
   let retained = runtime.log_tail;
@@ -90,14 +93,24 @@ async function run() {
   const startupAttemptIds: string[] = [];
   const activities: string[] = [];
   Object.assign(globalThis, { isTauri: true });
-  mockIPC((command, args) => command === "read_instance_log_document_from_storage" ? retained
-    : invokeMock(command, args as Record<string, unknown>));
+  mockIPC((command, args) => {
+    if (command === "read_instance_log_document_from_storage") return retained;
+    if (command === "start_instance_process") {
+      check(args.instanceId === instance.id && args.startupAttemptId === startupAttemptIds.at(-1),
+        "A repairable instance must dispatch the real start API with its own attempt identity");
+      starts++;
+      return new Promise<void>((resolve, reject) => { finishStart = resolve; failStart = reject; });
+    }
+    return invokeMock(command, args as Record<string, unknown>);
+  });
   const props: ComponentProps<typeof ServersView> = {
     aiSettings: createDefaultAiSettings(), assistantCanRun: false, bindAddressCandidates: [], instances: [instance, other],
     moduleInstallations: { [instance.module_id]: { installState: "Installed", hasManagedInstallSource: true } },
-    instanceLaunchPlans: {}, instanceLaunchFailures: {}, section: "overview", onWorkspaceSectionChange: noOperation,
+    instanceLaunchPlans: { [instance.id]: launchPlan }, instanceLaunchFailures: {}, section: "overview", onWorkspaceSectionChange: noOperation,
+    jobs: [{ id: "unrelated-library-repair", kind: "ValidateGame", target_id: instance.module_id, label: "Shared library repair",
+      status: "Running", progress_percent: 20, detail: null, output_excerpt: null, cancellable: false, cancel_requested: false }],
     selectedInstanceId: instance.id, selectedDetails: details, selectedBackups: [], selectedModuleDetails: moduleDetails,
-    selectedModuleDetailsError: null, runtime, runtimeWindows: null, launchPlan: null, launchPlanError: null,
+    selectedModuleDetailsError: null, runtime, runtimeWindows: null, launchPlan, launchPlanError: null,
     refreshIssue: null, onActivity: activity => { activities.push(activity.key ?? ""); }, onResumeAutoRefresh: noOperation, onSelectInstance: noOperation,
     onStart: async (id, _preview, operation) => {
       check(id === instance.id, "Start targeted the wrong instance");
@@ -105,8 +118,7 @@ async function run() {
       check(typeof operation?.startupAttemptId === "string" && !startupAttemptIds.includes(operation.startupAttemptId),
         "Each startup must have a distinct cancellation identity");
       startupAttemptIds.push(operation.startupAttemptId);
-      starts++;
-      await new Promise<void>((resolve, reject) => { finishStart = resolve; failStart = reject; });
+      await startInstance(id, _preview ?? null, operation.startupAttemptId);
     },
     onStop: async (id, operation) => {
       check(id === instance.id && operation?.cancelsStartup && !operation.localCancellation,
@@ -132,6 +144,8 @@ async function run() {
   await act(async () => { await prepareBrowserLocaleCatalogs(); render(); });
   await settleUntil(() => Boolean(consoleNode()) && runtimeListenerCount() === 2,
     "The actual ServersView runtime console and event subscriptions did not mount");
+  check(fixture.querySelector(".server-list-card-primary-action")?.textContent?.includes("启动"),
+    "A backend-repairable private program must offer startup despite a missing executable and an unrelated library job");
   await click(".server-list-card-primary-action");
   await settleUntil(() => Boolean(finishStart), "The production start action did not reach onStart");
   check(starts === 1 && fixture.querySelector(".server-list-card-primary-action")?.getAttribute("aria-busy") === "true",
@@ -394,7 +408,7 @@ async function run() {
   await act(async () => { root.unmount(); });
   check(runtimeListenerCount() === 0, "The startup tabs fixture leaked runtime listeners");
   check(errors.length === 0, `Unexpected browser errors: ${errors.join("; ")}`);
-  return { status: "passed", scenarios, starts, stops, browser_errors: errors };
+  return { status: "passed", scenarios, starts, stops, repairable_start_dispatched: starts === 3, browser_errors: errors };
 }
 
 let watchdog: ReturnType<typeof setTimeout>;

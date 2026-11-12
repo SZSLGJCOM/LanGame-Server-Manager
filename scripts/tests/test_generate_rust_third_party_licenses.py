@@ -16,18 +16,22 @@ def crate_archive(
     version: str,
     *,
     license_text: bytes | None = b"MIT License\n\nPermission is hereby granted.\n",
-    declared_license: str = "MIT",
+    declared_license: str | None = "MIT",
+    license_file: str | None = None,
+    repository: str = "https://example.invalid/project",
+    vcs_sha1: str = "a" * 40,
 ) -> bytes:
     prefix = f"{name}-{version}"
     manifest = (
         "[package]\n"
         f'name = "{name}"\n'
         f'version = "{version}"\n'
-        f'license = "{declared_license}"\n'
-        'repository = "https://example.invalid/project"\n'
-        'authors = ["Example Author"]\n'
+        + (f'license = "{declared_license}"\n' if declared_license is not None else "")
+        + (f'license-file = "{license_file}"\n' if license_file is not None else "")
+        + f'repository = "{repository}"\n'
+        + 'authors = ["Example Author"]\n'
     ).encode()
-    vcs = json.dumps({"git": {"sha1": "a" * 40}}).encode()
+    vcs = json.dumps({"git": {"sha1": vcs_sha1}}).encode()
     stream = io.BytesIO()
     with tarfile.open(fileobj=stream, mode="w:gz") as archive:
         for relative_path, payload in (
@@ -130,6 +134,68 @@ class RustLicenseGeneratorTests(unittest.TestCase):
                 generator.LicenseGenerationError, "do not match Cargo.lock checksum"
             ):
                 generator.find_cached_archive(root, "sample-crate", "1.2.3", "0" * 64)
+
+    def test_reviewed_unrar_license_file_retains_its_additional_restriction(self) -> None:
+        license_text = (
+            generator.REPOSITORY_ROOT
+            / "apps/desktop/src-tauri/src/test_fixtures/mod_archives/LICENSE-unrar-rs"
+        ).read_bytes()
+        payload = crate_archive(
+            "unrar-rs", "0.15.3", license_text=license_text,
+            declared_license=None, license_file="LICENSE",
+            repository="https://github.com/scryer-media/rarpar",
+            vcs_sha1="71d56c86f620a67ce9428186adf46b524e5a3d06",
+        )
+        package = {
+            "name": "unrar-rs", "version": "0.15.3",
+            "checksum": hashlib.sha256(payload).hexdigest(),
+            "source": generator.CRATES_IO_SOURCE,
+        }
+        record = generator.parse_crate(package, payload)
+        self.assertEqual(record.declared_license, "license-file: LICENSE (custom terms)")
+        self.assertEqual(len(record.license_sources), 1)
+        self.assertEqual(record.license_sources[0].payload, license_text)
+        self.assertIn("additional UnRAR restriction", record.selected_license)
+        document = generator.render_document([record])
+        self.assertIn(license_text.decode().strip(), document)
+        self.assertIn("A binary distribution must include this file.", document)
+
+    def test_custom_license_review_rejects_missing_changed_or_relabelled_terms(self) -> None:
+        license_text = (
+            generator.REPOSITORY_ROOT
+            / "apps/desktop/src-tauri/src/test_fixtures/mod_archives/LICENSE-unrar-rs"
+        ).read_bytes()
+        options = {
+            "license_text": license_text, "declared_license": None,
+            "license_file": "LICENSE", "repository": "https://github.com/scryer-media/rarpar",
+            "vcs_sha1": "71d56c86f620a67ce9428186adf46b524e5a3d06",
+        }
+        for changed in (
+            {"license_text": None},
+            {"license_text": b"Apache License, Version 2.0\n"},
+            {"declared_license": "Apache-2.0"},
+            {"license_file": "../LICENSE"},
+            {"repository": "https://example.invalid/other-project"},
+            {"vcs_sha1": "b" * 40},
+        ):
+            with self.subTest(changed=tuple(changed)):
+                payload = crate_archive("unrar-rs", "0.15.3", **(options | changed))
+                package = {
+                    "name": "unrar-rs", "version": "0.15.3",
+                    "checksum": hashlib.sha256(payload).hexdigest(),
+                    "source": generator.CRATES_IO_SOURCE,
+                }
+                with self.assertRaises(generator.LicenseGenerationError):
+                    generator.parse_crate(package, payload)
+
+        payload = crate_archive("unrar-rs", "0.15.4", **options)
+        package = {
+            "name": "unrar-rs", "version": "0.15.4",
+            "checksum": hashlib.sha256(payload).hexdigest(),
+            "source": generator.CRATES_IO_SOURCE,
+        }
+        with self.assertRaisesRegex(generator.LicenseGenerationError, "no SPDX license declaration"):
+            generator.parse_crate(package, payload)
 
     def test_rejects_unknown_missing_license_text(self) -> None:
         payload = crate_archive("unreviewed-crate", "1.0.0", license_text=None)

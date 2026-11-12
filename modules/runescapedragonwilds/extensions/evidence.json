@@ -178,6 +178,106 @@
         "real_player_leave",
         "real_player_reconnect"
       ]
+    },
+    {
+      "observed_at": "2026-11-10",
+      "release": "1.0.2",
+      "scope": "isolated_production_loader_two_boots_complete_empty_rosters_and_native_synthetic_ban_unban_three_fresh_processes",
+      "steam_app_id": 4019830,
+      "steam_build_id": 26419371,
+      "windows_depot_id": 4019831,
+      "windows_depot_manifest": "6043592975314395149",
+      "shipping_executable_sha256": "f7840d934fccb6f3ca0b01e781abf4463f3718ebb29418985cd9281bbd3a8fb2",
+      "native_evidence": "../native-evidence/2026-11-10-public-build-26419371-native.json",
+      "loader": {
+        "version": "3.0.1-1125-g527a483b",
+        "commit": "527a483b63b4dd0104fe1ca1a3934a06b87fcfb2",
+        "ue4ss_dll_sha256": "91d5444f41d19d0bb502f0fbdc15d76421e20359e898caa39e41e134c8f87958",
+        "admitted_steam_builds": [
+          25811348,
+          25991736,
+          26087591,
+          26161880,
+          26419371
+        ]
+      },
+      "native_loader_probe": {
+        "test": "isolated_dragonwilds_automatic_loader_install_survives_native_restart",
+        "launch": "production loader installer and spawn_launch_plan, RSDragonwildsServer.exe bootstrap",
+        "native_boot_cycles": 2,
+        "complete_empty_snapshots_per_cycle": 2,
+        "distinct_nonces": true,
+        "nonce_matched": true,
+        "stopped_process_rejected": true,
+        "loader_ready_after_each_cycle": true,
+        "tests_passed": 1,
+        "tests_failed": 0,
+        "test_exit_code": 0,
+        "elapsed_seconds": 18.1
+      },
+      "native_bridge": {
+        "admitted_steam_builds": [
+          25811348,
+          25991736,
+          26161880,
+          26419371
+        ],
+        "embedded_payload_bytes": 205824,
+        "embedded_payload_sha256": "a1267a30b259c7fa2c9addb5c0e0d6d143a7c32cb4e708a736299d04fca432cf",
+        "static_profile_test": {
+          "target": "native_profile_tests",
+          "mapping": "SEC_IMAGE_NO_EXECUTE",
+          "before_profile_exit_code": 1,
+          "before_profile_error": "build_26419371_rejected_by_native_bridge",
+          "after_profile_exit_code": 0,
+          "unknown_hash_rejected": true,
+          "changed_native_code_rejected": true,
+          "old_shipping_binaries_rerun": false
+        },
+        "synthetic_native_probe": {
+          "identity_source": "game_native_ini_importer",
+          "identity_valid": true,
+          "identity_type": "redpointeos",
+          "known_player_count": 1,
+          "real_client_count": 0,
+          "fresh_processes": 3,
+          "native_dll_matches_production_payload": true,
+          "ban_memory_and_ini": "false_to_true",
+          "fresh_restart_before_unban_banned_in_memory_and_ini": true,
+          "unban_memory_and_ini": "true_to_false",
+          "fresh_restart_after_unban_banned_in_memory_and_ini": false,
+          "ban_dispatches": 1,
+          "unban_dispatches": 1,
+          "stopped_ini_rechecked_each_cycle": true,
+          "bootstrap_exit_codes": [
+            0,
+            0,
+            0
+          ],
+          "shipping_exit_codes": [
+            0,
+            0,
+            0
+          ],
+          "normal_console_quit_cycles": 3,
+          "teardown_markers_each_cycle": true,
+          "forced_cleanup_used": false,
+          "all_private_jobs_empty": true
+        }
+      },
+      "cleanup": {
+        "remaining_owned_moderation_processes": 0,
+        "game_query_beacon_udp_ports_released": true
+      },
+      "not_verified": [
+        "pre_1_0_2_world_cross_version_migration",
+        "real_player_kick_disconnect",
+        "banned_real_player_connection_rejection",
+        "real_player_reconnect_after_unban",
+        "real_player_multiplayer_session",
+        "real_player_authentication_completion",
+        "real_owner_authorization"
+      ]
     }
   ],
   "not_verified": [

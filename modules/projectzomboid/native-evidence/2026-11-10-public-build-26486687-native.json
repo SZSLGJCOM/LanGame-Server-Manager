@@ -1,0 +1,253 @@
+{
+  "schema_version": 1,
+  "module_id": "projectzomboid",
+  "verified_on": "2026-11-10",
+  "verification_timezone": "Asia/Shanghai",
+  "evidence_classification": "isolated_managed_backend_native_manual_save_two_cycles",
+  "source_identity_sha256": "3153e15cb4043618895db5a00abe12faf1a408d3ca6891f8c13ea89f2d16ffad",
+  "source_manifest_sha256": "c05f68835f409dac89c37889e48a48e6ae859428f51992abbfd4ce45368fc21d",
+  "source_file_count": 4575,
+  "source_git_revision": "b5f0421a63c61ded2badff588261548db4fd7974",
+  "source_working_tree_clean": false,
+  "test_binary_sha256": "31f3d9101bd5efcc4c7904641d9f5b3aad2340de837632311a0e3697560509bb",
+  "runtime_module_files_sha256": {
+    "modules/projectzomboid/module.toml": "fbb49c34cb8317bfdde71231428de87c49a99b8f841c75aa5a393ade3f8cec73",
+    "modules/projectzomboid/schema.json": "a35e1d4388eff8aab752af13a4db080f72b778555d0f922310300545ad887abf",
+    "modules/projectzomboid/smoke.toml": "56dc21cc727a8dd9d95adf36df333dd011077a9b811e9af151a7f05581560107",
+    "modules/projectzomboid/templates/SandboxVars.lua.hbs": "244c480d144b47a126fc235226e6f56f2ed7ac271a4649f8a666ad16f2c698d4",
+    "modules/projectzomboid/templates/server.ini.hbs": "05a49867a9ec45c889d6c8c22731c8b51a92d2a97892d407981837653b1b499a",
+    "modules/projectzomboid/templates/spawnpoints.lua.hbs": "290d1f1994500d3a6aea42ae4dd058ad04edf52948dfb3f15e10750dad32099c",
+    "modules/projectzomboid/templates/spawnregions.lua.hbs": "0b30103f12d093e4bf52b3c46e1290b7ae673a0ffece7a41adfc860e9a4874b5"
+  },
+  "package": {
+    "classification": "fresh_official_public_package_validated_separately_then_supplied_as_local_package",
+    "steam_app_id": 380870,
+    "steam_build_id": "26486687",
+    "game_version": "42.22.2",
+    "manifest_state_flags": 4,
+    "manifest_update_result": 0,
+    "source_inventory_bytes": 7124224978,
+    "copied_payload_bytes": 7124224978,
+    "source_file_count": 39184,
+    "identity_files": [
+      {
+        "path": "steamapps/appmanifest_380870.acf",
+        "size": 997,
+        "sha256": "809d19da4ba7d3f9f3534cc2c6fbc88bb1993ba198d5e52f1d2c4f52bfe171af"
+      },
+      {
+        "path": "java/projectzomboid.jar",
+        "size": 68815659,
+        "sha256": "3c4a7c5f149d784758c6fb5f8fa85f3a21d572e38bc081400e89035f8120d287"
+      },
+      {
+        "path": "jre64/bin/java.exe",
+        "size": 50112,
+        "sha256": "e8e29318ae7435579a1f1718589fd753b8ed47effa6f67c0e4986fd7b8d89d93"
+      },
+      {
+        "path": "jre64/release",
+        "size": 1002,
+        "sha256": "e7a20ec3984861d3e109fed266d51340d6be4221d3b6cd1299a4be9b11ce1725"
+      },
+      {
+        "path": "StartServer64.bat",
+        "size": 367,
+        "sha256": "e9d76cadbb74729100808cd6d8a6af1d2a499a774054191c5af515ffd992af82"
+      },
+      {
+        "path": "ProjectZomboid64.json",
+        "size": 468,
+        "sha256": "403263cf4f15461470bb1d36a76a6665c4b436ef35746bcb8d91f970a36eca52"
+      }
+    ],
+    "acquisition_evidence": "2026-11-10-public-build-26486687-static.json",
+    "local_transfer_verification_sha256": "24d778f6d1c00745224906776e5d7b9347e2ce075d3abb0bc721a07eb590072c"
+  },
+  "test": {
+    "selector": "commands::tests::manual_runtime_tests::native_lifecycle_tests::native_manual_save",
+    "arguments": [
+      "--exact",
+      "--ignored",
+      "--test-threads=1",
+      "--nocapture"
+    ],
+    "started_utc": "2026-11-10T04:28:23Z",
+    "completed_utc": "2026-11-10T04:33:20Z",
+    "exit_code": 0,
+    "tests_passed": 1,
+    "duration_seconds": 296.39,
+    "settings": {
+      "memory_gb": 4,
+      "program_update": {
+        "policy": "pinned"
+      },
+      "mods": "",
+      "workshop_items": "",
+      "steam_scoreboard": "false"
+    },
+    "execution": "non-elevated interactive Windows session; independent disposable instance"
+  },
+  "observations": {
+    "native_ready_cycles": [
+      "initial",
+      "restart"
+    ],
+    "manual_save_receipts": [
+      "NATIVE_MANUAL_SAVE module=projectzomboid cycle=initial phase=receipt attempted_once=true retried=false instance_matches=true run_matches=true session_matches=true managed_generations_alive=true route=managed_process_generation response_present=false response_bytes=0 write_confirmation_pending=false save_completion=requested durable_write=not_assessed restart_readback=not_assessed",
+      "NATIVE_MANUAL_SAVE module=projectzomboid cycle=restart phase=receipt attempted_once=true retried=false instance_matches=true run_matches=true session_matches=true managed_generations_alive=true route=managed_process_generation response_present=false response_bytes=0 write_confirmation_pending=false save_completion=requested durable_write=not_assessed restart_readback=not_assessed"
+    ],
+    "normal_exit_zero_cycles": [
+      "initial",
+      "restart"
+    ],
+    "fresh_managed_restart": true,
+    "runtime_version_tokens": [
+      "42.22.2"
+    ],
+    "native_steam_scoreboard": "false",
+    "exact_checkpoint_readback": "not_tested",
+    "backup_restore_uninstall_archive": "not_tested",
+    "cleanup": {
+      "test_reported": "passed",
+      "owned_native_processes_remaining": 0,
+      "fixture_directories_remaining": 0
+    },
+    "harness_assertions": {
+      "oneTestPassed": true,
+      "twoNativeReadyCycles": true,
+      "twoRequestedSaveReceipts": true,
+      "twoNormalExitZeroStops": true,
+      "updatesPinnedBothCycles": true,
+      "freshManagedRestart": true,
+      "nativeCleanup": true,
+      "noOwnedNativeProcessRemains": true,
+      "noFixtureDirectoryRemains": true,
+      "frozenInputsUnchanged": true
+    }
+  },
+  "observation_collection": {
+    "primary_collector_state": "incomplete_evidence",
+    "primary_missing_observations": [
+      "nativeScoreboardFalse",
+      "runtimeVersion4222"
+    ],
+    "resolved_by": "Explicit native INI and managed-console files copied during this same run, before fixture cleanup, independently confirm both observations. The original collector receipt is retained unchanged.",
+    "collector_issue": "The primary collector exhausted its cap on runtime.staging media before startup and its INI regex did not allow CRLF. These explicit native config/log copies were captured during this same run; they independently resolve both missing observations.",
+    "supplemental_files": [
+      {
+        "path": "7/n-a27235585fad482c/config/server.ini",
+        "captured_utc": "2026-11-10T04:32:55.945632+00:00",
+        "bytes": 3513,
+        "sha256": "57fb7b58f972c5940de08eb395235d3e44a9876958fee0fb17487e051dd12a4a",
+        "native_server_ini": false,
+        "steam_scoreboard_values": [
+          "false"
+        ],
+        "version_tokens": []
+      },
+      {
+        "path": "7/n-a27235585fad482c/logs/managed-console/run-1794284942639-startup.log",
+        "captured_utc": "2026-11-10T04:32:55.951138+00:00",
+        "bytes": 833,
+        "sha256": "2d2bfe3ea149c8acba8875804000305a84093ab4217ec178868ab924ddd3ac10",
+        "native_server_ini": false,
+        "steam_scoreboard_values": [],
+        "version_tokens": []
+      },
+      {
+        "path": "7/n-a27235585fad482c/logs/managed-console/run-1794284942711-main.log",
+        "captured_utc": "2026-11-10T04:32:55.951138+00:00",
+        "bytes": 255880,
+        "sha256": "04015f530344a34e3eec00439436293e60ae8cc6f44303178937da38a847b03d",
+        "native_server_ini": false,
+        "steam_scoreboard_values": [],
+        "version_tokens": [
+          "42.22.2"
+        ]
+      },
+      {
+        "path": "7/n-a27235585fad482c/logs/managed-console/run-1794285092348-startup.log",
+        "captured_utc": "2026-11-10T04:32:55.956051+00:00",
+        "bytes": 537,
+        "sha256": "22af2d618cedbc52aaf59a54f3a7a6cd030c98418eb2706c31ec44fc5c78fe30",
+        "native_server_ini": false,
+        "steam_scoreboard_values": [],
+        "version_tokens": []
+      },
+      {
+        "path": "7/n-a27235585fad482c/logs/managed-console/run-1794285092410-main.log",
+        "captured_utc": "2026-11-10T04:32:55.956554+00:00",
+        "bytes": 256079,
+        "sha256": "78a41549ec1d3d0d13b1752b0a8273b6ba679288bd0a0d179af05a5720cea51e",
+        "native_server_ini": false,
+        "steam_scoreboard_values": [],
+        "version_tokens": [
+          "42.22.2"
+        ]
+      },
+      {
+        "path": "7/n-a27235585fad482c/config/runtime-home/Zomboid/server-console.txt",
+        "captured_utc": "2026-11-10T04:32:55.945632+00:00",
+        "bytes": 254981,
+        "sha256": "9a75e31d245a6526a0b2cf3b8af5ada853d193e0a2a63658b642b718426633a9",
+        "native_server_ini": false,
+        "steam_scoreboard_values": [],
+        "version_tokens": [
+          "42.22.2"
+        ]
+      },
+      {
+        "path": "7/n-a27235585fad482c/config/runtime-home/Zomboid/Server/n-a27235585fad482c.ini",
+        "captured_utc": "2026-11-10T04:32:55.944629+00:00",
+        "bytes": 15270,
+        "sha256": "2adc8bc5df124e2bba28d320c6504602547d99442b0975768a8185ea230621a5",
+        "native_server_ini": true,
+        "steam_scoreboard_values": [
+          "false"
+        ],
+        "version_tokens": []
+      }
+    ],
+    "reviewed_utc": "2026-11-10T04:34:19.937463+00:00",
+    "native_ini_capture_scope": "Native server INI was captured during the restart cycle; this checks rendering, not player permissions or client UI."
+  },
+  "artifacts": [
+    {
+      "path": "2026-11-10-public-build-26486687-native-output.txt",
+      "size_bytes": 2881,
+      "sha256": "aea7521c7ee10acac1dc81a596f4902b349b55fd1fa6c538e306b04e0d780151",
+      "original_size_bytes": 2882,
+      "original_sha256": "ada082052f366d9424447f53f0513d0c3d2cf7c1142e8163f3cb5b24437cbf4c",
+      "normalization": "Removed trailing empty lines for publication; test output content and the original run identity are unchanged."
+    },
+    {
+      "name": "native-build.json",
+      "sha256": "02c2479d34fc5ce1280ccc8a5aa83dd3b996b2037755fc4b6df7cb0941e7c87e"
+    },
+    {
+      "name": "source-manifest.json",
+      "sha256": "c05f68835f409dac89c37889e48a48e6ae859428f51992abbfd4ce45368fc21d"
+    },
+    {
+      "name": "native-result.json",
+      "sha256": "f1e92e17c182b6a6429944c7aaf360661fe1a6ad38642f5268b1aa9becace380"
+    },
+    {
+      "name": "supplemental-observations.json",
+      "sha256": "328a25fe0c95ce6d63f06ddd03b6e6e3f77f7cf3f70ee5b91f243fbffc0c9683"
+    },
+    {
+      "name": "native.stderr",
+      "sha256": "68c8cc8b404d06b85048a35bcdf7dbfc597b5f0f19d7be1b2deabe34e77ee29f"
+    }
+  ],
+  "scope_limits": [
+    "Two production backend start/save-request/normal-stop cycles with a fresh no-Mod world and owned cleanup. Full backup/restore, uninstall, archive recovery and in-product network acquisition/update were not exercised.",
+    "Both save receipts remain Requested. Native completion, exact manual-save contents and power-loss durability are not established; readiness after restart is not exact content readback.",
+    "Official public acquisition and file validation occurred separately. The native harness used an isolated copy of that package with updates pinned.",
+    "No GUI, real-client joining, populated player roster, multiplayer gameplay, permission behavior or existing-world migration was tested.",
+    "Code identity is the frozen test build recorded here. Runtime module/schema/smoke/templates matched the current files. Subsequent provenance edits and test-only formatting do not extend that identity.",
+    "The original temporary observation collector reached its file cap before startup. Independent contemporaneous file copies resolve the missing version/INI observations without changing the native test or its receipt."
+  ]
+}

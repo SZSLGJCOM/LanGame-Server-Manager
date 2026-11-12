@@ -1,0 +1,103 @@
+{
+  "schema_version": 1,
+  "module_id": "arksurvivalascended",
+  "evidence_classification": "official_package_identity_and_matching_symbol_http_head_availability",
+  "attempted_on": "2026-11-12",
+  "verification_timezone": "Asia/Shanghai",
+  "status": "passed",
+  "package": {
+    "steam_app_id": 2430930,
+    "steam_build_id": "26564816",
+    "state_flags": 4,
+    "acquisition": "official SteamCMD public package",
+    "acquisition_exit_code": 0,
+    "acquisition_started_utc": "2026-11-12T02:12:05.9926355Z",
+    "acquisition_completed_utc": "2026-11-12T02:14:15.7475017Z",
+    "manifest_path": "steamapps/appmanifest_2430930.acf",
+    "manifest_sha256": "5c970c7d88d44348dc98d339d51e3c16dc1040bf3e3b9ebacd49dbd9f8b28928",
+    "declared_size_on_disk_bytes": 12318034944,
+    "installed_depots": [
+      {
+        "depot_id": "1004",
+        "manifest_id": "7604377918839582995",
+        "declared_size_bytes": 67863136
+      },
+      {
+        "depot_id": "2430931",
+        "manifest_id": "3866706003566311928",
+        "declared_size_bytes": 12250171808
+      }
+    ],
+    "executable_path": "ShooterGame/Binaries/Win64/ArkAscendedServer.exe",
+    "executable_bytes": 215561832,
+    "executable_sha256": "79b0ce800a05e254f0a591967acea9ae0fcd0c03becf75ab04182e2c3cd0ab02",
+    "file_version": "",
+    "product_version": "",
+    "version_interpretation": "The empty PE version fields do not establish a publisher version; the separate native run observes version 97.21."
+  },
+  "comparison": {
+    "previous_tested_build": "26477280",
+    "previous_executable_sha256": "8cd7d552c22c7fac118e798e891d6167efc0045bc1f31d6bf19d9a557a73d579",
+    "executable_changed": true,
+    "symbol_selection": "current executable SHA256, not a fixed Steam build whitelist"
+  },
+  "matching_symbols": {
+    "configured_sources": "apps/desktop/src-tauri/src/ark_tools_symbols.rs",
+    "executable_sha256": "79b0ce800a05e254f0a591967acea9ae0fcd0c03becf75ab04182e2c3cd0ab02",
+    "probes": [
+      {
+        "url": "https://cdn.pelayori.com/cache/79b0ce800a05e254f0a591967acea9ae0fcd0c03becf75ab04182e2c3cd0ab02.zip",
+        "method": "HEAD",
+        "checked_utc": "2026-11-12T02:19:48.309375+00:00",
+        "status": 200,
+        "content_type": "application/zip",
+        "content_length": 23155786,
+        "last_modified": "Wed, 11 Nov 2026 00:24:06 GMT",
+        "etag": "\"59391a89703b300a137ba95069b502fe-3\"",
+        "body_bytes_read": 0
+      },
+      {
+        "url": "https://cdn.shadowhunter.co.za/cache/79b0ce800a05e254f0a591967acea9ae0fcd0c03becf75ab04182e2c3cd0ab02.zip",
+        "method": "HEAD",
+        "checked_utc": "2026-11-12T02:19:48.311309+00:00",
+        "status": 200,
+        "content_type": "application/zip",
+        "content_length": 23155786,
+        "last_modified": "Wed, 11 Nov 2026 00:24:06 GMT",
+        "etag": "\"59391a89703b300a137ba95069b502fe-3\"",
+        "body_bytes_read": 0
+      },
+      {
+        "url": "https://cdn.shadowhunter-systems.co.za/cache/79b0ce800a05e254f0a591967acea9ae0fcd0c03becf75ab04182e2c3cd0ab02.zip",
+        "method": "HEAD",
+        "checked_utc": "2026-11-12T02:19:48.311785+00:00",
+        "status": 200,
+        "content_type": "application/zip",
+        "content_length": 23155786,
+        "last_modified": "Wed, 11 Nov 2026 00:24:06 GMT",
+        "etag": "\"59391a89703b300a137ba95069b502fe-3\"",
+        "body_bytes_read": 0
+      }
+    ],
+    "archive_body_downloaded_in_static_probe": false,
+    "interpretation": "HTTP availability and declared matching headers only; ZIP contents and ABI compatibility are covered separately by production preparation and native acceptance."
+  },
+  "native_acceptance": "2026-11-12-managed_native_creature_persistence_asa_2_11_build_26564816.json",
+  "artifacts_retained_outside_repository": [
+    {
+      "name": "package-identity.json",
+      "bytes": 2311,
+      "sha256": "4b1ede70b75a1c1cfecdac6fc485f629935e5b3e96f9c6c4ba92136a213c949f"
+    },
+    {
+      "name": "matching-symbols-head.json",
+      "bytes": 3575,
+      "sha256": "643be6c5c1666ee061c89eb4fff52614d393c08039997bc98590e1cc5d06540b"
+    }
+  ],
+  "scope_limits": [
+    "This static record does not claim native execution, configuration-default verification or archive-content validation.",
+    "The build and executable hash change alone do not establish an SDK, schema or launch-contract defect.",
+    "Private paths, host identifiers and full acquisition logs remain outside the repository."
+  ]
+}

@@ -211,6 +211,7 @@ fn run_controller(root: &Path, nonce: &str, normalize: bool) {
         install_root: root.to_string_lossy().into_owned(),
         install_state: app_core::InstallState::Installed,
         uses_private_runtime: true,
+        can_update_before_start: false,
         working_directory: root.to_string_lossy().into_owned(),
         executable_path: executable.to_string_lossy().into_owned(),
         executable_exists: true,

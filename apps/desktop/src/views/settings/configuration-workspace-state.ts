@@ -1,6 +1,7 @@
 import { buildConfigurationFieldIds } from "./ConfigurationField";
 import type {
   ConfigurationSectionNode,
+  ConfigurationSearchResult,
   ConfigurationWorkspaceModel,
   GuidedSettingsValidationIssue,
   SettingsObject
@@ -16,6 +17,13 @@ export interface ConfigurationFocusRoot {
 export interface ConfigurationFieldNavigation {
   sectionId: string;
   inputId: string;
+}
+
+export function isConfigurationFieldNavigable(
+  item: Pick<ConfigurationSearchResult, "owner" | "state" | "sectionId" | "fieldKey">
+): boolean {
+  return (item.owner === "configuration" && (item.state === "editable" || item.state === "specialized"))
+    || (item.owner === "instance_network" && item.state === "derived" && item.sectionId === "network" && item.fieldKey === "public_ip");
 }
 
 export function groupConfigurationValidationIssues(issues: readonly GuidedSettingsValidationIssue[]) {
@@ -47,8 +55,7 @@ export function resolveConfigurationFieldNavigation(
   const item = model.items.find((candidate) => candidate.fieldKey === fieldKey);
   if (
     !item ||
-    item.owner !== "configuration" ||
-    (item.state !== "editable" && item.state !== "specialized") ||
+    !isConfigurationFieldNavigable(item) ||
     !model.actionableSectionIds.includes(item.sectionId)
   ) {
     return null;

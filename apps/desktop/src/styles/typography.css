@@ -1,5 +1,5 @@
 /* Typography roles stay in logical pixels as Windows DPI and viewport size change.
-   Layout responds to available space; ordinary text never scales with the viewport. */
+   Native maximize selects readable text roles and matching control spacing. */
 @font-face {
   font-family: "Inter";
   src: url("../assets/fonts/InterVariable.woff2") format("woff2");
@@ -32,9 +32,11 @@
   --text-hero: 2.5rem;
   --text-artwork: 7.5rem;
 
-  /* Button density is independent of the surrounding panel geometry. */
+  /* Shared controls and form spacing follow the native window state. */
+  --interface-density: 1;
   --control-height: 30px;
   --control-height-compact: 28px;
+  --control-padding-block: 4px;
   --control-padding-inline: 10px;
   --control-padding-inline-compact: 8px;
 
@@ -55,17 +57,34 @@
   font-optical-sizing: auto;
 }
 
-/* The resource dial grows with its instrument, with text capped at 115%.
-   These presentation roles do not scale the surrounding interface. */
+/* Keep a clear hierarchy while giving larger text proportional breathing room.
+   Shared roles also cover dialogs and tooltips rendered outside the shell. */
+:root:has(.shell-header[data-window-maximized="true"]) {
+  --interface-density: 1.25;
+  --text-page-title: 1.75rem;
+  --text-section-title: 1.25rem;
+  --text-body: 1rem;
+  --text-secondary: 0.875rem;
+  --text-meta: 0.875rem;
+  --text-code: 1rem;
+  --text-display: 2.125rem;
+  --text-hero: 3rem;
+  --text-artwork: 9rem;
+  --control-height: 38px;
+  --control-height-compact: 36px;
+  --control-padding-block: 6px;
+  --control-padding-inline: 12px;
+  --control-padding-inline-compact: 10px;
+}
+
+/* Dial fitting inherits the shared text step without adding another scale. */
 .system-core-visual {
-  --core-text-scale: min(1.15, calc(1 + (var(--core-scale) - 1) * 0.35));
-  --text-dial-meta: calc(var(--text-meta) * var(--core-text-scale));
-  --text-dial-secondary: calc(var(--text-secondary) * var(--core-text-scale));
-  --text-dial-body: calc(var(--text-body) * var(--core-text-scale));
-  --text-dial-display: calc(var(--text-display) * var(--core-text-scale));
-  --text-dial-page-title: calc(var(--text-page-title) * var(--core-text-scale));
-  --text-dial-primary: calc(3.375rem * var(--core-text-scale));
-  --text-dial-focused: calc(2.5rem * var(--core-text-scale));
+  --text-dial-meta: var(--text-meta);
+  --text-dial-secondary: var(--text-secondary);
+  --text-dial-body: var(--text-body);
+  --text-dial-display: var(--text-display);
+  --text-dial-page-title: var(--text-page-title);
+  --text-dial-section-title: var(--text-section-title);
 }
 
 body {

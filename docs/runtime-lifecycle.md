@@ -16,6 +16,10 @@ React 页面和 hooks 通过 `api.ts` / `api-transport.ts` 调用 Tauri。桌面
 
 启动先核对实例和程序归属、目录冲突、未完成恢复及程序安装状态。游戏更新遵循实例的固定版本或更新策略；更新之后检查运行环境和扩展，再创建游戏进程。扩展准备完成与游戏世界加载完成是不同状态。
 
+ASTRONEER 沿用统一的“玩家连接地址”入口，选择地址时一并保存原生 PublicIP 与内部地址来源，不再提供额外联机方式选择。启动在复制或更新程序前检查地址：空值自动选址优先使用唯一可用的 Radmin 地址，无 Radmin 时才通过 ipify 和 AWS HTTPS 共用八秒预算查询出口 IPv4；多个 Radmin 候选需在同一地址入口选择。已保存的 Radmin 地址会重新校验本机网卡归属，失效时提前报错，不回退公网。已有显式地址不会自动更换。管理器允许显式局域网、VPN（包括 RFC1918 和 100.64/10）及公网 IPv4；公网查询结果仍须为公网地址。这只验证配置条件，不表示原生注册或玩家可达已经验证。
+
+卡片、复制和邀请只使用已保存的公布地址及游戏 UDP 端口；未配置时不拿其他网卡地址代替，草稿未保存时禁止复制。联网要求保留在气泡中：原生服务仍需访问官方在线服务，出口地址发现和世界就绪均不等于玩家已进入。2026-11-09 已完成原生 1.45.1.0 的 Radmin 手工配置对照验证：公布地址对齐后官方目录有记录，Steam PC 客户端成功进入，原生查询报告一名在线玩家；见[验证记录](../modules/astroneer/reference-fixtures/2026-11-09-radmin-client-join.json)。这不代表离线局域网、任意 VPN 或其他平台已经验证。
+
 启动操作和日志订阅持续到操作结束，不随服务器页面卸载而释放。切换到游戏库或其他实例再返回时，保留本次启动状态与进度，拒绝重复提交。后台列表、详情和运行概览将有效启动预约显示为“启动中”，仅修改查询结果，不将临时状态写入数据库；重新加载界面后读取当前启动日志，避免使用上一轮运行的就绪或失败信息。操作完成时刷新状态并保留用户当前选择。
 
 LanGameCMD 的显示流以每个运行日志源的会话和版本标识排序，完整行增量追加，未完成末行替换预览；实际重复日志不会按文本去重。完整行继续写入原有托管日志，预览不参与就绪解析或持久化。界面按浏览器帧合并更新，首次打开、事件缺口和连接重建通过同版本的有界文档补读；原生日志使用精确位置的文档补丁，继续按当前进程过滤。控制台显示保留最近 400 行及有界内容预算，不改变磁盘日志的保留策略。
@@ -75,6 +79,10 @@ React views and hooks call Tauri through `api.ts` / `api-transport.ts`. The desk
 ### Startup and optional capabilities
 
 Startup checks ownership, conflicting paths, incomplete recovery and installation state. It applies the instance's update policy, checks runtime prerequisites and extensions, then creates the game process. A prepared extension does not establish world readiness.
+
+ASTRONEER uses the common Player join address control, saving native PublicIP and internal source metadata together without a separate connection-mode selector. Before copying or updating programs, an empty automatic address selects the unique active Radmin address; without Radmin it uses ipify and AWS HTTPS under one eight-second budget. Multiple Radmin addresses require a choice in the same address control. Saved Radmin addresses are checked against fresh host adapters and fail before startup if unavailable, without public fallback. Existing explicit addresses are never automatically replaced. The manager accepts explicit LAN, VPN (including RFC1918 and 100.64/10), and public IPv4 endpoints; Internet discovery must still return a public address. These configuration checks do not establish native registration or client reachability.
+
+Cards, copied endpoints and invitations use only the persisted advertised address and game UDP port. Missing configuration does not fall back to another adapter, and unsaved drafts disable copying. Network requirements remain in a help bubble: native online services are still required, and neither discovery nor world readiness proves a player joined. A manual Radmin comparison on native version 1.45.1.0 on 2026-11-09 aligned the advertised address, obtained the matching directory record, and admitted a Steam PC client; the native query reported one online player. See the [evidence record](../modules/astroneer/reference-fixtures/2026-11-09-radmin-client-join.json). Offline LAN, arbitrary VPNs and other client platforms were not validated.
 
 Startup operations and their log subscriptions remain owned until completion, independently of the server page. Returning from the library or another instance preserves progress and prevents duplicate requests. Lists, details and runtime overviews project active startup reservations as Starting without persisting that temporary state. A reloaded interface reads the current startup log instead of readiness or failure evidence from an earlier run. Completion refreshes state without changing the user's current selection.
 

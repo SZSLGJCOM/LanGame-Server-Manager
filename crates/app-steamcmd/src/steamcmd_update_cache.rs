@@ -274,20 +274,14 @@ async fn install_bootstrapper(
     drop(file);
     let temporary = BootstrapStaging(staging);
     let script = format!(
-        concat!(
-            "$ErrorActionPreference='Stop'\n",
-            "Add-Type -AssemblyName System.IO.Compression.FileSystem\n",
-            "$zip=[IO.Compression.ZipFile]::OpenRead({archive})\n",
-            "try {{\n",
-            " $entry=$zip.GetEntry('steamcmd.exe')\n",
-            " if ($null -eq $entry -or $entry.Length -lt 1 -or $entry.Length -gt 64MB) {{ throw 'Invalid SteamCMD bootstrapper ZIP' }}\n",
-            " [IO.Compression.ZipFileExtensions]::ExtractToFile($entry,{staging},$true)\n",
-            "}} finally {{ $zip.Dispose() }}\n"
-        ),
+        "{}\nExpand-SteamCmdBootstrapper {archive} {staging}\n",
+        include_str!("steamcmd_bootstrap_extract.ps1"),
         archive = ps_literal(archive),
         staging = ps_literal(&temporary.0),
     );
-    let output = run_powershell(&script, Some(root), deadline).await?;
+    // Every path is absolute. CreateProcess limits its working-directory path
+    // even when native file handles can open a longer archive or staging path.
+    let output = run_powershell(&script, None, deadline).await?;
     if !output.status.success() {
         return Err(update_error(super::output_excerpt(
             &output.stdout,

@@ -57,9 +57,12 @@ pub(super) struct Session {
 pub(crate) fn main_window(app: &tauri::AppHandle) -> Option<WebviewWindow> {
     app.get_webview_window("main").or_else(|| {
         app.get_webview("main")?;
-        let state = app.try_state::<BrowserState>()?;
-        let host = state.host.lock().ok()?;
-        Some(host.as_ref()?.parent.clone())
+        let parent = app.try_state::<BrowserState>().and_then(|state| {
+            let host = state.host.lock().ok()?;
+            Some(host.as_ref()?.parent.clone())
+        });
+        // Never hold one provider's host lock while entering the other's state.
+        parent.or_else(|| crate::nexus_browser::retained_main_window(app))
     })
 }
 

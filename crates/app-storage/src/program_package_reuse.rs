@@ -109,6 +109,38 @@ pub(crate) fn only_package_files(
     inspect_package_files(root, files, managed_files, false, cancellation)
 }
 
+/// Program files are checked at authoritative creation. Mutable shipped
+/// defaults are small and must also be checked by the reuse preview, otherwise
+/// a recorded path alone could disguise operator configuration as original.
+pub(crate) fn original_defaults_are_unchanged(
+    root: &Path,
+    module_id: &str,
+    cancellation: Option<&AtomicBool>,
+) -> Result<bool, StorageError> {
+    let Some(mut initial) = read_named_manifest(root, INITIAL_PACKAGE)? else {
+        return Ok(true);
+    };
+    let Some(clean) = read_manifest(root)? else {
+        return Ok(false);
+    };
+    if initial.module_id != module_id || clean.module_id != module_id {
+        return Err(invalid(
+            root,
+            "program inventories belong to another module",
+        ));
+    }
+    initial
+        .files
+        .retain(|key, _| !clean.files.contains_key(key));
+    initial.directories.clear();
+    if initial.files.is_empty() {
+        return Ok(true);
+    }
+    Ok(PackageVerifier::new(root, true, cancellation)
+        .verify(Some(module_id), Some(initial))?
+        .is_some())
+}
+
 fn inspect_package_files(
     root: &Path,
     files: &BTreeMap<String, String>,

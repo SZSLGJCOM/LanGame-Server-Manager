@@ -1,5 +1,5 @@
 use std::collections::BTreeMap;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use app_core::dragonwilds_world::{
     DragonwildsWorldMode, DragonwildsWorldSettingDefinition, DragonwildsWorldSettingsSnapshot,
@@ -23,6 +23,11 @@ use crate::{InstanceStatus, StorageError, StoragePaths};
 pub(crate) mod io;
 use io::{invalid, latest_world, read_world, world_file_name};
 
+#[path = "dragonwilds_bootstrap.rs"]
+pub(crate) mod bootstrap;
+#[path = "dragonwilds_world_settings_pending.rs"]
+mod pending;
+
 #[derive(Deserialize)]
 struct NativeCatalog {
     settings: Vec<DragonwildsWorldSettingDefinition>,
@@ -41,10 +46,15 @@ fn definitions() -> Result<Vec<DragonwildsWorldSettingDefinition>, StorageError>
     Ok(catalog.settings)
 }
 
+#[derive(Clone)]
 struct WorldContext {
+    install: PathBuf,
+    config: PathBuf,
     saves: PathBuf,
     writable: bool,
+    inactive: bool,
     default_world_name: String,
+    world_password: String,
 }
 
 async fn load_context(
@@ -61,11 +71,14 @@ async fn load_context(
                 "World settings belong only to a Dragonwilds instance.",
             ));
         }
-        let writable = matches!(record.summary.status, InstanceStatus::Stopped)
-            && record.summary.active_process_count == 0
+        let inactive = matches!(
+            record.summary.status,
+            InstanceStatus::Stopped | InstanceStatus::Error
+        ) && record.summary.active_process_count == 0
             && load_active_instance_run(&pool, instance_id)
                 .await?
                 .is_none();
+        let writable = inactive && matches!(record.summary.status, InstanceStatus::Stopped);
         if write && !writable {
             return Err(invalid(
                 &record.config_dir,
@@ -84,6 +97,11 @@ async fn load_context(
             .and_then(serde_json::Value::as_str)
             .unwrap_or("Ashenfall")
             .to_owned();
+        let world_password = settings
+            .get("world_password")
+            .and_then(serde_json::Value::as_str)
+            .unwrap_or("")
+            .to_owned();
         let mut connection = pool.acquire().await?;
         ensure_instance_paths_available(
             paths,
@@ -96,9 +114,13 @@ async fn load_context(
         )
         .await?;
         Ok(WorldContext {
+            install,
+            config: record.config_dir,
             saves,
             writable,
+            inactive,
             default_world_name,
+            world_password,
         })
     }
     .await;
@@ -150,6 +172,13 @@ fn snapshot(
     context: &WorldContext,
 ) -> Result<DragonwildsWorldSettingsSnapshot, StorageError> {
     let definitions = definitions()?;
+    let draft = pending::load(context, instance_id)?;
+    if draft.is_some()
+        || pending::read_document(&context.config.join(bootstrap::JOURNAL))?.is_some()
+        || io::world_files(&context.saves)?.is_empty()
+    {
+        return pending::snapshot(instance_id, context, draft, definitions);
+    }
     let Some(path) = latest_world(&context.saves, &context.default_world_name)? else {
         return Ok(DragonwildsWorldSettingsSnapshot {
             instance_id: instance_id.to_owned(),
@@ -223,7 +252,7 @@ fn prepare(
             "No generated world save matches the configured world name.",
         )
     })?;
-    if world_file_name(&path)? != input.world_file {
+    if Some(world_file_name(&path)?.as_str()) != input.world_file.as_deref() {
         return Err(invalid(
             &path,
             "The server's selected world changed. Reload world settings before saving.",
@@ -237,54 +266,7 @@ fn prepare(
         ));
     }
     let native = decode_world_settings(&bytes).map_err(|message| invalid(&path, message))?;
-    let previous_mode = DragonwildsWorldMode::from_native(native.world_mode)
-        .ok_or_else(|| invalid(&path, "Unknown native world mode; the save was preserved."))?;
-    let definitions = definitions()?;
-    if input.values.len() > definitions.len() {
-        return Err(invalid(&path, "Too many world rule changes."));
-    }
-    let mut overrides = native.overrides.clone();
-    // Entering Custom retains the current preset's effective gameplay values.
-    if previous_mode != DragonwildsWorldMode::Custom
-        && input.world_mode == DragonwildsWorldMode::Custom
-    {
-        let current = effective_values(&native, previous_mode, &definitions)?;
-        // Locked/internal values are carried forward unchanged as part of the
-        // preset conversion. This does not allow incoming patches to edit them.
-        for definition in &definitions {
-            if let Some(value) = current.get(&definition.tag) {
-                overrides
-                    .entry(definition.tag.clone())
-                    .or_insert(*value as f32);
-            }
-        }
-    }
-    for (tag, value) in &input.values {
-        let definition = definitions
-            .iter()
-            .find(|definition| &definition.tag == tag)
-            .ok_or_else(|| invalid(&path, "Unknown world rule; the save was preserved."))?;
-        if !definition.editable_in(input.world_mode) {
-            return Err(invalid(
-                &path,
-                format!("{} cannot be changed for this existing world mode.", tag),
-            ));
-        }
-        let step = 10_f64.powi(-(definition.decimal_places as i32));
-        let scaled = value / step;
-        if !value.is_finite()
-            || *value < definition.minimum
-            || *value > definition.maximum
-            || (scaled - scaled.round()).abs() > 0.00001
-            || (definition.kind == "boolean" && *value != 0.0 && *value != 1.0)
-        {
-            return Err(invalid(
-                &path,
-                format!("{} must match its native range and precision.", tag),
-            ));
-        }
-        overrides.insert(tag.clone(), *value as f32);
-    }
+    let overrides = changed_overrides(&path, &native, input.world_mode, &input.values)?;
     let replacement = patch_world_settings(&bytes, input.world_mode.native_value(), &overrides)
         .map_err(|message| invalid(&path, message))?;
     if replacement.len() > io::MAX_WORLD_BYTES {
@@ -300,6 +282,61 @@ fn prepare(
     })
 }
 
+fn changed_overrides(
+    path: &Path,
+    native: &NativeWorldSettings,
+    mode: DragonwildsWorldMode,
+    values: &BTreeMap<String, f64>,
+) -> Result<BTreeMap<String, f32>, StorageError> {
+    let previous_mode = DragonwildsWorldMode::from_native(native.world_mode)
+        .ok_or_else(|| invalid(path, "Unknown native world mode; the save was preserved."))?;
+    let definitions = definitions()?;
+    if values.len() > definitions.len() {
+        return Err(invalid(path, "Too many world rule changes."));
+    }
+    let mut overrides = native.overrides.clone();
+    // Entering Custom retains the current preset's effective gameplay values.
+    if previous_mode != DragonwildsWorldMode::Custom && mode == DragonwildsWorldMode::Custom {
+        let current = effective_values(native, previous_mode, &definitions)?;
+        // Locked/internal values are carried forward unchanged as part of the
+        // preset conversion. This does not allow incoming patches to edit them.
+        for definition in &definitions {
+            if let Some(value) = current.get(&definition.tag) {
+                overrides
+                    .entry(definition.tag.clone())
+                    .or_insert(*value as f32);
+            }
+        }
+    }
+    for (tag, value) in values {
+        let definition = definitions
+            .iter()
+            .find(|definition| &definition.tag == tag)
+            .ok_or_else(|| invalid(path, "Unknown world rule; the save was preserved."))?;
+        if !definition.editable_in(mode) {
+            return Err(invalid(
+                path,
+                format!("{} cannot be changed for this existing world mode.", tag),
+            ));
+        }
+        let step = 10_f64.powi(-(definition.decimal_places as i32));
+        let scaled = value / step;
+        if !value.is_finite()
+            || *value < definition.minimum
+            || *value > definition.maximum
+            || (scaled - scaled.round()).abs() > 0.00001
+            || (definition.kind == "boolean" && *value != 0.0 && *value != 1.0)
+        {
+            return Err(invalid(
+                path,
+                format!("{} must match its native range and precision.", tag),
+            ));
+        }
+        overrides.insert(tag.clone(), *value as f32);
+    }
+    Ok(overrides)
+}
+
 pub async fn write_dragonwilds_world_settings(
     paths: &StoragePaths,
     input: WriteDragonwildsWorldSettingsInput,
@@ -308,7 +345,15 @@ pub async fn write_dragonwilds_world_settings(
     let paths = paths.clone();
     lease.complete_mutation("saving Dragonwilds world settings", async move {
         let context = load_context(&paths, &input.instance_id, true).await?;
-        let prepared_context = WorldContext { saves: context.saves.clone(), writable: true, default_world_name: context.default_world_name.clone() };
+        if input.world_file.is_none() {
+            return tokio::task::spawn_blocking(move || pending::write(&context, &input)).await
+                .map_err(|error| StorageError::BlockingTaskFailed { operation: "saving Dragonwilds world draft", message: error.to_string() })?;
+        }
+        if pending::load(&context, &input.instance_id)?.is_some()
+            || pending::read_document(&context.config.join(bootstrap::JOURNAL))?.is_some() {
+            return Err(invalid(&context.config, "Finish the pending world initialization before editing its generated save."));
+        }
+        let prepared_context = context.clone();
         let prepare_input = input.clone();
         let prepared = tokio::task::spawn_blocking(move || prepare(&prepared_context, &prepare_input)).await
             .map_err(|error| StorageError::BlockingTaskFailed { operation: "preparing Dragonwilds world settings", message: error.to_string() })??;

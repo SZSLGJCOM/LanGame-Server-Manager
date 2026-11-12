@@ -14,8 +14,8 @@ the separately reviewed instance installer, rather than embedded in this code.
 | Input | Fixed source | Archive SHA-256 |
 | --- | --- | --- |
 | ASE SDK 3.56 | [AseApi 9459cb3941c2e62d4144cbb8294fe6c4c772d564](https://github.com/ArkServerApi/AseApi/tree/9459cb3941c2e62d4144cbb8294fe6c4c772d564) | `500cc0e0d46e75e3c67374a81914fe318ee1f88db8bca0c291f2e8a72ede3def` |
-| ASA SDK 2.1 | [AsaApi 08eef96decb0c626ff5f187dca18a98603b41a46](https://github.com/ArkServerApi/AsaApi/tree/08eef96decb0c626ff5f187dca18a98603b41a46) | `724e67648f73d003fdded2e17a3dbe420a27d285b666692daa43bf5f06c57e81` |
-| ASA import library | [AsaApi 2.1 release, AsaApi_2.1.zip](https://github.com/ArkServerApi/AsaApi/releases/tag/2.1) | `58d626b34c85e08e85d3dc076f1f18420150752802e1d227bed370182c84f3b6` |
+| ASA SDK 2.11 | [AsaApi bd376a0422291b0b1bf15a0b7868e7e275605da9](https://github.com/ArkServerApi/AsaApi/tree/bd376a0422291b0b1bf15a0b7868e7e275605da9) | `e179b1de7037ea48e69531e4aac75e02126fa63a8054cc32236f818a20ea95bc` |
+| ASA import library | [AsaApi 2.11 release, AsaApi_2.11.zip](https://github.com/ArkServerApi/AsaApi/releases/tag/2.11) | `64f5f1165ef73f3439bba3794e77e379489167cc385c0ac5c4717ca60ad3e88a` |
 | ASA version proxy export stubs | [AsaApiLoader 4e04dc8982e1473920278f199638b29dc511d539](https://github.com/ArkServerApi/AsaApiLoader/tree/4e04dc8982e1473920278f199638b29dc511d539) | `dd3c6ac17d2bdc9d072ca01c8e86f9451e6de909c2bf901bb5b2c63cb939e833` |
 
 The exact archive URLs are in `scripts/build_ark_tools.ps1`. ASA's public
@@ -25,13 +25,15 @@ path; it does not introduce another fmt version. SDK third-party header notices
 remain intact in the build cache. The notices shipped with the plugin include
 the incorporated JSON, spdlog, and fmt copyrights and licenses.
 
-ASA's UE 5.8.3 update requires the 2.1 SDK, import library and framework together.
-The SDK resolves `APrimalWorldSettings` through the new `AsaApi::ResolveClass`
-export and supplies the updated native `SpawnDino` and `TameDino` signatures.
-Reusing a plugin compiled against 2.03 leaves those old symbol lookups in place,
-even after downloading the executable's new cache. The plugin metadata therefore
-requires API 2.1. The executable-bound cache format and generation selection are
-unchanged between these two upstream versions.
+ASA's UE 5.8.3 support starts with the 2.1 SDK and framework. That SDK resolves
+`APrimalWorldSettings` through `AsaApi::ResolveClass` and updates the native
+`SpawnDino` and `TameDino` signatures; rebuilding is required for plugins compiled
+against 2.03. The current 2.11 SDK also corrects the UE 5.8 object-array layouts,
+so this bundle pins the 2.11 SDK and framework together and requires API 2.11
+in its plugin metadata. The import library, executable-bound cache format and
+generation selection are unchanged from 2.1. Intact managed 2.03 and 2.1 installs
+remain recognizable for explicit upgrades; unknown or modified files are
+still protected by ownership and byte-hash checks.
 
 Build prerequisites are Windows x64, Visual Studio C++ Build Tools with MSVC
 C++20 and a Windows 10 or later SDK. The script discovers these through
@@ -169,3 +171,25 @@ initializes the optional framework only with a locally verified, executable-boun
 cache and automatic downloads disabled. It holds the selected files while the
 framework reads them. Missing or incompatible cache data disables the extension;
 it does not turn startup into a symbol download wait.
+
+AsaApi 2.11 passed an isolated native run on Steam build 26477280 on
+2026-11-09: installation, plugin handshake, GM commands, map snapshot, three
+wild-creature spawn/readbacks, and a normal save/stop/restart with the same native
+creature IDs. The [dated acceptance record](../arksurvivalascended/reference-fixtures/2026-11-09-managed_native_creature_persistence_asa_2_11_build_26477280.json)
+binds the exact build and installed hashes to those results. This run used a new
+world; it does not establish existing-world migration or client connectivity.
+
+A further isolated run on 2026-11-12 passed on Steam build 26564816; both native
+server logs directly report ARK version 97.21. The existing pinned AsaApi 2.11
+SDK and framework passed production executable-bound symbol preparation,
+handshake, GM responses, map snapshot, and three wild-creature spawn/readbacks.
+After a primary-world save request and normal stop, a new managed run read back
+the same Dodo, Rex and Enigmasaur native IDs, classes, levels, wild states and
+teams without replaying Spawn. Both stops exited 0 and owned cleanup passed.
+The [new dated acceptance record](../arksurvivalascended/reference-fixtures/2026-11-12-managed_native_creature_persistence_asa_2_11_build_26564816.json)
+binds the package, frozen sources, frontend commands, test binary and raw-log
+hashes. Initial startup included Windows runtime preparation/download and a
+non-elevated firewall timeout warning; individual delays are not fully
+attributed. This fresh-world result does not establish external connectivity,
+live-player taming, populated-world migration or gameplay defaults. The earlier
+build-specific acceptance and failed preparation records remain historical.

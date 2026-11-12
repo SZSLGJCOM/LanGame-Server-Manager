@@ -1,5 +1,6 @@
-import { useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { describeError } from "../../app-state";
+import { ShellIcon } from "../../components/ShellIcon";
 import { useI18n, type TranslateFn } from "../../i18n";
 import type { ModuleDetails } from "../../types";
 import { ConfigurationField } from "../settings/ConfigurationField";
@@ -13,6 +14,7 @@ import type { GuidedSettingsField, SettingsObject } from "../settings/settings-s
 import { parseAsaModManifest } from "./asa-mod-manifest";
 import { changedSettingKeys } from "./mod-settings-patch";
 import { ASA_MEMBERSHIP_KEYS, buildAsaLoadListPlan, hasAsaRawModFlags } from "./mod-workbench-asa";
+import "./workshop-collection-removal-dialog.css";
 
 interface ModSourceListEditorsProps {
   instanceId: string;
@@ -26,6 +28,7 @@ interface ModSourceListEditorsProps {
 interface SourceFieldProps extends ModSourceListEditorsProps {
   moduleId: string;
   field: GuidedSettingsField;
+  onPendingChange: (key: string, pending: boolean) => void;
 }
 
 function validateSourceField(moduleId: string, field: GuidedSettingsField, settings: SettingsObject,
@@ -39,7 +42,7 @@ function validateSourceField(moduleId: string, field: GuidedSettingsField, setti
       ? validateAbioticModField("mods_directory", settings.mods_directory, settings, t) : undefined);
 }
 
-function ModSourceField({ field, moduleId, ...props }: SourceFieldProps) {
+function ModSourceField({ field, moduleId, onPendingChange, ...props }: SourceFieldProps) {
   const { locale, t } = useI18n();
   const coordinator = useInstanceSettingsSaveCoordinator();
   const [draft, setDraft] = useState<{ base: SettingsObject; value: unknown } | null>(null);
@@ -64,6 +67,11 @@ function ModSourceField({ field, moduleId, ...props }: SourceFieldProps) {
     : nativeReferences?.invalidTokens.length ? t("servers.mods.asaManifest.invalid", {
       values: nativeReferences.invalidTokens.slice(0, 8).map((entry) => entry.slice(0, 80)).join("、")
     }) : validateSourceField(moduleId, field, current, locale, t);
+
+  useLayoutEffect(() => {
+    onPendingChange(field.key, dirty || saving);
+    return () => onPendingChange(field.key, false);
+  }, [field.key, dirty, saving, onPendingChange]);
 
   // A full-file replacement requires the operator's confirmation, including when another control requests a start.
   useLayoutEffect(() => {
@@ -133,19 +141,83 @@ function ModSourceField({ field, moduleId, ...props }: SourceFieldProps) {
   </div>;
 }
 
-/** Native lists with their own loading semantics live beside My Mods even before the first Mod is added. */
+/** Source-specific settings share one secondary entry, leaving the Mod list unobstructed. */
 export function ModSourceListEditors(props: ModSourceListEditorsProps) {
   const { locale, t } = useI18n();
+  const titleId = useId();
+  const dialog = useRef<HTMLDialogElement>(null);
+  const closeButton = useRef<HTMLButtonElement>(null);
+  const [open, setOpen] = useState(false);
+  const [pendingFields, setPendingFields] = useState<ReadonlySet<string>>(() => new Set());
+  const [closeBlocked, setCloseBlocked] = useState(false);
+  const onPendingChange = useCallback((key: string, pending: boolean) => {
+    setPendingFields((current) => {
+      if (current.has(key) === pending) return current;
+      const next = new Set(current);
+      if (pending) next.add(key); else next.delete(key);
+      return next;
+    });
+  }, []);
   const moduleId = props.moduleDetails?.summary.id;
   const fields = useMemo(() => {
     if (!resolveSettingsModuleDefinition(moduleId)?.specializedRenderers?.[MOD_SOURCE_LIST_RENDERER]) return [];
     return parseGuidedSettingsSchema(props.moduleDetails, locale, t, { surface: "mods" }).fields
       .filter((field) => field.presentation.rendererId === MOD_SOURCE_LIST_RENDERER);
   }, [moduleId, props.moduleDetails, locale, t]);
+
+  useEffect(() => {
+    const node = dialog.current;
+    if (!node || !open) return;
+    const previous = document.activeElement;
+    node.showModal();
+    closeButton.current?.focus();
+    return () => {
+      node.close();
+      if (previous instanceof HTMLElement && previous.isConnected) previous.focus();
+    };
+  }, [open]);
+
+  useEffect(() => {
+    if (!open || !pendingFields.size) return;
+    const preserveDraft = (event: KeyboardEvent) => {
+      if (event.key === "Escape" && dialog.current?.open) {
+        event.preventDefault();
+        setCloseBlocked(true);
+      }
+    };
+    document.addEventListener("keydown", preserveDraft, true);
+    return () => document.removeEventListener("keydown", preserveDraft, true);
+  }, [open, pendingFields.size]);
+
+  function close() {
+    if (pendingFields.size) { setCloseBlocked(true); return; }
+    setCloseBlocked(false);
+    setOpen(false);
+  }
+
   if (!moduleId || !fields.length) return null;
-  return <details className="mw-source-lists">
-    <summary>{t("servers.mods.sourceLists.title")}</summary>
-    {moduleId === "abioticfactor" ? <AbioticOfficialModSource /> : null}
-    {fields.map((field) => <ModSourceField key={field.key} {...props} moduleId={moduleId} field={field} />)}
-  </details>;
+  return <>
+    <button type="button" className="mw-ghost-btn mw-source-settings-button" aria-haspopup="dialog"
+      onClick={() => setOpen(true)}>
+      <ShellIcon name="settings" className="mw-btn-icon" />{t("servers.mods.sourceLists.open")}
+    </button>
+    <dialog ref={dialog} className="mw-collection-removal-dialog mw-source-settings-dialog"
+      aria-labelledby={titleId} data-no-window-drag="true"
+      onCancel={(event) => { event.preventDefault(); close(); }}>
+      <header className="mw-collection-removal-header"><h2 id={titleId}>{t("servers.mods.sourceLists.title")}</h2></header>
+      <div className="mw-collection-removal-body">
+        {moduleId === "abioticfactor" ? <AbioticOfficialModSource /> : null}
+        {fields.map((field) => <ModSourceField key={field.key} {...props} moduleId={moduleId} field={field}
+          onPendingChange={onPendingChange} />)}
+      </div>
+      <footer className="mw-collection-removal-footer">
+        {closeBlocked && pendingFields.size > 0 ? <p role="alert" className="mw-source-settings-unsaved">
+          {t("servers.mods.sourceLists.unsaved")}
+        </p> : null}
+        <div className="mw-collection-removal-actions">
+          <button ref={closeButton} type="button" className="mw-ghost-btn mw-source-settings-close" onClick={close}>{t("common.closeWindow")}</button>
+        </div>
+      </footer>
+    </dialog>
+  </>;
 }

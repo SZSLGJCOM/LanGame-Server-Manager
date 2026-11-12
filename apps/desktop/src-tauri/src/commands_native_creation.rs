@@ -132,14 +132,16 @@ impl CreationMode {
                 .is_empty();
         let first_official_plan = if first_official {
             Some(
-                app_storage::inspect_instance_program_creation(
+                app_storage::inspect_module_programs(
                     &storage.paths,
                     descriptor,
                     program_mode,
                     app_core::InstanceProgramSource::Verified,
-                    None,
+                    Arc::new(AtomicBool::new(false)),
+                    false,
                 )
-                .await?,
+                .await?
+                .creation,
             )
         } else {
             None
@@ -166,13 +168,15 @@ impl CreationMode {
         let root = program_root(&instance)?;
         let mode = app_storage::instance_program_mode(instance_root(&instance)?)?;
         let exclusive = app_storage::instance_uses_exclusive_program(instance_root(&instance)?)?;
-        if let Some(plan) = first_official_plan
-            && exclusive != (plan.action == "existing_install")
-        {
-            return Err(format!(
-                "native first official instance violated source reuse policy: action={} exclusive={exclusive}",
-                plan.action,
-            ).into());
+        if let Some(plan) = first_official_plan {
+            if exclusive != (plan.action == "existing_install")
+                || (exclusive && plan.additional_bytes != Some(0))
+            {
+                return Err(format!(
+                    "native first official instance violated source reuse policy: action={} additional_bytes={:?} exclusive={exclusive}",
+                    plan.action, plan.additional_bytes,
+                ).into());
+            }
         }
         let expected_mode = program_mode.unwrap_or_else(|| {
             if exclusive || source_was_used {
@@ -258,11 +262,17 @@ impl CreationMode {
                     .join("runtime")
                     .join(
                         descriptor
-                            .process
+                            .install
                             .as_ref()
-                            .ok_or("missing native process")?
-                            .executable
-                            .as_str(),
+                            .and_then(|install| install.verification_path.as_deref())
+                            .or_else(|| {
+                                descriptor
+                                    .process
+                                    .as_ref()
+                                    .map(|process| process.executable.as_str())
+                            })
+                            .filter(|path| !path.contains("{{"))
+                            .ok_or("missing concrete native program entry")?,
                     )
                     .exists())
         {

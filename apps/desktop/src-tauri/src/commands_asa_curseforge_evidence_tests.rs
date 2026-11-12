@@ -428,3 +428,63 @@ fn asa_curseforge_evidence_missing_file_is_pending_and_directory_is_rejected() {
     assert!(observed.read(&fixture.0).is_err());
     assert!(!Evidence::new(vec![], 0).is_complete());
 }
+
+#[test]
+fn asa_terminal_install_reports_only_requested_mods_without_current_validation() {
+    let fixture = Fixture::new();
+    for marker in [
+        "ASAMods: Error: Not all mods were installed. Check the log for CFCore errors.",
+        "LogCFCore: Error: Missing installed mods - (3/4)",
+    ] {
+        fixture.write(
+            [
+                line("099", "LogCFCore: Mod valid: Old run (1786680)"),
+                line("110", "LogCFCore: Mod valid: Awesome Spyglass (947033)"),
+                line("110", "LogCFCore: Mod valid: Fear Ascended (877752)"),
+                line("110", "LogCFCore: Mod valid: Der Dino Finder (935408)"),
+                line("120", marker),
+                "Mods not installed: 999999 arbitrary-private-text\n".into(),
+                line("130", "LogCFCore: Mod valid: After failure (1786680)"),
+            ]
+            .concat(),
+        );
+        let cutoff = app_storage::ark_native_log_message(&line("100", "cutoff"))
+            .unwrap()
+            .0;
+        let mut observed = Evidence::new(
+            ["947033", "877752", "935408", "1786680"]
+                .map(String::from)
+                .into(),
+            cutoff,
+        );
+        let error = observed.read(&fixture.path()).unwrap_err();
+        let diagnostic: serde_json::Value = serde_json::from_str(&error).unwrap();
+        assert_eq!(
+            diagnostic["unvalidated_mod_ids"],
+            serde_json::json!(["1786680"])
+        );
+        assert!(
+            diagnostic["message"]
+                .as_str()
+                .unwrap()
+                .contains("not validated for this start: 1786680")
+        );
+        assert!(error.contains("native log has not confirmed either cause"));
+        assert!(!error.contains("999999") && !error.contains("arbitrary-private-text"));
+        assert!(!observed.is_complete());
+    }
+}
+
+#[test]
+fn asa_query_failure_does_not_infer_unvalidated_or_incompatible_mods() {
+    let fixture = Fixture::new();
+    fixture.write([
+        line("110", "LogCFCore: Mod valid: First (123456)"),
+        line("120", "LogCFCore: Error: Error querying server mods: ApiError: Failed (serverUnreachable)"),
+    ].concat());
+    let error = evidence().read(&fixture.path()).unwrap_err();
+    let diagnostic: serde_json::Value = serde_json::from_str(&error).unwrap();
+    assert_eq!(diagnostic["reason"], "server_unreachable");
+    assert!(diagnostic.get("unvalidated_mod_ids").is_none());
+    assert!(!error.contains("PC-only") && !error.contains("custom cosmetics"));
+}

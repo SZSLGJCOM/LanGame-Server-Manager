@@ -47,7 +47,10 @@ export function ArkToolsExtensionActions({ instanceId, instanceName, status, set
     : !stopped ? text("请先停止实例再安装、更新或卸载服务端扩展。", "Stop the instance before installing, updating, or uninstalling the server extension.")
     : working ? text("正在处理当前操作，请稍候。", "The current operation is in progress. Please wait.")
     : checking || installation.recovering ? text("正在检查服务端扩展，请稍候。", "Checking the server extension. Please wait.") : null;
-  const installHelp = commonHelp ?? (extension?.installed
+  const updateHelp = extension?.updateAvailable ? stopped
+    ? text("服务端扩展已安装，有可用更新。点击“检查并更新”完成更新。", "The server extension is installed and an update is available. Select Update to install the current version.")
+    : text("服务端扩展已安装，有可用更新。停止实例后点击“检查并更新”。", "The server extension is installed and an update is available. Stop the instance, then select Update.") : null;
+  const installHelp = commonHelp ?? updateHelp ?? (extension?.installed
     ? text("检查并更新本实例的服务端扩展；已是当前版本时无需重新安装。", "Check and update this instance's server extension. The current version does not need to be reinstalled.")
     : text("安装本实例的玩家地图与生物工具扩展。", "Install the player-map and creature-tools extension for this instance."));
   const removalHelp = commonHelp ?? (extension?.canUninstall
@@ -77,6 +80,7 @@ export function ArkToolsExtensionActions({ instanceId, instanceName, status, set
       </InlineConfirmAction>
     </ConfigurationActionHelp>
     <div className="ark-extension-feedback">
+      <ActivityNotice tone="info">{!checking && !working ? updateHelp ?? "" : ""}</ActivityNotice>
       {!installation.progress && installation.issue ? <ActivityNotice tone="warning">{text("安装进度暂时不可用：", "Installation progress is unavailable: ") + installation.issue.message}</ActivityNotice> : null}
       <ActivityNotice tone="error">{error ?? installation.removalError ?? extension?.issue ?? ""}</ActivityNotice>
       <ActivityNotice tone="success">{installation.removalResult ? installation.removalResult.frameworkRetained

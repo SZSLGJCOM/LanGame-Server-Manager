@@ -6,6 +6,10 @@ use super::install_publication_metadata::{
 };
 use super::{SteamCmdError, ps_literal};
 
+#[cfg(all(test, windows))]
+#[path = "install_publication_long_path_tests.rs"]
+mod long_path_tests;
+
 #[cfg(test)]
 pub(super) fn direct_download_publish_script(
     install_root: &Path,
@@ -75,37 +79,7 @@ enum PayloadPreparation<'a> {
 
 const DIRECTORY_RENAME_FUNCTION: &str = r#"
 function Move-InstallDirectory([string]$source, [string]$destination) {
-  if (-not ('LanGameInstallDirectoryIdentity' -as [type])) {
-    Add-Type -TypeDefinition @'
-using System;
-using System.IO;
-using System.ComponentModel;
-using System.Runtime.InteropServices;
-using Microsoft.Win32.SafeHandles;
-public static class LanGameInstallDirectoryIdentity {
-  [StructLayout(LayoutKind.Sequential)] private struct Information {
-    public uint Attributes;
-    public System.Runtime.InteropServices.ComTypes.FILETIME Creation, Access, Write;
-    public uint Volume, SizeHigh, SizeLow, Links, IndexHigh, IndexLow;
-  }
-  [DllImport("kernel32.dll", CharSet=CharSet.Unicode, SetLastError=true)]
-  private static extern SafeFileHandle CreateFile(string path, uint access, uint sharing, IntPtr security, uint disposition, uint flags, IntPtr template);
-  [DllImport("kernel32.dll", SetLastError=true)]
-  private static extern bool GetFileInformationByHandle(SafeFileHandle file, out Information info);
-  public static string Read(string path) {
-    // Attribute-only inspection shares deletion so it cannot block publication.
-    using (SafeFileHandle handle = CreateFile(path, 0, 7, IntPtr.Zero, 3, 0x02200000, IntPtr.Zero)) {
-      if (handle.IsInvalid) throw new Win32Exception(Marshal.GetLastWin32Error());
-      Information info;
-      if (!GetFileInformationByHandle(handle, out info)) throw new Win32Exception(Marshal.GetLastWin32Error());
-      if ((info.Attributes & 0x410) != 0x10) throw new IOException("Publication source must be a plain directory.");
-      return info.Volume.ToString("X8") + info.IndexHigh.ToString("X8") + info.IndexLow.ToString("X8");
-    }
-  }
-}
-'@
-  }
-  $identity = [LanGameInstallDirectoryIdentity]::Read($source)
+  $identity = [LanGameInstallFiles]::DirectoryIdentity($source)
   $timer = [Diagnostics.Stopwatch]::StartNew()
   $attempts = 0
   $delay = 25
@@ -114,23 +88,23 @@ public static class LanGameInstallDirectoryIdentity {
   while ($true) {
     if ($null -ne $failure -and $timer.ElapsedMilliseconds -ge 5000) { break }
     Assert-PlainPathChain $source
-    Assert-PlainPathChain ([IO.Path]::GetDirectoryName($destination))
-    if ([LanGameInstallDirectoryIdentity]::Read($source) -ne $identity) {
+    Assert-PlainPathChain ([LanGameInstallFiles]::Parent($destination))
+    if ([LanGameInstallFiles]::DirectoryIdentity($source) -ne $identity) {
       throw 'Directory publication source changed during the operation.'
     }
-    if (Test-Path -LiteralPath $destination -ErrorAction Stop) {
+    if (Test-InstallPath $destination) {
       throw 'Directory publication destination already exists.'
     }
     $attempts++
     try {
       # Same-volume renames must never partially copy or replace a new target.
-      [IO.Directory]::Move($source, $destination)
+      [LanGameInstallFiles]::MoveDirectory($source, $destination)
       return
     } catch {
       $failure = $_.Exception
       $native = $failure
       while ($null -ne $native.InnerException) { $native = $native.InnerException }
-      $code = $native.HResult -band 0xffff
+      $code = if ($native -is [ComponentModel.Win32Exception]) { $native.NativeErrorCode } else { $native.HResult -band 0xffff }
       $remaining = 5000 - $timer.ElapsedMilliseconds
       if ($code -notin @(5, 32, 33) -or $remaining -le 0) { break }
       if ($attempts -eq 1) { Write-Output "Waiting for directory publication contention (Win32 $code)." }
@@ -175,83 +149,85 @@ $marker={retained_marker}
 $libraryMarker={library_marker}
 $libraryHash={library_hash}
 $libraryLimit={library_limit}
+if (-not ('LanGameInstallFiles' -as [type])) {{
+Add-Type -TypeDefinition @'
+{install_files}
+'@
+}}
+function Test-InstallPath([string]$path, [string]$kind='Any') {{
+  $attributes = [LanGameInstallFiles]::Attributes($path)
+  if ($attributes -lt 0) {{ return $false }}
+  if ($kind -eq 'Container') {{ return ($attributes -band 16) -ne 0 }}
+  if ($kind -eq 'Leaf') {{ return ($attributes -band 16) -eq 0 }}
+  return $true
+}}
 function Assert-PlainItem($item) {{
-  if (($item.Attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0 -or $item.LinkType) {{
-    throw 'Installation data contains a link or reparse point.'
-  }}
+  [LanGameInstallFiles]::AssertPlainItem($item)
 }}
 function Assert-PlainPathChain([string]$path) {{
-  $item = Get-Item -LiteralPath $path -Force
-  while ($null -ne $item) {{
-    Assert-PlainItem $item
-    $item = if ($item -is [IO.DirectoryInfo]) {{ $item.Parent }} else {{ $item.Directory }}
-  }}
+  [LanGameInstallFiles]::AssertPlainPathChain($path)
 }}
 function Assert-PlainTree([string]$path) {{
-  $item = Get-Item -LiteralPath $path -Force
-  Assert-PlainItem $item
-  if ($item -is [IO.DirectoryInfo]) {{
-    foreach ($child in Get-ChildItem -LiteralPath $path -Force) {{ Assert-PlainTree $child.FullName }}
-  }}
+  [LanGameInstallFiles]::AssertPlainTree($path)
 }}
 {directory_rename}
-$stage = [IO.Path]::GetFullPath($stage)
+$stage = [LanGameInstallFiles]::FullPath($stage)
 $stagePrefix = $stage.TrimEnd('\') + '\'
-$root = [IO.Path]::GetFullPath($root)
-$verify = [IO.Path]::GetFullPath($verify)
+$root = [LanGameInstallFiles]::FullPath($root)
+$verify = [LanGameInstallFiles]::FullPath($verify)
 function Get-StagedPath([string]$relative) {{
   if ([IO.Path]::IsPathRooted($relative) -or $relative.Contains(':')) {{
     throw 'Installation path escapes the staging directory.'
   }}
-  $target = [IO.Path]::GetFullPath((Join-Path $stage $relative))
+  $target = [LanGameInstallFiles]::Combine($stage, $relative)
   if (-not $target.StartsWith($stagePrefix, [StringComparison]::OrdinalIgnoreCase)) {{
     throw 'Installation path escapes the staging directory.'
   }}
   return $target
 }}
 function Copy-RetainedData([string]$source, [string]$relative) {{
-  foreach ($item in Get-ChildItem -LiteralPath $source -Force) {{
+  foreach ($item in [LanGameInstallFiles]::Entries($source)) {{
     Assert-PlainItem $item
     if (-not $relative -and ($item.Name -eq $marker -or $item.Name -eq $libraryMarker)) {{ continue }}
-    $childRelative = if ($relative) {{ Join-Path $relative $item.Name }} else {{ $item.Name }}
+    $childRelative = if ($relative) {{ $relative + '\' + $item.Name }} else {{ $item.Name }}
     $target = Get-StagedPath $childRelative
     if (-not $relative -and
         ($item.Name -eq '.langame-initial-package.json' -or $item.Name -eq '.langame-clean-package.json') -and
-        (Test-Path -LiteralPath $target)) {{
+        (Test-InstallPath $target)) {{
       throw 'Retained data conflicts with fresh manager-owned package inventory.'
     }}
     if ($target.Equals($verify, [StringComparison]::OrdinalIgnoreCase) -or
         $target.StartsWith($verify + '\', [StringComparison]::OrdinalIgnoreCase) -or
-        ($item -isnot [IO.DirectoryInfo] -and $verify.StartsWith($target + '\', [StringComparison]::OrdinalIgnoreCase))) {{
+        (-not $item.IsDirectory -and $verify.StartsWith($target + '\', [StringComparison]::OrdinalIgnoreCase))) {{
       throw 'Retained data conflicts with the required server verification file.'
     }}
-    if (Test-Path -LiteralPath $target) {{
-      $existing = Get-Item -LiteralPath $target -Force
+    if (Test-InstallPath $target) {{
+      $existing = [LanGameInstallFiles]::ReadItem($target)
       Assert-PlainItem $existing
-      if (($item -is [IO.DirectoryInfo]) -ne ($existing -is [IO.DirectoryInfo])) {{
+      if ($item.IsDirectory -ne $existing.IsDirectory) {{
         # Only this operation's checked staging tree may be replaced by retained data.
         Assert-PlainTree $target
-        Remove-Item -LiteralPath $target -Recurse -Force
+        [LanGameInstallFiles]::RemoveTree($target)
       }}
     }}
-    if ($item -is [IO.DirectoryInfo]) {{
-      New-Item -ItemType Directory -Force -Path $target | Out-Null
+    if ($item.IsDirectory) {{
+      [LanGameInstallFiles]::CreateDirectory($target)
       Copy-RetainedData $item.FullName $childRelative
     }} else {{
-      [IO.File]::Copy($item.FullName, $target, $true)
+      [LanGameInstallFiles]::CopyFile($item.FullName, $target, $true)
     }}
   }}
 }}
 function Copy-RetainedLibraryMarker {{
-  $source = Join-Path $root $libraryMarker
-  $target = Join-Path $stage $libraryMarker
-  if (Test-Path -LiteralPath $target) {{ throw 'Payload contains a retained-library marker.' }}
+  $source = [LanGameInstallFiles]::Combine($root, $libraryMarker)
+  $target = [LanGameInstallFiles]::Combine($stage, $libraryMarker)
+  if (Test-InstallPath $target) {{ throw 'Payload contains a retained-library marker.' }}
   if ($null -eq $libraryHash) {{
-    if (Test-Path -LiteralPath $source) {{ throw 'Retained library ownership changed during installation.' }}
+    if (Test-InstallPath $source) {{ throw 'Retained library ownership changed during installation.' }}
     return
   }}
   Assert-PlainPathChain $source
-  $libraryInput = [IO.File]::Open($source, [IO.FileMode]::Open, [IO.FileAccess]::Read, [IO.FileShare]::Read)
+  $libraryInput = [LanGameInstallFiles]::OpenRead($source)
   try {{
     if ($libraryInput.Length -gt $libraryLimit) {{ throw 'Retained library marker exceeds its size limit.' }}
     $sha = [Security.Cryptography.SHA256]::Create()
@@ -259,29 +235,31 @@ function Copy-RetainedLibraryMarker {{
     finally {{ $sha.Dispose() }}
     if ($actual -ne $libraryHash) {{ throw 'Retained library ownership changed during installation.' }}
     $libraryInput.Position = 0
-    $libraryOutput = [IO.File]::Open($target, [IO.FileMode]::CreateNew, [IO.FileAccess]::Write, [IO.FileShare]::None)
+    $libraryOutput = [LanGameInstallFiles]::CreateNew($target)
     try {{ $libraryInput.CopyTo($libraryOutput); $libraryOutput.Flush($true) }} finally {{ $libraryOutput.Dispose() }}
   }} finally {{ $libraryInput.Dispose() }}
 }}
-Assert-PlainPathChain ([IO.Path]::GetDirectoryName($root))
-if (Test-Path -LiteralPath $root) {{ Assert-PlainPathChain $root }}
-if ($null -ne $zip -and (Test-Path -LiteralPath $stage)) {{
+Assert-PlainPathChain ([LanGameInstallFiles]::Parent($root))
+if (Test-InstallPath $root) {{ Assert-PlainPathChain $root }}
+if ($null -ne $zip -and (Test-InstallPath $stage)) {{
   throw 'Staging path already exists.'
 }}
-if ($null -eq $zip -and -not (Test-Path -LiteralPath $stage -PathType Container)) {{
+if ($null -eq $zip -and -not (Test-InstallPath $stage 'Container')) {{
   throw 'Prepared staging directory is missing.'
 }}
-if (Test-Path -LiteralPath $rollback) {{
+if (Test-InstallPath $rollback) {{
   throw 'Rollback path already exists.'
 }}
-if (Test-Path -LiteralPath $phase) {{
+if (Test-InstallPath $phase) {{
   throw 'Publish phase path already exists.'
 }}
-if ($null -ne $zip) {{ New-Item -ItemType Directory -Path $stage | Out-Null }}
+if ($null -ne $zip) {{ [LanGameInstallFiles]::CreateDirectory($stage) }}
 try {{
   if ($null -ne $zip) {{
-  Add-Type -AssemblyName System.IO.Compression,System.IO.Compression.FileSystem
-  $archive = [IO.Compression.ZipFile]::OpenRead($zip)
+  Add-Type -AssemblyName System.IO.Compression
+  $archiveInput = [LanGameInstallFiles]::OpenRead($zip)
+  try {{
+  $archive = [IO.Compression.ZipArchive]::new($archiveInput, [IO.Compression.ZipArchiveMode]::Read, $true)
   try {{
     foreach ($entry in $archive.Entries) {{
       $entryPath = Get-StagedPath $entry.FullName
@@ -289,56 +267,72 @@ try {{
           ($entry.ExternalAttributes -band 0x400) -ne 0) {{
         throw 'Archive contains a link or reparse point.'
       }}
-      if ($entryPath.Equals((Join-Path $stage $marker), [StringComparison]::OrdinalIgnoreCase)) {{
+      if ($entryPath.Equals([LanGameInstallFiles]::Combine($stage, $marker), [StringComparison]::OrdinalIgnoreCase)) {{
         throw 'Archive contains a retained-data marker.'
       }}
-      if ($entryPath.Equals((Join-Path $stage $libraryMarker), [StringComparison]::OrdinalIgnoreCase)) {{
+      if ($entryPath.Equals([LanGameInstallFiles]::Combine($stage, $libraryMarker), [StringComparison]::OrdinalIgnoreCase)) {{
         throw 'Archive contains a retained-library marker.'
       }}
       foreach ($inventory in @('.langame-initial-package.json', '.langame-clean-package.json')) {{
-        if ($entryPath.Equals((Join-Path $stage $inventory), [StringComparison]::OrdinalIgnoreCase)) {{
+        if ($entryPath.Equals([LanGameInstallFiles]::Combine($stage, $inventory), [StringComparison]::OrdinalIgnoreCase)) {{
           throw 'Archive contains manager-owned package inventory.'
         }}
       }}
     }}
+    foreach ($entry in $archive.Entries) {{
+      $entryPath = Get-StagedPath $entry.FullName
+      if ($entry.FullName.EndsWith('/') -or $entry.FullName.EndsWith('\')) {{
+        [LanGameInstallFiles]::CreateDirectory($entryPath)
+      }} else {{
+        [LanGameInstallFiles]::CreateDirectory([LanGameInstallFiles]::Parent($entryPath))
+        $entryInput = $entry.Open()
+        try {{
+          $entryOutput = [LanGameInstallFiles]::CreateNew($entryPath)
+          try {{
+            $entryInput.CopyTo($entryOutput)
+            if ($entryOutput.Length -ne $entry.Length) {{ throw 'Extracted package size does not match its ZIP entry.' }}
+          }} finally {{ $entryOutput.Dispose() }}
+        }} finally {{ $entryInput.Dispose() }}
+      }}
+    }}
   }} finally {{ $archive.Dispose() }}
-  Expand-Archive -LiteralPath $zip -DestinationPath $stage -Force
+  }} finally {{ $archiveInput.Dispose() }}
   }}
   Assert-PlainTree $stage
-  if (Test-Path -LiteralPath (Join-Path $stage $marker)) {{ throw 'Payload contains a retained-data marker.' }}
-  if (Test-Path -LiteralPath (Join-Path $stage $libraryMarker)) {{ throw 'Payload contains a retained-library marker.' }}
-  if (-not (Test-Path -LiteralPath $verify -PathType Leaf)) {{ throw 'Required server file is missing from staged payload.' }}
+  if (Test-InstallPath ([LanGameInstallFiles]::Combine($stage, $marker))) {{ throw 'Payload contains a retained-data marker.' }}
+  if (Test-InstallPath ([LanGameInstallFiles]::Combine($stage, $libraryMarker))) {{ throw 'Payload contains a retained-library marker.' }}
+  if (-not (Test-InstallPath $verify 'Leaf')) {{ throw 'Required server file is missing from staged payload.' }}
   if ($stageOnly) {{ $staged=$true; return }}
   if ($preserveData) {{
-    if (-not (Test-Path -LiteralPath (Join-Path $root $marker) -PathType Leaf)) {{
+    if (-not (Test-InstallPath ([LanGameInstallFiles]::Combine($root, $marker)) 'Leaf')) {{
       throw 'Retained installation data marker disappeared before publication.'
     }}
     Copy-RetainedData $root ''
   }}
   Copy-RetainedLibraryMarker
-  if (Test-Path -LiteralPath $root) {{
-    [IO.File]::WriteAllText($phase, 'rollback_pending')
+  if (Test-InstallPath $root) {{
+    [LanGameInstallFiles]::WriteAllText($phase, 'rollback_pending')
     try {{ Move-InstallDirectory $root $rollback }} catch {{
       # A failed atomic rename never acquired rollback ownership.
-      Remove-Item -LiteralPath $phase -Force
+      [LanGameInstallFiles]::DeleteFile($phase)
       throw
     }}
   }}
   try {{
     Move-InstallDirectory $stage $root
   }} catch {{
-    if (Test-Path -LiteralPath $root -ErrorAction Stop) {{
+    if (Test-InstallPath $root) {{
       # The failed atomic rename did not publish this target. Keep both owners.
-      [IO.File]::WriteAllText($phase, 'publication_conflict')
+      [LanGameInstallFiles]::WriteAllText($phase, 'publication_conflict')
       throw 'Directory publication target appeared before the staged payload was published; both directories were preserved.'
     }}
-    if (Test-Path -LiteralPath $rollback) {{ Move-InstallDirectory $rollback $root }}
-    Remove-Item -LiteralPath $phase -Force -ErrorAction SilentlyContinue
+    if (Test-InstallPath $rollback) {{ Move-InstallDirectory $rollback $root }}
+    try {{ [LanGameInstallFiles]::DeleteFile($phase) }} catch {{}}
     throw
   }}
 }} finally {{
-  if ($null -ne $zip) {{ Remove-Item -LiteralPath $zip -Force -ErrorAction SilentlyContinue }}
-  if (-not $staged -and (Test-Path -LiteralPath $stage)) {{ Remove-Item -LiteralPath $stage -Recurse -Force -ErrorAction SilentlyContinue }}
+  if ($null -ne $zip) {{ try {{ [LanGameInstallFiles]::DeleteFile($zip) }} catch {{}} }}
+  if (-not $staged -and (Test-InstallPath $stage)) {{ try {{ [LanGameInstallFiles]::RemoveTree($stage) }} catch {{}} }}
 }}
 "#,
         root = ps_literal(install_root),
@@ -364,6 +358,7 @@ try {{
             .unwrap_or_else(|| String::from("$null")),
         library_limit = MAX_RETAINED_LIBRARY_BYTES,
         directory_rename = DIRECTORY_RENAME_FUNCTION,
+        install_files = include_str!("install_files.cs"),
     )
 }
 

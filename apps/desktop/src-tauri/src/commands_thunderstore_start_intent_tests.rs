@@ -2,6 +2,8 @@ use super::*;
 
 fn package(intent: Option<ThunderstoreInstallIntent>, version: &str) -> InstalledPackage {
     InstalledPackage {
+        display_name: None,
+        icon_url: None,
         thunderstore_intent: intent,
         target_name: "thunderstore-Author-Plugin".into(),
         files: BTreeMap::new(),

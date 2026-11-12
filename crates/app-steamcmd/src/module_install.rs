@@ -313,23 +313,29 @@ where
         .await;
     }
 
-    // In-place installers can change program files immediately. ZIP installers
-    // own this transition at publication, after their isolated payload is ready.
-    let revision = begin_game_install_revision(Path::new(&settings.servers_root), revision_key)?;
-    let install_result = async {
-        if minecraft_java {
-            return install_or_update_minecraft_java_module(
+    if minecraft_java {
+        // Keep Minecraft's download and publication state out of the generic
+        // installer future, including calls that select another provider.
+        return Box::pin(install_or_update_minecraft_java_module(
+            minecraft_install::MinecraftInstallRequest {
                 settings,
                 module,
                 install,
                 process,
-                &operation,
+                operation: &operation,
                 deadline,
-                &mut on_progress,
-            )
-            .await;
-        }
+                revision_key,
+            },
+            &mut on_progress,
+            &mut prepare_fresh_payload,
+        ))
+        .await;
+    }
 
+    // In-place installers can change program files immediately. Isolated ZIP
+    // and Minecraft installers own this transition at directory publication.
+    let revision = begin_game_install_revision(Path::new(&settings.servers_root), revision_key)?;
+    let install_result = async {
         let steamcmd = require_steamcmd_ready(settings)?;
         on_progress(InstallProgressUpdate::stage(
             InstallPhase::Preparing,

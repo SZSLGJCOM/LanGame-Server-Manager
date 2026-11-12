@@ -104,16 +104,49 @@
         "client_combat_assessed": false,
         "test_log_sha256": "032e9a89769f9fc9469ef124044ca41eb9bf3e1c9a8eb4bb79cb8d6efadef0c5"
       }
+    },
+    {
+      "verified_on": "2026-11-12",
+      "build_id": "26593814",
+      "game_version": "1.3.6.0.177121+0",
+      "executable_sha256": "805396516e64d17f1713f24ce97a7d525a6d761db46ce069f40cf63114add6d9",
+      "database_user_version": 77,
+      "observation": "The current-world registry and native fixed-array metadata were independently matched to new-image static registration. Read-only process memory confirmed ArmedNPC5 has five triples, with Vehicle11 at slots2/3/4 and channels6/5/4. Enums still encode Ignore/Allow/Block as0/1/2. Direct CTRL_C returned0xC000013A and owned descendants required Job cleanup; this registry observation is not normal-shutdown or combat evidence.",
+      "native_contract_fixture": "../reference-fixtures/2026-11-12-native_contract_build_26593814.json",
+      "native_database_roundtrip": {
+        "verified_on": "2026-11-12",
+        "test": "scum_custom_zones::tests::native_schema_roundtrip_on_owned_copy",
+        "test_binary_sha256": "408dffa1e3898a5cf576ede73c7f9cb5b0b265fb6cd867828564ce136bbc12dc",
+        "source_identity_sha256": "44d2418e16f3953519feead6e4a6b385b86495ae7fbaddb9037b004a812b4c27",
+        "source": "Stopped disposable vanilla-01 native world; public API works on its newly copied database/WAL and executable",
+        "configurations": 2,
+        "public_read_write_api": "passed",
+        "native_image_gate": "passed",
+        "pre_change_backup_readback": "passed",
+        "selected_rules_and_other_configurations_readback": "passed",
+        "source_db_wal_unchanged": true,
+        "game_server_started": false,
+        "client_combat_assessed": false,
+        "test_log_sha256": "861f1b8c501b0809ef462ea62e5ff62c3880e3bca737b3e9441a9311706e1327"
+      }
     }
   ],
-  "layout_admission": "Each executable hash selects exactly its verified database schema: build 25803875 with 73, build 26320224 with 75. Crossed pairs, unrecognized executables and unverified database versions remain rejected. Database migration remains owned by the game.",
-  "tests_scope": "Nine local SQLite regressions passed, including both supported layouts, three-slot updates, unrelated world/unknown-bit retention, WAL-only backup data, native case/path behavior, rejected triggers, stale/replaced/read-only/corrupt databases and no-op writes. Both crossed build/schema pairs and unknown versions 74/76 are rejected before backup or mutation. Separate real native world copies passed public stopped-instance read/write, exact executable gates, committed reload and pre-change backup readback. All original DB/WAL bytes stayed unchanged. Backups omit only the reconstructable SCUM.db-shm index and retain the database, WAL and unrelated sidecars. No user database or client combat was used.",
+  "layout_admission": "Each executable hash selects exactly its verified database schema: build25803875 with73, build26320224 with75, build26593814 with77. Crossed pairs, unrecognized executables and unverified database versions remain rejected. Database migration remains owned by the game.",
+  "tests_scope": "On2026-11-12 nine SQLite regressions passed across all three synthetic supported layouts, including three-slot updates, unrelated world/unknown-bit retention, WAL-only backup data, case/path behavior, triggers, stale/replaced/read-only/corrupt databases and no-op writes. Crossed pairs and unknown versions are rejected before backup or mutation. The real schema77 world passed separate public stopped-instance read/write, exact executable gates, committed reload and pre-change backup readback; original DB/WAL bytes remained unchanged. Real73/75 world roundtrips remain separately dated historical evidence. Backups omit only the reconstructable SCUM.db-shm index and retain the database, WAL and unrelated sidecars. No user database or client combat was used.",
   "validation": {
-    "verified_on": "2026-10-30",
-    "test_binary_sha256": "53e0d1651b172dda54d0f7219003b000f385b1a0c1690eac7d4e5aadfa02def9",
-    "source_identity_sha256": "ff9a8c64abe416f0877a45fe9aee63b880e1dc0c70e70642718558b8cbf432a6",
+    "verified_on": "2026-11-12",
+    "test_binary_sha256": "408dffa1e3898a5cf576ede73c7f9cb5b0b265fb6cd867828564ce136bbc12dc",
+    "source_identity_sha256": "44d2418e16f3953519feead6e4a6b385b86495ae7fbaddb9037b004a812b4c27",
     "unit_test_passed": 9,
-    "explicit_native_roundtrips_passed": 2,
-    "unit_log_sha256": "be0f0b7711dcac8a12230e44a5b7c097f39cef1a7cf1b6264d8e1f23d04b6c29"
+    "supported_synthetic_layouts": [
+      73,
+      75,
+      77
+    ],
+    "explicit_native_roundtrips_passed": 1,
+    "historical_other_build_native_roundtrips": 2,
+    "unit_log_sha256": "ad6c9debf27f703072b64191ead2e026321299a7123e575d761fbc2ef64df59d",
+    "native_log_sha256": "861f1b8c501b0809ef462ea62e5ff62c3880e3bca737b3e9441a9311706e1327",
+    "scope": "Real schema77 world copied to a fresh fixture; public exact-image/stopped-state read/write, selected three-slot reload, unrelated configuration/world retention, pre-change backup readback, and original source DB/WAL unchanged. No game process started by this test; no gameplay or edited-rule in-game reload claimed."
   }
 }

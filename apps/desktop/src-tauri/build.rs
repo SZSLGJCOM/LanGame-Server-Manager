@@ -1,6 +1,7 @@
 fn main() {
     println!("cargo:rerun-if-env-changed=STATIC_VCRUNTIME");
     println!("cargo:rerun-if-env-changed=LANGAME_ARK_ARCHIVE_DIR");
+    println!("cargo:rerun-if-env-changed=LANGAME_ARK_ARCHIVE_CACHE_DIR");
     println!("cargo:rerun-if-env-changed=LANGAME_PROXY_SOURCE_DIR");
     println!("cargo:rerun-if-env-changed=LANGAME_UE4SS_ARCHIVE");
     println!("cargo:rerun-if-changed=icons/icon.ico");

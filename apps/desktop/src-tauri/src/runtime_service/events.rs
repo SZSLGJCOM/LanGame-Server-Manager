@@ -15,6 +15,12 @@ const MAX_RETAINED_BYTES: usize = 32 * 1024 * 1024;
 const MAX_BATCH_BYTES: usize = 4 * 1024 * 1024;
 pub(super) const LONG_POLL_TIMEOUT: Duration = Duration::from_secs(15);
 pub(super) const RESET_EVENT: &str = "runtime-service-events-reset";
+// Both the runtime collector and desktop relay use this fixed allowlist.
+pub(super) const FORWARDED_EVENT_NAMES: &[&str] = &[
+    crate::runtime_log_stream::RUNTIME_LOG_STREAM_EVENT,
+    "app-shutdown-failed",
+    crate::commands::commands_nexus_website::NEXUS_WEBSITE_PROGRESS_EVENT,
+];
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub(super) struct Event {
@@ -250,10 +256,7 @@ impl Cursor {
 
 pub(super) fn install(app: &tauri::AppHandle) {
     app.manage(Events::default());
-    for name in [
-        crate::runtime_log_stream::RUNTIME_LOG_STREAM_EVENT,
-        "app-shutdown-failed",
-    ] {
+    for &name in FORWARDED_EVENT_NAMES {
         let handle = app.clone();
         app.listen_any(name, move |event| {
             handle.state::<Events>().push(name, event.payload());

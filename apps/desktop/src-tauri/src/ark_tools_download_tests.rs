@@ -55,8 +55,8 @@ fn pinned_packages_keep_original_upstream_identities_and_locale_order() {
         ),
         (
             "arksurvivalascended",
-            32_203_814,
-            "58d626b34c85e08e85d3dc076f1f18420150752802e1d227bed370182c84f3b6",
+            32_408_318,
+            "64f5f1165ef73f3439bba3794e77e379489167cc385c0ac5c4717ca60ad3e88a",
         ),
     ] {
         let package = package(module).unwrap();

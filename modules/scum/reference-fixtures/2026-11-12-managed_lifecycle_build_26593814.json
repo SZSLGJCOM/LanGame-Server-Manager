@@ -1,0 +1,266 @@
+{
+  "schema_version": 1,
+  "module_id": "scum",
+  "evidence_classification": "isolated_managed_backend_native_save_requests_and_lifecycle",
+  "verified_on": "2026-11-12",
+  "verification_timezone": "Asia/Shanghai",
+  "steam_app_id": 3792580,
+  "steam_build_id": "26593814",
+  "game_version": "1.3.6.0.177121+0",
+  "prior_independent_evidence": [
+    "2026-11-12-native_contract_build_26593814.json",
+    "2026-11-12-generated_defaults_build_26593814.json"
+  ],
+  "environment": "Isolated Windows host with a non-elevated interactive token. The compiled manager backend owns the Independent instance; native logs record default binding and non_elevated_policy for firewall handling.",
+  "package": {
+    "acquisition_during_lifecycle": "existing_local_package; source_provenance=unverified",
+    "provenance": "Official SteamCMD acquisition and exact-image identity are independently recorded in the native-contract fixture. This lifecycle reuses the validated task package; it does not exercise a network program update.",
+    "copied_payload_bytes": 15797468447,
+    "executable_relative_path": "SCUM/Binaries/Win64/SCUMServer.exe",
+    "executable_size_bytes": 130652160,
+    "executable_sha256": "805396516e64d17f1713f24ce97a7d525a6d761db46ce069f40cf63114add6d9",
+    "program_update_policy": "pinned"
+  },
+  "source_identity_sha256": "5548c78f775d514f6bc81cc585c7944b979876c4774f0c903ccb85ae877aa442",
+  "test_binary_sha256": "3d13b05e1c2c7b94dee17b0d4c4e9fbf86fb5273a99f0b80faeeee3562b18065",
+  "source_manifest_sha256": "8f70623b26b8ebff2176dff43553c83480239bc9f24c6c80992b9cf1555208b0",
+  "build": {
+    "entry_point": "workspace-managed Cargo wrapper; host paths omitted",
+    "entry_point_sha256": "a49fe85bfed0b558354bc5a605e84b5a2f9a30c251c2bc57ff4ddc51503223b2",
+    "actual_task_entry_point_sha256": "910f6df183329c9ff55c9f006e8a45b864db0015da4044af4c491f6c84412c2e",
+    "task_invocation_audited_at_utc": "2026-11-12T02:41:58.5369276Z",
+    "entry_point_provenance": "The receipt exporter records the canonical wrapper hash in entry_point_sha256. The separately retained task invocation audit binds the actual task-only wrapper to the same desktop Cargo arguments; both wrapper hashes were independently rechecked. The task wrapper applies the authorized in-memory admission override while preserving the shared queue and target pool.",
+    "minimum_build_memory_gib": 12,
+    "max_compiler_jobs": 2,
+    "host_reserve_gib": 8,
+    "global_policy_modified": false,
+    "shared_queue_and_target_pool_preserved": true,
+    "central_policy_sha256": "2458b598bac668890f72d2cb39e4e1b06a8c34920667e10ed0f2bc354960c9a6",
+    "cargo_command": "test",
+    "cargo_arguments": [
+      "-p",
+      "langame-desktop",
+      "--bin",
+      "langame-desktop",
+      "--features",
+      "custom-protocol",
+      "--locked",
+      "--no-run"
+    ],
+    "test_binary_size_bytes": 232645632,
+    "captured_at_utc": "2026-11-12T02:55:54.8293198Z",
+    "source_manifest_file_count": 4665,
+    "independently_rehashed_frozen_source_files": 4665,
+    "frozen_source_mismatch_count": 0,
+    "binary_and_manifest_hashes_match_receipt": true,
+    "receipt_and_source_proof_identity_match": true,
+    "resource_binding": "The selected source snapshot supplies matching modules and migrations to the formal backend context."
+  },
+  "reviewed_current_and_frozen_source_files_sha256": {
+    "apps/desktop/src-tauri/src/commands_native_lifecycle_tests.rs": "d1680ca9fa02c4fd060ffd09d036d146384c413bfec9f3f0750e1f63d100af9e",
+    "apps/desktop/src-tauri/src/commands_native_manual_save_probe.rs": "fb30ac9c789a232283d8d4539b3a2388d7b671fecb9e4b480311f3c1c5469f0f",
+    "apps/desktop/src-tauri/src/unreal_loader/profile.rs": "f67538dce5bc1c3640f7725399ebfd5a7fcec3a1fa2f267aa5d304f16e4baa91",
+    "modules/scum/module.toml": "5defe5525b6fbf9a85eb7853a08505c176d465120cd53d96eef75e14313d4d43",
+    "modules/scum/smoke.toml": "cbd6a6f5617bde9e323a356fe4c5ff3036358c9e71f3ee47a71f2000eb7f0857",
+    "modules/scum/control/bridge.cpp": "b4b6d1eef35b934a19a3457b3b2a2cafd9f37440e9d76c950bbb114dd768a26d",
+    "modules/scum/control/LgsmWorldSave/Scripts/main.lua": "bcd793c8e9b7f1e9fe265b6aceed935c3dd0759ef4284d82c3c662408e87dc77"
+  },
+  "configuration_boundary": {
+    "max_ping_explicit_test_setting": 400,
+    "max_ping_default_in_this_compiled_snapshot": 200,
+    "final_inventory_default": 400,
+    "interpretation": "This managed run exercises the existing explicit-value path at 400. It does not establish that the later default 400 inventory was compiled into this binary. The separate generated-defaults fixture records the final-source regressions and exact default bytes embedded in its storage test binary."
+  },
+  "test": {
+    "selector": "commands::tests::manual_runtime_tests::native_lifecycle_tests::native_package_lifecycle",
+    "started_utc": "2026-11-12T03:48:49Z",
+    "completed_utc": "2026-11-12T04:00:35Z",
+    "started_local": "2026-11-12T11:48:49+08:00",
+    "completed_local": "2026-11-12T12:00:35+08:00",
+    "status": "passed",
+    "test_exit_code": 0,
+    "tests_passed": 1,
+    "tests_failed": 0,
+    "tests_ignored": 0,
+    "tests_filtered_out": 3667,
+    "duration_seconds": 706.44,
+    "runner_duration_seconds": 706.59,
+    "manual_save_enabled": true,
+    "manual_save_restart_enabled": true,
+    "exact_manual_save_checkpoint_readback": "not_claimed"
+  },
+  "manual_save_requests": {
+    "total": 4,
+    "requests_per_cycle": 1,
+    "retried": false,
+    "instance_run_and_session_matched": true,
+    "managed_generations_alive": true,
+    "route": "managed_process_generation",
+    "native_ready": true,
+    "native_invoked": true,
+    "native_call_returned": true,
+    "native_write_confirmed": false,
+    "native_error": "none",
+    "response_bytes_per_request": 201,
+    "write_confirmation_pending": false,
+    "save_completion": "requested",
+    "durable_write": "not_assessed",
+    "exact_saved_content_readback": "not_assessed",
+    "later_receipt_attribution": "The two cycle=other receipts follow after_restore and after_archive_restore readiness, respectively; they are separate requests, not retries."
+  },
+  "cycles": [
+    {
+      "cycle": "initial",
+      "managed_run_id": 1,
+      "start_elapsed_ms": 119793,
+      "native_readiness": "passed",
+      "manual_save_requests": 1,
+      "exit_code": 0,
+      "crash_flag": false,
+      "status": "stopped",
+      "active_run_after_stop": null
+    },
+    {
+      "cycle": "restart",
+      "managed_run_id": 2,
+      "start_elapsed_ms": 108941,
+      "native_readiness": "passed",
+      "manual_save_requests": 1,
+      "exit_code": 0,
+      "crash_flag": false,
+      "status": "stopped",
+      "active_run_after_stop": null
+    },
+    {
+      "cycle": "after_restore",
+      "managed_run_id": 3,
+      "start_elapsed_ms": 122128,
+      "native_readiness": "passed",
+      "manual_save_requests": 1,
+      "exit_code": 0,
+      "crash_flag": false,
+      "status": "stopped",
+      "active_run_after_stop": null
+    },
+    {
+      "cycle": "after_archive_restore",
+      "managed_run_id": 4,
+      "start_elapsed_ms": 123199,
+      "native_readiness": "passed",
+      "manual_save_requests": 1,
+      "exit_code": 0,
+      "crash_flag": false,
+      "status": "stopped",
+      "active_run_after_stop": null
+    }
+  ],
+  "storage_lifecycle": {
+    "archive_with_installed_library": {
+      "program_storage": "full",
+      "omitted_bytes": 0,
+      "library": "preserved"
+    },
+    "preflight_permanent_delete": {
+      "library": "installed",
+      "peer": "preserved",
+      "owned_files": "removed"
+    },
+    "restart_readback": {
+      "persisted_instance_settings_and_config": "verified",
+      "fresh_managed_run": "verified",
+      "native_readiness": "passed",
+      "exact_manual_save_content": "not_claimed"
+    },
+    "backup_restore": {
+      "outcome": "passed",
+      "restored_files": 59,
+      "safeguard": "verified",
+      "program_config": "preserved",
+      "subsequent_native_readiness": "passed"
+    },
+    "program_maintenance": {
+      "outcome": "not_tested",
+      "reason": "network_update_not_selected"
+    },
+    "save_observation": "generated",
+    "library_uninstall": {
+      "outcome": "library_only_instance_program_unchanged",
+      "program_entries": "preserved",
+      "save_files_preserved": 81,
+      "native_config_files_preserved": 0
+    },
+    "archive": {
+      "archive": "verified",
+      "interrupted_restore_simulation": "deferred_commit_failure",
+      "journal_during_interruption": "restoring",
+      "instance_row_during_interruption": "absent",
+      "interrupted_commit": "recovered",
+      "restored_state": "stopped",
+      "ownership": "verified",
+      "config_saves_program_bytes": "preserved",
+      "subsequent_native_readiness": "passed"
+    },
+    "instance_delete": {
+      "independent_program": "removed",
+      "library_record": "preserved",
+      "cleanup": "verified"
+    },
+    "final_library_uninstall": {
+      "unused_programs": "removed",
+      "retained_data_paths": 0
+    }
+  },
+  "cleanup": {
+    "four_managed_runs_stopped": true,
+    "all_native_process_exit_codes_zero": true,
+    "all_crash_flags_false": true,
+    "active_runs_cleared": true,
+    "log_result": "passed",
+    "runner_cleanup_failures": [],
+    "coordinator_confirmed_no_owned_scum_processes": true
+  },
+  "artifacts": [
+    {
+      "name": "native04-task-cargo-invocation.json",
+      "size_bytes": 937,
+      "sha256": "475168f491be02fbbb475e5e4202d9a1962d56fd3761392de0854032c356a871"
+    },
+    {
+      "name": "native04-invoke-task-cargo.ps1",
+      "size_bytes": 8097,
+      "sha256": "910f6df183329c9ff55c9f006e8a45b864db0015da4044af4c491f6c84412c2e"
+    },
+    {
+      "name": "native-output.txt",
+      "size_bytes": 610670,
+      "sha256": "11b6a123a037223ab222ce9b797548c94aaa48da5aca1ba098eb49e03ec7ea18"
+    },
+    {
+      "name": "result.json",
+      "size_bytes": 1092,
+      "sha256": "a0dcbdd99c4d1e6182600922387638492f8381d411e025eac8442b477fcc2e3b"
+    },
+    {
+      "name": "native-build-04-receipt.json",
+      "size_bytes": 1747,
+      "sha256": "260de01d4aea30df7778537e7fe795d9b0728ca385b2a4779c70f4e1a1d06de8"
+    },
+    {
+      "name": "native-build-04-source-proof.json",
+      "size_bytes": 572,
+      "sha256": "df9da576eb990f2de6648857334056dfa63d157f20f15af52c4a6094b8686257"
+    },
+    {
+      "name": "native-build-04-source-manifest.json",
+      "size_bytes": 956636,
+      "sha256": "8f70623b26b8ebff2176dff43553c83480239bc9f24c6c80992b9cf1555208b0"
+    }
+  ],
+  "limits": [
+    "Manual save acknowledges one native AutoSave(true) return per cycle, not completion of asynchronous database or disk writes.",
+    "The run used an isolated empty server; no clients, combat effects, populated-player branches, power-loss recovery or GUI acceptance is claimed.",
+    "The exact manual-save checkpoint was not read back. Backup restoration of stopped world files and normal startup are separate evidence.",
+    "Custom-zone public database read/write and registry-slot observations are recorded independently, not inferred from these lifecycle cycles.",
+    "Default400 compilation is outside this frozen lifecycle snapshot; the explicitly supplied400 setting remains distinct."
+  ]
+}

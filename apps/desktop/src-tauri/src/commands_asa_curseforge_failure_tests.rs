@@ -176,3 +176,35 @@ fn asa_curseforge_failure_validation_timeout_and_exit_have_log_context() {
         assert_eq!(parsed["native_log_path"], "native.log");
     }
 }
+
+#[test]
+fn asa_unvalidated_mod_context_survives_wrapping_with_bounded_readable_output() {
+    let ids = (1..=65).map(|id| id.to_string()).collect::<Vec<_>>();
+    let error = Failure::Install.with_unvalidated_mod_ids(ids.clone());
+    let error = with_cache_verification(
+        for_instance(with_native_log(error, Path::new("native.log")), "instance"),
+        false,
+        true,
+    );
+    let diagnostic = value(&error);
+    assert_eq!(diagnostic["unvalidated_mod_ids"], json!(ids));
+    let message = readable(&error);
+    assert!(message.contains("Showing 64 of 65 Mods."));
+    assert!(!message.contains(", 65."));
+
+    for ids in [
+        json!([]),
+        json!(["0"]),
+        json!(["01"]),
+        json!(["9223372036854775808"]),
+        json!(["private text"]),
+        json!(vec!["1"; 8193]),
+    ] {
+        let mut invalid = diagnostic.clone();
+        invalid["unvalidated_mod_ids"] = ids;
+        assert!(Diagnostic::decode(&invalid.to_string()).is_none());
+    }
+    let mut wrong_stage = diagnostic;
+    wrong_stage["stage"] = json!("query");
+    assert!(Diagnostic::decode(&wrong_stage.to_string()).is_none());
+}

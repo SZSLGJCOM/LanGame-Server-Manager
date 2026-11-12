@@ -1,4 +1,8 @@
 /* Desktop frame and shared scroll surface. */
+:root {
+  --shell-stack-gap: 8px;
+}
+
 .shell-frame {
   min-height: 100dvh;
   height: 100dvh;
@@ -26,6 +30,7 @@
 .shell-content-scroll {
   min-width: 0;
   min-height: 0;
+  padding-block: 0;
   scrollbar-gutter: stable;
   overflow-anchor: none;
   scrollbar-width: thin;
@@ -49,6 +54,7 @@
 
 .shell-content-body {
   min-width: 0;
+  padding-block: var(--shell-stack-gap);
   overflow-anchor: none;
 }
 
@@ -57,7 +63,7 @@
 }
 
 .shell-content-body:has(.system-dashboard-page, .library-experience--catalog, .servers-page) {
-  padding: 20px 24px 24px;
+  padding: var(--shell-stack-gap) 24px;
 }
 
 /* Whole-page states use the actual space between navigation and activity bar. */
@@ -93,7 +99,7 @@
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   align-items: stretch;
-  gap: 5px;
+  gap: var(--shell-stack-gap);
   min-height: 0;
   padding: 6px 24px 0;
   background: var(--theme-shell-main-bg);
@@ -182,6 +188,7 @@
   flex: 0 0 auto;
 }
 
+.app-update-trigger,
 .shell-theme-icon-button,
 .shell-locale-button,
 .shell-window-button {
@@ -202,6 +209,7 @@
   transition: color 140ms ease, background-color 140ms ease;
 }
 
+.app-update-trigger:hover,
 .shell-theme-icon-button:hover,
 .shell-locale-button:hover,
 .shell-window-button:hover {
@@ -209,6 +217,7 @@
   color: var(--shell-text);
 }
 
+.app-update-trigger:focus-visible,
 .shell-theme-icon-button:focus-visible,
 .shell-locale-button:focus-visible,
 .shell-window-button:focus-visible {
@@ -237,6 +246,7 @@
   color: var(--theme-danger-text);
 }
 
+.app-update-trigger .shell-small-icon,
 .shell-theme-icon-button .shell-small-icon,
 .shell-window-button .shell-small-icon {
   width: 14px;
@@ -361,7 +371,7 @@
 
 @media (max-width: 980px) {
   .shell-content-body:has(.system-dashboard-page, .library-experience--catalog, .servers-page) {
-    padding: 16px;
+    padding-inline: 16px;
   }
 
   .shell-header {
@@ -414,14 +424,9 @@
   .shell-header-side--right { grid-column: 2; grid-row: 1; }
 }
 
-@media (max-height: 740px) {
-  .shell-content-body:has(.system-dashboard-page, .library-experience--catalog, .servers-page) {
-    padding-block: 10px;
-  }
-}
-
 @media (prefers-reduced-motion: reduce) {
   .shell-window-brand-link,
+  .app-update-trigger,
   .shell-theme-icon-button,
   .shell-locale-button,
   .shell-window-button,

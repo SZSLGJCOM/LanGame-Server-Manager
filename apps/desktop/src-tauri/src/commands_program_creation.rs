@@ -88,12 +88,12 @@ pub(in crate::commands) async fn prepare_creation_program(
                 // acquisition pending or the package inventory absent. Recover
                 // their exact official bytes locally; the marker alone never
                 // authorizes a whole-tree scan.
-                LibraryBaselineRecorder::new(
+                let acquisition = LibraryBaselineRecorder::new(
                     operation,
                     descriptor,
                     &app_steamcmd::InstallCancellation::new(),
                 )
-                .finish_steam_acquisition(
+                .finish_steam_acquisition_for_creation(
                     (),
                     library_root.to_owned(),
                     storage.paths.steamcmd_root.clone(),
@@ -111,6 +111,11 @@ pub(in crate::commands) async fn prepare_creation_program(
                         steamcmd_error_message(&error)
                     )
                 })?;
+                if let super::baseline::SteamAcquisition::MissingMetadata { .. } = acquisition {
+                    return Ok(CreationProgramPreparation::NeedsRepair(String::from(
+                        "已有程序缺少原版 Steam 清单；将保留现有文件并另行准备原版副本。",
+                    )));
+                }
             } else if pending {
                 return Ok(CreationProgramPreparation::NeedsRepair(String::from(
                     "服务器程序尚未下载完成，请先在游戏库完成安装或校验，再创建实例；本次没有启动下载。",
@@ -125,6 +130,59 @@ pub(in crate::commands) async fn prepare_creation_program(
             return Ok(CreationProgramPreparation::NeedsRepair(String::from(
                 "本地服务器程序不完整，请先在游戏库安装或校验；已有文件已保留，本次没有启动下载。",
             )));
+        }
+        if source == app_core::InstanceProgramSource::Verified
+            && let Some((record, app_id, version)) = registered.as_ref().and_then(|record| {
+                Some((
+                    record,
+                    descriptor.summary.steam_app_id.filter(|id| *id != 0)?,
+                    record.current_version.clone()?,
+                ))
+            })
+            && !app_storage::read_module_instance_installs(&storage.paths, &descriptor.summary.id)
+                .await
+                .map_err(|error| error.to_string())?
+                .iter()
+                .any(|binding| binding.install.id == record.id)
+            && !library_root
+                .join(".langame-program-usage.json")
+                .try_exists()
+                .map_err(|error| error.to_string())?
+            && app_steamcmd::read_program_install_revision(
+                &storage.paths.instances_root,
+                &descriptor.summary.id,
+                library_root,
+            )
+            .is_ok()
+        {
+            let plan = app_storage::inspect_instance_program_creation(
+                &storage.paths,
+                descriptor,
+                Some(app_core::InstanceProgramMode::Independent),
+                source,
+                Some(operation.cancellation_token()),
+            )
+            .await
+            .map_err(|error| error.to_string())?;
+            if plan.action == "independent_install" {
+                // The caller retains the program lease. Recover old inventories
+                // locally before deciding to copy an otherwise original package.
+                LibraryBaselineRecorder::new(
+                    operation,
+                    descriptor,
+                    &app_steamcmd::InstallCancellation::new(),
+                )
+                .restore_steam_initial_defaults(
+                    (),
+                    library_root.to_owned(),
+                    storage.paths.steamcmd_root.clone(),
+                    app_id,
+                    version,
+                    |_| {},
+                )
+                .await
+                .map_err(|error| steamcmd_error_message(&error))?;
+            }
         }
         // Storage admission verifies the source immediately before copying.
         // Do not add a second full-package hash pass to this fast path.

@@ -43,6 +43,7 @@ fn assert_script_entrypoint_handoff(after_startup_grace: bool) {
         install_root: temp_root.to_string_lossy().into_owned(),
         install_state: app_core::InstallState::Installed,
         uses_private_runtime: false,
+        can_update_before_start: false,
         working_directory: temp_root.to_string_lossy().into_owned(),
         executable_path: script_entrypoint_path.to_string_lossy().into_owned(),
         executable_exists: true,

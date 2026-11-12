@@ -93,6 +93,15 @@ function button(text: string): HTMLButtonElement {
   check(found, `Missing button ${text}`); return found;
 }
 async function click(node: HTMLElement) { await act(async () => { node.click(); }); }
+async function pointerClick(node: HTMLElement) {
+  const bounds = node.getBoundingClientRect();
+  await act(async () => {
+    const result = await fetch(`/__reliability_pointer/${nonce}`, { method: "POST", body: JSON.stringify({
+      type: "click", x: bounds.left + bounds.width / 2, y: bounds.top + bounds.height / 2
+    }) });
+    check(result.ok, "Native pointer click failed");
+  });
+}
 async function settleUntil(predicate: () => boolean, message: string) {
   const deadline = performance.now() + 5000;
   while (!predicate()) {
@@ -117,6 +126,12 @@ function panelBounds() {
 async function close() {
   await key("Escape");
   check(!document.querySelector(".app-update-panel"), "Escape did not close updates");
+  check(document.activeElement === element(".app-update-trigger"), "Dismissal did not restore focus to the update entry");
+}
+async function openUpdates() {
+  await act(async () => { element(".app-update-trigger").focus(); });
+  await click(element(".app-update-trigger"));
+  panelBounds();
 }
 async function current() {
   await act(async () => {
@@ -133,45 +148,73 @@ async function run() {
   await act(async () => { await prepareBrowserLocaleCatalogs(); render(); });
   await settleUntil(() => Boolean(document.querySelector(".shell-theme-icon-button")), "Header did not mount");
   const quietTools = element(".shell-header-tools").getBoundingClientRect();
-  function unchangedHeader() {
-    check(!document.querySelector(".app-update-trigger, .assistant-update-badge"), "Update reintroduced a header entry");
+  const quietRow = element(".shell-header-row").getBoundingClientRect();
+  const quietCenter = element(".shell-header-center").getBoundingClientRect();
+  function headerLayout(hasUpdate: boolean) {
+    check(!document.querySelector(".assistant-update-badge"), "Update was placed inside the assistant");
     const tools = element(".shell-header-tools");
-    check(tools.firstElementChild === element(".shell-theme-icon-button"), "Update reserves a toolbar slot");
     const bounds = tools.getBoundingClientRect();
-    check(Math.abs(bounds.width - quietTools.width) < 1 && Math.abs(bounds.left - quietTools.left) < 1, "Update changes header layout");
+    check(Math.abs(bounds.right - quietTools.right) < 1, "Update moved the window controls");
+    check(Math.abs(element(".shell-header-row").getBoundingClientRect().height - quietRow.height) < 1, "Update changed header height");
+    check(Math.abs(element(".shell-header-center").getBoundingClientRect().left - quietCenter.left) < 1, "Update moved the assistant");
+    if (hasUpdate) {
+      const trigger = element<HTMLButtonElement>(".shell-header-tools > .app-update-trigger");
+      const triggerBounds = trigger.getBoundingClientRect();
+      check(tools.firstElementChild === trigger && !trigger.disabled, "Update entry is not reachable before the theme control");
+      check(triggerBounds.width >= 32 && triggerBounds.height >= 32, "Update entry is too small to click");
+      check(triggerBounds.left >= quietCenter.right && triggerBounds.right <= element(".shell-theme-icon-button").getBoundingClientRect().left,
+        "Update entry overlaps another header control");
+      check(trigger.getAttribute("aria-label")?.includes(props.appUpdateState.availableVersion!), "Update entry omits the available version");
+      check(trigger.getAttribute("aria-haspopup") === "dialog", "Update entry does not describe its dialog");
+    } else {
+      check(!document.querySelector(".app-update-trigger"), "A build without an available update shows an entry");
+      check(tools.firstElementChild === element(".shell-theme-icon-button"), "Hidden update reserves a toolbar slot");
+      check(Math.abs(bounds.width - quietTools.width) < 1, "Hidden update changes toolbar width");
+    }
   }
-  function noPrompt(reason: string) { check(!document.querySelector(".app-update-panel"), `${reason}: unexpected update prompt`); unchangedHeader(); }
-  noPrompt("disabled initial build");
-  await update({ status: "available", availableVersion: "0.2.0" }); noPrompt("disabled build with known version");
+  function noPrompt(reason: string, hasUpdate = true) {
+    check(!document.querySelector(".app-update-panel"), `${reason}: unexpected update prompt`); headerLayout(hasUpdate);
+  }
+  noPrompt("disabled initial build", false);
+  await update({ status: "available", availableVersion: "0.2.0" }); noPrompt("disabled build with known version", false);
   check(checks === 0 && installs === 0, "Disabled build invoked an updater"); cases.push("disabled-build");
   props.appUpdatesEnabled = true;
-  await update({ status: "idle", availableVersion: null }); noPrompt("idle");
-  await update({ status: "checking" }); noPrompt("first background check");
-  await update({ status: "failed", error: "检查更新失败" }); noPrompt("failure before discovery");
-  await current(); noPrompt("current version");
+  await update({ status: "idle", availableVersion: null }); noPrompt("idle", false);
+  await update({ status: "checking" }); noPrompt("first background check", false);
+  await update({ status: "failed", error: "检查更新失败" }); noPrompt("failure before discovery", false);
+  await current(); noPrompt("current version", false);
   cases.push("quiet-header");
 
   const notes = "修复安装与更新流程。\n<img src=x onerror=alert(1)>\n" + "更新说明 ".repeat(150);
   await act(async () => { element(".shell-theme-icon-button").focus(); });
   await update({ status: "available", availableVersion: "0.2.0", releaseNotes: notes, error: null });
-  panelBounds(); unchangedHeader();
-  check(element(".app-update-heading h2").textContent === "发现新版本 0.2.0", "Discovered release did not automatically open");
+  noPrompt("new release discovery");
+  check(document.activeElement === element(".shell-theme-icon-button"), "Background discovery stole focus");
+  check(element(".app-update-trigger").title === "发现新版本 · 0.2.0", "Available update hint is missing");
+  check(checks === 0 && installs === 0 && installerUrls.length === 0, "Discovery performed an update action");
+  cases.push("persistent-header-entry");
+  await openUpdates(); headerLayout(true);
+  check(element(".app-update-heading h2").textContent === "发现新版本 0.2.0", "Header entry did not open the discovered release");
   check(element(".app-update-notes").textContent === notes.trim(), "Release notes changed");
   check(!element(".app-update-notes").querySelector("img"), "Release notes became executable markup");
   check(!document.querySelector(".app-update-versions, .app-update-confirmation"), "Update prompt contains obsolete version rows or confirmation");
   check(element(".app-update-detail").textContent?.includes("保存并停止运行中的服务器"), "Online update omits stop-server impact");
-  check(document.activeElement === element(".app-update-heading h2") && installs === 0, "Auto prompt did not focus its title or installed automatically");
-  cases.push("automatic-prompt");
+  check(document.activeElement === element(".app-update-heading h2") && installs === 0, "Prompt did not focus its title or installed automatically");
+  cases.push("manual-prompt");
   await close();
-  check(document.activeElement === element(".shell-theme-icon-button"), "Dismissal did not restore prior focus");
-  await update({ status: "checking" }); await update({ status: "available" }); noPrompt("same-version polling");
-  await current(); await update({ status: "available", availableVersion: "0.2.0" }); noPrompt("same-version rediscovery");
-  cases.push("same-version-quiet");
-  await update({ availableVersion: "0.3.0" }); panelBounds();
+  noPrompt("dismissed release");
+  await openUpdates(); await click(element(".app-update-close")); noPrompt("close button");
+  await update({ status: "checking" }); noPrompt("checking a known release");
+  await update({ status: "available" }); noPrompt("same-version polling");
+  await current(); noPrompt("update no longer available", false);
+  await update({ status: "available", availableVersion: "0.2.0" }); noPrompt("same-version rediscovery");
+  await openUpdates(); await close();
+  cases.push("same-version-reopen");
+  await update({ availableVersion: "0.3.0" }); noPrompt("newer release discovery"); await openUpdates();
   await click(button("稍后")); noPrompt("Later"); check(installs === 0, "Later started installation");
   cases.push("new-version-and-later");
 
-  await update({ availableVersion: "0.4.0", releaseNotes: null }); panelBounds();
+  await update({ availableVersion: "0.4.0", releaseNotes: null }); noPrompt("release without notes"); await openUpdates();
   check(!document.querySelector(".app-update-notes"), "Missing release notes created placeholder content");
   failOpening = true;
   await click(button("前往下载"));
@@ -185,7 +228,8 @@ async function run() {
   check(installerUrls.every((url) => url === "https://github.com/SZSLGJCOM/LanGame-Server-Manager/releases/tag/v0.4.0"), "Installer page does not target the discovered official release");
   cases.push("installer-page");
 
-  await update({ availableVersion: "0.5.0" }); panelBounds();
+  await update({ availableVersion: "0.5.0" }); noPrompt("new release before keyboard activation");
+  await act(async () => { element(".app-update-trigger").focus(); }); await key("Enter"); panelBounds();
   await key("Tab");
   check(document.activeElement === element(".app-update-close"), "Title focus did not lead into the update actions");
   await act(async () => { button("在线更新").focus(); }); await key("Tab");
@@ -199,6 +243,7 @@ async function run() {
   check(!element<HTMLProgressElement>(".app-update-panel progress").hasAttribute("value"), "Unknown download size is not indeterminate");
   await update({ contentLength: 1000, downloadedBytes: 420, downloadPercent: 42 });
   check(element<HTMLProgressElement>(".app-update-panel progress").value === 42, "Download progress incorrect");
+  check(element(".app-update-trigger").title === "正在下载更新 · 0.5.0 · 42%", "Header download progress is stale");
   cases.push("download-progress");
   await update({ status: "installing", downloadPercent: 100 });
   check(!element<HTMLProgressElement>(".app-update-panel progress").hasAttribute("value"), "Installation pretends to have download progress");
@@ -206,6 +251,9 @@ async function run() {
   check(element(".app-update-error").textContent === props.appUpdateState.error, "Failure details lost"); panelBounds();
   check(button("重新检查") && installs === 1, "Failed install must recheck before installing again");
   await close(); noPrompt("dismissed failure");
+  await openUpdates();
+  check(element(".app-update-error").textContent === props.appUpdateState.error && checks === 0, "Header entry retried or lost the failure");
+  await close();
   cases.push("installing-and-failure");
   await click(element(".shell-activity-notice-actions .app-update-action"));
   check(checks === 1 && installs === 1 && props.appUpdateState.status === "checking", "Activity retry bypassed checking");
@@ -217,23 +265,31 @@ async function run() {
   await update({ contentLength: 1000, downloadedBytes: 420, downloadPercent: 42 });
   await close();
   check(element<HTMLProgressElement>(".shell-update-progress progress").value === 42, "Closing the prompt lost activity progress");
+  await openUpdates();
+  check(element<HTMLProgressElement>(".app-update-panel progress").value === 42, "Header entry lost an active download");
+  await close();
   await update({ status: "installing", downloadPercent: 100 }); noPrompt("installation after dismissal");
   check(element(".shell-activity-bar").textContent?.includes("正在安装更新"), "Closed prompt lost installation feedback");
-  await current(); await update({ status: "available", availableVersion: "0.5.0" }); noPrompt("same-version check after progress");
+  await openUpdates(); check(!element<HTMLProgressElement>(".app-update-panel progress").hasAttribute("value"), "Reopened installation shows download progress");
+  await close();
+  await current(); noPrompt("current after progress", false);
+  await update({ status: "available", availableVersion: "0.5.0" }); noPrompt("same-version check after progress");
   cases.push("closed-progress");
 
   // The asynchronous external-boundary fixture uses the real prompt to exercise
   // late completion independently of the browser's synchronous window.open API.
   isolatedPrompt = true;
-  await update({ availableVersion: "1.0.0" });
+  await update({ availableVersion: "1.0.0" }); await openUpdates();
   await click(button("前往下载")); const oldSuccess = deferredDownload.resolve;
   check(oldSuccess, "Deferred download did not start");
   await update({ availableVersion: "1.1.0" });
+  check(!document.querySelector(".app-update-panel"), "A newer release automatically replaced an open prompt");
+  await openUpdates();
   await act(async () => { oldSuccess(); });
   check(element(".app-update-heading h2").textContent?.includes("1.1.0"), "Old download completion closed the new version prompt");
   await click(button("前往下载")); const oldFailure = deferredDownload.reject;
   check(oldFailure, "Deferred failing download did not start");
-  await update({ availableVersion: "1.2.0" });
+  await update({ availableVersion: "1.2.0" }); await openUpdates();
   await act(async () => { oldFailure(new Error("OLD_DOWNLOAD_ERROR")); });
   check(!document.querySelector(".app-update-error"), "Old download error contaminated a newer version");
   await click(button("前往下载")); const unmountedFailure = deferredDownload.reject;
@@ -245,18 +301,31 @@ async function run() {
 
   isolatedPrompt = false;
   await update({ availableVersion: "0.6.0", releaseNotes: "改进桌面安装与更新体验。\n优化服务器运行管理和错误提示。" });
+  noPrompt("remounted shell with known release"); await openUpdates();
   for (const theme of ["light", "dark"] as const) {
-    props.theme = theme; document.documentElement.dataset.theme = theme; await act(async () => { render(); }); panelBounds(); unchangedHeader();
+    props.theme = theme; document.documentElement.dataset.theme = theme; await act(async () => { render(); }); panelBounds(); headerLayout(true);
   }
   await act(async () => { localeChange("en-US"); });
   await settleUntil(() => document.querySelector(".app-update-panel")?.textContent?.includes("Update available") === true, "English catalog did not load");
   check(button("Download installer") && button("Update now"), "Update actions are not localized"); panelBounds();
+  check(element(".app-update-trigger").title === "Update available · 0.6.0", "Header hint is not localized");
   await act(async () => { localeChange("zh-CN"); });
   await settleUntil(() => document.querySelector(".app-update-panel")?.textContent?.includes("发现新版本") === true, "Chinese catalog did not load");
   if (innerWidth < 1000) { props.theme = "light"; document.documentElement.dataset.theme = "light"; await act(async () => { render(); }); }
   await settleUntil(() => [...element(".app-update-panel").querySelectorAll("button")]
     .every((control) => control.getAnimations().length === 0), "Update button theme transitions did not settle");
   cases.push("theme-and-viewport");
+  await close(); noPrompt("ready for later download");
+  check(element(".app-update-trigger").matches(":focus-visible"), "Keyboard dismissal lost its focus indicator");
+  await pointerClick(element(".app-update-trigger")); panelBounds();
+  await pointerClick(element(".app-update-close")); noPrompt("pointer dismissal");
+  const trigger = element(".app-update-trigger");
+  check(document.activeElement === trigger, "Pointer dismissal lost the update entry's focus");
+  check(!trigger.matches(":focus-visible") && getComputedStyle(trigger).outlineStyle === "none",
+    "Pointer interaction leaves an outline around the update entry");
+  check(getComputedStyle(trigger).borderTopColor === "rgba(0, 0, 0, 0)" && getComputedStyle(trigger).boxShadow === "none",
+    "Update entry has a persistent border or shadow");
+  cases.push("pointer-without-frame");
   await document.fonts.ready;
   check(errors.length === 0, errors.join("; ")); cases.push("browser-errors");
   return { status: "passed", cases, install_calls: installs, check_calls: checks, installer_urls: installerUrls, browser_errors: errors };

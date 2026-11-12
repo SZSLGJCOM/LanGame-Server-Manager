@@ -1,0 +1,13 @@
+.asa-platform-settings {
+  display: grid;
+  gap: 8px;
+  padding: 16px;
+  border: 1px solid var(--shell-line);
+  border-radius: 12px;
+  color: var(--shell-text);
+  font-size: var(--text-body);
+}
+.asa-platform-settings label { font-weight: var(--font-weight-medium); }
+.asa-platform-settings select { width: 100%; max-width: 480px; }
+.asa-platform-settings p { margin: 0; color: var(--shell-muted); line-height: var(--leading-body); }
+.asa-platform-settings__custom { display: grid; gap: 8px; }

@@ -34,6 +34,8 @@ mod dst_instance_isolation_tests;
 #[path = "tests_private_runtime_required.rs"]
 mod private_runtime_required_tests;
 
+#[path = "tests_astroneer_connection.rs"]
+mod astroneer_connection;
 #[path = "tests_dst_delete_transaction.rs"]
 mod dst_delete_transaction_tests;
 #[path = "tests_instance_autostart.rs"]

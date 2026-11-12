@@ -102,7 +102,8 @@ export function createArkToolsInstallationStore<TimerHandle>(options: ArkToolsIn
       },
       onStatus: status => {
         if (isCurrent(record, currentSession, version)) replace(record, {
-          status: { installed: status.installed, connected: status.connected, canUninstall: status.canUninstall, issue: status.issue }
+          status: { installed: status.installed, updateAvailable: status.updateAvailable,
+            connected: status.connected, canUninstall: status.canUninstall, issue: status.issue }
         });
       },
       onIssue: issue => {

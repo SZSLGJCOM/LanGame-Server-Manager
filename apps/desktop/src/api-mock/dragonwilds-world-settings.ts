@@ -11,6 +11,7 @@ interface MockWorld {
   mode: DragonwildsWorldMode;
   overrides: Record<string, number>;
   revision: number;
+  name: string | null;
 }
 
 export class MockDragonwildsWorldSettings {
@@ -20,18 +21,30 @@ export class MockDragonwildsWorldSettings {
     if (details.summary.module_id !== "runescapedragonwilds") throw new Error("Not a Dragonwilds instance.");
     let world = this.worlds.get(details.summary.id);
     if (!world) {
-      world = { mode: "Normal", overrides: {}, revision: 0 };
+      world = { mode: "Normal", overrides: {}, revision: 0, name: null };
       this.worlds.set(details.summary.id, world);
     }
     const values = Object.fromEntries(definitions.map((definition) => [definition.tag,
       world.overrides[definition.tag] ?? definition.preset_defaults[world.mode === "Custom" ? "Normal" : world.mode]]));
+    const worldName = world.name ?? JSON.parse(details.settings_json ?? "{}").default_world_name ?? "Ashenfall";
     return structuredClone({
-      instance_id: details.summary.id, status: "ready", world_file: "MockWorld.sav",
-      world_name: details.summary.name, world_mode: world.mode, revision: `mock-world-${world.revision}`,
+      instance_id: details.summary.id, status: world.name === null ? "new" : "ready",
+      world_file: world.name === null ? null : `${world.name}.sav`,
+      world_name: worldName, world_mode: world.mode, revision: `mock-world-${world.revision}`,
       values, overrides: world.overrides, definitions: [...definitions],
       writable: details.summary.status === "Stopped" && details.summary.active_process_count === 0 && !details.active_run,
       message: null, backup_id: backupId
     });
+  }
+
+  start(details: InstanceDetails): void {
+    if (details.summary.module_id !== "runescapedragonwilds") return;
+    const snapshot = this.read(details);
+    const world = this.worlds.get(details.summary.id)!;
+    if (world.name === null) {
+      world.name = snapshot.world_name;
+      world.revision += 1;
+    }
   }
 
   write(details: InstanceDetails, input: WriteDragonwildsWorldSettingsInput): DragonwildsWorldSettingsSnapshot {
@@ -60,6 +73,6 @@ export class MockDragonwildsWorldSettings {
     world.mode = input.world_mode;
     world.overrides = overrides;
     world.revision += 1;
-    return this.read(details, `mock-world-settings-backup-${world.revision}`);
+    return this.read(details, world.name === null ? null : `mock-world-settings-backup-${world.revision}`);
   }
 }

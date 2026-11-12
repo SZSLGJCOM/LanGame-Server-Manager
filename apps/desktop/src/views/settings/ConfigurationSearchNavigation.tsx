@@ -2,6 +2,7 @@ import { useMemo, useRef, useState } from "react";
 import { useI18n } from "../../i18n";
 import { configurationNavigationRoots, searchConfigurationItems } from "./configuration-workspace-model";
 import { ConfigurationSectionNavigation } from "./ConfigurationSectionNavigation";
+import { isConfigurationFieldNavigable } from "./configuration-workspace-state";
 import type { ConfigurationWorkspaceModel } from "./settings-schema";
 
 interface ConfigurationSearchNavigationProps {
@@ -17,8 +18,7 @@ export function ConfigurationSearchNavigation(props: ConfigurationSearchNavigati
   const searchInput = useRef<HTMLInputElement>(null);
   const navigationRoots = useMemo(() => configurationNavigationRoots(props.model.roots), [props.model]);
   const results = useMemo(() => searchConfigurationItems(props.model, query, locale)
-    .filter((item) => item.owner === "configuration" &&
-      (item.state === "editable" || item.state === "specialized")), [locale, props.model, query]);
+    .filter(isConfigurationFieldNavigable), [locale, props.model, query]);
   const searching = query.trim().length > 0;
   const searchLabel = t("settings.configuration.workspace.search", undefined, "Search configuration");
 

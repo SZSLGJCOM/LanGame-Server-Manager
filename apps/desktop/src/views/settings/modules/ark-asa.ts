@@ -9,6 +9,7 @@ import {
 import { ARK_ASA_FOUNDATION_GROUPS } from "./ark-asa-groups-foundation";
 import { ARK_ASA_RULE_GROUPS } from "./ark-asa-groups-rules";
 import { arkComplexEditors } from "../ark-complex-editors";
+import { AsaPlatformSettings } from "../AsaPlatformSettings";
 
 const ARK_ASA_GROUPS = {
   ...ARK_ASA_FOUNDATION_GROUPS,
@@ -40,9 +41,18 @@ export function buildArkAsaFieldGroups(
   return buildArkFieldGroups(sectionId, fields, t, ARK_ASA_GROUPS);
 }
 
+const complexEditors = arkComplexEditors("arksurvivalascended");
 export const arkSurvivalAscendedSettingsDefinition: SettingsModuleDefinition = {
   id: "arksurvivalascended",
-  ...arkComplexEditors("arksurvivalascended"),
+  ...complexEditors,
+  fieldPresentationOverrides: {
+    ...complexEditors.fieldPresentationOverrides,
+    server_platform: { state: "specialized", owner: "configuration", sectionId: "join", rendererId: "asa-platforms" }
+  },
+  specializedRenderers: {
+    ...complexEditors.specializedRenderers,
+    "asa-platforms": { kind: "module-addon", sectionId: "join", placement: "before-fields", Renderer: AsaPlatformSettings }
+  },
   getSections: buildArkAsaSections,
   buildFieldGroups: (sectionId, fields, _locale, t) => buildArkAsaFieldGroups(sectionId, fields, t),
   getFieldCopy: (key, t) => buildArkAsaFieldCopy(key, t)

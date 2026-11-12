@@ -1071,8 +1071,50 @@ pub(crate) fn dispatch_command<'a>(
                     arg(&args, "ids", "ids")?,
                     opt_arg(&args, "missingOnly", "missing_only")?,
                     opt_arg(&args, "locale", "locale")?,
+                    opt_arg(&args, "attemptToken", "attempt_token")?,
                 )
                 .await?,
+            )
+        }),
+        "prepare_steam_workshop_items" => boxed_command(|| async move {
+            to_json(
+                commands::workshop_preparation::prepare_steam_workshop_items(
+                    app_handle.clone(),
+                    arg(&args, "instanceId", "instance_id")?,
+                    arg(&args, "ids", "ids")?,
+                    arg(&args, "attemptToken", "attempt_token")?,
+                    opt_arg(&args, "locale", "locale")?,
+                )
+                .await?,
+            )
+        }),
+        "commit_steam_workshop_items" => boxed_command(|| async move {
+            to_json(
+                commands::workshop_preparation::commit_steam_workshop_items(
+                    app_handle.clone(),
+                    arg(&args, "instanceId", "instance_id")?,
+                    arg(&args, "ticketId", "ticket_id")?,
+                )
+                .await?,
+            )
+        }),
+        "discard_steam_workshop_preparation" => boxed_command(|| async move {
+            to_json(
+                commands::workshop_preparation::discard_steam_workshop_preparation(
+                    app_handle.state::<DesktopState>(),
+                    arg(&args, "instanceId", "instance_id")?,
+                    arg(&args, "ticketId", "ticket_id")?,
+                )
+                .await?,
+            )
+        }),
+        "retain_steam_workshop_preparation" => boxed_command(|| async move {
+            to_json(
+                commands::workshop_preparation::retain_steam_workshop_preparation(
+                    app_handle.state::<DesktopState>(),
+                    arg(&args, "instanceId", "instance_id")?,
+                    arg(&args, "ticketId", "ticket_id")?,
+                )?,
             )
         }),
         "read_steam_workshop_installation_status" => boxed_command(|| async move {
@@ -1145,6 +1187,7 @@ pub(crate) fn dispatch_command<'a>(
                     app_handle.state::<DesktopState>(),
                     arg(&args, "instanceId", "instance_id")?,
                     arg(&args, "references", "references")?,
+                    opt_arg(&args, "presentations", "presentations")?,
                 )
                 .await?,
             )

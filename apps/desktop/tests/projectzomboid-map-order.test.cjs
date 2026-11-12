@@ -20,7 +20,9 @@ const settle = () => new Promise((resolve) => setImmediate(resolve));
 const translate = (catalog) => (key, params, fallback) => Object.entries(params ?? {}).reduce(
   (text, [name, value]) => text.replaceAll(`{${name}}`, String(value)), catalog[key] ?? fallback ?? key);
 const t = translate(en);
+const helpBinding = ({ children }) => children({ interactionProps: {}, descriptionId: "fixture-help" });
 function descendants(node) {
+  if (React.isValidElement(node) && node.type === helpBinding) return descendants(helpBinding(node.props));
   return React.isValidElement(node) ? [node, ...React.Children.toArray(node.props.children).flatMap(descendants)] : [];
 }
 function deferred() {
@@ -30,7 +32,7 @@ function deferred() {
 }
 function harness(value = "CustomMap", save = async () => {}, catalog = en) {
   const hooks = [], effects = [], calls = [];
-  let cursor = 0, writes = 0;
+  let cursor = 0, writes = 0, closes = 0;
   const equal = (a, b) => a?.length === b?.length && a.every((value, i) => Object.is(value, b[i]));
   const react = { ...React,
     useId: () => "pz-map-test",
@@ -55,9 +57,10 @@ function harness(value = "CustomMap", save = async () => {}, catalog = en) {
   const loaded = new Module(filename, module); loaded.filename = filename;
   const requireFromFile = Module.createRequire(filename);
   loaded.require = (id) => id === "react" ? react : id === "../../i18n"
-    ? { useI18n: () => ({ locale: catalog === zh ? "zh-CN" : "en-US", t: translate(catalog) }) } : requireFromFile(id);
+    ? { useI18n: () => ({ locale: catalog === zh ? "zh-CN" : "en-US", t: translate(catalog) }) }
+    : id === "../settings/ConfigurationFieldHelp" ? { ConfigurationHelp: helpBinding } : requireFromFile(id);
   loaded._compile(transpileTypeScript(fs.readFileSync(filename, "utf8"), filename), filename);
-  const props = { value, disabled: false, async onReload() { return props.value; },
+  const props = { value, disabled: false, open: false, onClose() { closes++; }, async onReload() { return props.value; },
     async onSave(value, expected) { calls.push({ value, expected }); await save(value, expected); } };
   function render() {
     let root;
@@ -73,7 +76,7 @@ function harness(value = "CustomMap", save = async () => {}, catalog = en) {
       button: (name) => nodes.find((n) => n.type === "button" && (n.props["aria-label"] === name || n.props.children === name)),
       maps: nodes.filter((n) => n.type === "li").map((n) => n.props.children.props.children[0].props.children) };
   }
-  return { props, calls, render, get writes() { return writes; },
+  return { props, calls, render, get writes() { return writes; }, get closes() { return closes; },
     click(name) { const button = render().button(name); assert.ok(button, name); button.props.onClick(); },
     type(value) { render().input.props.onChange({ target: { value } }); },
     unmount() { for (const hook of hooks) hook?.cleanup?.(); } };
@@ -144,6 +147,49 @@ test("Chinese controls use the same nonempty map validator and complete localize
   view.click("移除 CustomMap");
   assert.equal(view.render().button("保存地图顺序").props.disabled, true);
   assert.ok(validateProjectZomboidMapOrder(" ; \n", "zh-CN", translate(zh)));
+});
+
+test("map order stays in a closed dialog and dirty drafts require save or cancel before closing", () => {
+  const view = harness();
+  assert.equal(view.render().root.type, "dialog");
+  assert.equal(view.render().root.props.open, undefined, "only the controlled effect opens the native modal");
+  view.click("common.closeWindow"); assert.equal(view.closes, 1);
+  view.type("AnotherMap");
+  view.click("common.closeWindow"); assert.equal(view.closes, 1);
+  let prevented = false;
+  view.render().root.props.onCancel({ preventDefault() { prevented = true; } });
+  assert.equal(prevented, true); assert.equal(view.closes, 1);
+  assert.equal(view.render().input.props.value, "AnotherMap");
+  assert.match(view.render().html(), /servers.mods.sourceLists.unsaved/);
+  view.props.disabled = true;
+  view.click("common.cancel");
+  assert.equal(view.render().input.props.value, "");
+  assert.deepEqual(view.render().maps, ["CustomMap"]);
+  assert.equal(view.calls.length, 0, "cancelling a draft never writes or reloads settings");
+  view.click("common.closeWindow"); assert.equal(view.closes, 2);
+});
+
+test("pending save protects modal close and cancellation until completion", async () => {
+  const gate = deferred(); const view = harness("CustomMap", () => gate.promise);
+  view.type("AnotherMap"); view.click("Save map order");
+  view.click("common.closeWindow");
+  view.render().root.props.onCancel({ preventDefault() {} });
+  assert.equal(view.closes, 0);
+  assert.equal(view.render().button("common.cancel").props.disabled, true);
+  view.click("common.cancel");
+  assert.equal(view.render().input.props.value, "AnotherMap", "a queued cancellation cannot discard the in-flight draft");
+  gate.resolve(); await settle();
+  view.click("common.closeWindow"); assert.equal(view.closes, 1);
+  assert.deepEqual(view.calls, [{ value: "CustomMap\nAnotherMap", expected: "CustomMap" }]);
+});
+
+test("an archive without saved map order has no phantom draft and can close", () => {
+  const view = harness(); view.props.value = undefined; view.props.readOnly = true;
+  assert.deepEqual(view.render().maps, []);
+  assert.equal(view.render().button("common.cancel"), undefined);
+  assert.equal(view.render().input.props.disabled, true);
+  view.click("common.closeWindow");
+  assert.equal(view.closes, 1); assert.equal(view.calls.length, 0);
 });
 
 function persistence(base, fresh = base, readOnly = false) {

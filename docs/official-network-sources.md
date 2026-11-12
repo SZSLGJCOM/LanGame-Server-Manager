@@ -12,11 +12,13 @@ The news panel keeps successful responses for ten minutes under separate game/la
 
 | Resource | Configured delivery |
 | --- | --- |
+| ASTRONEER outbound IPv4 discovery | Before server updates, an empty `PublicIP` is resolved through `https://api.ipify.org` and, on recoverable failure, AWS's documented `https://checkip.amazonaws.com` service. Direct IPv4 HTTPS only, no proxy or redirects, one eight-second budget, 64-byte response limit and public-unicast validation. HTTP authorization, throttling, deferred retry and malformed responses stop discovery. An explicit address is retained. These queries do not verify inbound reachability or change the game's online registration requirements |
 | Steam store images | Akamai, Fastly, and the official Steam China shared CDN; only the declared asset path prefixes |
 | Steam description animations | WebM and MP4 under `/store_item_assets/steam/apps/` use the same verified shared CDN origins; image paths are not accepted as videos |
 | Steam trailers | Akamai, Fastly, and the official Steam China video CDN; HLS manifests, child playlists and segments use the same source rules |
 | Other catalog media | Existing original references, including Minecraft images at `store-images.s-microsoft.com` and trailers at `cdn.trailers.xboxservices.com`; resources outside the equivalence policy retain direct browser delivery without regional substitution |
 | Workshop preview images | `images.steamusercontent.com` and `steamuserimages-a.akamaihd.net`; no verified China-specific UGC origin |
+| Website Mod icons | ASA CurseForge avatars from `83374.media.forgecdn.net/avatars/` and Thunderstore icons from `ccdn.thunderstore.io/live/repository/icons/` or `gcdn.thunderstore.io/live/repository/icons/`; only declared image extensions, without query parameters. Each origin and image size/version retains its own cache identity; no equivalent origin is assumed |
 | Anonymous Workshop search, localized details and item-type HTML | `steamcommunity.com` and the built-in Steam Akamai connection described below; two exact paths only, without a China-specific mirror |
 | Public Workshop details, collections and Steam news | `api.steampowered.com` and `api.steamchina.com`, restricted to three exact read-only API paths and public parameters |
 | Steam store full descriptions | Public `IStoreBrowseService/GetItems/v1/` at `api.steamchina.com` and `api.steampowered.com`; Chinese prefers China and English prefers international. Only the verified full-description request shape is eligible; the older international AppDetails endpoint remains a recovery path |
@@ -29,8 +31,8 @@ The news panel keeps successful responses for ten minutes under separate game/la
 | Terraria and RimWorld Together server archives | The module's official release URL and bounded retries; RimWorld Together pins its release SHA-256 and byte size; no verified second independent official source |
 | Terraria mod server (tModLoader) | Hosts set to mainland China try GH-Proxy first. Other regions try GitHub Releases first. Each can fall back to the other. Both must match the size and SHA-256 of the same pinned release before extraction. GH-Proxy is an independent accelerator with global nodes. The required .NET runtime comes from Microsoft. [Upstream release](https://github.com/tModLoader/tModLoader/releases/tag/v2026.09.3.1) · [GH-Proxy documentation](https://gh-proxy.com/docs/github-accelerator) |
 | Modrinth and Thunderstore metadata and packages | The original provider APIs and their actual package URLs, with bounded retries; Modrinth verifies the metadata's byte size and SHA-512 (SHA-1 only when SHA-512 is absent); no verified alternate source |
-| Nexus Mods | Opens the official website in the system browser. In-app API downloads are unavailable; manually downloaded packages use the existing local-import workflow |
-| CurseForge slug resolution | `api.curse.tools`, an existing third-party integration; neither a CurseForge-operated API nor an official CDN, and no source substitution |
+| Nexus Mods | Desktop website import reads the verified official project page and lets the user complete the site's normal login and manual download flow. Public project images under `staticdelivery.nexusmods.com/mods/` use the image cache without source substitution; author avatars and signed package URLs are outside the media policy. In-app API downloads remain unavailable; existing local file import remains supported |
+| CurseForge project resolution | The desktop reads the official `www.curseforge.com/ark-survival-ascended/mods/` page in its bounded browser session, verifies the canonical project identity, and extracts public project metadata; no API key, third-party resolver or source substitution |
 | ARK Server API extension preparation | Pinned ASE/ASA release archives in LanGame's GitCode release mirror and the extension maintainers' GitHub repositories; Chinese requests prefer GitCode, English requests prefer upstream, with bounded fallback. Archive size, SHA-256 and expected payload remain mandatory |
 | ASA extension offset cache | The extension's configured cache services at `cdn.pelayori.com`, `cdn.shadowhunter.co.za` and `cdn.shadowhunter-systems.co.za`; the extension sends the server EXE SHA-256 to retrieve matching files after the installation notice obtains permission; these third-party services are not Valve or the game's official CDN |
 | Local knowledge embedding model | IBM Granite's pinned Hugging Face checkpoint and the explicitly allowed Hugging Face delivery hosts; file size/SHA-256, bounded retries and cancellation; no China-specific replacement model or mirror |
@@ -42,7 +44,7 @@ The news panel keeps successful responses for ten minutes under separate game/la
 | Game-server control, LAN management and discovery | Instance endpoints, the authenticated LAN management service and local discovery protocols; these are not public interchangeable CDN resources |
 | Websites opened in the system browser | The requested Steam, mod-provider, release or documentation website; browser routing remains under the user's environment |
 
-The full-description API is separate from the Steam China storefront and its catalog. Its narrowly verified public request does not authorize substitution of store, account, login, review or other StoreBrowse operations. The existing CurseForge slug resolver is a third-party integration, not an official CDN, and receives no source substitution. Local game-control endpoints, user-configured AI providers, authenticated services and externally opened websites are not redirected. Application update endpoints and signature verification remain owned by the updater configuration; this policy does not add an update endpoint.
+The full-description API is separate from the Steam China storefront and its catalog. Its narrowly verified public request does not authorize substitution of store, account, login, review or other StoreBrowse operations. CurseForge project-page resolution remains a browser operation and receives no source substitution. Local game-control endpoints, user-configured AI providers, authenticated services and externally opened websites are not redirected. Application update endpoints and signature verification remain owned by the updater configuration; this policy does not add an update endpoint.
 
 The [application updater](../apps/desktop/src-tauri/src/app_updates/sources.rs) and [update service](../deploy/desktop-updates/README.md) define a separate delivery path. The website serves only the small manifest; installers and signature attachments come from the release hosts. Regional selection uses the requesting IP's APNIC allocation, independently of interface language. Downloads accept only the exact project, version and installer URLs supported by the updater. GitCode hosts the project's published release copy, while the two GitHub proxies are third-party fallbacks, not official Steam/game CDN equivalents. An empty endpoint configuration remains disabled.
 
@@ -166,6 +168,7 @@ Before adding or changing a group, establish publisher ownership, verify the sam
 | Steam 视频 | Akamai、Fastly、蒸汽平台官方国内视频 CDN，覆盖 HLS 主清单、子清单与分片 |
 | 其他目录媒体 | 保留已有原始引用，包括 `store-images.s-microsoft.com` 的 Minecraft 图片及 `cdn.trailers.xboxservices.com` 的预告片；等价来源策略以外的资源由浏览器直连，不按地区换源 |
 | 工坊预览图 | Steam UGC 原域名与官方 Akamai 域名，未确认国内 UGC 专用等价源 |
+| 网站 Mod 图标 | ASA CurseForge 的 `83374.media.forgecdn.net/avatars/` 与 Thunderstore 的 `ccdn.thunderstore.io/live/repository/icons/`、`gcdn.thunderstore.io/live/repository/icons/`；仅允许声明的图片后缀，不接受查询参数。不同来源、图片尺寸和版本分别缓存，不假定 CDN 等价 |
 | 匿名工坊搜索、本地化详情与条目类型网页 | Steam 社区原站与内置 Steam Akamai CDN 连接，仅限下文两个精确路径，不是国内专用镜像 |
 | 工坊详情、集合、Steam 新闻 | 国际与中国官方 API，仅允许三个公开只读接口的精确路径和公开参数 |
 | Steam 商店完整简介 | `api.steamchina.com` 与 `api.steampowered.com` 的公开 `IStoreBrowseService/GetItems/v1/`；中文优先国内、英文优先国际，仅放行已核实的完整简介请求；原国际 AppDetails 接口保留为恢复路径 |
@@ -178,8 +181,8 @@ Before adding or changing a group, establish publisher ownership, verify the sam
 | Terraria、RimWorld Together 服务端 | 官方发行地址与有限重试；RimWorld Together 固定发行包 SHA-256 与字节数；未确认第二个独立官方备用源 |
 | 泰拉瑞亚模组服务端（tModLoader） | 宿主地区设为中国大陆时优先使用 GH-Proxy，其他地区优先使用 GitHub Releases。两条线路可以互相回退，下载后必须与同一官方发行包的字节数和 SHA-256 一致才解压。GH-Proxy 是使用全球节点的第三方加速服务。所需的 .NET 运行时从微软下载。[官方发行版](https://github.com/tModLoader/tModLoader/releases/tag/v2026.09.3.1) · [GH-Proxy 说明](https://gh-proxy.com/docs/github-accelerator) |
 | Modrinth、Thunderstore 元数据与模组包 | 原提供方 API 及其返回的实际下载地址，采用有限重试；Modrinth 校验元数据声明的字节数与 SHA-512，仅缺少 SHA-512 时使用 SHA-1；未确认备用等价源 |
-| Nexus Mods | 通过系统浏览器打开官方网站。应用内 API 下载不可用；手动下载后的包沿用现有本地导入流程 |
-| CurseForge slug 解析 | 既有第三方集成 `api.curse.tools`；不是 CurseForge 运营的 API 或官方 CDN，不做换源 |
+| Nexus Mods | 桌面网站导入读取身份已核对的官方项目页，由用户完成网站正常登录和手动下载流程。`staticdelivery.nexusmods.com/mods/` 下公开项目图片复用图片缓存，不换源；作者头像和带签名的包下载地址不进入媒体策略。应用内 API 下载仍不可用，保留现有本地文件导入 |
+| CurseForge 项目解析 | 桌面在有界浏览器会话中读取官方 `www.curseforge.com/ark-survival-ascended/mods/` 页面，核对 canonical 项目身份并提取公开元数据；不需要 API key、不经过第三方解析服务、不换源 |
 | ARK Server API 扩展准备 | LanGame GitCode 发布镜像与扩展维护者 GitHub 仓库中的固定 ASE/ASA 发行包；中文请求优先 GitCode、英文请求优先上游，失败时有界回退；必须核验归档大小、SHA-256 和预期文件 |
 | ASA 扩展偏移缓存 | 扩展配置的 `cdn.pelayori.com`、`cdn.shadowhunter.co.za`、`cdn.shadowhunter-systems.co.za` 缓存服务；安装说明征得许可后，由扩展发送服务器 EXE 的 SHA-256 获取匹配文件；这些第三方服务不是 Valve 或游戏官方 CDN |
 | 本地知识库向量模型 | IBM Granite 固定 Hugging Face checkpoint 及明确允许的 Hugging Face 分发域名，核验文件大小与 SHA-256，支持有限重试和取消；不换成国内其他模型或镜像 |
@@ -191,7 +194,7 @@ Before adding or changing a group, establish publisher ownership, verify the sam
 | 游戏服务器控制、局域网管理与发现 | 实例端点、已认证的局域网管理服务及本地发现协议，不属于可互换的公共 CDN 资源 |
 | 系统浏览器打开的网站 | 请求的 Steam、模组提供方、发行或文档网站，连接继续由用户的浏览器环境管理 |
 
-完整简介使用公开 API，独立于蒸汽平台商店及其游戏目录；本次核实的窄范围请求不允许替换商店、账号、登录、评价或其他 StoreBrowse 操作。已有 CurseForge 链接解析服务属于第三方集成，不标记为官方 CDN，也不换源。局域网游戏控制、用户配置的 AI 服务、需要认证的接口和外部浏览器网站不做域名替换。应用更新地址与签名验证仍由现有更新配置负责，不自行新增发行地址。
+完整简介使用公开 API，独立于蒸汽平台商店及其游戏目录；本次核实的窄范围请求不允许替换商店、账号、登录、评价或其他 StoreBrowse 操作。CurseForge 项目页面仍由浏览器解析，不做换源。局域网游戏控制、用户配置的 AI 服务、需要认证的接口和外部浏览器网站不做域名替换。应用更新地址与签名验证仍由现有更新配置负责，不自行新增发行地址。
 
 [应用更新器](../apps/desktop/src-tauri/src/app_updates/sources.rs)和[更新服务](../deploy/desktop-updates/README.md)定义独立的分发路径。官网只提供小型清单，安装包和签名附件由发行托管站点提供。区域选择依据请求来源 IP 的 APNIC 分配信息，与界面语言无关。下载仅接受更新器支持的精确项目、版本和安装包地址。GitCode 托管本项目发布的发行副本，两项 GitHub 代理属于第三方回退源，不属于 Steam／游戏官方 CDN 等价来源。更新地址为空时仍保持关闭。
 

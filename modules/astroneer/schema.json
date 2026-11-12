@@ -84,11 +84,23 @@
       "x-lsgm-source-key": "ConsolePassword",
       "x-lsgm-source-surface": "config_file"
     },
+    "connection_mode": {
+      "type": "string",
+      "default": "public",
+      "enum": ["public", "radmin", "manual"],
+      "title": "Join Address Source",
+      "description": "Internal address-source metadata derived from the common player join address control. An empty automatic address first uses the unique active Radmin adapter, otherwise outbound IPv4 discovery. It is not a separate user-selectable connection mode.",
+      "x-lsgm-section": "network",
+      "x-lsgm-order": 280,
+      "x-lsgm-source": "astroneer_connection_policy",
+      "x-lsgm-source-key": "connection_mode",
+      "x-lsgm-source-surface": "materializer"
+    },
     "public_ip": {
       "type": "string",
       "default": "",
-      "title": "Public IPv4 Address",
-      "description": "Leave empty to discover and save this host's public unicast IPv4 automatically at startup. An explicitly configured public IPv4 is retained. Discovery failure stops startup without using a private address.",
+      "title": "Advertised IPv4 Address",
+      "description": "Managed by the common player join address control and written to native PublicIP. Explicit LAN, VPN and public IPv4 endpoints are retained. Automatic selection prefers a unique active Radmin address, otherwise discovers the outbound IPv4. Address validation and discovery do not establish client reachability; official online services remain required.",
       "x-lsgm-section": "network",
       "x-lsgm-order": 300,
       "x-lsgm-source": "astro_server_settings",

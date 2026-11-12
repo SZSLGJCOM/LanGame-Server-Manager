@@ -7,6 +7,12 @@ const REASONS = [
 ];
 const CONTEXT = ["instance_id", "map_key", "before_process_key", "native_log_path", "cleanup_error"] as const;
 
+function unvalidatedModIds(value: unknown): value is string[] {
+  return Array.isArray(value) && value.length > 0 && value.length <= 8192
+    && value.every((id) => typeof id === "string" && /^[1-9][0-9]{0,18}$/.test(id)
+      && (id.length < 19 || id <= "9223372036854775807"));
+}
+
 /** Render only the native startup error contract; response bodies remain in native diagnostics. */
 export function formatAsaCurseForgeError(t: TranslateFn, value: Record<string, unknown>): string | null {
   if (typeof value.stage !== "string" || !STAGES.includes(value.stage)
@@ -16,7 +22,10 @@ export function formatAsaCurseForgeError(t: TranslateFn, value: Record<string, u
         || value.http_status < 100 || value.http_status > 599
       : value.http_status !== null)
     || CONTEXT.some((key) => value[key] != null && typeof value[key] !== "string")
-    || ["cache_verified", "native_process_exited"].some((key) => value[key] != null && typeof value[key] !== "boolean")) return null;
+    || ["cache_verified", "native_process_exited"].some((key) => value[key] != null && typeof value[key] !== "boolean")
+    || value.unvalidated_mod_ids != null && (!unvalidatedModIds(value.unvalidated_mod_ids)
+      || !(value.stage === "install" && value.reason === "unknown"
+        || value.stage === "validation" && value.reason === "missing_mods"))) return null;
 
   const connectionAdvice = value.reason === "server_unreachable"
     || value.reason === "http" && typeof value.http_status === "number"
@@ -30,6 +39,18 @@ export function formatAsaCurseForgeError(t: TranslateFn, value: Record<string, u
     t(value.cache_verified === true ? "errors.asaCurseForge.cacheVerified"
       : value.cache_verified === false ? "errors.asaCurseForge.cacheUnavailable" : "errors.asaCurseForge.cacheUnchecked")
   ];
+  if (unvalidatedModIds(value.unvalidated_mod_ids)) {
+    lines.push(t("errors.asaCurseForge.unvalidatedMods", { ids: value.unvalidated_mod_ids.slice(0, 64).join(", ") }));
+    if (value.unvalidated_mod_ids.length > 64) {
+      lines.push(t("errors.asaCurseForge.unvalidatedModsMore", { shown: 64, total: value.unvalidated_mod_ids.length }));
+    }
+  }
+  if (value.stage === "install" && value.reason === "unknown"
+    || value.stage === "validation" && value.reason === "missing_mods") {
+    lines.push(t("errors.asaCurseForge.checkCompatibility"));
+    lines.push(t("errors.asaCurseForge.compatibilitySteam"));
+    lines.push(t("errors.asaCurseForge.compatibilityCrossplay"));
+  }
   if (typeof value.native_process_exited === "boolean") {
     lines.push(t(value.native_process_exited ? "errors.asaCurseForge.nativeExited" : "errors.asaCurseForge.nativeNotExited"));
   }

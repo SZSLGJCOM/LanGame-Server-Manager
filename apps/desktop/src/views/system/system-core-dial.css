@@ -1,4 +1,12 @@
+/* Resolve panel-relative units before the stage becomes the dial's query container. */
+@property --core-dial-size {
+  syntax: "<length>";
+  inherits: true;
+  initial-value: 0px;
+}
+
 .system-core-stage {
+  --core-dial-size: 77cqw;
   position: relative;
   z-index: 1;
   display: grid;
@@ -9,21 +17,19 @@
   container-name: system-core-stage;
 }
 
-/* The dial geometry was tuned at 380px; larger stages scale it proportionally. */
-@property --core-scale {
-  syntax: "<number>";
-  inherits: true;
-  initial-value: 1;
-}
-
 .system-core-visual {
-  --core-scale: max(1, tan(atan2(min(100cqw, 100cqh), 380px)));
   position: relative;
-  width: min(100cqw, 100cqh);
+  width: min(var(--core-dial-size), 100cqw, 100cqh);
   min-width: 0;
   aspect-ratio: 1;
   border-radius: 50%;
   isolation: isolate;
+}
+
+@media (max-width: 1020px) {
+  .system-core-visual {
+    width: min(100cqw, 100cqh);
+  }
 }
 
 .system-core-visual::after {
@@ -252,11 +258,11 @@
   position: absolute;
   z-index: 4;
   display: grid;
-  width: 27%;
-  min-height: calc(88px * var(--core-scale));
+  width: min(27%, 144px);
+  min-height: 88px;
   container-type: inline-size;
-  gap: calc(4px * var(--core-scale));
-  padding: calc(9px * var(--core-scale)) calc(11px * var(--core-scale)) calc(10px * var(--core-scale));
+  gap: 4px;
+  padding: 9px 11px 10px;
   border: 1px solid var(--system-panel-border-soft);
   border-radius: 6px;
   background: var(--system-panel-bg);
@@ -279,26 +285,31 @@
   background: var(--band-accent);
 }
 
+/* Anchor compact reading cards by their centers as the surrounding ring grows. */
 .system-core-metric[data-position="0"] {
-  top: 15%;
-  left: 3%;
+  top: 27%;
+  left: 16.5%;
+  translate: -50% -50%;
 }
 
 .system-core-metric[data-position="1"] {
   --metric-align: right;
-  top: 15%;
-  right: 3%;
+  top: 27%;
+  right: 16.5%;
+  translate: 50% -50%;
 }
 
 .system-core-metric[data-position="2"] {
   --metric-align: right;
-  right: 3%;
-  bottom: 15%;
+  right: 16.5%;
+  bottom: 27%;
+  translate: 50% 50%;
 }
 
 .system-core-metric[data-position="3"] {
-  bottom: 15%;
-  left: 3%;
+  bottom: 27%;
+  left: 16.5%;
+  translate: -50% 50%;
 }
 
 .system-core-metric[data-position="1"]::before,
@@ -324,6 +335,14 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* Single-line labels keep the larger maximized text inside compact instruments. */
+:root:has(.shell-header[data-window-maximized="true"]) :is(
+  .system-core-metric-label, .system-core-metric-live,
+  .system-core-center-kicker, .system-core-center-state
+) {
+  line-height: var(--leading-control);
+}
+
 .system-core-metric-live {
   display: flex;
   align-items: center;
@@ -338,8 +357,8 @@
 .system-core-metric-live i {
   display: inline-block;
   flex: 0 0 auto;
-  width: calc(5px * var(--core-scale));
-  height: calc(5px * var(--core-scale));
+  width: 5px;
+  height: 5px;
   margin-right: 0;
   border-radius: 50%;
   background: var(--band-accent);
@@ -413,8 +432,8 @@
   width: 37%;
   height: 37%;
   container-type: inline-size;
-  gap: calc(7px * var(--core-scale));
-  padding: calc(12px * var(--core-scale));
+  gap: 7px;
+  padding: 12px;
   color: var(--system-panel-text);
   text-align: center;
   pointer-events: none;
@@ -452,14 +471,14 @@
 
 .system-core-center-value strong {
   flex: 0 0 auto;
-  font-size: min(var(--text-dial-primary), calc(140cqw / var(--core-value-length)));
+  font-size: min(var(--text-dial-display), calc(140cqw / var(--core-value-length)));
   font-weight: var(--font-weight-semibold);
   letter-spacing: -0.085em;
   white-space: nowrap;
 }
 
 .system-core-center.is-focused .system-core-center-value strong {
-  font-size: min(var(--text-dial-focused), 26cqw, calc(140cqw / var(--core-value-length)));
+  font-size: min(var(--text-dial-display), 26cqw, calc(140cqw / var(--core-value-length)));
   line-height: 1.15;
 }
 
@@ -491,8 +510,8 @@
 }
 
 .system-core-center-state i {
-  width: calc(6px * var(--core-scale));
-  height: calc(6px * var(--core-scale));
+  width: 6px;
+  height: 6px;
   flex: 0 0 auto;
   border-radius: 50%;
   background: var(--system-memory);
@@ -517,7 +536,11 @@
   line-height: var(--leading-heading);
 }
 
-@container system-core-stage (max-height: 330px) {
+@container system-core-stage (max-height: 380px) {
+  .system-core-metric[data-position] {
+    translate: none;
+  }
+
   .system-core-metric {
     width: 34%;
     min-height: 0;
@@ -546,15 +569,15 @@
   }
 
   .system-core-metric-value {
-    min-height: var(--text-section-title);
+    min-height: var(--text-dial-section-title);
   }
 
   .system-core-metric-value strong {
-    font-size: min(var(--text-section-title), calc(120cqw / var(--core-value-length)));
+    font-size: min(var(--text-dial-section-title), calc(120cqw / var(--core-value-length)));
   }
 
   .system-core-metric-value[data-wide-unit="true"] strong {
-    font-size: min(var(--text-section-title), calc((100cqw - 5ch - 4px) * 1.8 / var(--core-value-length)));
+    font-size: min(var(--text-dial-section-title), calc((100cqw - 5ch - 4px) * 1.8 / var(--core-value-length)));
   }
 
   .system-core-metric-live,

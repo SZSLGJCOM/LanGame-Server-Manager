@@ -28,6 +28,82 @@ pub(super) fn program_roots(
     Ok(roots)
 }
 
+/// Repair the shared source before detachment requires a complete clean copy.
+/// Healthy sources still detach first, avoiding unnecessary shared mutations.
+pub(super) async fn repair_shared_program_before_detach(
+    state: &tauri::State<'_, DesktopState>,
+    storage: &StorageBootstrap,
+    descriptor: &ModuleDescriptor,
+    instance: &InstanceDetails,
+    reservation: &RuntimeStartReservationLease,
+    mut guards: super::commands_runtime_lifecycle::RuntimeProgramGuards,
+    context: PrestartUpdateLogContext<'_>,
+) -> Result<
+    (
+        super::commands_runtime_lifecycle::RuntimeProgramGuards,
+        Option<Vec<app_core::RuntimeStartWarning>>,
+    ),
+    String,
+> {
+    if !requires_private_program(&instance.summary.module_id)
+        || super::commands_program_storage::program_mode(instance)?
+            != app_storage::InstanceProgramMode::Shared
+        || app_core::InstanceProgramUpdatePolicy::from_settings_json(&instance.settings_json)?
+            != app_core::InstanceProgramUpdatePolicy::Automatic
+    {
+        return Ok((guards, None));
+    }
+    let root = super::commands_runtime_lifecycle::private_runtime_install_root(instance)?;
+    let module =
+        map_module_details_with_install_state(&storage.settings, descriptor, Some(root.as_str()));
+    if !should_run_prestart_update(&module) {
+        return Ok((guards, None));
+    }
+    let mut force_repair = false;
+    if module.summary.install_state == InstallState::Installed {
+        let checked_root = PathBuf::from(&root);
+        let checked_descriptor = descriptor.clone();
+        let cancellation = reservation.storage_operation().cancellation_token();
+        let requires_repair = spawn_blocking_storage_context_task(reservation, move || {
+            app_storage::program_copy_requires_repair(
+                &checked_root,
+                &checked_descriptor,
+                Some(&cancellation),
+            )
+            .map_err(|error| error.to_string())
+        })
+        .await
+        .map_err(|error| format!("Program readiness worker failed: {error}"))??;
+        match requires_repair {
+            Some(false) => return Ok((guards, None)),
+            Some(true) => force_repair = true,
+            None => {}
+        }
+    }
+    let install_guard = guards
+        .1
+        .take()
+        .ok_or("startup program lifecycle lock is missing")?;
+    let outcome = Box::pin(
+        super::commands_runtime_prestart_update::run_prestart_update_with_repair(
+            state,
+            storage,
+            PrestartUpdateRequest {
+                descriptor,
+                module: &module,
+                instance,
+                install_guard,
+                reservation,
+                context,
+            },
+            force_repair,
+        ),
+    )
+    .await?;
+    guards.1 = Some(outcome.install_guard);
+    Ok((guards, Some(outcome.warnings)))
+}
+
 pub(super) async fn ensure_private_program(
     storage: &StorageBootstrap,
     descriptor: &ModuleDescriptor,

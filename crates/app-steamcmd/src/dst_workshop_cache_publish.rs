@@ -171,18 +171,18 @@ fn io(operation: &'static str, path: &Path, source: std::io::Error) -> DstWorksh
 }
 
 #[cfg(test)]
-static FAIL_ITEM_BACKUP: Mutex<Option<String>> = Mutex::new(None);
+static FAIL_ITEM_BACKUP: Mutex<Vec<String>> = Mutex::new(Vec::new());
 
 #[cfg(test)]
 pub(crate) fn fail_item_backup_for_test(item_id: &str) {
-    *FAIL_ITEM_BACKUP.lock().unwrap() = Some(item_id.to_owned());
+    FAIL_ITEM_BACKUP.lock().unwrap().push(item_id.to_owned());
 }
 
 #[cfg(test)]
 fn stage_old_item(item_id: &str, target: &Path, backup: &Path) -> std::io::Result<()> {
     let mut requested = FAIL_ITEM_BACKUP.lock().unwrap();
-    if requested.as_deref() == Some(item_id) {
-        *requested = None;
+    if let Some(index) = requested.iter().position(|id| id == item_id) {
+        requested.remove(index);
         return Err(std::io::Error::new(
             std::io::ErrorKind::PermissionDenied,
             "controlled test conflict while staging old item",

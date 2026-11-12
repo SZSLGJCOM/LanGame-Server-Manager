@@ -4,7 +4,7 @@
 .server-save-policy-editor,
 .settings-guided-sections,
 .settings-schema-section {
-  --settings-control-height: 38px;
+  --settings-control-height: calc(38px * var(--interface-density));
   --settings-control-radius: 8px;
   --settings-control-border: color-mix(in srgb, var(--border) 82%, transparent);
   --settings-control-bg: color-mix(in srgb, var(--panel-strong) 88%, var(--panel));
@@ -17,7 +17,7 @@
 .settings-schema-textarea {
   width: 100%;
   min-height: var(--settings-control-height);
-  padding: 8px 10px;
+  padding: calc(8px * var(--interface-density)) calc(10px * var(--interface-density));
   border-radius: var(--settings-control-radius);
   border: 1px solid var(--settings-control-border);
   background: var(--settings-control-bg);
@@ -56,7 +56,7 @@
 }
 
 .settings-schema-textarea {
-  min-height: 92px;
+  min-height: calc(92px * var(--interface-density));
   resize: vertical;
   line-height: var(--leading-body);
 }
@@ -68,9 +68,9 @@ select:is(.settings-schema-input, .settings-schema-select) { padding-right: 32px
   align-self: start;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: calc(12px * var(--interface-density));
   min-height: var(--settings-control-height);
-  padding: 8px 10px;
+  padding: calc(8px * var(--interface-density)) calc(10px * var(--interface-density));
   border: 1px solid var(--settings-control-border);
   border-radius: var(--settings-control-radius);
   background: var(--settings-control-bg);
@@ -88,14 +88,14 @@ select:is(.settings-schema-input, .settings-schema-select) { padding-right: 32px
 .settings-enum-checklist-option input[type="checkbox"],
 .maintenance-workspace :is(.server-broadcast-rule-toggle, .ark-cluster-exclusive) input[type="checkbox"] {
   appearance: none;
-  width: 18px;
-  height: 18px;
+  width: calc(18px * var(--interface-density));
+  height: calc(18px * var(--interface-density));
   margin: 0;
   border: 1px solid color-mix(in srgb, var(--border) 84%, transparent);
   border-radius: 5px;
   background: color-mix(in srgb, var(--panel) 86%, var(--panel-strong));
   cursor: pointer;
-  flex: 0 0 18px;
+  flex: 0 0 calc(18px * var(--interface-density));
   transition: background-color 0.14s ease, border-color 0.14s ease, box-shadow 0.14s ease;
 }
 
@@ -127,7 +127,7 @@ select:is(.settings-schema-input, .settings-schema-select) { padding-right: 32px
 
 .settings-toggle-copy {
   display: grid;
-  gap: 3px;
+  gap: calc(3px * var(--interface-density));
   min-width: 0;
 }
 

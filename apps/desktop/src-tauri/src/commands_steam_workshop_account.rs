@@ -231,6 +231,7 @@ pub async fn download_authenticated_steam_workshop_items<R: tauri::Runtime>(
     account_name: String,
     missing_only: Option<bool>,
     locale: Option<String>,
+    attempt_token: Option<String>,
 ) -> Result<SteamWorkshopDownloadResult, String> {
     let account_name = app_steamcmd::normalize_workshop_account_name(&account_name)
         .map_err(|error| steamcmd_error_message(&error))?;
@@ -245,6 +246,7 @@ pub async fn download_authenticated_steam_workshop_items<R: tauri::Runtime>(
             missing_only.unwrap_or(false),
             app_network::SourcePreference::from_locale(locale.as_deref()),
             Some(account_name),
+            attempt_token,
         )
         .await
     })

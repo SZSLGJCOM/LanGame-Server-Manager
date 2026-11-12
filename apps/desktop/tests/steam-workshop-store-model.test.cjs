@@ -124,6 +124,34 @@ test("store actions preserve missing-file repair, PZ activation and unsupported 
   assert.equal(busy.lifecycleState, "installing");
 });
 
+test("queued items remain distinct from the active download and inventory inspection", () => {
+  const item = workshopItem({ consumer_app_id: 322330 });
+  const queued = new Set([item.id]);
+  assert.equal(storeState(item, { queuedIds: queued, inspectedIds: new Set() }).lifecycleState, "queued");
+  assert.equal(storeState(item, { queuedIds: queued, installingIds: queued }).lifecycleState, "installing",
+    "A collection waiting for an active child cannot replace that child's download progress");
+  assert.equal(storeState(item, { queuedIds: new Set(["999999"]) }).lifecycleState, "downloaded");
+});
+
+test("queue presentation assigns failures and pending rows to their own items", () => {
+  const { workshopDownloadPresentation } = require("../src/views/servers/workshop-download-presentation.ts");
+  const request = (id, status, overrides = {}) => ({ requestId: Number(id), attemptToken: "token", jobId: "job", ids: [id], contentIds: [id],
+    items: { [id]: workshopItem({ id, title: `Mod ${id}` }) }, locale: "en-US", status,
+    error: status === "error" ? "Network failure" : null, job: null, ...overrides });
+  const requests = [request("1", "success"), request("2", "error"), request("3", "preparing", { job: { progress_percent: 37 } }), request("4", "queued")];
+  const view = workshopDownloadPresentation(requests, "en-US");
+  assert.deepEqual(view.contentIds, ["2", "3", "4"]);
+  assert.deepEqual(view.errors, { "2": "Network failure" });
+  assert.deepEqual([...view.installingIds], ["3"]);
+  assert.deepEqual([...view.queuedIds], ["4"]);
+  assert.deepEqual(view.byId["3"], { state: "installing", progressPercent: 37 });
+  assert.equal(view.busy, true);
+  assert.deepEqual(workshopDownloadPresentation(requests, "zh-CN").items, {}, "Old-language metadata must not replace current-language lookups");
+  const retried = workshopDownloadPresentation([...requests, request("2", "queued", { requestId: 5 })], "en-US");
+  assert.deepEqual(retried.errors, {}, "The retried item must show waiting rather than its earlier error");
+  assert.deepEqual(retried.contentIds, ["2", "3", "4"], "Retrying must not create a duplicate My Mods row");
+});
+
 test("PZ active internal IDs cannot replace missing Workshop membership", () => {
   const item = workshopItem();
   const options = { moduleId: "projectzomboid", expectedAppId: 108600, enabled: true };

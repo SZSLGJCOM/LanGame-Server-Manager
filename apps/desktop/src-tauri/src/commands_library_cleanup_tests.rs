@@ -4,6 +4,9 @@ use crate::commands::commands_storage_management::{
 };
 use std::collections::BTreeMap;
 
+#[path = "commands_program_recovery_retention_tests.rs"]
+mod recovery_retention;
+
 type TestResult<T = ()> = Result<T, Box<dyn std::error::Error>>;
 
 struct Fixture {

@@ -186,6 +186,30 @@ async fn prepare_managed_installation<F: FnMut(SteamCmdPrepareProgress)>(
     reporter.ready(managed_steamcmd_status(settings))
 }
 
+/// A private worker must never discover or verify a different installation.
+/// Its caller already holds the exact configured root's lifecycle lease.
+pub(super) async fn prepare_private_runtime_locked<F: FnMut(SteamCmdPrepareProgress)>(
+    settings: &AppSettings,
+    deadline: InstallDeadline,
+    on_progress: F,
+) -> Result<SteamCmdStatus, SteamCmdError> {
+    deadline.check_cancelled()?;
+    prepare_configured_steamcmd_root(&configured_steamcmd_root(settings))?;
+    let current = managed_steamcmd_status(settings);
+    if current.ready && current.executable_exists {
+        return Ok(current);
+    }
+    let mut reporter = PrepareReporter::new(on_progress);
+    if super::steamcmd_readiness::needs_reverification(
+        std::path::Path::new(&current.root),
+        current.ownership,
+    ) {
+        warm_up_steamcmd(&current, deadline, &mut reporter).await?;
+        return reporter.ready(current);
+    }
+    prepare_managed_installation(settings, deadline, &mut reporter).await
+}
+
 async fn apply_prepared_update<F: FnMut(SteamCmdPrepareProgress)>(
     settings: &AppSettings,
     update: super::steamcmd_update_cache::PreparedUpdate,

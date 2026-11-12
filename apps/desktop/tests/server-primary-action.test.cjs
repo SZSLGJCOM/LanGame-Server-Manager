@@ -149,12 +149,51 @@ test("a ready private runtime remains startable despite absent shared files and 
   assert.equal(action.disabled, false);
 });
 
-test("damaged private runtimes lead to the library instead of repairing an unrelated shared directory", () => {
+test("noninstalled private runtimes open their own maintenance even when the shared library is installed", () => {
   for (const install_state of ["NotInstalled", "Incomplete", "Corrupted"]) {
-    const action = resolve({ launchPlan: { instance_id: "pz-a", install_state, uses_private_runtime: true } });
-    assert.equal(action.action, "library");
+    const action = resolve({ launchPlan: { instance_id: "pz-a", install_state, uses_private_runtime: true,
+      can_update_before_start: false, executable_exists: true, ready_to_launch: true } });
+    assert.equal(action.action, "maintenance");
+    assert.equal(action.labelKey, "servers.tabs.maintenance");
     assert.equal(action.disabled, false);
   }
+});
+
+test("backend-authorized startup updates can repair a missing private or shared executable before launch", () => {
+  for (const install_state of ["Incomplete", "Corrupted"]) {
+    for (const uses_private_runtime of [false, true]) {
+      const action = resolve({
+        installation: { installState: install_state, hasManagedInstallSource: null },
+        launchPlan: { instance_id: "pz-a", install_state, uses_private_runtime,
+          can_update_before_start: true, executable_exists: false, ready_to_launch: false }
+      });
+      assert.equal(action.action, "start");
+      assert.equal(action.labelKey, "common.start");
+      assert.equal(action.disabled, false);
+    }
+  }
+});
+
+test("startup update capability preserves private ownership and shared installation busy states", () => {
+  const jobs = [{ id: "shared-repair", kind: "ValidateGame", target_id: "pz", status: "Running" }];
+  const launchPlan = { instance_id: "pz-a", install_state: "Incomplete", can_update_before_start: true,
+    executable_exists: false, ready_to_launch: false };
+  const installation = { installState: "Incomplete", hasManagedInstallSource: true };
+  const independent = resolve({ installation, jobs, launchPlan: { ...launchPlan, uses_private_runtime: true } });
+  assert.equal(independent.action, "start");
+  assert.equal(independent.disabled, false);
+  const shared = resolve({ installation, jobs, launchPlan: { ...launchPlan, uses_private_runtime: false } });
+  assert.equal(shared.action, "repair");
+  assert.equal(shared.labelKey, "servers.actions.repairing");
+  assert.equal(shared.disabled, true);
+});
+
+test("another instance's startup capability cannot authorize this instance", () => {
+  const action = resolve({ installation: { installState: "Incomplete", hasManagedInstallSource: true },
+    launchPlan: { instance_id: "pz-b", install_state: "Incomplete", uses_private_runtime: true,
+      can_update_before_start: true, executable_exists: false, ready_to_launch: false } });
+  assert.equal(action.action, "checking");
+  assert.equal(action.disabled, true);
 });
 
 test("unverified missing installations wait for their own plan and ignore another instance plan", () => {
@@ -167,9 +206,20 @@ test("unverified missing installations wait for their own plan and ignore anothe
   assert.equal(resolve({ launchPlan: undefined }).action, "start", "known shared installed files preserve the existing start entry");
 });
 
-test("preview failures offer a library action instead of staying in checking", () => {
-  const action = resolve({ launchPlan: undefined, launchFailed: true, installation: { installState: "NotInstalled", hasManagedInstallSource: null } });
-  assert.equal(action.action, "library");
+test("preview failures open instance maintenance regardless of the shared library state", () => {
+  for (const installState of ["Installed", "NotInstalled"]) {
+    const action = resolve({ launchPlan: { instance_id: "pz-a", can_update_before_start: true },
+      launchFailed: true, installation: { installState, hasManagedInstallSource: null } });
+    assert.equal(action.action, "maintenance");
+    assert.equal(action.labelKey, "servers.tabs.maintenance");
+    assert.equal(action.disabled, false);
+  }
+});
+
+test("a running instance remains stoppable despite failed preview or damaged private files", () => {
+  const action = resolve({ status: "Running", launchFailed: true,
+    launchPlan: { instance_id: "pz-a", install_state: "Incomplete", uses_private_runtime: true } });
+  assert.equal(action.action, "stop");
   assert.equal(action.disabled, false);
 });
 

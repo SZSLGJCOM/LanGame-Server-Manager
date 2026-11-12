@@ -6,9 +6,9 @@ use app_core::ModuleModSourceSpec;
 #[path = "nexus_mods_api.rs"]
 mod api;
 #[path = "nexus_mods_download.rs"]
-mod download;
+pub(super) mod download;
 #[path = "nexus_mods_reference.rs"]
-mod reference;
+pub(super) mod reference;
 pub(super) use download::download_selected_files;
 use reference::{NexusReference, parse_reference, source_domain};
 

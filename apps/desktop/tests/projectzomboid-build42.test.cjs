@@ -14,7 +14,7 @@ const repo = path.resolve(__dirname, "../../..");
 const schema = require(path.join(repo, "modules/projectzomboid/schema.json"));
 const inventory = require(path.join(repo, "modules/projectzomboid/server-options-build-42.json"));
 const retired = require(path.join(repo, "modules/projectzomboid/retired-server-options.json"));
-const { parseGuidedSettingsSchema } = require("../src/views/settings/guided-settings.ts");
+const { parseGuidedSettingsSchema, validateGuidedSettingsObject } = require("../src/views/settings/guided-settings.ts");
 const { resolveSettingsModuleDefinition } = require("../src/views/settings/module-registry.ts");
 const { buildConfigurationWorkspaceModel } = require("../src/views/settings/configuration-workspace-model.ts");
 const { EN_US_PROJECT_ZOMBOID_MESSAGES: en } = require("../src/i18n/games/projectzomboid.en.ts");
@@ -50,6 +50,25 @@ test("native anti-cheat enums and constraints match the shipped constructors", (
   assert.equal(schema.properties.bad_word_policy.enum.length, 3);
   assert.equal(schema.properties.max_players.maximum, 254);
   assert.equal(schema.properties.chat_message_character_limit.minimum, 64);
+});
+
+test("Steam scoreboard preserves stored boolean strings and rejects the retired admin mode", () => {
+  assert.equal(inventory.options.find((option) => option.key === "SteamScoreboard").type, "Boolean");
+  const parsed = parseGuidedSettingsSchema({ summary: { id: "projectzomboid" }, schema_json: JSON.stringify(schema) });
+  assert.equal(schema.properties.steam_scoreboard.default, "true");
+  for (const value of ["true", "false"]) {
+    const settings = { steam_scoreboard: value };
+    assert.deepEqual(validateGuidedSettingsObject(parsed, settings)
+      .filter((issue) => issue.fieldKey === "steam_scoreboard"), []);
+    assert.equal(settings.steam_scoreboard, value);
+  }
+  const legacy = { steam_scoreboard: "admin", server_description: "Keep this description" };
+  const original = structuredClone(legacy);
+  const issues = validateGuidedSettingsObject(parsed, legacy)
+    .filter((issue) => issue.fieldKey === "steam_scoreboard");
+  assert.equal(issues.length, 1);
+  assert.equal(issues[0].reason, "enum");
+  assert.deepEqual(legacy, original);
 });
 
 test("new fields have dedicated groups and keep player lists, Mods and maintenance outside Config", () => {

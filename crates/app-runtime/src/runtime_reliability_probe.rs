@@ -207,6 +207,7 @@ impl Fixture {
             install_root: fixture.root.to_string_lossy().into_owned(),
             install_state: app_core::InstallState::Installed,
             uses_private_runtime: false,
+            can_update_before_start: false,
             working_directory: fixture.root.to_string_lossy().into_owned(),
             executable_path: std::env::current_exe()
                 .unwrap()

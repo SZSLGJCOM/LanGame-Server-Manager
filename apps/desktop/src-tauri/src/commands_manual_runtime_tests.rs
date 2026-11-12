@@ -1847,8 +1847,10 @@ pub(super) fn manual_mod_archive_limits_reject_unsafe_metrics() {
         .expect_err("file count should be bounded");
     let size_error = validate_manual_mod_archive_metrics(1, u64::MAX, u64::MAX)
         .expect_err("uncompressed bytes should be bounded");
-    let ratio_error = validate_manual_mod_archive_metrics(1, 1, 201)
-        .expect_err("compression ratio should be bounded");
+    validate_manual_mod_archive_metrics(1, 1, 201)
+        .expect("small highly compressible data fits the archive budget");
+    let ratio_error = validate_manual_mod_archive_metrics(1, 1, 256 * 1024 * 1024 + 201)
+        .expect_err("high-compression output beyond the archive budget should be bounded");
 
     assert!(file_count_error.contains("file count"));
     assert!(size_error.contains("uncompressed size"));
@@ -2158,6 +2160,7 @@ pub(super) fn ensure_launch_plans_ready_blocks_preflight_errors() {
             ),
             install_state: InstallState::NotInstalled,
             uses_private_runtime: false,
+            can_update_before_start: false,
             executable_exists: false,
             ready_to_launch: false,
             validation_issues: vec![app_core::LaunchValidationIssue {
@@ -2389,6 +2392,7 @@ pub(super) fn ensure_module_installed_for_start_uses_effective_preview_state() {
         build_instance_launch_preview(&settings, descriptor, &instance).expect("private preview");
     assert_eq!(plan.install_state, InstallState::Installed);
     assert!(plan.uses_private_runtime);
+    assert!(plan.can_update_before_start);
     assert!(plan.ready_to_launch);
     assert_eq!(PathBuf::from(&plan.install_root), private_root);
 
@@ -2399,8 +2403,17 @@ pub(super) fn ensure_module_installed_for_start_uses_effective_preview_state() {
         .expect("damaged private preview");
     assert_eq!(plan.install_state, InstallState::Corrupted);
     assert!(plan.uses_private_runtime);
+    assert!(plan.can_update_before_start);
     assert!(!plan.ready_to_launch);
     assert_eq!(PathBuf::from(&plan.install_root), private_root);
+
+    let mut pinned = instance.clone();
+    pinned.settings_json = r#"{"program_update":{"policy":"pinned"}}"#.into();
+    let plan = build_instance_launch_preview(&settings, descriptor, &pinned)
+        .expect("pinned damaged private preview");
+    assert_eq!(plan.install_state, InstallState::Corrupted);
+    assert!(!plan.can_update_before_start);
+    assert!(!plan.ready_to_launch);
 
     fs::remove_file(&private_marker).expect("remove private marker");
     assert!(build_instance_launch_preview(&settings, descriptor, &instance).is_err());
@@ -2661,14 +2674,28 @@ pub(super) fn prestart_update_skips_direct_download_modules() {
 }
 
 #[test]
-pub(super) fn prestart_update_does_not_auto_install_missing_modules() {
-    let module = test_module_details(
+pub(super) fn prestart_update_prepares_existing_instances_with_repairable_program_states() {
+    for install_state in [
+        InstallState::Incomplete,
+        InstallState::Corrupted,
         InstallState::NotInstalled,
-        Some(1_623_730),
-        Some(test_install_spec()),
-    );
+    ] {
+        let module = test_module_details(install_state, Some(1_623_730), Some(test_install_spec()));
+        assert!(should_run_prestart_update(&module));
+        assert!(ensure_module_installed_for_start(&module).is_err());
+    }
+}
 
-    assert!(!should_run_prestart_update(&module));
+#[test]
+pub(super) fn prestart_update_waits_for_active_installation_operations() {
+    for install_state in [
+        InstallState::Installing,
+        InstallState::Updating,
+        InstallState::Uninstalling,
+    ] {
+        let module = test_module_details(install_state, Some(1_623_730), Some(test_install_spec()));
+        assert!(!should_run_prestart_update(&module));
+    }
 }
 
 #[test]
@@ -2781,6 +2808,7 @@ fn run_log_paths_keep_elevated_redirection_outside_managed_retention() {
             install_root: String::new(),
             install_state: InstallState::NotInstalled,
             uses_private_runtime: false,
+            can_update_before_start: false,
             working_directory: String::new(),
             executable_path: String::new(),
             executable_exists: false,

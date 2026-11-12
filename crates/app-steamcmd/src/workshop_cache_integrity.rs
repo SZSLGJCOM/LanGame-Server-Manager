@@ -315,7 +315,7 @@ pub fn record_validated_workshop_items(
     Ok(())
 }
 
-fn record_item(
+pub(super) fn record_item(
     content: &Path,
     app: u32,
     id: &str,

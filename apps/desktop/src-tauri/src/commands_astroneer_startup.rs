@@ -80,15 +80,11 @@ pub(super) fn prepare(instance: &InstanceDetails) -> Result<Option<Plan>, String
     {
         return Err("ASTRONEER 首个世界只会在已准备好的独立实例程序中自动创建。".into());
     }
+    // Independent programs include both private runtime copies and exclusively
+    // owned library installations. Storage validates either ownership layout.
     let root = app_storage::resolve_instance_runtime_root(instance_root)
         .map_err(|error| error.to_string())?;
     let root = fs::canonicalize(root).map_err(|_| "ASTRONEER 独立程序目录不可用。")?;
-    if root
-        != fs::canonicalize(instance_root.join("runtime"))
-            .map_err(|_| "ASTRONEER 独立程序归属无法核实。")?
-    {
-        return Err("ASTRONEER 程序不是当前实例的独立运行副本。".into());
-    }
     let saves = root.join("Astro/Saved/SaveGames");
     let pins = installation::pin(&saves, true)?;
     let saves = fs::canonicalize(saves).map_err(|_| "ASTRONEER 存档目录不可用。")?;

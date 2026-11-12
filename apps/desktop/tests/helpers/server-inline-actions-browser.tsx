@@ -117,10 +117,10 @@ async function run() {
   await click(card.querySelector(".server-list-card-icon-action"));
   let review = card.querySelector<HTMLElement>(".inline-confirm-review")!;
   check(review && deletedInstances.length === 0, "Opening instance deletion must only request confirmation");
-  check(review.textContent?.includes("永久删除此实例") && review.textContent?.includes("fixture/instance/backups")
-    && review.textContent?.includes("关联库程序") && review.textContent?.includes("fixture/library")
-    && review.textContent?.includes("基础库、此实例之外的个人数据及归档依赖的程序会保留"),
-    "Deletion confirmation names removed instance data and retained installation");
+  check(review.textContent?.includes("永久删除此实例") && review.textContent.includes("存档和备份")
+    && review.textContent.includes("无法恢复") && review.textContent.includes("基础库保留")
+    && review.textContent.includes("闲置程序") && !review.textContent.includes("fixture/"),
+    "Deletion confirmation concisely explains irreversible data removal and program retention");
   contained(review, card, "Instance confirmation");
   contained(review.querySelector(".inline-confirm-buttons")!, card, "Instance confirmation buttons");
   check(Math.abs(card.getBoundingClientRect().height - closedHeight) < 1, "Instance confirmation must stay within its existing card");

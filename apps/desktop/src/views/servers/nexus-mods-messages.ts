@@ -1,7 +1,39 @@
 import { NexusApiError } from "../../nexus-mods-api";
 
 const copy = {
-  manualImportHelp: ["从 Nexus Mods 官网下载适用于此服务器的文件，然后在“商店”中导入。请按作者说明准备加载器和依赖。", "Download server-compatible files from the Nexus Mods website, then import them in Store. Follow the author's loader and dependency requirements."],
+  websiteDropHint: ["松开以开始 Nexus 下载", "Release to start the Nexus download."],
+  localDropHint: ["松开以导入 Mod 文件", "Release to import Mod files."],
+  websiteLogin: ["Nexus 登录", "Nexus sign-in"],
+  websiteAccount: ["Nexus 账户", "Nexus account"],
+  websiteSignedIn: ["Nexus 已登录", "Nexus signed in"],
+  websiteAccountHelp: ["可在 Nexus 官网管理账户；完成后返回商店。", "Manage your account on the Nexus website, then return to Store."],
+  websiteLoginOpening: ["正在打开 Nexus 登录页…", "Opening the Nexus sign-in page…"],
+  websiteLoginHelp: ["请在 Nexus 官网完成登录或验证；确认登录后会返回商店。也可手动返回，再重试下载。", "Sign in or complete verification on the Nexus website. Confirmed sign-in returns to Store; you can also return manually and retry your download."],
+  websiteLoginClose: ["返回商店", "Return to Store"],
+  websiteLoginClosing: ["正在关闭 Nexus 账户页面，请稍候再下载…", "Closing the Nexus account page. Wait before starting a download…"],
+  websiteLoginBlocked: ["Nexus 账户页面仍在使用中，下载尚未开始。请完成登录或返回商店后重新拖入链接。", "The Nexus account page is still open; the download has not started. Finish signing in or return to Store, then drop the link again."],
+  websiteLoginPage: ["Nexus 登录页", "Nexus sign-in page"],
+  websiteOpening: ["正在自动准备 Nexus 下载…", "Preparing the Nexus download automatically…"],
+  websiteSelecting: ["正在识别并准备 Nexus 文件…", "Finding and preparing the Nexus file…"],
+  websiteWaiting: ["正在等待 Nexus 下载倒计时…", "Waiting for the Nexus download countdown…"],
+  websiteVerifying: ["正在等待 Nexus 网站自动验证…", "Waiting for Nexus automatic verification…"],
+  websiteInstalling: ["正在下载并安装 Nexus 文件…", "Downloading and installing the Nexus file…"],
+  websiteDownloading: ["正在下载 Nexus 文件…", "Downloading the Nexus file…"],
+  websiteChecking: ["正在检查 Nexus 文件…", "Checking the Nexus file…"],
+  websitePublishing: ["正在安装 Nexus 文件…", "Installing the Nexus file…"],
+  nexus_browser_unavailable: ["无法打开 Nexus 网站会话，请重试。", "The Nexus website session could not start. Retry."],
+  nexus_browser_busy: ["请先关闭 Nexus 登录页，或完成当前后台下载。", "Close Nexus sign-in or finish the current background download first."],
+  nexus_browser_cancelled: ["已取消 Nexus 后台下载。", "Nexus background download cancelled."],
+  nexus_browser_page_unavailable: ["Nexus 项目页面未能加载或识别，请检查网络与项目链接后重试。", "The Nexus project page could not load or be recognized. Check the connection and project link, then retry."],
+  nexus_browser_timed_out: ["Nexus 后台下载等待超时，未完成安装。请稍后重试或导入已下载的文件。", "The Nexus background download timed out without installing. Retry later or import a downloaded file."],
+  nexus_one_project_required: ["请每次拖入一个 Nexus 项目或文件链接。需要指定文件时，请使用具体文件链接。", "Drop one Nexus project page at a time. To select a specific file, use its file page."],
+  nexus_website_login_required: ["Nexus 要求登录，后台下载未完成。请主动点击商店中的“Nexus 登录”，在应用内完成登录后关闭登录页，再重试下载；也可下载文件后本地导入。", "Nexus requires sign-in, so the background download did not complete. Open Nexus sign-in in Store, sign in within LanGame, close the page, then retry the download. You can also import a downloaded file."],
+  nexus_website_verification_required: ["Nexus 网站验证未完成，后台下载未完成。请稍后重试，或自行从官网下载文件后本地导入。", "Nexus website verification did not finish, so the background download did not complete. Retry later, or download the file from Nexus and import it locally."],
+  nexus_file_selection_required: ["无法唯一确定要安装的 Nexus 文件，后台下载未完成。请粘贴具体文件链接，或下载后本地导入。", "The Nexus file could not be selected unambiguously, so the download did not complete. Paste a specific file page or import a downloaded file."],
+  nexus_website_action_required: ["Nexus 网站要求人工操作，后台下载未完成。可自行从官网下载文件后本地导入。", "The Nexus website requires a manual action, so the background download did not complete. Download the file separately and import it locally."],
+  nexus_website_controls_unavailable: ["当前 Nexus 页面没有可识别的下载控件，后台下载未完成。请检查链接，或下载后本地导入。", "Download controls could not be identified on this Nexus page, so the download did not complete. Check the link or import a downloaded file."],
+  nexus_website_file_quarantined: ["该文件已被 Nexus 隔离，暂时无法下载。", "Nexus has quarantined this file; it cannot be downloaded right now."],
+  nexus_format_unsupported: ["无法识别或解压该文件格式，安装未完成。", "The file format could not be identified or extracted; installation did not complete."],
   nexus_api_unavailable: ["此版本不提供 Nexus API 下载。请从 Nexus Mods 官网下载后导入本地文件。", "Nexus API downloads are not available in this release. Download files from the Nexus Mods website and import them locally."],
   auth: ["Nexus 授权", "Nexus authorization"], key: ["API Key", "API Key"],
   authTitle: ["Nexus Mods 授权", "Nexus Mods authorization"],
@@ -32,14 +64,18 @@ const copy = {
   nexus_download_expired: ["签名下载链接已失效，请在 Nexus 重新获取链接后重试。", "The signed download link has expired. Get a new link from Nexus and retry."],
   nexus_file_unavailable: ["所选文件已不可用，请重新读取项目并选择文件。", "The selected file is unavailable. Review the project again and select a file."],
   nexus_network_error: ["无法连接 Nexus，请检查网络后重试。", "Nexus could not be reached. Check your connection and retry."],
-  nexus_local_desktop_required: ["请在服务器所在电脑的 LanGame 桌面应用中配置 Nexus 授权并安装。局域网管理页不接收 API Key 或执行 Nexus 下载。", "Configure Nexus authorization and install from LanGame's desktop app on the server computer. The LAN management page does not accept API keys or perform Nexus downloads."],
+  nexus_local_desktop_required: ["请在服务器所在电脑的 LanGame 桌面应用中使用 Nexus 后台下载。局域网管理页可导入已下载的文件。", "Use Nexus background downloads in LanGame's desktop app on the server computer. LAN management can import files already downloaded."],
   nexus_invalid_response: ["Nexus 返回的数据格式不受支持，请更新应用后重试。", "The Nexus response is not supported. Update the app and retry."],
-  nexus_operation_failed: ["操作未完成。请确认授权、网络和安装文件符合要求后重试。", "The operation did not complete. Check authorization, connectivity and the installation files, then retry."],
+  nexus_operation_failed: ["操作未完成。请检查官网页面、网络和安装文件后重试。", "The operation did not complete. Check the website page, connectivity and installation files, then retry."],
+  nexus_preparation_failed: ["暂时无法开始 Nexus 下载", "The Nexus download could not start"],
+  nexus_desktop_update_required: ["当前运行的桌面端不支持此 Nexus 操作，请更新并重新启动桌面应用。", "This running desktop version does not support the Nexus operation. Update and restart the desktop app."],
   nexus_installation_failed: ["安装未完成", "Installation did not complete"],
 } as const;
 export type NexusCopyKey = keyof typeof copy;
 export function nexusText(locale: string, key: NexusCopyKey): string { return copy[key][locale === "zh-CN" ? 0 : 1]; }
 export function nexusErrorText(locale: string, error: unknown): string {
-  if (error instanceof NexusApiError && error.code === "nexus_installation_failed" && error.safeMessage) return `${nexusText(locale, error.code)}: ${error.safeMessage}`;
+  if (error instanceof NexusApiError && ["nexus_installation_failed", "nexus_preparation_failed"].includes(error.code) && error.safeMessage) {
+    return `${nexusText(locale, error.code)}: ${error.safeMessage}`;
+  }
   return nexusText(locale, error instanceof NexusApiError ? error.code : "nexus_operation_failed");
 }

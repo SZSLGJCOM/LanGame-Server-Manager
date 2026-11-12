@@ -134,6 +134,64 @@ fn missing_modified_and_wrong_size_payloads_cannot_be_certified() {
 }
 
 #[test]
+fn missing_steam_metadata_is_distinct_from_missing_payload_corruption_and_cancellation() {
+    for missing_acf in [true, false] {
+        let fixture = Fixture::new();
+        let path = if missing_acf {
+            fixture.root.join("steamapps/appmanifest_7.acf")
+        } else {
+            fixture.steamcmd.join("depotcache/7_9.manifest")
+        };
+        fs::remove_file(path).unwrap();
+        let error = fixture.verify().unwrap_err();
+        assert_eq!(error.kind(), io::ErrorKind::NotFound);
+        assert!(super::super::steam_metadata_is_missing(&error));
+        assert_eq!(fs::read(fixture.root.join("x.bin")).unwrap(), b"abc");
+    }
+    let fixture = Fixture::new();
+    fs::remove_file(fixture.root.join("x.bin")).unwrap();
+    let error = fixture.verify().unwrap_err();
+    assert_eq!(error.kind(), io::ErrorKind::NotFound);
+    assert!(!super::super::steam_metadata_is_missing(&error));
+    fs::write(
+        fixture.steamcmd.join("depotcache/7_9.manifest"),
+        b"corrupt manifest",
+    )
+    .unwrap();
+    let error = fixture.verify().unwrap_err();
+    assert_eq!(error.kind(), io::ErrorKind::InvalidData);
+    assert!(!super::super::steam_metadata_is_missing(&error));
+    let error = verify_installed_steam_package(
+        &fixture.root,
+        &fixture.steamcmd,
+        7,
+        "17",
+        Some(&AtomicBool::new(true)),
+    )
+    .unwrap_err();
+    assert_eq!(error.kind(), io::ErrorKind::Interrupted);
+    assert!(!super::super::steam_metadata_is_missing(&error));
+}
+
+#[cfg(windows)]
+#[test]
+fn locked_steam_metadata_does_not_authorize_a_missing_metadata_repair() {
+    use std::os::windows::fs::OpenOptionsExt;
+    let fixture = Fixture::new();
+    let manifest = fixture.steamcmd.join("depotcache/7_9.manifest");
+    let _locked = fs::OpenOptions::new()
+        .read(true)
+        .share_mode(0)
+        .open(&manifest)
+        .unwrap();
+    let original = fs::File::open(&manifest).unwrap_err();
+    assert_eq!(original.raw_os_error(), Some(32));
+    let error = fixture.verify().unwrap_err();
+    assert_eq!(error.kind(), original.kind());
+    assert!(!super::super::steam_metadata_is_missing(&error));
+}
+
+#[test]
 fn missing_exact_depot_and_incomplete_or_changed_builds_are_rejected() {
     let fixture = Fixture::new();
     let acf = fixture.root.join("steamapps/appmanifest_7.acf");
@@ -229,6 +287,7 @@ fn cancelled_verification_returns_no_package() {
             &mut file,
             &fixture.root.join("x.bin"),
             &[&expected],
+            true,
             Some(&signal),
             &mut reporter
         )
@@ -386,3 +445,6 @@ fn linked_official_parent_is_rejected_without_following_it() {
     fs::remove_dir(&linked).unwrap();
     assert!(result.is_err());
 }
+
+#[path = "steam_depot_optional_verification_tests.rs"]
+mod optional;

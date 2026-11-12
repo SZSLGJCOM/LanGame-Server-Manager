@@ -20,5 +20,4 @@
 .nexus-file-selection__copy { display: grid; gap: 5px; min-width: 0; }
 .nexus-file-selection__file.is-unavailable { cursor: default; }
 .nexus-file-selection__description,.nexus-file-selection__requirements { white-space: pre-wrap; font-size: var(--text-secondary); }
-.mw-nexus-local-note { margin: 0; padding: 10px 14px 0; color: var(--shell-muted); font-size: var(--text-secondary); line-height: var(--leading-body); }
 .mw-community-workspace--nexus .mw-nexus-auth-btn { height: 36px; box-sizing: border-box; }

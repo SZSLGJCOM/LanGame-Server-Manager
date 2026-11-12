@@ -35,8 +35,10 @@ impl InstallCancellation {
         self.state.cancelled.load(Ordering::Acquire)
     }
 
-    pub(super) async fn scope<F: Future>(&self, future: F) -> F::Output {
-        CURRENT.scope(self.clone(), future).await
+    pub(super) fn scope<F: Future>(&self, future: F) -> impl Future<Output = F::Output> + use<F> {
+        // Allocate before polling so callers do not retain another large
+        // installer state while its nested network/process futures are polled.
+        CURRENT.scope(self.clone(), Box::pin(future))
     }
 
     pub(crate) fn current() -> Option<Self> {

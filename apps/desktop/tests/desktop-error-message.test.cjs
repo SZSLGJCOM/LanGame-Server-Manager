@@ -379,6 +379,40 @@ test("ASA cleanup failures remain visible without claiming every process stopped
   assert.doesNotMatch(zh + en, /本次启动已中止|This start was aborted|download_issue|server_unreachable/);
 });
 
+test("ASA install failures identify unvalidated Mods and suggest compatibility checks without asserting a cause", () => {
+  for (const fields of [{ stage: "install", reason: "unknown" }, { stage: "validation", reason: "missing_mods" }]) {
+    const payload = asaError({ ...fields, unvalidated_mod_ids: ["1786680"] });
+    const zh = formatDesktopError(translator("zh-CN"), payload);
+    const en = formatDesktopError(translator("en-US"), payload);
+    assert.match(zh, /未通过本次校验的 Mod：1786680/);
+    assert.match(zh, /仅支持 PC.*自定义外观.*尚未确认具体原因/);
+    assert.match(zh, /配置 → 加入控制 → 允许加入的游戏平台.*仅 Steam.*保存完成/);
+    assert.match(zh, /Xbox、PS5 或微软商店版.*保留跨平台.*停用或替换/);
+    assert.match(en, /Mods not validated for this start: 1786680/);
+    assert.match(en, /PC-only Mods.*custom cosmetics.*has not confirmed the cause/);
+    assert.match(en, /Configuration → Join Control → Allowed Game Platforms.*Steam only.*saving to finish/);
+    assert.match(en, /Xbox, PS5 or Microsoft Store.*keep cross-platform.*disable or replace/);
+    assert.doesNotMatch(zh + en, /UNTRUSTED_RESPONSE_BODY|api_key|errors\.asa/);
+  }
+  for (const locale of ["zh-CN", "en-US"]) {
+    assert.doesNotMatch(formatDesktopError(translator(locale), asaError()), /未通过本次校验|Mods not validated|自定义外观|PC-only/);
+  }
+});
+
+test("ASA unvalidated Mod display is bounded while retaining the structured list", () => {
+  const ids = Array.from({ length: 65 }, (_, index) => String(100000 + index));
+  const payload = asaError({ stage: "install", reason: "unknown", unvalidated_mod_ids: ids });
+  const zh = formatDesktopError(translator("zh-CN"), payload);
+  const en = formatDesktopError(translator("en-US"), payload);
+  assert.match(zh, /前 64 项，共 65 项/);
+  assert.match(en, /first 64 of 65 Mods/);
+  for (const rendered of [zh, en]) {
+    assert.ok(rendered.includes(ids[0]) && rendered.includes(ids[63]));
+    assert.ok(!rendered.includes(ids[64]));
+  }
+  assert.equal(payload.unvalidated_mod_ids.length, 65);
+});
+
 test("unknown or malformed ASA contracts keep their original diagnostic", () => {
   const malformed = [
     { stage: "future" }, { reason: "future" }, { message: 42 }, { http_status: 503 },
@@ -386,7 +420,11 @@ test("unknown or malformed ASA contracts keep their original diagnostic", () => 
     { reason: "http", http_status: 600 }, { reason: "http", http_status: 200.5 },
     { reason: "http", http_status: "503" }, { native_log_path: 42 }, { cleanup_error: {} },
     { instance_id: [] }, { map_key: false }, { before_process_key: 0 }, { code: "future_code" },
-    { cache_verified: "true" }, { cache_verified: 1 }, { native_process_exited: "false" }, { native_process_exited: [] }
+    { cache_verified: "true" }, { cache_verified: 1 }, { native_process_exited: "false" }, { native_process_exited: [] },
+    { unvalidated_mod_ids: ["1786680"] },
+    ...[[], ["0"], ["01"], ["9223372036854775808"], ["private text"], Array(8193).fill("1"), "1786680"].map((unvalidated_mod_ids) => ({
+      stage: "install", reason: "unknown", unvalidated_mod_ids
+    }))
   ];
   for (const fields of malformed) {
     const original = JSON.stringify(asaError(fields));

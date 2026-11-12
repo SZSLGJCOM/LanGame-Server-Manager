@@ -5,6 +5,22 @@ const test = require("node:test");
 const nativeRoot = path.resolve(__dirname, "../src-tauri/src");
 const read = (file) => fs.readFileSync(path.join(nativeRoot, file), "utf8");
 
+test("Nexus byte observation crosses only the fixed runtime event allowlist with its operation identity", () => {
+  const events = read("runtime_service/events.rs"), client = read("runtime_service/client.rs");
+  const allowlist = events.match(/FORWARDED_EVENT_NAMES: &\[&str\] = &\[([\s\S]*?)\];/)?.[1];
+  assert.ok(allowlist, "Runtime event allowlist missing");
+  assert.match(allowlist, /RUNTIME_LOG_STREAM_EVENT/);
+  assert.match(allowlist, /"app-shutdown-failed"/);
+  assert.match(allowlist, /commands_nexus_website::NEXUS_WEBSITE_PROGRESS_EVENT/);
+  assert.equal(allowlist.split(",").filter((value) => value.trim()).length, 3, "No arbitrary event forwarding");
+  assert.match(events, /for &name in FORWARDED_EVENT_NAMES\s*\{[\s\S]*?app\.listen_any\(name/);
+  assert.match(client, /if !super::events::FORWARDED_EVENT_NAMES\.contains\(&event.name.as_str\(\)\)\s*\{\s*continue;/);
+  assert.match(read("nexus_browser.rs"), /"operationId": session.id/);
+  const input = read("runtime_service/local_commands.rs");
+  assert.match(input, /NexusWebsiteDownloadInput\s*\{[^}]*operation_id: String/);
+  assert.match(input, /nexus_website::install_nexus_website_download\([\s\S]*?request.instance_id,\s*request.operation_id,/);
+});
+
 test("registered execution and transport policies cover exactly the product adapters", () => {
   const registration = read("command_registry.rs");
   const commands = [...registration.matchAll(/\(\s*([a-z_]+),\s*\[([a-z_:]+)\],\s*(Desktop|Runtime),\s*(Allowed|Denied),\s*(Bounded|Owned)\s*\)/g)]

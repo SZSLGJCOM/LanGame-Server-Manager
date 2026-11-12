@@ -5,6 +5,9 @@ import { isClientOnlyDstWorkshopItem, isUnsupportedWorkshopItem, serverWorkshopC
 export type WorkshopInstallationState = "installed" | "partial" | "not-installed" | "checking" | "unknown";
 export type WorkshopLifecycleState =
   | "installing"
+  | "queued"
+  | "ready"
+  | "applying"
   | "enabled"
   | "downloaded"
   | "needs-configuration"
@@ -90,11 +93,13 @@ export function resolveWorkshopLifecycleState(input: {
   partiallyConfigured?: boolean;
   enabled: boolean;
   installing: boolean;
+  queued?: boolean;
   moduleId: string;
 }): WorkshopLifecycleState {
   if (input.installing) {
     return "installing";
   }
+  if (input.queued) return "queued";
   if (input.installationState === "checking" || input.installationState === "unknown") {
     return input.installationState;
   }
@@ -128,6 +133,8 @@ export function resolveWorkshopStoreItemState(input: {
   inspectedIds: ReadonlySet<string>;
   inspectionFailed: boolean;
   installingIds: ReadonlySet<string>;
+  queuedIds?: ReadonlySet<string>;
+  downloadStates?: Readonly<Record<string, { state: "queued" | "installing" | "ready" | "applying" }>>;
   steamDownloadMode?: "steamcmd-cache" | "not-wired";
   enabled?: boolean;
 }): WorkshopStoreItemState {
@@ -141,12 +148,15 @@ export function resolveWorkshopStoreItemState(input: {
     input.item, input.cachedIds, input.inspectedIds, input.inspectionFailed, input.expectedAppId
   );
   const installing = input.installingIds.has(input.item.id) || contentIds.some((id) => input.installingIds.has(id));
+  const queued = input.queuedIds?.has(input.item.id) || contentIds.some((id) => input.queuedIds?.has(id));
+  const downloadState = input.downloadStates?.[input.item.id]
+    ?? contentIds.map((id) => input.downloadStates?.[id]).find(Boolean);
   const clientOnlyCollection = input.item.item_kind === "collection" && input.item.children.length > 0 &&
     serverWorkshopCollectionChildren(input.item, {}, input.expectedAppId)?.length === 0;
   const lifecycleState = isClientOnlyDstWorkshopItem(input.item, input.expectedAppId) || clientOnlyCollection ? "client-only"
     : isUnsupportedWorkshopItem(input.item, input.expectedAppId) ? "unsupported"
-    : resolveWorkshopLifecycleState({
-      installationState, configured, partiallyConfigured, enabled, installing, moduleId: input.moduleId
+    : downloadState?.state ?? resolveWorkshopLifecycleState({
+      installationState, configured, partiallyConfigured, enabled, installing, queued, moduleId: input.moduleId
     });
   const downloadRequired = input.steamDownloadMode === "steamcmd-cache" &&
     (installationState === "not-installed" || installationState === "partial");

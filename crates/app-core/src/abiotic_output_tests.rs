@@ -67,6 +67,7 @@ fn public_preview_and_both_start_response_plan_copies_hide_the_token() {
         install_root: String::new(),
         install_state: crate::InstallState::NotInstalled,
         uses_private_runtime: true,
+        can_update_before_start: false,
         working_directory: String::new(),
         executable_path: String::new(),
         executable_exists: false,

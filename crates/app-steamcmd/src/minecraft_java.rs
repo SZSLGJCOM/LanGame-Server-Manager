@@ -5,6 +5,23 @@ use app_core::InstallPhase;
 #[path = "minecraft_java_metadata.rs"]
 mod metadata;
 
+#[cfg(any(test, feature = "test-support"))]
+tokio::task_local! {
+    static PACKAGE_FIXTURE: (String, String, u64);
+}
+
+/// Scope only the upstream package description; download integrity, extraction,
+/// Java verification and publication still execute normally in fixture tests.
+#[cfg(any(test, feature = "test-support"))]
+pub fn with_minecraft_java_package_fixture<T>(
+    url: String,
+    sha256: String,
+    size: u64,
+    future: impl std::future::Future<Output = T>,
+) -> impl std::future::Future<Output = T> {
+    PACKAGE_FIXTURE.scope((url, sha256, size), Box::pin(future))
+}
+
 pub(super) async fn latest_runtime_package(
     client: &reqwest::Client,
     major: u16,
@@ -66,16 +83,14 @@ where
     )
     .await?;
     let archive_path = archive.path().to_path_buf();
-    let script = format!(
-        "$ErrorActionPreference='Stop'\nExpand-Archive -LiteralPath {archive} -DestinationPath {stage} -Force\n",
-        archive = ps_literal(&archive_path),
-        stage = ps_literal(&staging_root),
-    );
+    let script = minecraft_jre_extraction_script(&archive_path, &staging_root);
     on_progress(InstallProgressUpdate::stage(
         InstallPhase::Extracting,
         format!("Extracting Temurin Java {required_major} runtime..."),
     ));
-    let output = match run_powershell(&script, Some(install_root), deadline).await {
+    // The archive and stage are absolute. CreateProcess's working directory
+    // still has legacy length limits even when native file handles do not.
+    let output = match run_powershell(&script, None, deadline).await {
         Ok(output) => output,
         Err(error @ SteamCmdError::InstallProcessCleanupFailed { .. }) => return Err(error),
         Err(error) => {
@@ -156,7 +171,18 @@ where
         &rejected_root,
         &staging_root,
     )
-    .await
+    .await?;
+    // The caller records this isolated payload immediately. Join cleanup of
+    // extraction scratch directories before they can enter that inventory.
+    await_failed_directory_cleanup(vec![rollback_root.clone(), staging_root.clone()]).await;
+    if rollback_root.exists() || staging_root.exists() {
+        return Err(SteamCmdError::MinecraftJrePreparation {
+            detail: String::from(
+                "Java extraction scratch could not be removed before inventory publication",
+            ),
+        });
+    }
+    Ok(())
 }
 
 pub(super) async fn java_major_version(
@@ -208,3 +234,17 @@ fn find_file_named(root: &Path, name: &str) -> Option<PathBuf> {
     }
     None
 }
+
+fn minecraft_jre_extraction_script(archive: &Path, stage: &Path) -> String {
+    format!(
+        "$ErrorActionPreference='Stop'\nAdd-Type -TypeDefinition @'\n{}\n'@\n{}\nExpand-MinecraftJavaArchive {} {}\n",
+        include_str!("install_files.cs"),
+        include_str!("minecraft_java_extract.ps1"),
+        ps_literal(archive),
+        ps_literal(stage),
+    )
+}
+
+#[cfg(all(test, windows))]
+#[path = "minecraft_java_extract_tests.rs"]
+mod extract_tests;

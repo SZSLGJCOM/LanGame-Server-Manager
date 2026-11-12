@@ -31,7 +31,7 @@ export const DRAGONWILDS_WORLD_CATEGORIES = [
 
 export interface DragonwildsWorldSettingsSnapshot {
   instance_id: string;
-  status: "ready" | "empty";
+  status: "ready" | "new" | "empty";
   world_file: string | null;
   world_name: string | null;
   world_mode: DragonwildsWorldMode | null;
@@ -46,7 +46,7 @@ export interface DragonwildsWorldSettingsSnapshot {
 
 export interface WriteDragonwildsWorldSettingsInput {
   instance_id: string;
-  world_file: string;
+  world_file: string | null;
   expected_revision: string;
   world_mode: DragonwildsWorldMode;
   values: Record<string, number>;

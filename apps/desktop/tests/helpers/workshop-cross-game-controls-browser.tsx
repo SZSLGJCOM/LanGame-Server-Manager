@@ -28,6 +28,8 @@ const snapshotRequests: string[][] = [];
 const writes: { instance: string; command: string }[] = [];
 let stored: InstanceDetails, details: InstanceDetails, moduleDetails: ModuleDetails, catalog: SteamWorkshopLookupItem[];
 let inventory: ManualModInventoryResult | null = null, epoch = 0, game = "", pzFresh = false, pzMissingMetadata = false;
+let failEditorSave = false;
+let editorSaveGate: { promise: Promise<void>; release: () => void } | null = null;
 const cached = new Set<string>();
 const originalError = console.error;
 console.error = (...args) => { errors.push(args.map(String).join(" ")); originalError(...args); };
@@ -62,6 +64,18 @@ async function click(target: HTMLElement) {
     rect.top >= -1 && rect.bottom <= innerHeight + 1, "Action is reachable inside the viewport");
   assert(!((target instanceof HTMLButtonElement || target instanceof HTMLInputElement) && target.disabled), "Action is enabled");
   await act(async () => { target.focus(); target.click(); });
+}
+async function typeText(target: HTMLTextAreaElement, text: string) {
+  await act(async () => {
+    Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, "value")!.set!.call(target, text);
+    target.dispatchEvent(new Event("input", { bubbles: true }));
+  });
+}
+async function nativeEscape() {
+  await act(async () => {
+    const response = await fetch(`/__reliability_key/${new URLSearchParams(location.search).get("nonce")}/Escape`, { method: "POST" });
+    assert(response.ok, "Native Escape dispatched");
+  });
 }
 function settings(): Record<string, unknown> { return JSON.parse(stored.settings_json); }
 function values(key: string): string[] { return String(settings()[key] ?? "").split(/[;\n]+/).map((id) => id.trim()).filter(Boolean); }
@@ -151,6 +165,60 @@ function prepare(template: InstanceDetails, moduleId: string) {
       inferred_id: game === "palworld" ? `Package${id}` : game === "squad" ? null : id,
       ...(game === "terraria" && id !== X ? { tmodloader_mod_name: tmodNames[id] } : {}) })) } : null;
 }
+async function auxiliaryEditorDialog() {
+  await myMods();
+  const pz = game === "projectzomboid", field = pz ? "map_name" : "tmodloader_enabled_mod_names";
+  const selector = pz ? ".pz-map-order-dialog" : ".mw-terraria-import-dialog";
+  const trigger = element<HTMLButtonElement>(pz ? ".pz-map-order-open" : ".mw-terraria-import-button");
+  const dialog = element<HTMLDialogElement>(selector);
+  assert(trigger.closest(".mw-detail-col-actions") && !dialog.open && dialog.getBoundingClientRect().height === 0,
+    "Optional editor starts closed and shares the list header instead of adding a permanent panel");
+  const before = settings(), beforeWrites = writes.length, beforeDownloads = downloads.length;
+  await click(trigger); await settle(() => dialog.open, "Optional editor did not open");
+  assert(dialog.contains(document.activeElement), "Native editor contains initial keyboard focus");
+  const input = element<HTMLTextAreaElement>("textarea", dialog);
+  const close = element<HTMLButtonElement>(pz ? ".pz-map-order-close" : ".mw-terraria-import-close", dialog);
+  const helpId = input.getAttribute("aria-describedby")?.split(" ")[0];
+  assert(helpId && document.getElementById(helpId)?.textContent, "Editor input exposes its instructions accessibly");
+  await act(async () => input.focus());
+  await settle(() => Boolean(dialog.querySelector(".configuration-field-help-tooltip.is-visible")), "Editor help is hidden behind the native modal");
+  const bounds = dialog.getBoundingClientRect();
+  assert(bounds.left >= 0 && bounds.top >= 0 && bounds.right <= innerWidth && bounds.bottom <= innerHeight,
+    "Optional editor fits the supported desktop viewport");
+  const token = pz ? "FixtureMap" : "FixtureLocalMod";
+  await typeText(input, token);
+  await click(close); await nativeEscape(); await nativeEscape();
+  assert(dialog.open && input.value === token && writes.length === beforeWrites && dialog.querySelector('[role="alert"]'),
+    "Close and repeated Escape preserve an unsaved draft without changing settings");
+  await click(button("Cancel", dialog)); await click(close);
+  assert(!dialog.open && document.activeElement === trigger && writes.length === beforeWrites,
+    "Cancelling the draft closes cleanly and restores the header action focus");
+
+  await click(trigger); await typeText(input, token);
+  const save = button(pz ? "Save map order" : "Add to enabled Mods", dialog);
+  failEditorSave = true;
+  await click(save);
+  await settle(() => Boolean(dialog.querySelector('.shell-activity-notice.is-error')?.textContent?.includes("Fixture editor save refused")),
+    "Save failure must remain visible inside the native editor");
+  assert(input.value === token && writes.length === beforeWrites && !input.disabled,
+    "Failed editor save keeps the draft available for retry");
+  let release!: () => void;
+  editorSaveGate = { promise: new Promise<void>((resolve) => { release = resolve; }), release: () => release() };
+  await click(save); await settle(() => input.disabled && save.disabled, "Pending editor save did not lock its controls");
+  await nativeEscape(); await nativeEscape(); await click(close);
+  assert(dialog.open && input.value === token && writes.length === beforeWrites,
+    "Pending editor save survives repeated Escape and close without discarding its draft");
+  await act(async () => { editorSaveGate!.release(); }); editorSaveGate = null;
+  await settle(() => writes.length === beforeWrites + 1 && input.value === "" && !input.disabled,
+    "Editor retry did not save and clear its acknowledged draft");
+  const after = settings();
+  assert(values(field).includes(token) && Object.keys(after).filter((key) => JSON.stringify(after[key]) !== JSON.stringify(before[key])).join() === field
+    && downloads.length === beforeDownloads, "Editor saves only its own field and never downloads Mods");
+  assert(Boolean(dialog.querySelector(".shell-activity-notice.is-success")), "Save success is visible inside the native editor");
+  await nativeEscape();
+  await settle(() => !dialog.open, "Saved editor did not close on Escape");
+  assert(document.activeElement === trigger, "Saved editor restores keyboard focus to its trigger");
+}
 async function runGame(template: InstanceDetails, moduleId: string) {
   prepare(template, moduleId);
   const originalOptions = JSON.stringify(settings().fixture_mod_options), originalCache = JSON.stringify([...cached]);
@@ -178,7 +246,7 @@ async function runGame(template: InstanceDetails, moduleId: string) {
     await library(); await expand(A);
     await click(element<HTMLButtonElement>(".mw-entry-row-actions > .mw-entry-remove-button", collectionRow(A)));
     await settle(() => Boolean(fixture.querySelector(".mw-collection-removal-dialog[open]")), "Terraria review did not open");
-    const review = element<HTMLDialogElement>(".mw-collection-removal-dialog");
+    const review = element<HTMLDialogElement>(".mw-collection-removal-dialog[open]");
     await click(button("Remove collection and selected Mods", review));
     await settle(() => Boolean(review.querySelector('[role="alert"]')), "Unsafe name ownership must produce a visible removal error");
     assert(writes.length === beforeWrites && records().length === 2 && settings().tmodloader_enabled_mod_names === "IndependentRuntimeMod",
@@ -253,7 +321,7 @@ async function runGame(template: InstanceDetails, moduleId: string) {
     "Palworld restore clears the removal marker and reuses the saved PackageName");
   await click(element<HTMLButtonElement>(".mw-entry-row-actions > .mw-entry-remove-button", collectionRow(A)));
   await settle(() => Boolean(fixture.querySelector(".mw-collection-removal-dialog[open]")), "Whole removal review did not open");
-  const dialog = element<HTMLDialogElement>(".mw-collection-removal-dialog");
+  const dialog = element<HTMLDialogElement>(".mw-collection-removal-dialog[open]");
   const shared = element<HTMLInputElement>(`input[value="${Y}"]`, dialog);
   assert(shared.disabled && !shared.checked && element<HTMLInputElement>(`input[value="${X}"]`, dialog).checked,
     "Whole removal protects members shared with another collection");
@@ -273,8 +341,10 @@ async function runGame(template: InstanceDetails, moduleId: string) {
   await library(); await expand(B);
   assert(document.documentElement.scrollWidth <= innerWidth + 1 && document.documentElement.scrollHeight <= innerHeight + 1,
     "Collection layout stays within the viewport");
+  const editorDialog = game === "projectzomboid" || game === "terraria";
+  if (editorDialog) await auxiliaryEditorDialog();
   reports.push({ module: game, reversible, single_remove_repair: true, protected_whole_removal: true,
-    leaf_visibility_and_remount: true, writes: writes.length - beforeWrites, downloads: downloads.length - beforeDownloads });
+    leaf_visibility_and_remount: true, editor_dialog: editorDialog, writes: writes.length - beforeWrites, downloads: downloads.length - beforeDownloads });
 }
 async function run() {
   await act(prepareBrowserLocaleCatalogs);
@@ -291,6 +361,10 @@ async function run() {
   });
   mockWindows("cross-game-controls-fixture");
   mockIPC(async (command, payload) => {
+    if (command === "update_instance_record_if_current") {
+      if (failEditorSave) { failEditorSave = false; throw new Error("Fixture editor save refused"); }
+      if (editorSaveGate) await editorSaveGate.promise;
+    }
     if (command === "read_project_zomboid_workshop_mods_snapshot") {
       const args = payload as { instanceId: string; ids: string[] };
       assert(game === "projectzomboid" && args.instanceId === stored.summary.id, "PZ metadata remains scoped to this instance");
@@ -315,6 +389,13 @@ async function run() {
   }, { shouldMockEvents: true });
   Object.assign(window, { isTauri: true });
   for (const moduleId of games) await runGame(template, moduleId);
+  // The two viewport captures show each optional editor after all shared controls have passed.
+  prepare(template, innerWidth < 1000 ? "terraria" : "projectzomboid");
+  await mount(); await myMods();
+  await click(element(game === "terraria" ? ".mw-terraria-import-button" : ".pz-map-order-open"));
+  const editor = element<HTMLDialogElement>(game === "terraria" ? ".mw-terraria-import-dialog" : ".pz-map-order-dialog");
+  await act(async () => element<HTMLTextAreaElement>("textarea", editor).focus());
+  await settle(() => Boolean(editor.querySelector(".configuration-field-help-tooltip.is-visible")), "Final editor guidance did not appear");
   assert(errors.length === 0, "No browser console or uncaught errors");
   return { status: "passed", checks, games: reports, browser_errors: errors, viewport: { width: innerWidth, height: innerHeight } };
 }

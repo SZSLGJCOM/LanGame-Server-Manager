@@ -40,10 +40,27 @@ pub struct InstallProgressInput {
 #[serde(rename_all = "camelCase")]
 pub struct ToolsStatus {
     pub installed: bool,
+    pub update_available: bool,
     pub connected: bool,
     pub can_uninstall: bool,
     pub issue: Option<String>,
 }
+
+impl From<install::InstallStatus> for ToolsStatus {
+    fn from(status: install::InstallStatus) -> Self {
+        Self {
+            installed: status.ready,
+            update_available: status.ready && !status.matches_bundle,
+            connected: false,
+            can_uninstall: status.can_uninstall,
+            issue: status.issue,
+        }
+    }
+}
+
+#[cfg(test)]
+#[path = "commands_ark_tools_status_tests.rs"]
+mod status_tests;
 
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -261,13 +278,9 @@ pub async fn read_ark_tools_status(
     let status = tokio::task::spawn_blocking(move || install::inspect(&root, &module, payload))
         .await
         .map_err(|e| format!("ARK extension inspection failed: {e}"))??;
-    if !status.ready || details.active_run.is_none() {
-        return Ok(ToolsStatus {
-            installed: status.ready,
-            connected: false,
-            can_uninstall: status.can_uninstall,
-            issue: status.issue,
-        });
+    let mut status = ToolsStatus::from(status);
+    if !status.installed || details.active_run.is_none() {
+        return Ok(status);
     }
     let connected = async {
         let process_key = input.process_key.as_deref().unwrap_or("main");
@@ -286,12 +299,9 @@ pub async fn read_ark_tools_status(
         handshake(&target).await
     }
     .await;
-    Ok(ToolsStatus {
-        installed: true,
-        connected: connected.is_ok(),
-        can_uninstall: status.can_uninstall,
-        issue: connected.err(),
-    })
+    status.connected = connected.is_ok();
+    status.issue = connected.err();
+    Ok(status)
 }
 
 #[tauri::command]
@@ -400,7 +410,7 @@ pub async fn prepare_ark_tools(
             if !status.ready {
                 return Err(status.issue.unwrap_or_else(|| "ARK extension installation did not pass verification.".into()));
             }
-            Ok(ToolsStatus { installed: true, connected: false, can_uninstall: status.can_uninstall, issue: status.issue })
+            Ok(ToolsStatus::from(status))
         });
         let terminal = finish_installation(&mut preparation, &task_storage, &task_instance_id, &task_operation_id, result.as_ref().err().map(String::as_str));
         result.and_then(|status| {

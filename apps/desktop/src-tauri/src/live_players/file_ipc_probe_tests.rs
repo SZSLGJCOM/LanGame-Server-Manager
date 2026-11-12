@@ -47,6 +47,7 @@ pub(super) fn run_owned_empty_probe(game: Game, root: PathBuf, args: Vec<String>
         install_root: root.to_string_lossy().into_owned(),
         install_state: app_core::InstallState::Installed,
         uses_private_runtime: true,
+        can_update_before_start: false,
         working_directory: root.to_string_lossy().into_owned(),
         executable_path: root
             .join(if game == Game::Scum {

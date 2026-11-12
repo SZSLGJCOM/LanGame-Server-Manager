@@ -15,17 +15,91 @@ for (const extension of [".ts", ".tsx"]) {
 }
 
 const {
+  ABIOTIC_OFFICIAL_MOD_ENTRY_KEY,
   buildConfigurableEntries,
   buildConfiguredEntries,
   buildEnabledRows,
+  buildSteamLookupIds,
+  canReorderEnabledRow,
   canToggleModEnabledRow,
+  isAbioticOfficialModId,
+  parseAbioticOfficialModIds,
   reorderEnabledEntryValues
 } = require(path.join(desktopRoot, "src", "views", "servers", "mod-workbench-model.ts"));
 const {
+  buildAbioticModRemovePlan,
   buildModSettingsApplyPlan,
   buildModSettingsRemovePlan
 } = require(path.join(desktopRoot, "src", "views", "servers", "mod-workbench-plans.ts"));
 const { parseWorkshopIdList } = require(path.join(desktopRoot, "src", "views", "settings", "guided-setting-values.ts"));
+
+test("Abiotic official Mods share ordered library rows without becoming Workshop downloads or enablement toggles", () => {
+  const settings = { mod_ids: "6472275; 1,6472552\n18446744073709551615\t6472275", server_name: "Keep" };
+  const details = { mods: { source: { provider: "nexus" }, manual_staging: { target_label: "ue4ss/Mods" } } };
+  const inventory = [{ name: "LocalUE4SS", inferred_id: "6472275", path: "fixture/local-mod" }];
+  const entries = buildConfiguredEntries("abioticfactor", settings, details, [], inventory);
+  const rows = buildEnabledRows(buildConfigurableEntries("abioticfactor", entries));
+  assert.deepEqual(rows.map((row) => row.id), ["6472275", "1", "6472552", "18446744073709551615"]);
+  assert.equal(entries[0].key, ABIOTIC_OFFICIAL_MOD_ENTRY_KEY);
+  assert.equal(entries[0].fieldLabel, "mod_ids");
+  assert.equal(entries[0].label, "mod.io");
+  assert.equal(entries[0].kind, "game-mod");
+  assert.deepEqual(buildSteamLookupIds(entries, []), []);
+  assert.equal(buildModSettingsApplyPlan("abioticfactor", settings, ["6472275"], {}, null).canApply, false);
+  assert.ok(rows.every((row) => !canToggleModEnabledRow(row, "abioticfactor", false)));
+  assert.ok(rows.every((row) => !canToggleModEnabledRow(row, "abioticfactor", true)));
+  assert.equal(canReorderEnabledRow(rows[0]), true);
+  assert.deepEqual(reorderEnabledEntryValues(entries[0], "6472552", "6472275"),
+    ["6472552", "6472275", "1", "18446744073709551615"]);
+  assert.equal(settings.mod_ids, "6472275; 1,6472552\n18446744073709551615\t6472275");
+  assert.deepEqual(inventory, [{ name: "LocalUE4SS", inferred_id: "6472275", path: "fixture/local-mod" }]);
+  assert.deepEqual(buildConfiguredEntries("abioticfactor", {}, details, [], inventory), []);
+});
+
+test("Abiotic IDs retain native delimiters and unsigned 64-bit bounds without silently hiding invalid saved data", () => {
+  assert.deepEqual(parseAbioticOfficialModIds("1\r\n2,3;4\t5 6;1"), ["1", "2", "3", "4", "5", "6"]);
+  assert.ok(["1", "6472275", "18446744073709551615"].every(isAbioticOfficialModId));
+  for (const value of ["0", "01", "-1", "1.5", "1e6", "18446744073709551616", "a", "https://mod.io/g/abiotic-factor/m/mod"]) {
+    assert.equal(isAbioticOfficialModId(value), false, value);
+  }
+  const entries = buildConfiguredEntries("abioticfactor", { mod_ids: "6472275;bad;6472552" });
+  const rows = buildEnabledRows(entries);
+  assert.deepEqual(rows.map((row) => row.value), ["6472275", "bad", "6472552"]);
+  assert.equal(canReorderEnabledRow(rows[0]), false);
+  assert.equal(reorderEnabledEntryValues(entries[0], "6472552", "6472275"), null);
+});
+
+test("Abiotic removal preserves native order and unrelated settings regardless of matching Workshop metadata", () => {
+  const settings = { mod_ids: "1;6472275,6472552\n6472275", sideload_mods: true,
+    sideload_mods_path: "AbioticFactor/Mods/custom", mods_directory: "AbioticFactor/Saved/mod.io",
+    server_name: "Keep", local_config: { retained: true }, modio_token: "fixture-private-token" };
+  const before = structuredClone(settings);
+  const lookup = { "6472275": { id: "6472275", item_kind: "collection", status: "resolved", consumer_app_id: 322330,
+    children: [{ id: "6472552", item_kind: "item", status: "resolved", consumer_app_id: 322330 }] } };
+  const plan = buildModSettingsRemovePlan("abioticfactor", settings, ["6472275", "9999999"], lookup, 322330, null);
+  assert.equal(plan.canRemove, true);
+  assert.deepEqual(plan.removedIds, ["6472275"]);
+  assert.deepEqual(plan.nextSettings, { ...settings, mod_ids: "1\n6472552" });
+  assert.deepEqual(settings, before);
+  assert.equal(buildAbioticModRemovePlan(settings, ["9999999"]).canRemove, false);
+  assert.equal(buildAbioticModRemovePlan(settings, ["9999999"]).nextSettings, null);
+});
+
+test("Abiotic final removal respects sideload requirements and never silently repairs other invalid IDs", () => {
+  const settings = { mod_ids: "6472275", sideload_mods: true, sideload_mods_path: "AbioticFactor/Mods/curated" };
+  const blocked = buildAbioticModRemovePlan(settings, ["6472275"]);
+  assert.equal(blocked.canRemove, false);
+  assert.equal(blocked.nextSettings, null);
+  assert.equal(blocked.summaryKey, "abiotic.settings.validation.sideloadIds");
+  assert.equal(settings.sideload_mods, true);
+  const cleared = buildAbioticModRemovePlan({ ...settings, sideload_mods: false }, ["6472275"]);
+  assert.equal(cleared.canRemove, true);
+  assert.deepEqual(cleared.nextSettings, { ...settings, sideload_mods: false, mod_ids: "" });
+  const invalid = { mod_ids: "6472275;18446744073709551616" };
+  assert.equal(buildAbioticModRemovePlan(invalid, ["6472275"]).summaryKey, "abiotic.settings.validation.modIds");
+  assert.equal(buildAbioticModRemovePlan(invalid, ["6472275"]).nextSettings, null);
+  assert.deepEqual(buildAbioticModRemovePlan(invalid, ["18446744073709551616"]).nextSettings, { mod_ids: "6472275" });
+});
 
 test("DST collection download, enablement and ownership use server members without re-expanding native collections", () => {
   const { buildDownloadableSteamIds } = require("../src/views/servers/mod-workbench-model.ts");

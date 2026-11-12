@@ -1,5 +1,8 @@
 use super::*;
 
+#[path = "commands_mod_management_local_tests.rs"]
+mod local_actions;
+
 fn fixture(label: &str) -> (PathBuf, ResolvedManualModTarget) {
     let root = std::env::temp_dir().join(format!(
         "langame-managed-mod-{label}-{}",
@@ -149,6 +152,8 @@ fn dependencies_block_reverse_mutations_and_enable_checks_payload_version_and_st
         manifest.packages.insert(
             key.into(),
             InstalledPackage {
+                display_name: None,
+                icon_url: None,
                 thunderstore_intent: None,
                 routed_files: BTreeMap::new(),
                 target_name: name.into(),
@@ -530,6 +535,8 @@ fn adopting_existing_thunderstore_consumer_preserves_declared_reverse_dependenci
     manifest.packages.insert(
         "thunderstore-Team-Library".into(),
         InstalledPackage {
+            display_name: None,
+            icon_url: None,
             thunderstore_intent: None,
             routed_files: BTreeMap::new(),
             target_name: "Library".into(),
@@ -636,6 +643,8 @@ fn deleting_owned_payload_preserves_root_and_nested_configuration_formats() {
     manifest.packages.insert(
         "local-Example".into(),
         InstalledPackage {
+            display_name: None,
+            icon_url: None,
             thunderstore_intent: None,
             routed_files: BTreeMap::new(),
             target_name: "Example".into(),
@@ -678,6 +687,8 @@ fn deleting_a_recorded_configuration_root_file_preserves_its_bytes() {
         manifest.packages.insert(
             key.clone(),
             InstalledPackage {
+                display_name: None,
+                icon_url: None,
                 thunderstore_intent: None,
                 routed_files: BTreeMap::new(),
                 target_name: name.into(),

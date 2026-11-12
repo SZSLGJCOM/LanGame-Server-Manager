@@ -95,10 +95,11 @@ function pollingHarness(relativePath, imports) {
 
 const workshopOperations = loadSourceModule("src/views/servers/workshop-download-operations.ts", {
   "../../app-state": loadSourceModule("src/app-state.ts", { "./api": {} })
-});
+}, { crypto });
+const { InstanceSettingsSaveCoordinator } = require("../src/views/settings/instance-settings-save-coordinator.ts");
 
 function workshopPollingHarness(readBackgroundJobs) {
-  const owner = {};
+  const owner = new InstanceSettingsSaveCoordinator();
   return pollingHarness("src/views/servers/useWorkshopDownloadOperation.ts", {
     "../../api": { readBackgroundJobs },
     "../../domain/single-flight-poller": { SingleFlightPoller },
@@ -237,40 +238,51 @@ test("library polling stays single-flight and disposes pending reads", async () 
 });
 
 test("workshop polling respects read-only, idle and queued states and discards a response after cleanup", async () => {
-  for (const [readOnly, stage] of [[true, "running"], [false, "idle"], [false, "queued"], [false, "running"]]) {
-    const pending = deferred();
+  for (const [readOnly, stage] of [[true, "running"], [false, "idle"], [false, "queued"], [false, "preparing"], [false, "running"]]) {
+    const pending = deferred(), finished = deferred();
     let calls = 0;
     const view = workshopPollingHarness(() => { calls++; return pending.promise; });
-    const initial = view.render("useWorkshopDownloadOperation", "a", readOnly);
+    const initial = view.render("useWorkshopDownloadOperation", "a", false);
+    let completion;
     if (stage !== "idle") {
-      const operation = initial.begin(workshopRequest);
-      if (stage === "running") operation.trackJobs([]);
+      completion = initial.enqueue(workshopRequest, (operation) => {
+        if (stage === "running") operation.beginAttempt();
+        return finished.promise;
+      });
+      if (stage !== "queued") await flushPromises();
+      assert.equal(view.snapshot().requests[0].status, stage === "queued" ? "queued" : "preparing");
     }
     view.render("useWorkshopDownloadOperation", "a", readOnly);
     const active = !readOnly && stage === "running";
     assert.equal(calls, active ? 1 : 0);
-    assert.equal(view.snapshot().job, null);
+    assert.equal(view.snapshot().requests[0]?.job ?? null, null);
     view.dispose();
     pending.resolve([workshopJob("late")]);
     await flushPromises();
-    assert.equal(view.snapshot().job, null, "A disposed instance must not receive the late Workshop response");
+    assert.equal(view.snapshot().requests[0]?.job ?? null, null, "A disposed instance must not receive the late Workshop response");
     assert.equal(view.scheduler.tasks.size, 0);
+    finished.resolve();
+    await completion;
   }
 });
 
 test("workshop polling records only its own accepted attempt and stops when it becomes read-only", async () => {
-  const reads = [];
+  const reads = [], finished = deferred();
   const view = workshopPollingHarness(() => { const read = deferred(); reads.push(read); return read.promise; });
-  const operation = view.render("useWorkshopDownloadOperation", "a", false).begin(workshopRequest);
-  const existing = workshopJob("existing"), own = workshopJob("current");
-  operation.trackJobs([existing]);
+  const existing = workshopJob("existing");
+  const completion = view.render("useWorkshopDownloadOperation", "a", false).enqueue(workshopRequest, (operation) => {
+    operation.beginAttempt();
+    return finished.promise;
+  });
+  await flushPromises();
+  const own = workshopJob(view.snapshot().requests[0].attemptToken);
   view.render("useWorkshopDownloadOperation", "a", false);
   view.render("useWorkshopDownloadOperation", "a", false);
   assert.equal(reads.length, 1);
   assert.equal(view.scheduler.tasks.size, 0);
   reads[0].resolve([existing, workshopJob("other", { target_id: "b" }), own]);
   await flushPromises();
-  assert.equal(view.snapshot().job, own);
+  assert.equal(view.snapshot().requests[0].job, own);
   view.render("useWorkshopDownloadOperation", "a", false);
   assert.equal(reads.length, 1, "Progress updates must not restart an unchanged polling effect");
   assert.equal(view.scheduler.runNext(), 350);
@@ -278,9 +290,11 @@ test("workshop polling records only its own accepted attempt and stops when it b
   view.render("useWorkshopDownloadOperation", "a", true);
   reads[1].resolve([{ ...own, progress_percent: 99 }]);
   await flushPromises();
-  assert.equal(view.snapshot().job, own, "A response started before read-only must not update progress");
+  assert.equal(view.snapshot().requests[0].job, own, "A response started before read-only must not update progress");
   assert.equal(view.scheduler.tasks.size, 0);
   view.dispose();
+  finished.resolve();
+  await completion;
 });
 
 test("server workspace discovers autostart jobs enqueued after an initially empty bootstrap", async () => {

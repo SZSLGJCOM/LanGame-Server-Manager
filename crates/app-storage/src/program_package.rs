@@ -24,9 +24,15 @@ use verification::{CachedVerification, PackageVerifier};
 #[path = "program_steam_metadata.rs"]
 mod steam_metadata;
 
+#[path = "program_copy_integrity.rs"]
+mod copy_integrity;
+pub use copy_integrity::program_copy_requires_repair;
+
 #[path = "program_package_reuse.rs"]
 mod reuse;
-pub(crate) use reuse::{only_package_files, retired_library_is_clean};
+pub(crate) use reuse::{
+    only_package_files, original_defaults_are_unchanged, retired_library_is_clean,
+};
 
 pub(super) const CLEAN_PACKAGE: &str = ".langame-clean-package.json";
 const INITIAL_PACKAGE: &str = ".langame-initial-package.json";
@@ -62,6 +68,7 @@ pub use baseline::{
     ProgramBaselineInventory, record_library_program_baseline,
     record_library_program_baseline_with_progress, record_verified_library_program_baseline,
     record_verified_library_program_baseline_with_progress,
+    restore_library_initial_program_defaults_with_progress,
 };
 
 /// Destructive and archive operations always verify the current file bytes.
@@ -83,6 +90,31 @@ pub(crate) fn read_package_inventory(
             files: manifest.files,
             directories: manifest.directories,
         }))
+}
+
+/// Compare locally certified defaults with the original inventory. This only
+/// decides whether an older inventory needs certification again; it grants no
+/// authority to copy or bind a program directory.
+pub fn library_initial_program_matches_files(
+    root: &Path,
+    module_id: &str,
+    files: &BTreeMap<String, String>,
+) -> Result<bool, StorageError> {
+    if files.is_empty() {
+        return Ok(true);
+    }
+    let Some(initial) = read_named_manifest(root, INITIAL_PACKAGE)? else {
+        return Ok(false);
+    };
+    if initial.module_id != module_id {
+        return Err(invalid(
+            root,
+            "original program inventory belongs to another module",
+        ));
+    }
+    Ok(files
+        .iter()
+        .all(|(path, digest)| initial.files.get(path) == Some(digest)))
 }
 
 /// Metadata-only copy preview; never use this as proof that payloads are clean.
@@ -199,6 +231,56 @@ pub fn library_program_is_pristine(
     Ok(read_verified_clean_package(root, Some(&descriptor.summary.id), cancellation)?.is_some())
 }
 
+/// Check the module's concrete launch/installation entry points against the
+/// installer baseline. This is startup readiness, not a clean-copy certificate:
+/// external loaders can intentionally patch other original files (e.g. Oxide).
+/// None means a legacy installation has no baseline; its explicit repair can
+/// acquire official evidence, but an ordinary start must not guess its contents.
+pub fn program_launch_files_match_baseline(
+    root: &Path,
+    descriptor: &ModuleDescriptor,
+    cancellation: Option<&AtomicBool>,
+) -> Result<Option<bool>, StorageError> {
+    check_creation_cancelled(cancellation)?;
+    let Some(mut manifest) = read_manifest(root)? else {
+        return Ok(None);
+    };
+    if manifest.module_id != descriptor.summary.id {
+        return Err(invalid(root, "program inventory belongs to another module"));
+    }
+    let required: BTreeSet<_> = descriptor
+        .install
+        .as_ref()
+        .and_then(|install| install.verification_path.as_deref())
+        .into_iter()
+        .chain(
+            descriptor
+                .process
+                .as_ref()
+                .map(|process| process.executable.as_str()),
+        )
+        .filter(|path| !path.contains("{{"))
+        .map(|path| path.replace('\\', "/"))
+        .collect();
+    if required.is_empty() {
+        return Ok(None);
+    }
+    if required.iter().any(|key| !manifest.files.contains_key(key)) {
+        return Ok(Some(false));
+    }
+    manifest.files.retain(|key, _| required.contains(key));
+    manifest.directories.retain(|directory| {
+        required
+            .iter()
+            .any(|key| key.starts_with(&(directory.clone() + "/")))
+    });
+    Ok(Some(
+        PackageVerifier::new(root, true, cancellation)
+            .verify(Some(&descriptor.summary.id), Some(manifest))?
+            .is_some(),
+    ))
+}
+
 /// After official validation of the same package version, retain only an
 /// existing allowlist whose program bytes still match, refreshing only the
 /// validated Steam installation metadata already listed for this module. The
@@ -224,7 +306,20 @@ pub fn retain_verified_library_program_baseline_with_progress(
     cancellation: Option<&AtomicBool>,
     on_progress: &mut dyn FnMut(InstallVerificationProgress),
 ) -> Result<bool, StorageError> {
-    retain_baseline(root, descriptor, false, cancellation, on_progress)
+    retain_baseline(root, descriptor, false, true, cancellation, on_progress)
+}
+
+/// Same-version updates retain their prior expected hashes on mismatch. This
+/// keeps repair evidence and prevents external loader patches from turning a
+/// later ordinary update into an unrequested fresh acquisition. False never
+/// certifies the program as pristine; repair callers must reject it.
+pub fn retain_existing_program_baseline_with_progress(
+    root: &Path,
+    descriptor: &ModuleDescriptor,
+    cancellation: Option<&AtomicBool>,
+    on_progress: &mut dyn FnMut(InstallVerificationProgress),
+) -> Result<bool, StorageError> {
+    retain_baseline(root, descriptor, false, false, cancellation, on_progress)
 }
 
 /// Finalize a just-published isolated payload. Retained data can change shipped
@@ -248,13 +343,14 @@ pub fn retain_published_library_program_baseline_with_progress(
     cancellation: Option<&AtomicBool>,
     on_progress: &mut dyn FnMut(InstallVerificationProgress),
 ) -> Result<bool, StorageError> {
-    retain_baseline(root, descriptor, true, cancellation, on_progress)
+    retain_baseline(root, descriptor, true, true, cancellation, on_progress)
 }
 
 fn retain_baseline(
     root: &Path,
     descriptor: &ModuleDescriptor,
     allow_cached: bool,
+    invalidate_on_mismatch: bool,
     cancellation: Option<&AtomicBool>,
     on_progress: &mut dyn FnMut(InstallVerificationProgress),
 ) -> Result<bool, StorageError> {
@@ -277,13 +373,15 @@ fn retain_baseline(
         verifier.set_progress_inventory(clean, original_initial.as_ref())?;
     }
     let Some(clean) = verifier.verify_with_progress(module_id, clean, on_progress)? else {
-        record_library_program_baseline_with_progress(
-            root,
-            descriptor,
-            false,
-            cancellation,
-            on_progress,
-        )?;
+        if invalidate_on_mismatch {
+            record_library_program_baseline_with_progress(
+                root,
+                descriptor,
+                false,
+                cancellation,
+                on_progress,
+            )?;
+        }
         return Ok(false);
     };
     let initial = if original_initial.is_some() {

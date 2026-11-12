@@ -175,7 +175,7 @@ async function run() {
       if (((payload as { ids?: string[] } | undefined)?.ids ?? []).includes(OFFLINE)) throw new Error("Fixture Workshop lookup is offline");
       if (holdLookup) { holdLookup = false; await new Promise<void>((resolve) => { releaseLookup = resolve; }); }
     }
-    if (command === "download_steam_workshop_items" && holdDownload) {
+    if (command === "prepare_steam_workshop_items" && holdDownload) {
       holdDownload = false; await new Promise<void>((resolve) => { releaseDownload = resolve; });
     }
     return baseIpc(command, payload);

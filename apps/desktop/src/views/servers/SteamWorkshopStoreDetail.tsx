@@ -79,12 +79,13 @@ export function SteamWorkshopStoreDetail(props: SteamWorkshopStoreDetailProps) {
     { id: "favorites", icon: "star" as const, label: t("servers.mods.storeDetail.favorites", undefined, "Favorites"), value: formatCount(locale, props.item.favorites) },
     { id: "views", icon: "eye" as const, label: t("servers.mods.storeDetail.views", undefined, "Views"), value: formatCount(locale, props.item.views) }
   ].filter((metric) => metric.value);
-  const actionLabel = props.actionBusy
+  const waiting = props.lifecycleState === "queued" || props.lifecycleState === "ready";
+  const actionLabel = waiting || props.lifecycleState === "applying" ? t(`servers.mods.lifecycle.${props.lifecycleState}`, undefined, props.lifecycleState) : props.actionBusy
     ? t("servers.mods.installRunning", undefined, "Installing…")
     : props.action === "manage"
       ? t("servers.mods.storeDetail.manage", undefined, "Manage")
       : t("servers.mods.storeDetail.install", undefined, "Download and add");
-  const actionIcon = props.actionBusy
+  const actionIcon = waiting ? "clock" : props.actionBusy
     ? "loader"
     : props.action === "manage"
       ? "settings"

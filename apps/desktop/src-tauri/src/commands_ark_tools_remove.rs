@@ -103,6 +103,7 @@ pub async fn remove_ark_tools(
         result.map(|framework_retained| RemovalResult {
             status: ToolsStatus {
                 installed: false,
+                update_available: false,
                 connected: false,
                 can_uninstall: false,
                 issue: None,

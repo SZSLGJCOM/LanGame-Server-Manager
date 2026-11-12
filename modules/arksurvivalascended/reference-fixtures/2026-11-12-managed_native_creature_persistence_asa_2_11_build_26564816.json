@@ -1,0 +1,305 @@
+{
+  "schema_version": 1,
+  "module_id": "arksurvivalascended",
+  "evidence_classification": "isolated_managed_backend_native_game_tools_and_creature_persistence",
+  "attempted_on": "2026-11-12",
+  "verification_timezone": "Asia/Shanghai",
+  "status": "passed",
+  "package": {
+    "steam_app_id": 2430930,
+    "steam_build_id": "26564816",
+    "executable_sha256": "79b0ce800a05e254f0a591967acea9ae0fcd0c03becf75ab04182e2c3cd0ab02",
+    "acquisition_evidence": "2026-11-12-public_package_build_26564816.json",
+    "copied_payload_bytes": 12318035887,
+    "acquisition_in_test": "existing_local_package",
+    "test_copy_source_provenance_marker": "unverified",
+    "provenance_interpretation": "The test copies an existing local package; the separate same-task official SteamCMD acquisition and static identity record bind that package to this build.",
+    "native_version_observations": [
+      {
+        "version": "97.21",
+        "timestamp_as_logged": "2026.11.12-02.36.21:171",
+        "raw_log_line": 49,
+        "banner": "ARK Version: 97.21"
+      },
+      {
+        "version": "97.21",
+        "timestamp_as_logged": "2026.11.12-02.39.20:829",
+        "raw_log_line": 445,
+        "banner": "ARK Version: 97.21"
+      }
+    ]
+  },
+  "framework": {
+    "version": "AsaApi 2.11",
+    "version_source": "exact frozen dependency and plugin metadata, successful production preparation and native handshake",
+    "release_url": "https://github.com/ArkServerApi/AsaApi/releases/tag/2.11",
+    "source_commit": "bd376a0422291b0b1bf15a0b7868e7e275605da9",
+    "runtime_archive_sha256": "64f5f1165ef73f3439bba3794e77e379489167cc385c0ac5c4717ca60ad3e88a",
+    "sdk_archive_sha256": "e179b1de7037ea48e69531e4aac75e02126fa63a8054cc32236f818a20ea95bc",
+    "minimum_api_version": 2.11,
+    "production_preparation": {
+      "entry_point": "commands_ark_tools::prepare_ark_tools",
+      "allow_matching_symbols_download": true,
+      "installed_status": true,
+      "completion_marker": "NATIVE_ARK_CREATURE module=arksurvivalascended phase=extension_installed isolated=true",
+      "scope": "The production installer and executable-bound matching-cache validation completed before native startup; successful handshake, map and entity operations subsequently exercised the extension.",
+      "independent_installed_payload_inventory_captured": false
+    }
+  },
+  "build": {
+    "cargo_command": "test",
+    "cargo_arguments": [
+      "-p",
+      "langame-desktop",
+      "--bin",
+      "langame-desktop",
+      "--features",
+      "custom-protocol",
+      "--locked",
+      "--no-run"
+    ],
+    "entry_point": "invoke-codex-cargo.ps1",
+    "entry_point_sha256": "a49fe85bfed0b558354bc5a605e84b5a2f9a30c251c2bc57ff4ddc51503223b2",
+    "source_identity_sha256": "8ecd9d4866d8f0f204e3a30f378304100a7ac168ace58870e997327c72740c9a",
+    "source_manifest_sha256": "084d23b719f1af47e7229e531476217f44b979c8f55b50ffece94f9db007a1ed",
+    "independently_verified_source_files": 4655,
+    "test_binary_sha256": "c4ce15f417ce527dfea71b693ac29573b8bfb078a73417e8e0ad133925af5b50",
+    "test_binary_bytes": 232290816,
+    "gm_commands_sha256": "4b4148623e8bb40a52a1bb7bdffc5b552d97cee493f054dc9fe381553c1e562a",
+    "relevant_frozen_sources": [
+      {
+        "path": "scripts/build_ark_tools.ps1",
+        "sha256": "8534a92662a774168813bb51392c8141d0c06f67c53c84ce0a894c750b9ce9d6"
+      },
+      {
+        "path": "modules/ark-tools/dependencies.json",
+        "sha256": "372baf0170be4b3dc0a16c744d092ee8f4f9b49ecf2efa90526b4ea72a69db54"
+      },
+      {
+        "path": "modules/ark-tools/PluginInfo.json",
+        "sha256": "06747822be770d895c490ad7ccb2314e3a954ca1be67771b5a9c89fa77c0c47d"
+      },
+      {
+        "path": "apps/desktop/src-tauri/src/ark_tools_install.rs",
+        "sha256": "656a634a005f5ddcd431bcab6f44218e054d3ca6a5e985dd9909c2df32d272cd"
+      },
+      {
+        "path": "apps/desktop/src-tauri/src/commands_native_runtime.rs",
+        "sha256": "d07c7a9b2d41a40761a27badcef989eb86eb3319ff846c1582339f594bd8a9ec"
+      },
+      {
+        "path": "apps/desktop/src-tauri/src/commands_native_ark_creatures.rs",
+        "sha256": "c47829a4009193f85e29f5216d4ff4c0f63f4d7e39ec048bff085e133f42e2ca"
+      },
+      {
+        "path": "apps/desktop/src-tauri/src/commands_native_ark_persistence.rs",
+        "sha256": "1f9e462171b5181740e1bf20e0b2eb5b57a9981edf37d800f99e713f6611bfcf"
+      },
+      {
+        "path": "apps/desktop/src-tauri/src/commands_native_lifecycle_tests.rs",
+        "sha256": "d1680ca9fa02c4fd060ffd09d036d146384c413bfec9f3f0750e1f63d100af9e"
+      },
+      {
+        "path": "apps/desktop/src/views/servers/gm-tools.ts",
+        "sha256": "7677d42efd6064afece3311575119c34f5bba3f49fd76e7badadac6c221627d2"
+      }
+    ]
+  },
+  "test": {
+    "selector": "commands::tests::manual_runtime_tests::native_lifecycle_tests::native_game_tools",
+    "arguments": [
+      "--exact",
+      "commands::tests::manual_runtime_tests::native_lifecycle_tests::native_game_tools",
+      "--ignored",
+      "--nocapture",
+      "--test-threads=1"
+    ],
+    "started_utc": "2026-11-12T02:28:14Z",
+    "completed_utc": "2026-11-12T02:41:21Z",
+    "runner_duration_seconds": 787.17,
+    "rust_test_footer_duration_seconds": 787.11,
+    "native_catalog_elapsed_ms": 787074,
+    "duration_interpretation": "Runner duration includes process orchestration; the Rust footer and native catalog measure their respective inner scopes.",
+    "non_elevated": true,
+    "exit_code": 0,
+    "tests_passed": 1,
+    "tests_failed": 0,
+    "settings": {
+      "program_update": {
+        "policy": "pinned"
+      },
+      "dino_resistance_multiplier": 0,
+      "dino_damage_multiplier": 0,
+      "num_gachas_per_tribe_for_penalty": -1,
+      "gachas_over_tribe_limit_penalty": 2,
+      "limit_replicators_per_saddle": 0,
+      "limit_cloning_chambers_range": 7500,
+      "limit_cloning_chambers_in_range_num": -1,
+      "limit_cloning_chambers_in_tribe_num": 45
+    },
+    "flags": {
+      "LANGAME_NATIVE_GM_TOOLS": "true",
+      "LANGAME_NATIVE_ARK_CREATURES": "true",
+      "LANGAME_NATIVE_ARK_PERSISTENCE": "true",
+      "LANGAME_NATIVE_GM_COMMANDS_FILE": "frontend-exported asa-gm-commands.json"
+    },
+    "cycles": [
+      {
+        "cycle": "initial",
+        "run_id": 1,
+        "production_start_elapsed_ms": 450877,
+        "native_readiness": "passed",
+        "exit_code": 0,
+        "crash_flag": false,
+        "status": "stopped",
+        "active_run_after_stop": null
+      },
+      {
+        "cycle": "restart",
+        "run_id": 2,
+        "production_start_elapsed_ms": 138103,
+        "native_readiness": "passed",
+        "exit_code": 0,
+        "crash_flag": false,
+        "status": "stopped",
+        "active_run_after_stop": null
+      }
+    ],
+    "assertions": {
+      "production_extension_preparation": true,
+      "extension_handshake": true,
+      "map_snapshot_validated": true,
+      "owned_rcon_endpoint": true,
+      "read_only_rcon_preflight": true,
+      "frontend_gm_commands": true,
+      "three_native_creature_readbacks": true,
+      "duplicate_nonce_one_entity": true,
+      "unknown_class_rejected": true,
+      "missing_online_owner_rejected": true,
+      "primary_world_changed_after_save_request": true,
+      "same_three_creatures_read_back_in_fresh_managed_run": true,
+      "two_normal_exit_zero_stops": true,
+      "owned_fixture_cleanup": true
+    }
+  },
+  "gm_commands": [
+    {
+      "tool_id": "ark_set_time",
+      "commands": [
+        "SetTimeOfDay 12:30"
+      ],
+      "transport": "source_rcon",
+      "result": "native_rcon_response_no_client_world_observation"
+    },
+    {
+      "tool_id": "ark_destroy_wild_dinos",
+      "commands": [
+        "DestroyWildDinos"
+      ],
+      "transport": "source_rcon",
+      "result": "native_rcon_response_no_client_world_observation"
+    }
+  ],
+  "creatures_reloaded": [
+    {
+      "class_name": "Dodo_Character_BP_C",
+      "level": 37,
+      "tamed": false,
+      "team": 1,
+      "id1": 201054196,
+      "id2": 289982021,
+      "same_native_id_as_initial_readback": true,
+      "spawn_replayed": false,
+      "raw_log_line": 311
+    },
+    {
+      "class_name": "Rex_Character_BP_C",
+      "level": 150,
+      "tamed": false,
+      "team": 7,
+      "id1": 252876022,
+      "id2": 167184510,
+      "same_native_id_as_initial_readback": true,
+      "spawn_replayed": false,
+      "raw_log_line": 312
+    },
+    {
+      "class_name": "Chameleon_Character_BP_C",
+      "level": 73,
+      "tamed": false,
+      "team": 5,
+      "id1": 19580081,
+      "id2": 345705558,
+      "same_native_id_as_initial_readback": true,
+      "spawn_replayed": false,
+      "raw_log_line": 313
+    }
+  ],
+  "world_save": {
+    "map": "TheIsland_WP",
+    "first_observed_primary_change": {
+      "bytes": 16441344,
+      "sha256": "d4163992a71608dc5a9d8848565fff1102f53816ce66741226e3934680cc53b4"
+    },
+    "save_receipt": "requested",
+    "durable_entity_evidence": "Original native DinoID1/DinoID2, class, level, wild state and team were read back through Inspect in a new managed run; Spawn and DestroyWildDinos were not replayed."
+  },
+  "startup_observations": {
+    "initial_preparing_timestamp_as_logged": "1794450630480",
+    "initial_game_log_open_timestamp_as_logged": "2026.11.12-02.36.18:327",
+    "initial_advertised_timestamp_as_logged": "2026.11.12-02.38.00:887",
+    "restart_advertised_timestamp_as_logged": "2026.11.12-02.40.49:650",
+    "progress_before_first_native_log": [
+      "Checking Windows runtime dependencies",
+      "Waiting for Windows runtime preparation lock",
+      "Downloading and verifying Microsoft Visual C++ v14 (x64), 18.0 MiB",
+      "Windows runtime dependencies ready"
+    ],
+    "firewall": "Non-elevated firewall operation or cleanup timed out; startup continued with an external-connectivity warning.",
+    "delay_diagnosis": "Startup dependency preparation and a firewall warning are directly recorded. Progress lines lack individual timestamps, so the initial delay is not fully attributed to the lock, download, installation or firewall. This successful run does not establish a native extension hang."
+  },
+  "cleanup": {
+    "native_harness_cleanup": "passed",
+    "runner_cleanup_failures": [],
+    "both_managed_runs_have_no_active_run_after_normal_stop": true
+  },
+  "artifacts_retained_outside_repository": [
+    {
+      "name": "native-output.txt",
+      "bytes": 63100,
+      "sha256": "f8dbe5be5db0cea764fda63ef10ac29f789ad034dff379aa3ae3da47d7fd7f76"
+    },
+    {
+      "name": "result.json",
+      "bytes": 1576,
+      "sha256": "41cbdfa9622d7c8be74f6b0682d980546cc776436eb8de80c207c3d1936da4f1"
+    },
+    {
+      "name": "native-build-01.json",
+      "bytes": 1726,
+      "sha256": "a9a4171551f2d4ad13002f8e546a04659635d6a79f5e5393cb53d34b36a12127"
+    },
+    {
+      "name": "native-build-01-portable-proof.json",
+      "bytes": 747,
+      "sha256": "bf3cc3a6e098c14ce18d8bab11d22704e60e3b40d9bd82eabc7265b057562e82"
+    },
+    {
+      "name": "asa-gm-commands.json",
+      "bytes": 795,
+      "sha256": "4b4148623e8bb40a52a1bb7bdffc5b552d97cee493f054dc9fe381553c1e562a"
+    }
+  ],
+  "scope_limits": [
+    "New isolated TheIsland_WP world; no populated-save migration, third-party mod stack, crash or power-loss recovery was tested.",
+    "GM results establish native RCON responses, not client-observed gameplay effects.",
+    "Only the three recorded wild creatures were checked; no live-player taming or tamed-creature persistence was exercised.",
+    "No client joins, external connectivity or public discovery acceptance; non-elevated firewall warnings remain.",
+    "Zero dino damage/resistance multipliers and the six v97 overrides belong to this fixture; gameplay defaults and effects were not measured.",
+    "The formal save receipt remains requested; durable entity evidence comes from the separate restart Inspect readback.",
+    "No backup/restore, program uninstall, desktop release or dependency publication was part of this native_game_tools run.",
+    "Installed DLL and symbol-cache file inventories were not independently retained before normal fixture cleanup.",
+    "Full raw logs, private paths, host identifiers and temporary credentials remain outside the repository.",
+    "Historical fixtures and configuration/default last_verified dates remain unchanged."
+  ]
+}

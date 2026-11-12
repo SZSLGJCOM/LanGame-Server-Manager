@@ -121,6 +121,28 @@ impl Failure {
     }
 
     pub(super) fn error(self) -> String {
+        self.diagnostic().encode()
+    }
+
+    pub(super) fn with_unvalidated_mod_ids(self, ids: Vec<String>) -> String {
+        if ids.is_empty() || !matches!(self, Self::Install | Self::MissingMods) {
+            return self.error();
+        }
+        let mut diagnostic = self.diagnostic();
+        let displayed = ids.iter().take(64).cloned().collect::<Vec<_>>().join(", ");
+        diagnostic
+            .message
+            .push_str(&format!(" Mods not validated for this start: {displayed}."));
+        if ids.len() > 64 {
+            diagnostic
+                .message
+                .push_str(&format!(" Showing 64 of {} Mods.", ids.len()));
+        }
+        diagnostic.unvalidated_mod_ids = Some(ids);
+        diagnostic.encode()
+    }
+
+    fn diagnostic(self) -> Diagnostic {
         let (stage, reason, status, detail) = match self {
             Self::Query(cause) => ("query", cause.reason, cause.http_status, format!("the native Mod metadata query failed. {}", cause.explanation())),
             Self::MissingMods => ("validation", Reason::MissingMods, None, "the final installed Mod set is incomplete.".into()),
@@ -128,7 +150,13 @@ impl Failure {
             Self::MissingFile => ("validation", Reason::MissingFile, None, "a required Mod has no published main file.".into()),
             Self::Install => ("install", Reason::Unknown, None, "the native game could not install every requested Mod. The final installation cause was not reported; inspect this startup's native log.".into()),
         };
-        Diagnostic::new(stage, reason, status, format!("ASA CurseForge Mod initialization failed: {detail} The native game did not confirm loading every requested Mod; inspect this startup's native log.")).encode()
+        let mut message = format!(
+            "ASA CurseForge Mod initialization failed: {detail} The native game did not confirm loading every requested Mod; inspect this startup's native log."
+        );
+        if matches!(self, Self::Install | Self::MissingMods) {
+            message.push_str(" Check for custom cosmetics or PC-only Mods on a cross-platform server; the native log has not confirmed either cause.");
+        }
+        Diagnostic::new(stage, reason, status, message)
     }
 }
 
@@ -149,6 +177,8 @@ struct Diagnostic {
     cache_verified: Option<bool>,
     #[serde(default)]
     native_process_exited: Option<bool>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    unvalidated_mod_ids: Option<Vec<String>>,
 }
 
 #[derive(Deserialize, Serialize)]
@@ -172,6 +202,7 @@ impl Diagnostic {
             cleanup_error: None,
             cache_verified: None,
             native_process_exited: None,
+            unvalidated_mod_ids: None,
         }
     }
     fn encode(&self) -> String {
@@ -186,6 +217,19 @@ impl Diagnostic {
             || value
                 .http_status
                 .is_some_and(|status| !(100..=599).contains(&status))
+            || value.unvalidated_mod_ids.as_ref().is_some_and(|ids| {
+                !matches!(
+                    (value.stage.as_str(), value.reason),
+                    ("install", Reason::Unknown) | ("validation", Reason::MissingMods)
+                ) || ids.is_empty()
+                    || ids.len() > 8192
+                    || ids.iter().any(|id| {
+                        id.parse::<i64>()
+                            .ok()
+                            .filter(|number| *number > 0)
+                            .is_none_or(|number| number.to_string() != *id)
+                    })
+            })
         {
             return None;
         }

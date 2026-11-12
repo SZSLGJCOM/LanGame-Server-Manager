@@ -47,6 +47,8 @@ impl BepInExProfile {
 
     pub(in crate::commands) fn identity(&self) -> OnlineModIdentity {
         OnlineModIdentity {
+            display_name: None,
+            icon_url: None,
             thunderstore_intent: None,
             provider: "thunderstore".into(),
             project: self.project.clone(),

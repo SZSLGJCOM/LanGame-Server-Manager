@@ -94,7 +94,7 @@ test("ARK configuration remains reachable while save policies belong to Maintena
     arksurvivalascended: {
       maintenance: ["auto_save_period_minutes"],
       mods: ["mod_ids_csv", "asa_mod_configurations", "ark_mod_map_overrides", "passive_mod_ids_csv"],
-      structured: []
+      structured: ["server_platform"]
     }
   };
   const sharedStructuredKeys = [
