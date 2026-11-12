@@ -103,6 +103,7 @@ async fn missing_instance_parent_is_never_recreated_or_treated_as_individual_del
 }
 
 #[tokio::test(flavor = "current_thread")]
+#[cfg(windows)]
 async fn missing_instance_protection_preserves_explicit_storage_path_initialization()
 -> Result<(), Box<dyn std::error::Error>> {
     let _lock = command_smoke_lock().lock().await;
@@ -114,8 +115,8 @@ async fn missing_instance_protection_preserves_explicit_storage_path_initializat
         .with_file_name("explicit-new-instances");
     let archives = instances.join(".trash");
     assert!(!instances.exists());
-    update_app_settings(
-        app.state::<DesktopState>(),
+    crate::commands::commands_storage_migration::tests::migrate(
+        &app,
         AppPathSettingsInput {
             servers_root: instances.to_string_lossy().into_owned(),
             archives_root: archives.to_string_lossy().into_owned(),

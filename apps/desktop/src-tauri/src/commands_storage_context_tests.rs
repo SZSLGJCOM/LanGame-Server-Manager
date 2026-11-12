@@ -170,34 +170,38 @@ async fn storage_context_process_fixture() -> Result<(), Box<dyn std::error::Err
         1
     );
 
-    let next_games = root.join("selected-games");
-    let next_steamcmd = root.join("selected-steamcmd");
-    let input = || AppPathSettingsInput {
-        servers_root: storage.settings.servers_root.clone(),
-        archives_root: storage.settings.archives_root.clone(),
-        games_root: next_games.to_string_lossy().into_owned(),
-        steamcmd_root: next_steamcmd.to_string_lossy().into_owned(),
-    };
     let state = app.state::<DesktopState>();
-    let operation = state.begin_storage_context_operation("held context fixture")?;
-    let before = fs::read(&paths.settings_path)?;
-    assert!(
-        update_app_settings(app.state::<DesktopState>(), input())
-            .await
-            .is_err()
-    );
-    assert_eq!(fs::read(&paths.settings_path)?, before);
-    drop(operation);
-    let saved = update_app_settings(app.state::<DesktopState>(), input()).await?;
-    assert_eq!(Path::new(&saved.games_root), next_games);
-    let refreshed = state.bootstrap_storage()?;
-    assert_eq!(refreshed.paths.database_path, paths.database_path);
-    assert_eq!(refreshed.paths.games_root, next_games);
-    assert_eq!(refreshed.paths.steamcmd_root, next_steamcmd);
-    let restarted = app_storage::bootstrap_storage_with_paths(paths.clone())?;
-    assert_eq!(restarted.paths.games_root, next_games);
-    assert_eq!(restarted.paths.steamcmd_root, next_steamcmd);
-    assert_eq!(fs::read(&world)?, b"world belongs to the original context");
+    #[cfg(windows)]
+    {
+        let next_games = root.join("selected-games");
+        let next_steamcmd = root.join("selected-steamcmd");
+        let input = || AppPathSettingsInput {
+            servers_root: storage.settings.servers_root.clone(),
+            archives_root: storage.settings.archives_root.clone(),
+            games_root: next_games.to_string_lossy().into_owned(),
+            steamcmd_root: next_steamcmd.to_string_lossy().into_owned(),
+        };
+        let operation = state.begin_storage_context_operation("held context fixture")?;
+        let before = fs::read(&paths.settings_path)?;
+        assert!(
+            crate::commands::commands_storage_migration::tests::migrate(&app, input())
+                .await
+                .is_err()
+        );
+        assert_eq!(fs::read(&paths.settings_path)?, before);
+        drop(operation);
+        let saved =
+            crate::commands::commands_storage_migration::tests::migrate(&app, input()).await?;
+        assert_eq!(Path::new(&saved.input.games_root), next_games);
+        let refreshed = state.bootstrap_storage()?;
+        assert_eq!(refreshed.paths.database_path, paths.database_path);
+        assert_eq!(refreshed.paths.games_root, next_games);
+        assert_eq!(refreshed.paths.steamcmd_root, next_steamcmd);
+        let restarted = app_storage::bootstrap_storage_with_paths(paths.clone())?;
+        assert_eq!(restarted.paths.games_root, next_games);
+        assert_eq!(restarted.paths.steamcmd_root, next_steamcmd);
+        assert_eq!(fs::read(&world)?, b"world belongs to the original context");
+    }
     assert_eq!(fs::read(&ambient.paths.settings_path)?, ambient_settings);
     assert!(!ambient.paths.database_path.exists());
 
@@ -288,25 +292,29 @@ async fn verify_saved_location_protection(root: &Path) -> Result<(), Box<dyn std
         state.app_state.read().unwrap().settings.games_root,
         paths.games_root.to_string_lossy()
     );
-    let next_games = selected_root.join("updated-games");
-    let input = || AppPathSettingsInput {
-        servers_root: paths.instances_root.to_string_lossy().into_owned(),
-        archives_root: paths.archives_root.to_string_lossy().into_owned(),
-        games_root: next_games.to_string_lossy().into_owned(),
-        steamcmd_root: paths.steamcmd_root.to_string_lossy().into_owned(),
-    };
-    let operation = state.begin_storage_context_operation("recovered storage fixture")?;
-    let before = fs::read(&paths.settings_path)?;
-    let error = update_app_settings(app.state::<DesktopState>(), input())
-        .await
-        .unwrap_err();
-    assert!(error.contains("1 项操作"), "{error}");
-    assert!(error.contains("recovered storage fixture"), "{error}");
-    assert_eq!(fs::read(&paths.settings_path)?, before);
-    drop(operation);
-    let saved = update_app_settings(app.state::<DesktopState>(), input()).await?;
-    assert_eq!(Path::new(&saved.games_root), next_games);
-    assert_eq!(state.bootstrap_storage()?.paths.games_root, next_games);
+    #[cfg(windows)]
+    {
+        let next_games = selected_root.join("updated-games");
+        let input = || AppPathSettingsInput {
+            servers_root: paths.instances_root.to_string_lossy().into_owned(),
+            archives_root: paths.archives_root.to_string_lossy().into_owned(),
+            games_root: next_games.to_string_lossy().into_owned(),
+            steamcmd_root: paths.steamcmd_root.to_string_lossy().into_owned(),
+        };
+        let operation = state.begin_storage_context_operation("recovered storage fixture")?;
+        let before = fs::read(&paths.settings_path)?;
+        let error = crate::commands::commands_storage_migration::tests::migrate(&app, input())
+            .await
+            .unwrap_err();
+        assert!(error.contains("1 项操作"), "{error}");
+        assert!(error.contains("recovered storage fixture"), "{error}");
+        assert_eq!(fs::read(&paths.settings_path)?, before);
+        drop(operation);
+        let saved =
+            crate::commands::commands_storage_migration::tests::migrate(&app, input()).await?;
+        assert_eq!(Path::new(&saved.input.games_root), next_games);
+        assert_eq!(state.bootstrap_storage()?.paths.games_root, next_games);
+    }
 
     let retained = root.join("retained-selected-directory");
     fs::rename(&selected_root, &retained)?;

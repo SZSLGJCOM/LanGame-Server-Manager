@@ -151,6 +151,10 @@ pub(crate) async fn prepare_nexus_website_install(
 }
 
 #[tauri::command]
+#[expect(
+    clippy::too_many_arguments,
+    reason = "Tauri injects app and state beside the established flat IPC fields"
+)]
 pub(crate) async fn install_nexus_website_download(
     app: tauri::AppHandle,
     state: tauri::State<'_, DesktopState>,

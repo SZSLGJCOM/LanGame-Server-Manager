@@ -8,10 +8,6 @@ const sourcePath = (...segments) => path.join(desktopRoot, "src", ...segments);
 const readSource = (...segments) => fs.readFileSync(sourcePath(...segments), "utf8");
 
 const appSource = readSource("App.tsx");
-const shellSource = readSource("components", "AppShell.tsx");
-const headerSource = readSource("components", "AppHeader.tsx");
-const assistantCapsuleSource = readSource("components", "AssistantCapsule.tsx");
-const assistantPanelSource = readSource("components", "AssistantPanel.tsx");
 const routerSource = readSource("views", "AppViewRouter.tsx");
 const systemSource = readSource("views", "SystemView.tsx");
 
@@ -19,22 +15,6 @@ test("application update state bypasses the system dashboard", () => {
   for (const source of [routerSource, systemSource]) {
     assert.doesNotMatch(source, /AppUpdateState|appUpdateState|onCheckAppUpdate|onInstallAppUpdate/);
   }
-});
-
-test("the shell supplies a header update entry without exposing updater state to the assistant", () => {
-  for (const source of [appSource, shellSource]) {
-    assert.match(source, /appUpdateState/);
-    assert.match(source, /onInstallAppUpdate/);
-    assert.match(source, /appUpdatesEnabled/);
-  }
-  for (const source of [headerSource, assistantCapsuleSource, assistantPanelSource]) {
-    assert.doesNotMatch(source, /AppUpdateState|appUpdateState|onCheckAppUpdate|onInstallAppUpdate|assistant-update/);
-  }
-  assert.match(shellSource, /<AppUpdatePrompt/);
-  assert.match(shellSource, /appUpdateAction=\{<AppUpdatePrompt/);
-  assert.match(headerSource, /className="shell-header-tools">\s*\{props\.appUpdateAction\}/);
-  assert.match(shellSource, /appUpdateReleaseUrl\(props\.appUpdateState\.availableVersion\)/);
-  assert.match(shellSource, /await openExternalUrl\(url\)/);
 });
 
 test("the desktop checks for application updates automatically after startup", () => {

@@ -50,7 +50,7 @@ impl Profile {
         format!("{}/Binaries/Win64/ue4ss/Mods/", self.project())
     }
 
-    pub(super) fn runtime_root<'a>(self, target: &'a Path) -> Result<&'a Path, String> {
+    pub(super) fn runtime_root(self, target: &Path) -> Result<&Path, String> {
         let root = target
             .ancestors()
             .nth(Path::new(self.target()).components().count())
@@ -316,14 +316,14 @@ fn strip_ascii_prefix<'a>(path: &'a str, prefix: &str) -> Option<&'a str> {
         .map(|_| &path[prefix.len()..])
 }
 
-fn lua_relative<'a>(profile: Profile, path: &'a str) -> Option<&'a str> {
+fn lua_relative(profile: Profile, path: &str) -> Option<&str> {
     // HumanitZ 61 ships named UE4SS Mods beneath the game's client folder.
     // Rebase this named Mods container without adopting the client's loader.
     // https://www.nexusmods.com/humanitz/mods/61?tab=description
-    if profile == Profile::HumanitZ {
-        if let Some(relative) = strip_ascii_prefix(path, "HumanitZ/Binaries/Win64/ue4ss/Mods/") {
-            return Some(relative);
-        }
+    if profile == Profile::HumanitZ
+        && let Some(relative) = strip_ascii_prefix(path, "HumanitZ/Binaries/Win64/ue4ss/Mods/")
+    {
+        return Some(relative);
     }
     [
         profile.lua_mods(),
@@ -335,14 +335,14 @@ fn lua_relative<'a>(profile: Profile, path: &'a str) -> Option<&'a str> {
     .find_map(|prefix| strip_ascii_prefix(path, prefix))
 }
 
-fn pak_relative<'a>(profile: Profile, path: &'a str) -> Option<&'a str> {
+fn pak_relative(profile: Profile, path: &str) -> Option<&str> {
     // HumanitZ 46 packages its Pak under the game's client Content/Paks tree.
     // Rebase only this explicit container, retaining its author-defined subfolders.
     // https://www.nexusmods.com/humanitz/mods/46?tab=description
-    if profile == Profile::HumanitZ {
-        if let Some(relative) = strip_ascii_prefix(path, "HumanitZ/Content/Paks/") {
-            return Some(relative);
-        }
+    if profile == Profile::HumanitZ
+        && let Some(relative) = strip_ascii_prefix(path, "HumanitZ/Content/Paks/")
+    {
+        return Some(relative);
     }
     [profile.paks(), "Content/Paks/".into()]
         .iter()
@@ -558,18 +558,17 @@ pub(super) fn plan(
                 let map_proxy = destinations.contains(&"iphlpapi.dll");
                 let map_files = destinations.iter().any(|path| path.starts_with("livemap/"));
                 let map_config = destinations.contains(&"livemap.ini");
-                if map_proxy || map_files || map_config {
-                    if !map_proxy
+                if (map_proxy || map_files || map_config)
+                    && (!map_proxy
                         || !["livemap/index.html", "livemap/maps.json"]
                             .iter()
                             .all(|entry| {
                                 destinations
                                     .iter()
                                     .any(|path| path.eq_ignore_ascii_case(entry))
-                            })
-                    {
-                        return Err("Live Map requires iphlpapi.dll with its livemap/index.html and livemap/maps.json assets; existing files were preserved".into());
-                    }
+                            }))
+                {
+                    return Err("Live Map requires iphlpapi.dll with its livemap/index.html and livemap/maps.json assets; existing files were preserved".into());
                 }
                 // Author's dedicated-server contract: both files sit beside the
                 // server exe. The optional self-test is never installed or run.

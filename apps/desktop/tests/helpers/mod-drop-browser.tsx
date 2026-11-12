@@ -19,7 +19,7 @@ const workshopModules = ["barotrauma", "conanexiles", "palworld", "squad", "terr
 const checks: string[] = [], errors: string[] = [], covered: string[] = [], workshopCovered: string[] = [];
 const versionPolicyCovered: string[] = [];
 const nexusRequests: string[] = [];
-const nexusCovered: { module: string; local_imports: number; rejected_inputs: string[] }[] = [];
+const nexusCovered: { module: string; local_imports: number }[] = [];
 let details: InstanceDetails, moduleDetails: ModuleDetails, inventory: ManualModInventoryResult;
 let epoch = 0, stages = 0, references = 0, saves = 0, inventoryReads = 0;
 let lastReferences: string[] = [];
@@ -79,6 +79,10 @@ async function run() {
     check, save: (saved) => { details = saved; }
   });
   mockIPC(async (command, payload) => {
+    if (command === "read_nexus_website_auth_state") {
+      check(Object.keys(payload ?? {}).length === 0, "Local Nexus sign-in observations carry no Mod references");
+      return "unknown";
+    }
     if (command.includes("nexus")) {
       nexusRequests.push(command);
       throw new Error(`Nexus local imports must not call ${command}`);
@@ -132,24 +136,9 @@ async function run() {
       await drop(fileDrop); await settle(() => stages === previousStage + 1);
       check(references === previousReferences, "File drop wins over incidental URL payload");
       if (moduleDetails.mods?.source?.provider === "nexus") {
-        const source = new URL(moduleDetails.mods.source.url);
-        const rejectedInputs: string[] = [];
-        for (const [kind, format, value] of [
-          ["id", "text/plain", "123"],
-          ["http", "text/uri-list", `${source.href}/mods/123`],
-          ["nxm", "text/uri-list", `nxm://${source.pathname.slice(1)}/mods/123/files/456?key=fixture&expires=2000000000&user_id=1`]
-        ]) {
-          const data = new DataTransfer(); data.setData(format, value);
-          await settle(() => !fixture.querySelector('[aria-disabled="true"].mw-dropzone'));
-          const beforeReferences = references, beforeImports = stages, beforeSaves = saves;
-          await drop(data, false);
-          check(nexusRequests.length === 0 && references === beforeReferences && stages === beforeImports && saves === beforeSaves,
-            `${id}: Nexus ${kind} drops are rejected without API requests, reference resolution, imports or settings writes`);
-          check(!fixture.querySelector("[data-nexus-file-review],[data-nexus-install]"),
-            `${id}: rejected Nexus ${kind} drops do not open file selection`);
-          rejectedInputs.push(kind);
-        }
-        nexusCovered.push({ module: id, local_imports: stages - previousStage, rejected_inputs: rejectedInputs });
+        // Website references use the dedicated Nexus browser workflow fixture.
+        check(nexusRequests.length === 0, "Local Nexus imports do not open website or download sessions");
+        nexusCovered.push({ module: id, local_imports: stages - previousStage });
       }
       const supportsReferences = Boolean(moduleDetails.mods?.enablement || moduleDetails.mods?.source?.provider === "thunderstore");
       if (supportsReferences) for (const [type, text] of [

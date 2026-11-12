@@ -26,9 +26,9 @@ impl AdditionalModArchiveFormat {
 enum ArchiveReader {
     SevenZ {
         source: fs::File,
-        archive: sevenz_rust2::Archive,
+        archive: Box<sevenz_rust2::Archive>,
     },
-    Rar(unrar_rs::RarArchive),
+    Rar(Box<unrar_rs::RarArchive>),
 }
 
 /// Recognize bytes, then validate the entire directory before assigning a format.
@@ -105,7 +105,10 @@ fn open_archive(
         .map_err(|error| format!("Cannot read 7z Mod archive: {error}"))?;
         Ok(Some((
             AdditionalModArchiveFormat::SevenZ,
-            ArchiveReader::SevenZ { source, archive },
+            ArchiveReader::SevenZ {
+                source,
+                archive: Box::new(archive),
+            },
         )))
     } else if length >= 7 && signature[..7] == *b"Rar!\x1a\x07\0"
         || length == 8 && signature == *b"Rar!\x1a\x07\x01\0"
@@ -120,7 +123,7 @@ fn open_archive(
         archive.set_decode_mode(unrar_rs::DecodeMode::Serial);
         Ok(Some((
             AdditionalModArchiveFormat::Rar,
-            ArchiveReader::Rar(archive),
+            ArchiveReader::Rar(Box::new(archive)),
         )))
     } else {
         Ok(None)

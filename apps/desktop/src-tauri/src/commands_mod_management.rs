@@ -494,7 +494,7 @@ fn verify_enable_dependencies(
                 paths.root.join("disabled-routes").join(key).join(relative)
             };
             let current = fingerprint_tree(&file)?;
-            if current.get("").is_none()
+            if !current.contains_key("")
                 || (!protected_nexus_route(key, relative) && current.get("") != Some(hash))
             {
                 return Err(format!(

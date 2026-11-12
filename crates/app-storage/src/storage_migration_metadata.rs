@@ -19,6 +19,8 @@ use crate::{StorageError, StoragePaths};
 
 #[path = "storage_migration_metadata_archives.rs"]
 mod archives;
+#[path = "storage_migration_metadata_clusters.rs"]
+mod clusters;
 #[path = "storage_migration_metadata_console.rs"]
 mod console;
 #[path = "storage_migration_metadata_db.rs"]
@@ -171,6 +173,7 @@ async fn prepare(
         preflight::validate(&paths, &moves, &database, copied, &mut plan)?;
         documents::prepare(&paths, &moves, &database, copied, &mut plan)?;
         archives::prepare(&paths, &moves, &database, copied, &mut plan)?;
+        clusters::prepare(&paths, &moves, copied, &mut plan)?;
         db::prepare_rows(&database, &moves, copied, &mut plan)?;
         plan.files.sort_by(|left, right| left.path.cmp(&right.path));
         if plan

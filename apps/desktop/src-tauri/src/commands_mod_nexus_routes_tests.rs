@@ -1929,29 +1929,31 @@ fn nexus_route_configuration_snapshot_rejects_new_paths_payload_overrides_and_la
 
 #[test]
 fn nexus_route_enable_markers_and_eml_metadata_keep_strict_payload_hashes() {
-    let cases: [(&str, &str, Vec<(&str, &[u8])>, &str); 2] = [
+    let abiotic_entries: &[(&str, &[u8])] = &[
+        ("Example/Scripts/main.lua", b"return 1"),
+        ("Example/enabled.txt", b""),
+    ];
+    let enshrouded_entries: &[(&str, &[u8])] = &[
+        ("Example/mod.json", br#"{"id":"example"}"#),
+        ("Example/src/mod.lua", b"return 1"),
+    ];
+    let cases = [
         (
             "abioticfactor",
             "66",
-            vec![
-                ("Example/Scripts/main.lua", b"return 1"),
-                ("Example/enabled.txt", b""),
-            ],
+            abiotic_entries,
             "AbioticFactor/Binaries/Win64/ue4ss/Mods/Example/enabled.txt",
         ),
         (
             "enshrouded",
             "189",
-            vec![
-                ("Example/mod.json", br#"{"id":"example"}"#),
-                ("Example/src/mod.lua", b"return 1"),
-            ],
+            enshrouded_entries,
             "mods/Example/mod.json",
         ),
     ];
     for (module, project, entries, relative) in cases {
         let fixture = Fixture::new();
-        fixture.install(module, project, &entries).unwrap();
+        fixture.install(module, project, entries).unwrap();
         let live = fixture.0.join("runtime").join(relative);
         let original = fs::read(&live).unwrap();
         fs::write(&live, br#"{"id":"operator"}"#).unwrap();

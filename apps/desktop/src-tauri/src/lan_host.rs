@@ -17,8 +17,8 @@ use std::thread;
 use std::time::{Duration, Instant};
 
 use app_core::{
-    AppPathSettingsInput, CreateInstanceInput, ExecuteInstanceManualPlayerActionInput,
-    ExecuteInstancePlayerActionInput, UpdateInstanceBroadcastPolicyInput, UpdateInstanceInput,
+    CreateInstanceInput, ExecuteInstanceManualPlayerActionInput, ExecuteInstancePlayerActionInput,
+    UpdateInstanceBroadcastPolicyInput, UpdateInstanceInput,
 };
 use base64::Engine;
 use serde::Serialize;
@@ -1009,15 +1009,6 @@ pub(crate) fn dispatch_command<'a>(
                 app_handle.state::<DesktopState>(),
                 arg(&args, "jobId", "job_id")?,
             )?)
-        }),
-        "update_app_settings" => boxed_command(|| async move {
-            to_json(
-                commands::update_app_settings(
-                    app_handle.state::<DesktopState>(),
-                    arg::<AppPathSettingsInput>(&args, "input", "input")?,
-                )
-                .await?,
-            )
         }),
         "pick_directory_path" => boxed_command(|| async move {
             to_json(commands::pick_directory_path(opt_arg(

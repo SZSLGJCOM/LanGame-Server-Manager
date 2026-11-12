@@ -168,15 +168,14 @@ impl CreationMode {
         let root = program_root(&instance)?;
         let mode = app_storage::instance_program_mode(instance_root(&instance)?)?;
         let exclusive = app_storage::instance_uses_exclusive_program(instance_root(&instance)?)?;
-        if let Some(plan) = first_official_plan {
-            if exclusive != (plan.action == "existing_install")
-                || (exclusive && plan.additional_bytes != Some(0))
-            {
-                return Err(format!(
-                    "native first official instance violated source reuse policy: action={} additional_bytes={:?} exclusive={exclusive}",
-                    plan.action, plan.additional_bytes,
-                ).into());
-            }
+        if let Some(plan) = first_official_plan
+            && (exclusive != (plan.action == "existing_install")
+                || (exclusive && plan.additional_bytes != Some(0)))
+        {
+            return Err(format!(
+                "native first official instance violated source reuse policy: action={} additional_bytes={:?} exclusive={exclusive}",
+                plan.action, plan.additional_bytes,
+            ).into());
         }
         let expected_mode = program_mode.unwrap_or_else(|| {
             if exclusive || source_was_used {

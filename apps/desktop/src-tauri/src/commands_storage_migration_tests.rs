@@ -102,6 +102,32 @@ async fn settled(app: &tauri::App<tauri::test::MockRuntime>) -> StorageMigration
     .expect("isolated migration command must settle")
 }
 
+pub(in crate::commands) async fn migrate(
+    app: &tauri::App<tauri::test::MockRuntime>,
+    input: AppPathSettingsInput,
+) -> Result<StorageMigrationStatus, String> {
+    preview_app_storage_migration(app.handle().clone(), app.state::<DesktopState>(), input).await?;
+    let ready = settled(app).await;
+    if ready.phase != Phase::Ready || ready.conflict_count != 0 {
+        return Err(ready
+            .error
+            .unwrap_or_else(|| format!("Migration was not ready: {:?}", ready.phase)));
+    }
+    execute_app_storage_migration(
+        app.handle().clone(),
+        app.state::<DesktopState>(),
+        ready.operation_id,
+    )
+    .await?;
+    let completed = settled(app).await;
+    if completed.phase != Phase::Completed {
+        return Err(completed
+            .error
+            .unwrap_or_else(|| format!("Migration did not complete: {:?}", completed.phase)));
+    }
+    Ok(completed)
+}
+
 pub(super) fn tree_snapshot(root: &Path) -> BTreeMap<PathBuf, Option<Vec<u8>>> {
     let mut result = BTreeMap::new();
     let mut pending = vec![root.to_path_buf()];

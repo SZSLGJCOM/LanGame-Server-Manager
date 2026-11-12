@@ -429,7 +429,7 @@ async fn untrusted_added_files_force_a_clean_copy_before_the_first_instance() {
 }
 
 #[tokio::test]
-async fn official_excluded_defaults_allow_direct_use_but_modified_defaults_do_not() {
+async fn official_excluded_defaults_allow_direct_use_and_modified_defaults_require_a_clean_copy() {
     let mut fixture = CleanCreationFixture::new().await;
     fixture
         .descriptor
@@ -458,13 +458,37 @@ async fn official_excluded_defaults_allow_direct_use_but_modified_defaults_do_no
         b"personal settings",
     )
     .unwrap();
-    assert!(matches!(
-        create(&fixture, "No hidden settings import")
-            .await
-            .unwrap_err(),
-        StorageError::CleanLibraryProgramRequired { .. }
-    ));
-    fixture.assert_no_instance().await;
+    let plan = inspect_instance_program_creation(
+        &fixture.paths,
+        &fixture.descriptor,
+        Some(InstanceProgramMode::Independent),
+        app_core::InstanceProgramSource::Verified,
+        None,
+    )
+    .await
+    .unwrap();
+    assert_eq!(plan.action, "independent_install");
+    assert!(plan.can_create);
+    let source_before = crate::test_file_snapshot::tree_snapshot(&fixture.source).unwrap();
+    let copied = create(&fixture, "No hidden settings import").await.unwrap();
+    assert_ne!(
+        fs::canonicalize(&copied.effective_install_root).unwrap(),
+        fs::canonicalize(&fixture.source).unwrap()
+    );
+    assert_eq!(
+        crate::test_file_snapshot::tree_snapshot(&fixture.source).unwrap(),
+        source_before
+    );
+    assert!(
+        !copied
+            .effective_install_root
+            .join("official-settings.ini")
+            .exists()
+    );
+    assert_eq!(
+        fs::read(copied.effective_install_root.join("payload.bin")).unwrap(),
+        vec![7; 512 * 1024 + 1]
+    );
     fs::write(
         fixture.source.join("official-settings.ini"),
         b"shipped defaults",

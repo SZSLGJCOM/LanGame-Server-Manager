@@ -57,10 +57,9 @@ pub use instance_archive_resources::{
     InstanceStorageResources, read_instance_archive_cleanup_resources,
     read_instance_archive_resources, read_instance_retirement_resources,
 };
-mod instance_archive_roots;
-pub use instance_archive_roots::{ArchiveRootSettingsGuard, guard_archive_root_settings_update};
 mod instance_archive_files;
 mod instance_archive_models;
+mod instance_archive_roots;
 mod instance_archive_store;
 mod instance_autostart;
 mod instance_creation_io;

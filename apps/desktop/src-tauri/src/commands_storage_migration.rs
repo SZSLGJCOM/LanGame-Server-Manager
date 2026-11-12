@@ -430,7 +430,7 @@ fn append_migration_log(
 
 #[cfg(all(test, windows))]
 #[path = "commands_storage_migration_tests.rs"]
-mod tests;
+pub(in crate::commands) mod tests;
 
 #[cfg(all(test, windows))]
 #[path = "commands_storage_migration_acceptance_tests.rs"]

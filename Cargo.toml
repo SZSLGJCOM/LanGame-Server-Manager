@@ -11,12 +11,13 @@ members = [
     "crates/app-knowledge",
 ]
 resolver = "3"
+exclude = ["vendor/sqlx-sqlite"]
 
 [workspace.package]
 edition = "2024"
 license-file = "LICENSE"
 rust-version = "1.99.0"
-version = "0.2.1"
+version = "0.2.2"
 
 [workspace.dependencies]
 regex = "1.13.1"
@@ -30,8 +31,12 @@ tauri-build = { version = "2.7.4" }
 thiserror = "2.0.21"
 tokio = { version = "1.54.1", features = ["io-util", "macros", "net", "process", "rt-multi-thread", "sync", "time"] }
 toml = "1.1.8"
-uuid = { version = "1.28.0", features = ["v4"] }
+uuid = { version = "1.29.1", features = ["v4"] }
 windows-sys = { version = "0.61.2", features = ["Win32_Storage_FileSystem"] }
+
+[patch.crates-io]
+# Upstream's SQLite dependency-bound fix, pending a published SQLx release.
+sqlx-sqlite = { path = "vendor/sqlx-sqlite" }
 
 # The local desktop hashes multi-GiB server packages in development builds.
 # Optimize compression without changing assertions, algorithms or CPU dispatch.

@@ -1,5 +1,7 @@
-use super::{INTERRUPTED, Ordering};
 use std::ffi::c_void;
+use std::sync::atomic::{AtomicBool, Ordering};
+
+pub(super) static INTERRUPTED: AtomicBool = AtomicBool::new(false);
 
 fn wide(value: &str) -> Vec<u16> {
     value.encode_utf16().chain(Some(0)).collect()

@@ -1,5 +1,5 @@
 use super::*;
-use crate::guard_archive_root_settings_update;
+use crate::instance_archive_roots::validate_archive_root;
 
 #[tokio::test]
 async fn archive_root_saved_settings_restart_and_full_archive_lifecycle() {
@@ -10,11 +10,7 @@ async fn archive_root_saved_settings_restart_and_full_archive_lifecycle() {
         .join("custom/archive-area")
         .to_string_lossy()
         .into_owned();
-    let guard = guard_archive_root_settings_update(&fixture.paths, &settings)
-        .await
-        .unwrap();
     crate::settings::save_app_settings_with_paths(settings.clone(), &fixture.paths).unwrap();
-    drop(guard);
     let restarted = crate::bootstrap_storage_with_paths(fixture.paths.clone()).unwrap();
     assert_eq!(restarted.settings.archives_root, settings.archives_root);
     fixture.paths = restarted.paths;
@@ -83,80 +79,7 @@ async fn archive_root_saved_settings_restart_and_full_archive_lifecycle() {
 }
 
 #[tokio::test]
-async fn archive_root_change_rejects_retained_files_and_keeps_old_archives_restorable() {
-    let fixture = Fixture::new().await;
-    let archived = fixture.archive().await.unwrap();
-    let mut settings = fixture.paths.settings();
-    settings.archives_root = fixture
-        .root
-        .join("new-archives")
-        .to_string_lossy()
-        .into_owned();
-    let error = guard_archive_root_settings_update(&fixture.paths, &settings)
-        .await
-        .err()
-        .unwrap();
-    assert!(error.to_string().contains("not empty"));
-    assert!(!Path::new(&settings.archives_root).exists());
-    settings = fixture.paths.settings();
-    settings.servers_root = fixture
-        .root
-        .join("new-instances")
-        .to_string_lossy()
-        .into_owned();
-    assert!(
-        guard_archive_root_settings_update(&fixture.paths, &settings)
-            .await
-            .is_err()
-    );
-    assert!(
-        list_instance_archives(&fixture.paths)
-            .await
-            .unwrap()
-            .archives[0]
-            .can_restore
-    );
-    restore_instance_archive(&fixture.paths, &archived.archive_id)
-        .await
-        .unwrap();
-    assert_eq!(
-        fs::read(fixture.instance_root.join("saves/world.dat")).unwrap(),
-        b"world state"
-    );
-}
-
-#[tokio::test]
-async fn archive_root_change_rejects_untracked_old_files_and_nonempty_destination() {
-    let fixture = Fixture::new().await;
-    fs::create_dir_all(&fixture.paths.archives_root).unwrap();
-    let historical = fixture.paths.archives_root.join("untracked-world.dat");
-    fs::write(&historical, b"historical world").unwrap();
-    let mut settings = fixture.paths.settings();
-    settings.archives_root = fixture
-        .root
-        .join("new-archives")
-        .to_string_lossy()
-        .into_owned();
-    assert!(
-        guard_archive_root_settings_update(&fixture.paths, &settings)
-            .await
-            .is_err()
-    );
-    assert_eq!(fs::read(&historical).unwrap(), b"historical world");
-    fs::remove_file(historical).unwrap();
-    fs::create_dir_all(&settings.archives_root).unwrap();
-    let foreign = Path::new(&settings.archives_root).join("other-data");
-    fs::write(&foreign, b"unrelated").unwrap();
-    let error = guard_archive_root_settings_update(&fixture.paths, &settings)
-        .await
-        .err()
-        .unwrap();
-    assert!(error.to_string().contains("must be empty"));
-    assert_eq!(fs::read(foreign).unwrap(), b"unrelated");
-}
-
-#[tokio::test]
-async fn archive_root_change_rejects_pending_deletion_journal_even_when_directory_is_empty() {
+async fn archive_root_migration_rejects_pending_deletion_journal_even_when_directory_is_empty() {
     let fixture = Fixture::new().await;
     let id = stage_archiving(&fixture, false).await;
     let pool = connect_pool(&fixture.paths).await.unwrap();
@@ -173,11 +96,17 @@ async fn archive_root_change_rejects_pending_deletion_journal_even_when_director
         .join("new-archives")
         .to_string_lossy()
         .into_owned();
-    let error = guard_archive_root_settings_update(&fixture.paths, &settings)
-        .await
-        .err()
-        .unwrap();
-    assert!(error.to_string().contains("finish failed deletions"));
+    let error = crate::storage_migration::preview(
+        &fixture.paths,
+        settings,
+        uuid::Uuid::new_v4().to_string(),
+        Vec::new(),
+        std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false)),
+        std::sync::Arc::new(|_| {}),
+    )
+    .await
+    .unwrap_err();
+    assert!(error.to_string().contains("Finish its recovery"), "{error}");
     let list = list_instance_archives(&fixture.paths).await.unwrap();
     assert_eq!(list.pending_deletions.len(), 1);
     assert_eq!(list.pending_deletions[0].operation_id, id);
@@ -186,7 +115,7 @@ async fn archive_root_change_rejects_pending_deletion_journal_even_when_director
 }
 
 #[tokio::test]
-async fn archive_root_change_rejects_overlaps_relative_paths_and_files() {
+async fn archive_root_validation_rejects_overlaps_relative_paths_and_files() {
     let fixture = Fixture::new().await;
     let file = fixture.root.join("not-a-directory");
     fs::write(&file, b"keep").unwrap();
@@ -206,28 +135,13 @@ async fn archive_root_change_rejects_overlaps_relative_paths_and_files() {
         let mut settings = fixture.paths.settings();
         settings.archives_root = target.to_string_lossy().into_owned();
         assert!(
-            guard_archive_root_settings_update(&fixture.paths, &settings)
-                .await
-                .is_err(),
+            validate_archive_root(&fixture.paths.with_app_settings(&settings)).is_err(),
             "{}",
             target.display()
         );
     }
     assert_eq!(fs::read(file).unwrap(), b"keep");
-    guard_archive_root_settings_update(&fixture.paths, &fixture.paths.settings())
-        .await
-        .unwrap();
-}
-
-#[tokio::test]
-async fn archive_root_update_holds_inventory_lock_until_settings_are_saved() {
-    let fixture = Fixture::new().await;
-    let guard = guard_archive_root_settings_update(&fixture.paths, &fixture.paths.settings())
-        .await
-        .unwrap();
-    assert!(inventory_lock(&fixture.paths).is_err());
-    drop(guard);
-    assert!(inventory_lock(&fixture.paths).is_ok());
+    validate_archive_root(&fixture.paths).unwrap();
 }
 
 #[tokio::test]
@@ -250,7 +164,7 @@ async fn permanent_delete_uses_configured_archive_root_without_creating_a_recove
 
 #[cfg(windows)]
 #[tokio::test]
-async fn archive_root_update_rejects_junction_without_touching_its_target() {
+async fn archive_root_validation_rejects_junction_without_touching_its_target() {
     let mut fixture = Fixture::new().await;
     let target = fixture.root.join("external");
     let link = fixture.root.join("archive-link");
@@ -269,14 +183,14 @@ async fn archive_root_update_rejects_junction_without_touching_its_target() {
     );
     let mut settings = fixture.paths.settings();
     settings.archives_root = link.to_string_lossy().into_owned();
-    let result = guard_archive_root_settings_update(&fixture.paths, &settings).await;
+    let result = validate_archive_root(&fixture.paths.with_app_settings(&settings));
     settings.archives_root = fixture
         .root
         .join("new-archives")
         .to_string_lossy()
         .into_owned();
     fixture.paths.migrations_root = link.join("../migrations");
-    let bundled_result = guard_archive_root_settings_update(&fixture.paths, &settings).await;
+    let bundled_result = validate_archive_root(&fixture.paths.with_app_settings(&settings));
     fs::remove_dir(&link).unwrap();
     assert!(result.is_err());
     assert!(
@@ -393,9 +307,7 @@ async fn archive_default_root_in_common_program_container_preserves_lifecycle_an
         } else {
             fixture.root.clone()
         };
-        guard_archive_root_settings_update(&fixture.paths, &fixture.paths.settings())
-            .await
-            .unwrap();
+        validate_archive_root(&fixture.paths).unwrap();
         let archived = fixture.archive().await.unwrap();
         let list = list_instance_archives(&fixture.paths).await.unwrap();
         assert_eq!(list.archives.len(), 1);
@@ -450,11 +362,7 @@ async fn archive_default_root_in_common_program_container_preserves_lifecycle_an
             .join("custom-archives")
             .to_string_lossy()
             .into_owned();
-        assert!(
-            guard_archive_root_settings_update(&fixture.paths, &custom)
-                .await
-                .is_err()
-        );
+        assert!(validate_archive_root(&fixture.paths.with_app_settings(&custom)).is_err());
         assert!(!Path::new(&custom.archives_root).exists());
     }
 }

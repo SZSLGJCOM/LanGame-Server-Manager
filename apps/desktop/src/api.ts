@@ -18,8 +18,6 @@ import type {
   AssistantExecuteOperationOutput,
   AssistantRunInput,
   AssistantRunOutput,
-  AppPathSettingsInput,
-  AppSettings,
   AppUpdateCheckResult,
   AppUpdateInstallEvent,
   AssistantSecretDescriptor,
@@ -137,7 +135,6 @@ export const readSteamCmdPrepareProgress = (operationId: string | null) => invok
 export const cancelSteamCmdPreparation = (operationId: string) => invokeOrMock<SteamCmdPrepareSnapshot>("cancel_steamcmd_preparation", { operationId });
 export const cancelInstallationJob = (jobId: string) => invokeOrMock<BackgroundJob>("cancel_installation_job", { jobId });
 export const uninstallSteamCmd = () => invokeOrMock<SteamCmdStatus>("uninstall_steamcmd");
-export const updateAppSettings = (input: AppPathSettingsInput) => invokeOrMock<AppSettings>("update_app_settings", { input });
 export const pickDirectoryPath = (currentPath?: string | null) => {
   if (!isTauri() && shouldUseLanApi()) {
     return Promise.resolve(currentPath ?? null);

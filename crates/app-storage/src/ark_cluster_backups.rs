@@ -206,6 +206,42 @@ pub async fn list_ark_cluster_backups(
         })?
 }
 
+/// Validate the same manifest used by listing and restoration before migration
+/// rebinds its member targets. Snapshot payloads and transfer identity stay intact.
+pub(crate) fn validate_snapshot_for_storage_migration(
+    storage: &StoragePaths,
+    path: &Path,
+    value: &serde_json::Value,
+) -> Result<(), StorageError> {
+    let directory = path
+        .parent()
+        .ok_or_else(|| invalid(path, "Snapshot manifest has no directory"))?;
+    let root = directory
+        .parent()
+        .ok_or_else(|| invalid(path, "Snapshot directory has no cluster root"))?;
+    let id = directory
+        .file_name()
+        .and_then(|name| name.to_str())
+        .ok_or_else(|| invalid(path, "Invalid cluster snapshot directory"))?;
+    transaction::snapshot_directory(root, id)?;
+    let manifest: Manifest = serde_json::from_value(value.clone())?;
+    transaction::validate_manifest(directory, id, &manifest)?;
+    let identity = &manifest.summary.identity;
+    if !is_ark_module(&identity.module_id)
+        || path_key(root) != path_key(&backup_root(storage, identity)?)
+        || manifest.scopes.last().is_none_or(|scope| {
+            !scope.target.is_absolute()
+                || path_key(&scope.target) != path_key(Path::new(&identity.directory_key))
+        })
+    {
+        return Err(invalid(
+            path,
+            "Snapshot does not belong to this cluster directory",
+        ));
+    }
+    Ok(())
+}
+
 async fn operate<T, F>(
     storage: &StoragePaths,
     instance_id: &str,

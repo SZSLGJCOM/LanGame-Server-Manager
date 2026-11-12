@@ -76,43 +76,39 @@ fn explicit_paths_are_preserved_without_changing_the_module_root() {
 }
 
 #[test]
-fn path_change_detection_distinguishes_runtime_roots_from_steamcmd() {
+fn path_change_detection_covers_every_storage_role() {
     let current = settings(r"D:\current");
     let mut steamcmd_only = current.clone();
     steamcmd_only.steamcmd_root = String::from(r"D:\tools\steamcmd");
 
     assert!(app_paths_changed(&current, &steamcmd_only));
-    assert!(!runtime_roots_changed(&current, &steamcmd_only));
     assert!(!app_paths_changed(&current, &current));
 
     let mut instances_changed = current.clone();
     instances_changed.servers_root = String::from(r"E:\LanGame\instances");
-    assert!(runtime_roots_changed(&current, &instances_changed));
+    assert!(app_paths_changed(&current, &instances_changed));
 
     let mut archives_changed = current.clone();
     archives_changed.archives_root = String::from(r"D:\archives");
     assert!(app_paths_changed(&current, &archives_changed));
-    assert!(runtime_roots_changed(&current, &archives_changed));
 }
 
 #[test]
 fn idle_context_allows_runtime_root_changes() {
-    ensure_app_path_update_allowed(&AppPathUpdateBlockers::default(), true)
+    ensure_app_path_update_allowed(&AppPathUpdateBlockers::default())
         .expect("an idle runtime context should allow a root change");
 }
 
 #[test]
-fn active_runs_block_runtime_roots_but_not_a_steamcmd_only_change() {
+fn active_runs_block_storage_migration() {
     let blockers = AppPathUpdateBlockers {
         active_run_instance_ids: vec![String::from("running-server")],
         ..AppPathUpdateBlockers::default()
     };
 
-    let error = ensure_app_path_update_allowed(&blockers, true)
+    let error = ensure_app_path_update_allowed(&blockers)
         .expect_err("runtime roots must stay stable while a run is active");
     assert!(error.contains("active runs: running-server"));
-    ensure_app_path_update_allowed(&blockers, false)
-        .expect("an active run does not consume the SteamCMD path");
 }
 
 #[test]
@@ -135,7 +131,7 @@ fn pending_starts_jobs_restarts_and_shutdown_block_every_path_change() {
             ..AppPathUpdateBlockers::default()
         },
     ] {
-        assert!(ensure_app_path_update_allowed(&blockers, false).is_err());
+        assert!(ensure_app_path_update_allowed(&blockers).is_err());
     }
 }
 
@@ -211,88 +207,4 @@ fn background_job_ids_are_unique_for_the_same_target() {
         ids.iter()
             .all(|id| id.starts_with("module-install:shared-target:"))
     );
-}
-
-#[tokio::test]
-async fn path_settings_log_rejected_roots_and_persist_joint_changes()
--> Result<(), Box<dyn std::error::Error>> {
-    let root = crate::commands::tests::temp_test_dir("path-settings");
-    let workspace = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../..");
-    let paths = app_storage::StoragePaths {
-        app_data_root: root.join("app-data"),
-        settings_path: root.join("app-data/settings.json"),
-        database_path: root.join("app-data/db/lgs.db"),
-        logs_root: root.join("app-data/logs"),
-        modules_root: workspace.join("modules"),
-        migrations_root: workspace.join("migrations"),
-        steamcmd_root: root.join("steamcmd"),
-        games_root: root.join("games"),
-        instances_root: root.join("instances"),
-        archives_root: root.join("instances/.trash"),
-    };
-    let storage = app_storage::bootstrap_storage_with_paths(paths.clone())?;
-    app_storage::save_app_settings_with_paths(storage.settings.clone(), &paths)?;
-    initialize_database(&paths).await?;
-    let app = tauri::test::mock_builder()
-        .manage(DesktopState::from_storage(&storage))
-        .build(tauri::test::mock_context(tauri::test::noop_assets()))?;
-    let original_settings = fs::read(&paths.settings_path)?;
-    let retained = paths.instances_root.join("existing-world.dat");
-    fs::write(&retained, b"keep the original workspace")?;
-    let next_instances = root.join("selected/instances");
-    let next_archives = next_instances.join(".trash");
-    let input = |archives: &Path| AppPathSettingsInput {
-        servers_root: next_instances.to_string_lossy().into_owned(),
-        archives_root: archives.to_string_lossy().into_owned(),
-        games_root: storage.settings.games_root.clone(),
-        steamcmd_root: storage.settings.steamcmd_root.clone(),
-    };
-
-    // The first choice is invalid as a pair. It must fail before creating or
-    // persisting either root, and leave enough evidence to diagnose the failure.
-    let error = update_app_settings(app.state::<DesktopState>(), input(&next_instances))
-        .await
-        .unwrap_err();
-    assert!(error.contains("must be separate"), "{error}");
-    assert_eq!(fs::read(&paths.settings_path)?, original_settings);
-    assert!(!next_instances.exists());
-    assert_eq!(
-        app.state::<DesktopState>()
-            .app_state
-            .read()
-            .unwrap()
-            .settings
-            .servers_root,
-        storage.settings.servers_root
-    );
-    let log = fs::read_to_string(paths.app_log_path())?;
-    let entries = log
-        .lines()
-        .map(serde_json::from_str::<serde_json::Value>)
-        .collect::<Result<Vec<_>, _>>()?;
-    assert!(entries.iter().any(|entry| {
-        entry["action"] == "settings.paths.update.failed"
-            && entry["context"]["phase"] == "archive_roots"
-            && entry["message"]
-                .as_str()
-                .is_some_and(|message| message.contains("must be separate"))
-    }));
-
-    // A single valid request can change both roots, even when the selected
-    // workspace already contains files. Changing settings does not move them.
-    let selected_world = next_instances.join("existing-instance/saves/world.dat");
-    fs::create_dir_all(selected_world.parent().unwrap())?;
-    fs::write(&selected_world, b"keep the selected workspace")?;
-    let saved = update_app_settings(app.state::<DesktopState>(), input(&next_archives)).await?;
-    assert_eq!(Path::new(&saved.servers_root), next_instances);
-    assert_eq!(Path::new(&saved.archives_root), next_archives);
-    let restarted = app_storage::bootstrap_storage_with_paths(paths.clone())?;
-    assert_eq!(restarted.paths.instances_root, next_instances);
-    assert_eq!(restarted.paths.archives_root, next_archives);
-    assert_eq!(restarted.paths.database_path, paths.database_path);
-    assert_eq!(fs::read(&retained)?, b"keep the original workspace");
-    assert_eq!(fs::read(&selected_world)?, b"keep the selected workspace");
-    drop(app);
-    fs::remove_dir_all(root)?;
-    Ok(())
 }

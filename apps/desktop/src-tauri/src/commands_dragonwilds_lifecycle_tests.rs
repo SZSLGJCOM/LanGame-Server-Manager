@@ -3,10 +3,7 @@ use std::io::Write;
 
 const WORLD: &str = "Bootstrap world";
 #[cfg(windows)]
-static INTERRUPTED: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
-#[cfg(windows)]
-#[path = "commands_windrose_console_fixture.rs"]
-mod native_console_fixture;
+use crate::commands::commands_runtime_lifecycle::native_console_fixture::{self, INTERRUPTED};
 
 fn save_markers(world: &str) -> String {
     format!(

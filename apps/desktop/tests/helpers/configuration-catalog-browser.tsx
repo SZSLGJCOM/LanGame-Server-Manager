@@ -146,8 +146,16 @@ function verifySection(moduleId: string, sectionId: string, schema: GuidedSettin
   const cards = [...fixture.querySelectorAll<HTMLElement>(".configuration-workspace__main [data-field-key]")]
     .filter((card) => card.getClientRects().length > 0);
   const actual = cards.map((card) => card.dataset.fieldKey!).sort();
-  check(new Set(actual).size === actual.length && actual.every((key) => expected.includes(key)),
+  const networkFields = moduleId === "astroneer" && sectionId === "network" ? ["public_ip"] : [];
+  check(new Set(actual).size === actual.length && actual.every((key) => expected.includes(key) || networkFields.includes(key)),
     `${moduleId}.${sectionId}: controls contain duplicate or unexpected fields: ${actual}`);
+  for (const key of networkFields) {
+    const field = schema.presentationFields?.find((candidate) => candidate.key === key);
+    const card = cards.find((candidate) => candidate.dataset.fieldKey === key);
+    check(field?.presentation.owner === "instance_network" && field.presentation.state === "derived"
+      && field.sectionId === sectionId && card?.closest(".instance-connection-settings"),
+      `${moduleId}.${sectionId}.${key}: the shared network editor must own the join address control`);
+  }
   for (const key of expected) {
     if (actual.includes(key)) continue;
     const registration = renderers.find((renderer) => renderer.fieldKey === key);
@@ -155,14 +163,15 @@ function verifySection(moduleId: string, sectionId: string, schema: GuidedSettin
     check(registration && fixture.querySelectorAll(`#${CSS.escape(inputId)}.configuration-workspace__addon`).length === 1,
       `${moduleId}.${sectionId}.${key}: missing field control or registered structured editor`);
   }
-  const foreign = new Set((schema.presentationFields ?? []).filter((field) => field.presentation.owner !== "configuration")
+  const foreign = new Set((schema.presentationFields ?? []).filter((field) =>
+    field.presentation.owner !== "configuration" && !networkFields.includes(field.key))
     .map((field) => field.key));
   check(actual.every((key) => !foreign.has(key)), `${moduleId}.${sectionId}: another workspace owns a rendered control`);
   for (const card of cards) {
     const labelledBy = card.getAttribute("aria-labelledby")?.split(/\s+/)
       .map((id) => document.getElementById(id)?.textContent?.trim()).filter(Boolean).join(" ");
     const label = labelledBy || card.getAttribute("aria-label")?.trim()
-      || card.querySelector<HTMLElement>(".settings-field-label,.settings-field-title")?.textContent?.trim();
+      || card.querySelector<HTMLElement>(".settings-field-label,.settings-field-title,.detail-label")?.textContent?.trim();
     check(label && !/^settings\.[\w.]+$/.test(label), `${moduleId}.${card.dataset.fieldKey}: missing translated title`);
     check(card.querySelector("input,select,textarea,button"), `${moduleId}.${card.dataset.fieldKey}: missing operable control`);
   }

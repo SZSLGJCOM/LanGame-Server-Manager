@@ -18,7 +18,7 @@ for (const viewport of [{ width: 1560, height: 900 }, { width: 960, height: 600 
       const report = await runBrowserFixture({ fixturePath: "manual-mod-layout-browser.html", viewport, keyboard: true, pointer: true,
         screenshotPath: output ? path.join(output, `source-header-${name}.png`) : undefined });
       if (output) await fs.writeFile(path.join(output, `${name}.json`), JSON.stringify(report, null, 2));
-      console.log(`MANUAL_MOD_LAYOUT ${JSON.stringify({ viewport: report.viewport, checks: report.checks?.length,
+      console.log(`MANUAL_MOD_LAYOUT ${JSON.stringify({ viewport: report.viewport, checks: report.checks,
         failures: report.failures, measurements: report.measurements, writes: report.writes,
         browser_errors: report.browser_errors, browser_exited: report.browser_exited,
         browser_processes_remaining: report.browser_processes_remaining, scratch_removed: report.scratch_removed })}`);

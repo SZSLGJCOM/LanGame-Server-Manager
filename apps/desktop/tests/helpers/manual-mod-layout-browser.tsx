@@ -24,7 +24,7 @@ fixture.style.cssText = "height:100vh;padding:24px;box-sizing:border-box;display
 const root = createRoot(fixture);
 const errors: string[] = [];
 const failures: string[] = [];
-const checks: string[] = [];
+let checks = 0;
 const measurements: Record<string, unknown>[] = [];
 const successSelector = ".shell-activity-bar .shell-activity-notice.is-success";
 addEventListener("error", (event) => errors.push(event.message));
@@ -45,7 +45,7 @@ function assert(condition: unknown, label: string): asserts condition {
   if (!condition) throw new Error(label);
 }
 function check(condition: unknown, label: string) {
-  checks.push(label);
+  checks += 1;
   if (!condition) failures.push(label);
 }
 function element<T extends HTMLElement = HTMLElement>(selector: string): T {
@@ -113,6 +113,13 @@ function visibleIn(target: HTMLElement, container: HTMLElement) {
   const bounds = container.getBoundingClientRect();
   return rect.width > 0 && rect.height > 0 && rect.left >= bounds.left - 1 && rect.right <= bounds.right + 1 &&
     rect.top >= Math.max(0, bounds.top) - 1 && rect.bottom <= Math.min(innerHeight, bounds.bottom) + 1;
+}
+function dragFeedback() {
+  if (moduleDetails.mods?.source?.provider === "nexus") {
+    return [...fixture.querySelectorAll<HTMLElement>(".shell-activity-notice")]
+      .find((notice) => notice.textContent?.includes("Release to import Mod files."));
+  }
+  return fixture.querySelector<HTMLElement>(".mw-dropzone-feedback");
 }
 function headerLayout(state: string, hasReferences: boolean) {
   const toolbar = element(".mw-community-workspace > .mw-workspace-toolbar"), toolbarBounds = toolbar.getBoundingClientRect();
@@ -185,7 +192,7 @@ function layout(state: string, hasReferences: boolean, view: "store" | "my-mods"
   }
   check(bounds.top >= toolbar.getBoundingClientRect().bottom - 1 && Math.abs(bounds.bottom - workspace.getBoundingClientRect().bottom) <= 2,
     `${label}: the selected pane fills the workspace below the existing controls`);
-  check(Boolean(fixture.querySelector(".mw-dropzone-feedback")) === state.includes("drag-active"), `${label}: drag guidance exists only during a valid drag`);
+  check(Boolean(dragFeedback()) === state.includes("drag-active"), `${label}: drag guidance exists only during a valid drag`);
   check(outer.scrollHeight <= outer.clientHeight + 1 && workbench.scrollHeight <= workbench.clientHeight + 1,
     `${label}: outer workspace has no vertical overflow`);
   outer.scrollTop = 100;
@@ -341,37 +348,38 @@ async function run() {
         installed = true; return stageResult();
       case "open_external_url": sourceOpens += 1; return;
       case "read_background_jobs": return [];
+      case "read_nexus_website_auth_state": return "unknown";
       default: throw new Error(`Unexpected native command ${command}`);
     }
   }, { shouldMockEvents: true });
   Object.assign(window, { isTauri: true });
 
   await render("sevendaystodie");
-  layout("empty", false);
+  layout("empty", true);
   await act(async () => { element(".mw-dropzone").dispatchEvent(new DragEvent("dragenter", {
     bubbles: true, cancelable: true, dataTransfer: fileTransfer()
   })); });
   check(element(".mw-dropzone").classList.contains("mw-dropzone--active"), "File drag enters the real drop target");
-  layout("drag-active", false);
+  layout("drag-active", true);
   await act(async () => { element(".mw-dropzone").dispatchEvent(new DragEvent("dragleave", {
     bubbles: true, relatedTarget: element(".mw-dropzone-title")
   })); });
-  check(Boolean(fixture.querySelector(".mw-dropzone-feedback")), "Moving across children keeps the store drag feedback");
+  check(Boolean(dragFeedback()), "Moving across children keeps the store drag feedback");
   await act(async () => { element(".mw-dropzone").dispatchEvent(new DragEvent("dragleave", { bubbles: true, relatedTarget: fixture })); });
-  check(!fixture.querySelector(".mw-dropzone-feedback"), "Leaving the store drop target removes its temporary feedback");
+  check(!dragFeedback(), "Leaving the store drop target removes its temporary feedback");
   await act(async () => {
     element(".mw-dropzone").dispatchEvent(new DragEvent("dragenter", { bubbles: true, cancelable: true, dataTransfer: fileTransfer() }));
   });
   await act(async () => { window.dispatchEvent(new DragEvent("dragend")); });
-  check(!fixture.querySelector(".mw-dropzone-feedback"), "Cancelling a drag removes temporary store feedback");
+  check(!dragFeedback(), "Cancelling a drag removes temporary store feedback");
   await dropFiles();
   await settle(() => Boolean(fixture.querySelector(successSelector)), "File installation result did not render in the activity bar");
-  layout("installed", false);
+  layout("installed", true);
   await selectView("My Mods");
   await settle(() => fixture.textContent?.includes("FixtureMod") === true, "The imported file did not appear after switching to My Mods");
-  layout("installed-my-mods", false, "my-mods");
+  layout("installed-my-mods", true, "my-mods");
   await selectView("Store");
-  layout("returned-store", false);
+  layout("returned-store", true);
 
   await render("minecraft");
   layout("empty", false);

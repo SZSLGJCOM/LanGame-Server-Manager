@@ -282,7 +282,7 @@ async function exercise() {
   check(sourceInput("mod_ids").readOnly || sourceInput("mod_ids").disabled, "Archived official settings are read only");
   await closeSettings();
   check(writes === beforeArchive, "Archive inspection performs no write"); flags.archive_guard = true;
-  check(sourceCalls.length === 0, "Official mod.io IDs never reach Steam or Nexus APIs"); flags.source_isolation = true;
+  check(sourceCalls.length === 0, `Official mod.io IDs never reach Steam or Nexus APIs (${sourceCalls.join(", ")})`); flags.source_isolation = true;
 
   seed("abioticfactor", { mod_ids: "invalid-mod-id" }, false); await mount();
   await click(element<HTMLButtonElement>(".mw-entry-row-select", officialRow("invalid-mod-id")));
@@ -382,7 +382,13 @@ async function run() {
     cached: new Set(catalog.map((item) => item.id)) }), { check, save: (saved) => { details = saved; writes += 1; } });
   mockWindows("main");
   mockIPC(async (command, payload) => {
-    if (moduleDetails.summary.id === "abioticfactor" && (/steam_workshop|nexus/.test(command))) sourceCalls.push(command);
+    if (moduleDetails.summary.id === "abioticfactor" && /steam_workshop|nexus/.test(command)) {
+      if (command === "read_nexus_website_auth_state") {
+        check(Object.keys(payload ?? {}).length === 0, "Local Nexus sign-in observations carry no Mod references");
+      } else {
+        sourceCalls.push(command);
+      }
+    }
     if (command === "update_instance_record_if_current") {
       attempts += 1;
       if (pendingSave) await pendingSave;

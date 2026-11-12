@@ -1599,103 +1599,6 @@ pub async fn uninstall_steamcmd(
     })
 }
 
-#[tauri::command]
-pub async fn update_app_settings(
-    state: tauri::State<'_, DesktopState>,
-    input: AppPathSettingsInput,
-) -> Result<app_core::AppSettings, String> {
-    let storage = state.bootstrap_storage()?;
-    let next_settings = normalize_app_path_settings(&storage.settings, &input);
-    let runtime_roots_will_change = runtime_roots_changed(&storage.settings, &next_settings);
-    let any_path_changed = app_paths_changed(&storage.settings, &next_settings);
-    if !any_path_changed {
-        ensure_storage_context_snapshot_current(&state, &storage, "path update")?;
-        return Ok(storage.settings);
-    }
-    let _storage_context_transition = state.begin_storage_context_transition()?;
-    ensure_storage_context_snapshot_current(&state, &storage, "path update")?;
-
-    append_desktop_app_log(
-        &storage,
-        "info",
-        "settings.paths.update.request",
-        "Saving app path settings",
-        json!({
-            "games_root": next_settings.games_root,
-            "servers_root": next_settings.servers_root,
-            "archives_root": next_settings.archives_root,
-            "steamcmd_root": next_settings.steamcmd_root,
-        }),
-    );
-
-    let blockers =
-        collect_app_path_update_blockers(&state, &storage, runtime_roots_will_change).await?;
-    if let Err(message) = ensure_app_path_update_allowed(&blockers, runtime_roots_will_change) {
-        append_desktop_app_log(
-            &storage,
-            "warn",
-            "settings.paths.update.blocked",
-            &message,
-            json!({
-                "runtime_roots_changed": runtime_roots_will_change,
-                "active_run_instance_ids": blockers.active_run_instance_ids,
-                "tracked_instance_ids": blockers.tracked_instance_ids,
-                "pending_start_instance_ids": blockers.pending_start_instance_ids,
-                "active_job_ids": blockers.active_job_ids,
-                "pending_restart_count": blockers.pending_restart_count,
-                "shutdown_in_progress": blockers.shutdown_in_progress,
-            }),
-        );
-        return Err(message);
-    }
-
-    // Retain the inventory lock through persistence so another operation cannot
-    // create an archive between the emptiness check and the root change.
-    let _archive_root_guard =
-        app_storage::guard_archive_root_settings_update(&storage.paths, &next_settings)
-            .await
-            .map_err(|error| {
-                let message = error.to_string();
-                append_desktop_app_log(
-                    &storage,
-                    "error",
-                    "settings.paths.update.failed",
-                    &message,
-                    json!({ "phase": "archive_roots" }),
-                );
-                logged_error_message(&storage, message)
-            })?;
-    let saved = app_storage::save_app_settings_with_paths(next_settings, &storage.paths).map_err(
-        |error| {
-            let message = error.to_string();
-            append_desktop_app_log(
-                &storage,
-                "error",
-                "settings.paths.update.failed",
-                &message,
-                json!({ "phase": "persist_settings" }),
-            );
-            logged_error_message(&storage, message)
-        },
-    )?;
-
-    if let Err(message) = clear_assistant_pending_operations() {
-        append_desktop_app_log(
-            &storage,
-            "warn",
-            "settings.paths.update.assistant_confirmations_clear_failed",
-            &message,
-            json!({}),
-        );
-    }
-
-    mutate_app_state(&state, |app_state| {
-        app_state.settings = saved.clone();
-    })?;
-
-    Ok(saved)
-}
-
 fn normalize_app_path_settings(current: &AppSettings, input: &AppPathSettingsInput) -> AppSettings {
     let servers_root = normalize_app_path_setting(&input.servers_root, &current.servers_root);
     AppSettings {
@@ -1722,14 +1625,10 @@ fn normalize_app_path_setting(value: &str, fallback: &str) -> String {
 }
 
 fn app_paths_changed(current: &AppSettings, next: &AppSettings) -> bool {
-    runtime_roots_changed(current, next)
-        || Path::new(&current.steamcmd_root) != Path::new(&next.steamcmd_root)
-}
-
-fn runtime_roots_changed(current: &AppSettings, next: &AppSettings) -> bool {
     Path::new(&current.servers_root) != Path::new(&next.servers_root)
         || Path::new(&current.archives_root) != Path::new(&next.archives_root)
         || Path::new(&current.games_root) != Path::new(&next.games_root)
+        || Path::new(&current.steamcmd_root) != Path::new(&next.steamcmd_root)
 }
 
 fn storage_context_snapshot_is_current(
@@ -1770,23 +1669,18 @@ struct AppPathUpdateBlockers {
 async fn collect_app_path_update_blockers(
     state: &DesktopState,
     storage: &StorageBootstrap,
-    include_active_runs: bool,
 ) -> Result<AppPathUpdateBlockers, String> {
     let mut pending_start_instance_ids = state.pending_runtime_start_instance_ids()?;
     pending_start_instance_ids.sort();
 
-    let mut tracked_instance_ids = if include_active_runs {
-        state
-            .runtime_supervisor
-            .lock()
-            .map_err(|_| String::from("runtime supervisor lock poisoned"))?
-            .tracked_instances()
-            .into_iter()
-            .map(|instance| instance.summary.id)
-            .collect::<Vec<_>>()
-    } else {
-        Vec::new()
-    };
+    let mut tracked_instance_ids = state
+        .runtime_supervisor
+        .lock()
+        .map_err(|_| String::from("runtime supervisor lock poisoned"))?
+        .tracked_instances()
+        .into_iter()
+        .map(|instance| instance.summary.id)
+        .collect::<Vec<_>>();
     tracked_instance_ids.sort();
     tracked_instance_ids.dedup();
 
@@ -1814,16 +1708,12 @@ async fn collect_app_path_update_blockers(
         .map_err(|_| String::from("runtime restart scheduler lock poisoned"))?
         .pending_count();
 
-    let mut active_run_instance_ids = if include_active_runs {
-        list_active_instance_runs(&storage.paths)
-            .await
-            .map_err(|error| error.to_string())?
-            .into_iter()
-            .map(|run| run.instance_id)
-            .collect::<Vec<_>>()
-    } else {
-        Vec::new()
-    };
+    let mut active_run_instance_ids = list_active_instance_runs(&storage.paths)
+        .await
+        .map_err(|error| error.to_string())?
+        .into_iter()
+        .map(|run| run.instance_id)
+        .collect::<Vec<_>>();
     active_run_instance_ids.sort();
     active_run_instance_ids.dedup();
 
@@ -1837,13 +1727,9 @@ async fn collect_app_path_update_blockers(
     })
 }
 
-fn ensure_app_path_update_allowed(
-    blockers: &AppPathUpdateBlockers,
-    runtime_roots_changed: bool,
-) -> Result<(), String> {
-    let runtime_is_active = runtime_roots_changed
-        && (!blockers.active_run_instance_ids.is_empty()
-            || !blockers.tracked_instance_ids.is_empty());
+fn ensure_app_path_update_allowed(blockers: &AppPathUpdateBlockers) -> Result<(), String> {
+    let runtime_is_active =
+        !blockers.active_run_instance_ids.is_empty() || !blockers.tracked_instance_ids.is_empty();
     if !runtime_is_active
         && blockers.pending_start_instance_ids.is_empty()
         && blockers.active_job_ids.is_empty()

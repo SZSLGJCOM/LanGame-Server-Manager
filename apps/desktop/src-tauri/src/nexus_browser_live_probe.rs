@@ -318,24 +318,24 @@ async fn observe(
                 return Err(failure);
             }
         }
-        if let Some(value) = snapshot(&view, &script).await {
-            if previous.as_ref() != Some(&value) {
-                previous = Some(value.clone());
-                if samples.len() < 80 {
-                    let automation = app
-                        .state::<LiveAutomation>()
-                        .0
-                        .lock()
-                        .ok()
-                        .and_then(|values| values.last().cloned());
-                    samples.push(json!({ "elapsed_ms": started.elapsed().as_millis(), "page": value, "automation": automation }));
-                    std::fs::write(
-                        root.join("snapshots.json"),
-                        serde_json::to_vec_pretty(&samples)
-                            .map_err(|_| "Cannot encode safe snapshots")?,
-                    )
-                    .map_err(|error| error.to_string())?;
-                }
+        if let Some(value) = snapshot(&view, &script).await
+            && previous.as_ref() != Some(&value)
+        {
+            previous = Some(value.clone());
+            if samples.len() < 80 {
+                let automation = app
+                    .state::<LiveAutomation>()
+                    .0
+                    .lock()
+                    .ok()
+                    .and_then(|values| values.last().cloned());
+                samples.push(json!({ "elapsed_ms": started.elapsed().as_millis(), "page": value, "automation": automation }));
+                std::fs::write(
+                    root.join("snapshots.json"),
+                    serde_json::to_vec_pretty(&samples)
+                        .map_err(|_| "Cannot encode safe snapshots")?,
+                )
+                .map_err(|error| error.to_string())?;
             }
         }
         tokio::time::sleep(Duration::from_millis(250)).await;

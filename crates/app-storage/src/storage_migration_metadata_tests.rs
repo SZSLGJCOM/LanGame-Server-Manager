@@ -215,7 +215,7 @@ fn equal_log_bytes_cannot_authorize_a_forged_source_identity() {
 }
 
 #[tokio::test]
-async fn pending_recovery_and_affected_cluster_snapshots_are_preflight_blockers() {
+async fn pending_program_and_cluster_restores_are_preflight_blockers() {
     let fixture = Fixture::new();
     let movement = fixture.movement(&fixture.paths.instances_root, "moved-instances");
     let journal = fixture
@@ -232,18 +232,15 @@ async fn pending_recovery_and_affected_cluster_snapshots_are_preflight_blockers(
             .contains("unfinished data or program recovery")
     );
     fs::remove_file(journal).unwrap();
-    let manifest = fixture
+    let pending = fixture
         .paths
         .app_data_root
-        .join("cluster-backups/group/snapshot-one/manifest.json");
-    write_json(
-        &manifest,
-        &json!({"scopes":[{"target":fixture.paths.instances_root.join("one/config")}]}),
-    );
+        .join("cluster-backups/group/restore-pending.json");
+    write_json(&pending, &json!({}));
     let error = preflight_metadata(&fixture.paths, &[movement])
         .await
         .unwrap_err();
-    assert!(error.to_string().contains("ARK cluster snapshot targets"));
+    assert!(error.to_string().contains("pending ARK cluster restore"));
 }
 
 #[test]

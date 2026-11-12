@@ -20,14 +20,6 @@ export class MockStorageManagement {
   private readonly archives = new Map<string, ArchivedFixture>();
   private readonly scans = new Map<string, { cancelled: boolean }>();
 
-  validatePathChange(current: AppSettings, next: AppSettings) {
-    const rootsChanged = normalizedPath(current.archives_root) !== normalizedPath(next.archives_root)
-      || normalizedPath(current.servers_root) !== normalizedPath(next.servers_root);
-    if (rootsChanged && this.archives.size > 0) {
-      throw new Error("Restore or permanently delete all archived instances before changing the archive or instance workspace path.");
-    }
-  }
-
   withProgramCounts(modules: ModuleSummary[], instances: InstanceSummary[], programs: ReadonlyMap<string, { mode: "shared" | "independent" }>, root: string): ModuleSummary[] {
     return modules.map((module) => ({ ...module,
       instance_program_count: instances.filter((instance) => instance.module_id === module.id

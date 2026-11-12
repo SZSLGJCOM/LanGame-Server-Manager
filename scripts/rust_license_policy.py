@@ -315,6 +315,7 @@ add_rule(
 )
 for package_id, vcs_sha1 in (
     ("selectors@0.38.0", "572ecba2d1600e7c3d490586692a209faf703baa"),
+    ("selectors@0.41.0", "34d25f741765a0bdb894f8271852e633299352d8"),
 ):
     add_rule(
         package_id,

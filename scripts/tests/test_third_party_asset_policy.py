@@ -22,6 +22,8 @@ from scripts.third_party_asset_policy import (
     ARCHIVE_FIXTURE_ROOT,
     ARCHIVE_FIXTURE_SHA256,
     INTER_LICENSE_PATH,
+    SQLX_VENDOR_REQUIRED_PATHS,
+    SQLX_VENDOR_ROOT,
     THIRD_PARTY_ASSET_LICENSES,
     THIRD_PARTY_ASSET_SHA256,
     THIRD_PARTY_ARCHIVE_FIXTURES,
@@ -50,6 +52,29 @@ def change_last_byte(path: Path) -> None:
 
 
 class ThirdPartyAssetPolicyTests(unittest.TestCase):
+    def test_sqlx_vendor_is_complete_and_rejects_changed_source_or_missing_license(self):
+        paths = tuple(sorted(
+            path.relative_to(REPOSITORY_ROOT)
+            for path in (REPOSITORY_ROOT / SQLX_VENDOR_ROOT).rglob("*") if path.is_file()
+        ))
+        self.assertEqual(verify_third_party_asset_bytes(REPOSITORY_ROOT, paths), [])
+        scan_snapshot_files(REPOSITORY_ROOT, paths)
+        self.assertTrue(SQLX_VENDOR_REQUIRED_PATHS <= PUBLIC_SNAPSHOT_REQUIRED_PATHS)
+        for path in paths:
+            self.assertIsNone(exclusion_reason(path, frozenset()))
+        missing_license = tuple(path for path in paths if path.name != "LICENSE-MIT")
+        with self.assertRaisesRegex(SnapshotError, "third-party-source-integrity"):
+            scan_snapshot_files(REPOSITORY_ROOT, missing_license)
+        with tempfile.TemporaryDirectory() as directory:
+            repository = Path(directory)
+            for path in paths:
+                target = repository / path
+                target.parent.mkdir(parents=True, exist_ok=True)
+                target.write_bytes((REPOSITORY_ROOT / path).read_bytes())
+            change_last_byte(repository / SQLX_VENDOR_ROOT / "src/lib.rs")
+            with self.assertRaisesRegex(SnapshotError, "third-party-source-integrity"):
+                scan_snapshot_files(repository, paths)
+
     def test_archive_fixtures_match_the_source_ledger_and_require_snapshot_inclusion(self):
         sources = json.loads((REPOSITORY_ROOT / ARCHIVE_FIXTURE_ROOT / "sources.json").read_text())
         self.assertEqual(

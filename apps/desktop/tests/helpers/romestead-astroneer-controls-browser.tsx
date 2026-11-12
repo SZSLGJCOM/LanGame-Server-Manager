@@ -108,6 +108,7 @@ async function draw(moduleId: "romestead" | "astroneer", key: string, archived =
     </main></ConfigurationActivityHost>
   </InstanceSettingsSaveProvider></I18nProvider>); });
   await until(() => Boolean(fixture?.querySelector(".configuration-workspace__body")));
+  if (moduleId === "astroneer") await section("room");
 }
 async function section(id: string) {
   const toggle = element<HTMLButtonElement>(".configuration-workspace__navigation-toggle");

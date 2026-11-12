@@ -306,10 +306,8 @@ fn validate_manifests(unpacked: &Path, routes: &[Route]) -> Result<(), String> {
         let Some(path) = route.destination.as_deref() else {
             continue;
         };
-        if path.starts_with("emf/mods/") {
-            let (name, _) = path["emf/mods/".len()..]
-                .split_once('/')
-                .ok_or("Invalid EMF Mod path")?;
+        if let Some(relative) = path.strip_prefix("emf/mods/") {
+            let (name, _) = relative.split_once('/').ok_or("Invalid EMF Mod path")?;
             if !destinations.contains(format!("emf/mods/{name}/mod.json").as_str()) {
                 return Err(format!(
                     "EMF Mod {name} has no mod.json; no files were installed"

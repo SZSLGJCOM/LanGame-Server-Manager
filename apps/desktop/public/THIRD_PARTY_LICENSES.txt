@@ -481,9 +481,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 ================================================================================
-Package / 软件包: framer-motion@14.9.0
+Package / 软件包: framer-motion@14.9.1
 Declared license / 声明许可证: MIT
-Locked source / 锁定来源: https://registry.npmjs.org/framer-motion/-/framer-motion-14.9.0.tgz
+Locked source / 锁定来源: https://registry.npmjs.org/framer-motion/-/framer-motion-14.9.1.tgz
 License source / 许可证来源: npm package file: LICENSE.md
 SHA-256: 5ff46083b88563822b0560dd6221ab89d2f74bc97a52d4c97a75020fd62c6f32
 --------------------------------------------------------------------------------
@@ -594,9 +594,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 ================================================================================
-Package / 软件包: motion-dom@14.9.0
+Package / 软件包: motion-dom@14.9.1
 Declared license / 声明许可证: MIT
-Locked source / 锁定来源: https://registry.npmjs.org/motion-dom/-/motion-dom-14.9.0.tgz
+Locked source / 锁定来源: https://registry.npmjs.org/motion-dom/-/motion-dom-14.9.1.tgz
 License source / 许可证来源: npm package file: LICENSE.md
 SHA-256: 1bf0dc3f7727723e5a032ed12164a47cf92c05204cb1a3485f123c24e2833ed1
 --------------------------------------------------------------------------------
@@ -652,9 +652,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 ================================================================================
-Package / 软件包: motion@14.9.0
+Package / 软件包: motion@14.9.1
 Declared license / 声明许可证: MIT
-Locked source / 锁定来源: https://registry.npmjs.org/motion/-/motion-14.9.0.tgz
+Locked source / 锁定来源: https://registry.npmjs.org/motion/-/motion-14.9.1.tgz
 License source / 许可证来源: npm package file: LICENSE.md
 SHA-256: 1bf0dc3f7727723e5a032ed12164a47cf92c05204cb1a3485f123c24e2833ed1
 --------------------------------------------------------------------------------
@@ -826,9 +826,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 ================================================================================
-Package / 软件包: three@0.186.1
+Package / 软件包: three@0.187.0
 Declared license / 声明许可证: MIT
-Locked source / 锁定来源: https://registry.npmjs.org/three/-/three-0.186.1.tgz
+Locked source / 锁定来源: https://registry.npmjs.org/three/-/three-0.187.0.tgz
 License source / 许可证来源: npm package file: LICENSE
 SHA-256: 8b378ebe60e2fe500158cb0ac71cb5e8b7d92953c2abcc63a0eb90499653b5bc
 --------------------------------------------------------------------------------

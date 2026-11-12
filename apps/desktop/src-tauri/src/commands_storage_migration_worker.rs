@@ -70,10 +70,10 @@ pub(super) async fn run<R: tauri::Runtime>(
     let state = app
         .try_state::<DesktopState>()
         .ok_or_else(|| Failure::message("桌面运行状态已不可用。"))?;
-    let blockers = super::super::collect_app_path_update_blockers(&state, &storage, true)
+    let blockers = super::super::collect_app_path_update_blockers(&state, &storage)
         .await
         .map_err(Failure::message)?;
-    super::super::ensure_app_path_update_allowed(&blockers, true).map_err(Failure::message)?;
+    super::super::ensure_app_path_update_allowed(&blockers).map_err(Failure::message)?;
     check_cancelled(&run)?;
     match job {
         Job::Preview(input) => {

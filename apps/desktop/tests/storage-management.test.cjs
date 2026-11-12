@@ -157,20 +157,6 @@ test("development archive details preserve saved configuration, policies and bac
   assert.throws(() => model.details("saved-archive", "D:/instance-archives"), /no longer exists/);
 });
 
-test("development preview cannot hide retained archives by changing their roots", () => {
-  const { MockStorageManagement } = load("api-mock/storage-management.ts");
-  const model = new MockStorageManagement();
-  const settings = { servers_root: "D:/instances", archives_root: "D:/instance-archives" };
-  const next = { ...settings, archives_root: "D:/other-archives" };
-  assert.doesNotThrow(() => model.validatePathChange(settings, next));
-  const fixture = archived(model);
-  assert.throws(() => model.validatePathChange(settings, next), /Restore or permanently delete/);
-  assert.throws(() => model.validatePathChange(settings, { ...settings, servers_root: "D:/other-instances" }), /Restore or permanently delete/);
-  assert.doesNotThrow(() => model.validatePathChange(settings, { ...settings, archives_root: "d:\\INSTANCE-ARCHIVES\\" }));
-  model.purge(fixture.id, settings.archives_root);
-  assert.doesNotThrow(() => model.validatePathChange(settings, next));
-});
-
 test("development scan reports unknown physical allocation and retains cancellation ownership", async () => {
   const { MockStorageManagement } = load("api-mock/storage-management.ts");
   const model = new MockStorageManagement();

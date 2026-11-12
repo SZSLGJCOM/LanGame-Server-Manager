@@ -8,7 +8,7 @@ rust-version.workspace = true
 [dependencies]
 app-network = { path = "../app-network" }
 ort = { version = "=2.0.0-rc.15", default-features = false, features = ["std", "alternative-backend", "api-28"] }
-dom_query = "=0.28.0"
+dom_query = "=0.29.0"
 http = "1.5.0"
 hyper-util = { version = "0.1.21", features = ["client-proxy", "client-proxy-system"] }
 pdf-extract = "=0.12.1"
@@ -32,4 +32,4 @@ reqwest = { workspace = true, features = ["blocking"] }
 serde.workspace = true
 serde_json.workspace = true
 sha2.workspace = true
-zip = { version = "=9.2.2", default-features = false, features = ["deflate"] }
+zip = { version = "=9.4.0", default-features = false, features = ["deflate"] }

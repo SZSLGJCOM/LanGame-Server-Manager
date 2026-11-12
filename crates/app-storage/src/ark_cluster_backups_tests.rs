@@ -6,6 +6,10 @@ use app_core::{InstanceSummary, PortBinding};
 #[path = "ark_cluster_backups_concurrency_tests.rs"]
 mod concurrency;
 
+#[cfg(windows)]
+#[path = "storage_migration_ark_cluster_tests.rs"]
+mod storage_migration;
+
 fn report() -> ArkClusterReport {
     let identity = ArkClusterIdentity {
         module_id: "arksurvivalevolved".to_owned(),

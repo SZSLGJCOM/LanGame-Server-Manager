@@ -41,6 +41,8 @@ from scripts.verify_no_tracked_secrets import scan_paths
 from scripts.open_source_product_policy import scan_product_surfaces
 from scripts.third_party_asset_policy import (
     ARCHIVE_FIXTURE_COMPANION_SHA256,
+    SQLX_VENDOR_REQUIRED_PATHS,
+    SQLX_VENDOR_ROOT,
     THIRD_PARTY_ARCHIVE_FIXTURES,
     THIRD_PARTY_ASSET_LICENSES,
     THIRD_PARTY_REFERENCE_MEDIA,
@@ -161,6 +163,7 @@ PUBLIC_SNAPSHOT_REQUIRED_PATHS = frozenset(
         *THIRD_PARTY_ASSET_LICENSES.values(),
         *THIRD_PARTY_ARCHIVE_FIXTURES,
         *ARCHIVE_FIXTURE_COMPANION_SHA256,
+        *SQLX_VENDOR_REQUIRED_PATHS,
         "docs/game-config-source-ledger.csv",
         "docs/game-config-source-ledger.md",
         "docs/game-integration-validation.md",
@@ -627,7 +630,9 @@ def exclusion_reason(relative_path: Path, ignored_paths: frozenset[str]) -> str 
         part in LOCAL_DEVELOPMENT_DIRECTORIES for part in lowercase_parts[:-1]
     ):
         return "local-development-metadata"
-    if any(part in GENERATED_OR_PRIVATE_DIRECTORIES for part in lowercase_parts[:-1]):
+    if any(part in GENERATED_OR_PRIVATE_DIRECTORIES for part in lowercase_parts[:-1]) and not (
+        normalized_path.startswith(f"{SQLX_VENDOR_ROOT}/")
+    ):
         return "generated-or-private-directory"
     if relative_path.suffix.casefold() in ASSET_AND_BINARY_SUFFIXES:
         return "unlicensed-asset-or-binary"

@@ -200,19 +200,11 @@ async fn uninstall_astroneer_rejects_nested_instance_root_and_preserves_data()
         serde_json::to_value(&instance_before)?
     );
     assert_eq!(list_instances(&storage.paths).await?.len(), 1);
-    // Retire the original registration before the configured root can select
-    // the later package surrounding this private instance.
+    // Prepare an overlapping stored layout to exercise uninstall admission.
+    // Normal directory changes use migration and do not create this layout.
     settings.games_root = replacement_games.to_string_lossy().into_owned();
-    update_app_settings(
-        app.state::<DesktopState>(),
-        AppPathSettingsInput {
-            servers_root: settings.servers_root,
-            archives_root: settings.archives_root,
-            games_root: settings.games_root,
-            steamcmd_root: settings.steamcmd_root,
-        },
-    )
-    .await?;
+    let saved = app_storage::save_app_settings_with_paths(settings, &storage.paths)?;
+    mutate_app_state(&app.state::<DesktopState>(), |state| state.settings = saved)?;
     let storage = bootstrap_storage()?;
     assert!(storage_context_snapshot_is_current(
         &app.state::<DesktopState>(),

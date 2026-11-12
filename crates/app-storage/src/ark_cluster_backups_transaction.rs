@@ -173,6 +173,17 @@ pub(super) fn list(
 }
 
 pub(super) fn load(root: &Path, id: &str) -> Result<Manifest, StorageError> {
+    let directory = snapshot_directory(root, id)?;
+    let mut manifest: Manifest = read_json(&directory.join("manifest.json"), 128 * 1024 * 1024)?;
+    validate_manifest(&directory, id, &manifest)?;
+    manifest.summary.backup_path = directory.to_string_lossy().into_owned();
+    Ok(manifest)
+}
+
+pub(super) fn snapshot_directory(
+    root: &Path,
+    id: &str,
+) -> Result<std::path::PathBuf, StorageError> {
     let suffix = id
         .strip_prefix("snapshot-")
         .ok_or_else(|| invalid(root, "Invalid cluster snapshot ID"))?;
@@ -183,7 +194,14 @@ pub(super) fn load(root: &Path, id: &str) -> Result<Manifest, StorageError> {
     }
     let directory = root.join(id);
     canonical_plain_directory(&directory, root)?;
-    let mut manifest: Manifest = read_json(&directory.join("manifest.json"), 128 * 1024 * 1024)?;
+    Ok(directory)
+}
+
+pub(super) fn validate_manifest(
+    directory: &Path,
+    id: &str,
+    manifest: &Manifest,
+) -> Result<(), StorageError> {
     if manifest.version != 1
         || manifest.summary.backup_id != id
         || !matches!(
@@ -191,11 +209,11 @@ pub(super) fn load(root: &Path, id: &str) -> Result<Manifest, StorageError> {
             "manual" | "pre_restore"
         )
     {
-        return Err(invalid(&directory, "Invalid cluster snapshot manifest"));
+        return Err(invalid(directory, "Invalid cluster snapshot manifest"));
     }
     if totals(&manifest.scopes)? != (manifest.summary.file_count, manifest.summary.total_bytes) {
         return Err(invalid(
-            &directory,
+            directory,
             "Snapshot totals do not match its manifest",
         ));
     }
@@ -212,7 +230,7 @@ pub(super) fn load(root: &Path, id: &str) -> Result<Manifest, StorageError> {
             != members.iter().collect::<Vec<_>>()
         || manifest.scopes.len() != members.len() * 2 + 1
     {
-        return Err(invalid(&directory, "Snapshot membership is malformed"));
+        return Err(invalid(directory, "Snapshot membership is malformed"));
     }
     for (index, scope) in manifest.scopes.iter().enumerate() {
         let expected = if index == members.len() * 2 {
@@ -225,11 +243,10 @@ pub(super) fn load(root: &Path, id: &str) -> Result<Manifest, StorageError> {
             )
         };
         if scope.key != expected {
-            return Err(invalid(&directory, "Snapshot scope ordering is malformed"));
+            return Err(invalid(directory, "Snapshot scope ordering is malformed"));
         }
     }
-    manifest.summary.backup_path = directory.to_string_lossy().into_owned();
-    Ok(manifest)
+    Ok(())
 }
 
 fn totals(scopes: &[Scope]) -> Result<(u64, u64), StorageError> {

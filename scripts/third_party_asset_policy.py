@@ -71,6 +71,16 @@ ARCHIVE_FIXTURE_COMPANION_SHA256 = {
 }
 
 
+# Published SQLx source with the documented dependency-bound patch. Hash sorted
+# relative paths (UTF-8, NUL terminated) followed by each file's SHA-256 bytes.
+SQLX_VENDOR_ROOT = "vendor/sqlx-sqlite"
+SQLX_VENDOR_TREE_SHA256 = "f691eb5780154b870222e4c63b2283d6abb5df7044012a5bf66f63b2c4289cb5"
+SQLX_VENDOR_REQUIRED_PATHS = frozenset(
+    f"{SQLX_VENDOR_ROOT}/{name}"
+    for name in ("Cargo.toml", "SOURCE.md", "LICENSE-MIT", "LICENSE-APACHE")
+)
+
+
 @dataclass(frozen=True)
 class ThirdPartyAssetFinding:
     rule: str
@@ -81,7 +91,7 @@ class ThirdPartyAssetFinding:
 def verify_third_party_asset_bytes(
     repository_root: Path, relative_paths: tuple[Path, ...]
 ) -> list[ThirdPartyAssetFinding]:
-    """Verify selected assets and legal texts, without requiring unrelated build assets."""
+    """Verify selected third-party material without requiring unrelated assets."""
     selected = {path.as_posix() for path in relative_paths}
     findings: list[ThirdPartyAssetFinding] = []
     missing_licenses = {
@@ -119,5 +129,21 @@ def verify_third_party_asset_bytes(
             findings.append(ThirdPartyAssetFinding(
                 "third-party-asset-integrity", path,
                 "file bytes differ from the reviewed third-party asset or license",
+            ))
+    vendor_paths = sorted(path for path in selected if path.startswith(f"{SQLX_VENDOR_ROOT}/"))
+    if vendor_paths:
+        digest = hashlib.sha256()
+        for path in vendor_paths:
+            try:
+                payload = read_source_payload(repository_root / path, repository_root=repository_root)
+            except SourceReadError as error:
+                findings.append(ThirdPartyAssetFinding(error.rule, path, "vendor source could not be safely inspected"))
+                continue
+            digest.update(path.removeprefix(f"{SQLX_VENDOR_ROOT}/").encode("utf-8") + b"\0")
+            digest.update(hashlib.sha256(payload).digest())
+        if digest.hexdigest() != SQLX_VENDOR_TREE_SHA256:
+            findings.append(ThirdPartyAssetFinding(
+                "third-party-source-integrity", SQLX_VENDOR_ROOT,
+                "vendor files differ from the reviewed SQLx source, patch or notices",
             ))
     return findings

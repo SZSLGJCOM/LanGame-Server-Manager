@@ -21,7 +21,7 @@ app-storage = { path = "../../../crates/app-storage" }
 app-steamcmd = { path = "../../../crates/app-steamcmd" }
 base64 = "0.23.1"
 dunce = "=1.0.5"
-dom_query = "=0.28.0"
+dom_query = "=0.29.0"
 encoding_rs = "0.8.42"
 if-addrs = "0.15.0"
 keyring = "4.2.0"
@@ -36,14 +36,14 @@ sha2.workspace = true
 socket2 = "0.6.5"
 subtle = "2.6.1"
 tauri = { workspace = true, features = ["image-png", "tray-icon", "unstable"] }
-tauri-plugin-single-instance = "=2.5.4"
-tauri-plugin-updater = { version = "2.14.0", default-features = false, features = ["rustls-tls", "system-proxy"] }
+tauri-plugin-single-instance = "=2.5.5"
+tauri-plugin-updater = { version = "2.14.1", default-features = false, features = ["rustls-tls", "system-proxy"] }
 thiserror.workspace = true
 tokio.workspace = true
 toml.workspace = true
 uuid.workspace = true
 unrar-rs = { version = "=0.15.3", default-features = false, features = ["crypto-rust"] }
-zip = { version = "9.2.2", default-features = false, features = ["deflate"] }
+zip = { version = "9.4.0", default-features = false, features = ["deflate"] }
 
 [features]
 default = []
@@ -53,7 +53,7 @@ native-test-console = ["app-runtime/native-test-console"]
 
 [dev-dependencies]
 app-steamcmd = { path = "../../../crates/app-steamcmd", features = ["test-support"] }
-libsqlite3-sys = "=0.37.0"
+libsqlite3-sys = "=0.39.1"
 sevenz-rust2 = { version = "=0.25.0", default-features = false, features = ["compress"] }
 sqlx.workspace = true
 tauri = { workspace = true, features = ["test"] }

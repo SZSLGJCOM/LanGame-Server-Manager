@@ -76,7 +76,7 @@ pub(super) fn validate(
             ));
         }
     }
-    reject_cluster_snapshots(paths, moves)
+    Ok(())
 }
 
 fn reject_archive_leaf_merges(
@@ -337,75 +337,4 @@ fn path_spelling(value: &str) -> String {
     } else {
         value.to_owned()
     }
-}
-
-fn reject_cluster_snapshots(paths: &StoragePaths, moves: &[RootMove]) -> Result<(), StorageError> {
-    let root = paths.app_data_root.join("cluster-backups");
-    if !exists(&root)? {
-        return Ok(());
-    }
-    let mut pending = vec![(root.clone(), 0usize)];
-    let mut count = 0;
-    while let Some((directory, depth)) = pending.pop() {
-        if !owned::plain_directory(&directory)? {
-            continue;
-        }
-        for entry in fs::read_dir(&directory).map_err(|source| StorageError::ReadPath {
-            path: directory.clone(),
-            source,
-        })? {
-            let path = entry
-                .map_err(|source| StorageError::ReadPath {
-                    path: directory.clone(),
-                    source,
-                })?
-                .path();
-            count += 1;
-            if count > 100_000 {
-                return Err(invalid(
-                    &root,
-                    "Too many ARK cluster snapshot entries to validate migration.",
-                ));
-            }
-            let name = path
-                .file_name()
-                .and_then(|name| name.to_str())
-                .unwrap_or_default();
-            if name == "restore-pending.json" {
-                return Err(invalid(
-                    &path,
-                    "Complete the pending ARK cluster restore before moving storage.",
-                ));
-            }
-            if name == "manifest.json" {
-                let (_, value) = read_json(&path)?;
-                let scopes = value
-                    .get("scopes")
-                    .and_then(Value::as_array)
-                    .ok_or_else(|| invalid(&path, "ARK cluster snapshot scopes are invalid."))?;
-                for scope in scopes {
-                    let target = Path::new(text(scope, "target", &path)?);
-                    if moved(target, moves)? {
-                        return Err(invalid(
-                            &path,
-                            format!(
-                                "This ARK cluster snapshot targets {}. Storage migration cannot yet rewrite cluster snapshot membership and checksums; preserve this location or resolve the snapshot first.",
-                                target.display()
-                            ),
-                        ));
-                    }
-                }
-            } else if depth < 2
-                && fs::symlink_metadata(&path)
-                    .map_err(|source| StorageError::ReadPath {
-                        path: path.clone(),
-                        source,
-                    })?
-                    .is_dir()
-            {
-                pending.push((path, depth + 1));
-            }
-        }
-    }
-    Ok(())
 }

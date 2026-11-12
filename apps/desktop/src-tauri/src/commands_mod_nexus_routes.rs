@@ -83,7 +83,7 @@ pub(in crate::commands) fn stage_nexus_routed_source(
     let _guard = lock.lock().map_err(|_| "Nexus Mod target lock poisoned")?;
     validate_manual_mod_target_path(&target.target_path)?;
     validate_manual_mod_target_tree(&target.target_path)?;
-    validate_manual_mod_source_inputs(&[source.clone()], &target.accepts)?;
+    validate_manual_mod_source_inputs(std::slice::from_ref(&source), &target.accepts)?;
     validate_manual_mod_source_destination(&source, &root)?;
     management::recover_management(&target)?;
     let transaction = create_manual_mod_transaction(&root)?;

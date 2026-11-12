@@ -135,10 +135,11 @@ test("Conan advanced controls describe native diagnostics and attribute enforcem
   assert.equal(schema.properties.lqavp_method.enum, undefined, "Native fallthrough values must remain representable");
 });
 
-test("SCUM current defaults match unconditional native constructor values in schema and inventory", () => {
+test("SCUM defaults match the recorded native values in schema and inventory", () => {
   const scum = JSON.parse(fs.readFileSync(path.join(root, "modules/scum/schema.json"), "utf8"));
   for (const [section, key, current] of [
-    ["general", "max_ping", 200], ["world", "max_allowed_killbox_keycards", 4],
+    // Build 26593814 generates MaxPing=400; the earlier build used 200.
+    ["general", "max_ping", 400], ["world", "max_allowed_killbox_keycards", 4],
     ["world", "max_allowed_killbox_keycards_police_station", 3]
   ]) {
     const field = scum.properties[`server_${section}`].properties[key];

@@ -1,11 +1,9 @@
 use super::*;
-#[path = "commands_windrose_console_fixture.rs"]
-mod native_console_fixture;
+use crate::commands::commands_runtime_lifecycle::native_console_fixture::{self, INTERRUPTED};
 use std::net::TcpListener;
 
 const CHILD_TEST: &str = "commands::commands_runtime_lifecycle::windrose_lifecycle::tests::windrose_initialization_child";
 const HOST_READY_LOG: &str = "R5LogCoopProxy: [000566] ...opProxyServer::SetIsReadyForHostOwnerConnect Host server is ready for owner to connect. Semaphore null";
-static INTERRUPTED: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
 
 #[link(name = "kernel32")]
 unsafe extern "system" {

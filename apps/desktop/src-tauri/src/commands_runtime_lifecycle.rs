@@ -36,6 +36,9 @@ mod startup_readiness;
 #[path = "commands_startup_sources.rs"]
 mod startup_sources;
 use super::commands_native_status_readiness as startup_status;
+#[cfg(all(test, windows))]
+#[path = "commands_windrose_console_fixture.rs"]
+mod native_console_fixture;
 #[path = "commands_windrose_lifecycle.rs"]
 mod windrose_lifecycle;
 

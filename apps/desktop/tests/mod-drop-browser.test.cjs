@@ -8,7 +8,7 @@ test("Mod drop entry accepts file, link and selected text payloads across declar
   assert.deepEqual(report.workshop_covered, ["barotrauma", "conanexiles", "palworld", "squad", "terraria"]);
   assert.deepEqual(report.version_policy_covered, ["corekeeper", "valheim", "vrising"]);
   assert.deepEqual(report.nexus_covered, ["abioticfactor", "enshrouded", "humanitz", "sevendaystodie"].map((module) => ({
-    module, local_imports: 1, rejected_inputs: ["id", "http", "nxm"]
+    module, local_imports: 1
   })));
   assert.deepEqual(report.nexus_requests, []);
   assert.equal(report.stages, 26, "15 community imports, six Thunderstore file-priority imports and five Workshop imports");

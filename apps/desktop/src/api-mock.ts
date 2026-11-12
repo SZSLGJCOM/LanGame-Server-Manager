@@ -19,8 +19,6 @@ import type {
   AssistantExecuteOperationInput,
   AssistantRunInput,
   AssistantSecretDescriptor,
-  AppPathSettingsInput,
-  AppSettings,
   BackgroundJob,
   CreateInstanceInput,
   GenerateInstanceBroadcastInput,
@@ -1218,32 +1216,6 @@ export async function invokeMock<T>(command: string, args?: Record<string, unkno
         return (selected ? selected.trim() : null) as T;
       }
       return (currentPath || null) as T;
-    }
-    case "update_app_settings": {
-      const input = (args?.input ?? {}) as AppPathSettingsInput;
-      const nextSettings: AppSettings = {
-        ...mockBootstrap.state.settings,
-        servers_root: String(input.servers_root ?? mockBootstrap.state.settings.servers_root),
-        games_root: String(input.games_root ?? mockBootstrap.state.settings.games_root),
-        archives_root: String(input.archives_root ?? mockBootstrap.state.settings.archives_root),
-        steamcmd_root: String(input.steamcmd_root ?? mockBootstrap.state.settings.steamcmd_root)
-      };
-      mockStorageManagement.validatePathChange(mockBootstrap.state.settings, nextSettings);
-      mockBootstrap.state.settings = nextSettings;
-      const steamCmdRootChanged = nextSettings.steamcmd_root !== mockSteamCmdStatus.configured_root;
-      mockSteamCmdStatus = {
-        ...mockSteamCmdStatus,
-        root: nextSettings.steamcmd_root,
-        executable_path: `${nextSettings.steamcmd_root}/steamcmd.exe`,
-        executable_exists: steamCmdRootChanged ? false : mockSteamCmdStatus.executable_exists,
-        ready: steamCmdRootChanged ? false : mockSteamCmdStatus.ready,
-        configured_root: nextSettings.steamcmd_root,
-        configured_executable_path: `${nextSettings.steamcmd_root}/steamcmd.exe`,
-        source: "configured",
-        ownership: steamCmdRootChanged ? "none" : mockSteamCmdStatus.ownership,
-        can_uninstall: steamCmdRootChanged ? false : mockSteamCmdStatus.can_uninstall
-      };
-      return clone(nextSettings) as T;
     }
     case "ensure_storage_ready": {
       const storage: StorageStatus = {

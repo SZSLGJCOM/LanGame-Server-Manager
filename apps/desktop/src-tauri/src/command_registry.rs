@@ -91,7 +91,6 @@ register_commands! {
     (cancel_steamcmd_preparation, [crate::commands::commands_steamcmd_preparation], Runtime, Allowed, Bounded),
     (cancel_installation_job, [crate::commands::commands_install_progress], Runtime, Allowed, Bounded),
     (uninstall_steamcmd, [crate::commands], Runtime, Denied, Bounded),
-    (update_app_settings, [crate::commands], Runtime, Allowed, Bounded),
     (preview_app_storage_migration, [crate::commands::commands_storage_migration], Runtime, Denied, Owned),
     (read_app_storage_migration, [crate::commands::commands_storage_migration], Runtime, Denied, Bounded),
     (execute_app_storage_migration, [crate::commands::commands_storage_migration], Runtime, Denied, Owned),
