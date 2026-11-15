@@ -6344,9 +6344,9 @@ checksum = "39ec24b3121d976906ece63c9daad25b85969647682eee313cb5779fdd69e14e"
 
 [[package]]
 name = "unrar-rs"
-version = "0.15.3"
+version = "0.16.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ce151d8edd4f1429540498ffddf43e9773e6864c8ac4b022816e7ae663daa595"
+checksum = "99544e98c65185431a5e022f75ca1e86dd002342f6085bc9acbefd92b438866a"
 dependencies = [
  "aes 0.9.3",
  "blake2s_simd",
