@@ -154,8 +154,8 @@ fn receipt_rejects_ambiguous_scrolled_prompt_and_command_histories() {
     assert!(!after.follows_empty_read(&before));
 
     let mut console = Console::at(13, 12);
-    for row in 0..12 {
-        console.rows[row] = if row % 2 == 0 {
+    for (row, line) in console.rows[..12].iter_mut().enumerate() {
+        *line = if row % 2 == 0 {
             EXIT_ECHO
         } else {
             EXIT_RESPONSES[0]

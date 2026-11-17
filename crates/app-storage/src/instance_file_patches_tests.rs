@@ -172,8 +172,8 @@ fn second_write_failure_rolls_back_first_and_retains_all_backups() {
             .iter()
             .all(|file| file.backup_id.is_some() && file.read_back_verified)
     );
-    for index in 0..2 {
-        assert_eq!(fixture.read(index), prepared.patches[index].original);
+    for (index, patch) in prepared.patches[..2].iter().enumerate() {
+        assert_eq!(fixture.read(index), patch.original);
     }
 }
 
@@ -270,8 +270,8 @@ fn backup_capacity_failure_happens_before_any_file_write() {
     assert_eq!(result.status, InstanceFilePatchesStatus::NotApplied);
     assert!(result.files[0].backup_id.is_some());
     assert!(result.files[1].backup_id.is_none());
-    for index in 0..2 {
-        assert_eq!(fixture.read(index), prepared.patches[index].original);
+    for (index, patch) in prepared.patches[..2].iter().enumerate() {
+        assert_eq!(fixture.read(index), patch.original);
     }
 }
 
