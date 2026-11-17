@@ -115,10 +115,13 @@ impl AssistantOperationMode {
 
     fn allows_target_discovery(&self) -> bool {
         #[cfg(test)]
-        if matches!(self, Self::Preview | Self::ExecuteImmediately) {
-            return true;
+        {
+            matches!(self, Self::Preview | Self::ExecuteImmediately)
         }
-        false
+        #[cfg(not(test))]
+        {
+            false
+        }
     }
 }
 
