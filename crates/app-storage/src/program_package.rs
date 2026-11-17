@@ -36,18 +36,18 @@ pub(crate) use reuse::{
 
 pub(super) const CLEAN_PACKAGE: &str = ".langame-clean-package.json";
 const INITIAL_PACKAGE: &str = ".langame-initial-package.json";
-pub(super) const MAX_MANIFEST_BYTES: u64 = 64 * 1024 * 1024;
+pub(crate) const MAX_MANIFEST_BYTES: u64 = 64 * 1024 * 1024;
 
 #[derive(Clone, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
-pub(super) struct CleanPackage {
+pub(crate) struct CleanPackage {
     pub(super) version: u32,
-    pub(super) module_id: String,
+    pub(crate) module_id: String,
     pub(super) source: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub(super) archive_sha256: Option<String>,
-    pub(super) files: BTreeMap<String, String>,
-    pub(super) directories: BTreeSet<String>,
+    pub(crate) files: BTreeMap<String, String>,
+    pub(crate) directories: BTreeSet<String>,
     #[serde(
         default,
         skip_serializing_if = "BTreeMap::is_empty",
@@ -629,7 +629,7 @@ fn read_named_manifest(root: &Path, name: &str) -> Result<Option<CleanPackage>, 
     Ok(Some(manifest))
 }
 
-pub(super) fn validate_manifest(manifest: &CleanPackage, root: &Path) -> Result<(), StorageError> {
+pub(crate) fn validate_manifest(manifest: &CleanPackage, root: &Path) -> Result<(), StorageError> {
     if manifest.version != 1
         || manifest.source != "official_clean_install"
         || manifest.module_id.is_empty()

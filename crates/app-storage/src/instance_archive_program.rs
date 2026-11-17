@@ -13,6 +13,7 @@ use crate::instance_archive_files::{self as files, native};
 use crate::instance_archive_store::{digest, invalid};
 use crate::instance_isolation::paths::{contains, normalize_path, normalize_resource_path};
 use crate::private_runtime_refresh::{PackageTree, validated_relative_path};
+use crate::program_seed::{CleanPackage, MAX_MANIFEST_BYTES, validate_manifest};
 
 #[path = "instance_archive_program_restore.rs"]
 mod reconstruction;
@@ -91,57 +92,30 @@ fn fingerprint(module: &str, tree: &PackageTree) -> Result<String, StorageError>
 /// Advisory inventory only. Restore separately verifies the allowlisted payloads
 /// while holding the installation lifecycle lock; a summary never authorizes copying.
 pub(crate) fn manifest_fingerprint(root: &Path, module: &str) -> Result<String, StorageError> {
-    #[derive(Deserialize)]
-    #[serde(deny_unknown_fields)]
-    struct Manifest {
-        version: u32,
-        module_id: String,
-        source: String,
-        files: BTreeMap<String, String>,
-        directories: std::collections::BTreeSet<String>,
-        // Optional first-use acceleration does not change the program identity.
-        #[serde(default, rename = "verified_files")]
-        _verified_files: Option<serde::de::IgnoredAny>,
-    }
     normalize_path(root)?;
     let path = root.join(".langame-clean-package.json");
     let mut file = open_file(&path, false)?;
     let mut bytes = Vec::new();
     file.reader()
-        .take(64 * 1024 * 1024 + 1)
+        .take(MAX_MANIFEST_BYTES + 1)
         .read_to_end(&mut bytes)
         .map_err(|source| StorageError::ReadPath {
             path: path.clone(),
             source,
         })?;
-    if bytes.len() > 64 * 1024 * 1024 {
+    if bytes.len() as u64 > MAX_MANIFEST_BYTES {
         return Err(invalid(
             &path,
             "Official program manifest exceeds its supported size.",
         ));
     }
-    let manifest: Manifest = serde_json::from_slice(&bytes)?;
-    if manifest.version != 1
-        || manifest.module_id != module
-        || manifest.source != "official_clean_install"
-        || manifest.files.len() + manifest.directories.len() > 200_000
-    {
+    let manifest: CleanPackage = serde_json::from_slice(&bytes)?;
+    validate_manifest(&manifest, root)?;
+    if manifest.module_id != module || manifest.files.len() + manifest.directories.len() > 200_000 {
         return Err(invalid(
             &path,
             "The installed official program manifest is unavailable or invalid.",
         ));
-    }
-    for (relative, sha) in &manifest.files {
-        validated_relative_path(relative)?;
-        if !valid_hash(sha) {
-            return Err(invalid(
-                &path,
-                "Official program manifest contains an invalid digest.",
-            ));
-        }
-    }
-    for relative in &manifest.directories {
-        validated_relative_path(relative)?;
     }
     fingerprint(
         module,

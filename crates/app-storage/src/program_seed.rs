@@ -18,15 +18,12 @@ mod sources;
 #[path = "program_package.rs"]
 mod package;
 #[cfg(test)]
-use package::{CLEAN_PACKAGE, MAX_MANIFEST_BYTES};
+use package::CLEAN_PACKAGE;
 pub(crate) use package::{
-    CleanCopyInventory, only_package_files, original_defaults_are_unchanged,
-    read_clean_package_copy_inventory, read_clean_package_inventory, read_package_inventory,
-    require_initial_package_tree, retired_library_is_clean, write_clean_package_copy_inventory,
-};
-use package::{
-    CleanPackage, checked_relative, excluded, package_exclusions, read_manifest, validate_manifest,
-    write_manifest,
+    CleanCopyInventory, CleanPackage, MAX_MANIFEST_BYTES, only_package_files,
+    original_defaults_are_unchanged, read_clean_package_copy_inventory,
+    read_clean_package_inventory, read_package_inventory, require_initial_package_tree,
+    retired_library_is_clean, validate_manifest, write_clean_package_copy_inventory,
 };
 pub use package::{
     ProgramBaselineInventory, VerifiedProgramFiles, archive_program_has_baseline,
@@ -42,6 +39,7 @@ pub use package::{
     retain_verified_library_program_baseline,
     retain_verified_library_program_baseline_with_progress,
 };
+use package::{checked_relative, excluded, package_exclusions, read_manifest, write_manifest};
 pub(crate) use package::{read_clean_package_tree, require_clean_package_tree};
 
 const STAGE_OWNER: &str = ".langame-seed-staging";

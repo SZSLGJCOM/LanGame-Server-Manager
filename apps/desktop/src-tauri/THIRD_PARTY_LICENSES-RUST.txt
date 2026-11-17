@@ -4951,15 +4951,15 @@ VCS commit / 版本提交: 838a0223142a2137b530e020cb7231aba46f7946
 Legal text / 法律文本: 6efb0476a1cc085077ed49357026d8c173bf33017278ef440f222fb9cbcb66e6 — checksum-verified crate file serde_spanned-0.6.9/LICENSE-MIT
 Legal text / 法律文本: c6596eb7be8581c18be736c846fb9173b69eccf6ef94c5135893ec56bd92ba08 — checksum-verified crate file serde_spanned-0.6.9/LICENSE-APACHE
 --------------------------------------------------------------------------------
-Package / 软件包: serde_spanned@1.1.2
+Package / 软件包: serde_spanned@1.1.3
 Declared license / 声明许可证: MIT OR Apache-2.0
 Selected reviewed terms / 选用审计条款: packaged upstream texts
-Archive SHA-256: 4e7523beb55eece201a2356bee0bbca0d1ab466c14c07703b2e0ee6d42cb0c2c
-Source archive / 源码归档: https://static.crates.io/crates/serde_spanned/serde_spanned-1.1.2.crate
+Archive SHA-256: 9c187e0a369471c550af028cba56d4f4fa2a489ad28151ae95a4d340a2a8b782
+Source archive / 源码归档: https://static.crates.io/crates/serde_spanned/serde_spanned-1.1.3.crate
 Repository / 仓库: https://github.com/toml-rs/toml
-VCS commit / 版本提交: f72038c2508112dfaaedb227a511f91bf9b2015c
-Legal text / 法律文本: 249fdb6694467dd615b259f7ddde07be3f8ae5a72cecebb0e24f6629af4215fe — checksum-verified crate file serde_spanned-1.1.2/LICENSE-APACHE
-Legal text / 法律文本: 6efb0476a1cc085077ed49357026d8c173bf33017278ef440f222fb9cbcb66e6 — checksum-verified crate file serde_spanned-1.1.2/LICENSE-MIT
+VCS commit / 版本提交: 563cb1a5d133e39d1008d4d4148ef35d3bba379f
+Legal text / 法律文本: 249fdb6694467dd615b259f7ddde07be3f8ae5a72cecebb0e24f6629af4215fe — checksum-verified crate file serde_spanned-1.1.3/LICENSE-APACHE
+Legal text / 法律文本: 6efb0476a1cc085077ed49357026d8c173bf33017278ef440f222fb9cbcb66e6 — checksum-verified crate file serde_spanned-1.1.3/LICENSE-MIT
 --------------------------------------------------------------------------------
 Package / 软件包: serde_urlencoded@0.7.1
 Declared license / 声明许可证: MIT/Apache-2.0
@@ -5866,15 +5866,15 @@ Authors metadata / 作者元数据: Alex Crichton <alex@alexcrichton.com>
 Legal text / 法律文本: 6efb0476a1cc085077ed49357026d8c173bf33017278ef440f222fb9cbcb66e6 — checksum-verified crate file toml-0.8.2/LICENSE-MIT
 Legal text / 法律文本: c6596eb7be8581c18be736c846fb9173b69eccf6ef94c5135893ec56bd92ba08 — checksum-verified crate file toml-0.8.2/LICENSE-APACHE
 --------------------------------------------------------------------------------
-Package / 软件包: toml@1.2.0+spec-1.1.0
+Package / 软件包: toml@1.2.1+spec-1.1.0
 Declared license / 声明许可证: MIT OR Apache-2.0
 Selected reviewed terms / 选用审计条款: packaged upstream texts
-Archive SHA-256: c5ffcdf8f50436dbbfd675c1fe1b8e0854f42b7defea8584bdebe1aee900e561
-Source archive / 源码归档: https://static.crates.io/crates/toml/toml-1.2.0%2Bspec-1.1.0.crate
+Archive SHA-256: d5755c51863cdac711f1956baf8eb9588e060755f7d3c4c979e70ea1e1f32cd7
+Source archive / 源码归档: https://static.crates.io/crates/toml/toml-1.2.1%2Bspec-1.1.0.crate
 Repository / 仓库: https://github.com/toml-rs/toml
-VCS commit / 版本提交: 8ffe3c590d69fab440fedb2ebb396ae1596c3e34
-Legal text / 法律文本: 249fdb6694467dd615b259f7ddde07be3f8ae5a72cecebb0e24f6629af4215fe — checksum-verified crate file toml-1.2.0+spec-1.1.0/LICENSE-APACHE
-Legal text / 法律文本: 6efb0476a1cc085077ed49357026d8c173bf33017278ef440f222fb9cbcb66e6 — checksum-verified crate file toml-1.2.0+spec-1.1.0/LICENSE-MIT
+VCS commit / 版本提交: 563cb1a5d133e39d1008d4d4148ef35d3bba379f
+Legal text / 法律文本: 249fdb6694467dd615b259f7ddde07be3f8ae5a72cecebb0e24f6629af4215fe — checksum-verified crate file toml-1.2.1+spec-1.1.0/LICENSE-APACHE
+Legal text / 法律文本: 6efb0476a1cc085077ed49357026d8c173bf33017278ef440f222fb9cbcb66e6 — checksum-verified crate file toml-1.2.1+spec-1.1.0/LICENSE-MIT
 --------------------------------------------------------------------------------
 Package / 软件包: toml_datetime@0.6.3
 Declared license / 声明许可证: MIT OR Apache-2.0
@@ -5887,15 +5887,15 @@ Authors metadata / 作者元数据: Alex Crichton <alex@alexcrichton.com>
 Legal text / 法律文本: 378f5840b258e2779c39418f3f2d7b2ba96f1c7917dd6be0713f88305dbda397 — checksum-verified crate file toml_datetime-0.6.3/LICENSE-MIT
 Legal text / 法律文本: a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2 — checksum-verified crate file toml_datetime-0.6.3/LICENSE-APACHE
 --------------------------------------------------------------------------------
-Package / 软件包: toml_datetime@1.1.2+spec-1.1.0
+Package / 软件包: toml_datetime@1.1.3+spec-1.1.0
 Declared license / 声明许可证: MIT OR Apache-2.0
 Selected reviewed terms / 选用审计条款: packaged upstream texts
-Archive SHA-256: 2b86d767906c6c42421dcba507eb9d203e779497710a47782a224bb871653053
-Source archive / 源码归档: https://static.crates.io/crates/toml_datetime/toml_datetime-1.1.2%2Bspec-1.1.0.crate
+Archive SHA-256: 173f25c883cd2176a2d8212155638c0a60d484a9d84546d270866f40f56b6e49
+Source archive / 源码归档: https://static.crates.io/crates/toml_datetime/toml_datetime-1.1.3%2Bspec-1.1.0.crate
 Repository / 仓库: https://github.com/toml-rs/toml
-VCS commit / 版本提交: f72038c2508112dfaaedb227a511f91bf9b2015c
-Legal text / 法律文本: 249fdb6694467dd615b259f7ddde07be3f8ae5a72cecebb0e24f6629af4215fe — checksum-verified crate file toml_datetime-1.1.2+spec-1.1.0/LICENSE-APACHE
-Legal text / 法律文本: 6efb0476a1cc085077ed49357026d8c173bf33017278ef440f222fb9cbcb66e6 — checksum-verified crate file toml_datetime-1.1.2+spec-1.1.0/LICENSE-MIT
+VCS commit / 版本提交: 563cb1a5d133e39d1008d4d4148ef35d3bba379f
+Legal text / 法律文本: 249fdb6694467dd615b259f7ddde07be3f8ae5a72cecebb0e24f6629af4215fe — checksum-verified crate file toml_datetime-1.1.3+spec-1.1.0/LICENSE-APACHE
+Legal text / 法律文本: 6efb0476a1cc085077ed49357026d8c173bf33017278ef440f222fb9cbcb66e6 — checksum-verified crate file toml_datetime-1.1.3+spec-1.1.0/LICENSE-MIT
 --------------------------------------------------------------------------------
 Package / 软件包: toml_edit@0.19.15
 Declared license / 声明许可证: MIT OR Apache-2.0
@@ -11027,9 +11027,9 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 
 Text SHA-256 / 文本 SHA-256: 249fdb6694467dd615b259f7ddde07be3f8ae5a72cecebb0e24f6629af4215fe
-Source / 来源: checksum-verified crate file serde_spanned-1.1.2/LICENSE-APACHE
-Source / 来源: checksum-verified crate file toml-1.2.0+spec-1.1.0/LICENSE-APACHE
-Source / 来源: checksum-verified crate file toml_datetime-1.1.2+spec-1.1.0/LICENSE-APACHE
+Source / 来源: checksum-verified crate file serde_spanned-1.1.3/LICENSE-APACHE
+Source / 来源: checksum-verified crate file toml-1.2.1+spec-1.1.0/LICENSE-APACHE
+Source / 来源: checksum-verified crate file toml_datetime-1.1.3+spec-1.1.0/LICENSE-APACHE
 Source / 来源: checksum-verified crate file toml_edit-0.25.17+spec-1.1.0/LICENSE-APACHE
 Source / 来源: checksum-verified crate file toml_parser-1.1.5+spec-1.1.0/LICENSE-APACHE
 Source / 来源: checksum-verified crate file toml_writer-1.2.0+spec-1.1.0/LICENSE-APACHE
@@ -19288,10 +19288,10 @@ DEALINGS IN THE SOFTWARE.
 
 Text SHA-256 / 文本 SHA-256: 6efb0476a1cc085077ed49357026d8c173bf33017278ef440f222fb9cbcb66e6
 Source / 来源: checksum-verified crate file serde_spanned-0.6.9/LICENSE-MIT
-Source / 来源: checksum-verified crate file serde_spanned-1.1.2/LICENSE-MIT
+Source / 来源: checksum-verified crate file serde_spanned-1.1.3/LICENSE-MIT
 Source / 来源: checksum-verified crate file toml-0.8.2/LICENSE-MIT
-Source / 来源: checksum-verified crate file toml-1.2.0+spec-1.1.0/LICENSE-MIT
-Source / 来源: checksum-verified crate file toml_datetime-1.1.2+spec-1.1.0/LICENSE-MIT
+Source / 来源: checksum-verified crate file toml-1.2.1+spec-1.1.0/LICENSE-MIT
+Source / 来源: checksum-verified crate file toml_datetime-1.1.3+spec-1.1.0/LICENSE-MIT
 Source / 来源: checksum-verified crate file toml_edit-0.19.15/LICENSE-MIT
 Source / 来源: checksum-verified crate file toml_edit-0.20.2/LICENSE-MIT
 Source / 来源: checksum-verified crate file toml_edit-0.25.17+spec-1.1.0/LICENSE-MIT

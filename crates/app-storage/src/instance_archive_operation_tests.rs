@@ -78,13 +78,14 @@ async fn compact_archive_restores_exact_program_and_keeps_personal_bytes() {
 }
 
 #[tokio::test]
-async fn compact_archive_identity_does_not_depend_on_optional_verification_cache() {
+async fn compact_archive_identity_does_not_depend_on_optional_package_metadata() {
     let (fixture, library) = with_program().await;
     let fingerprint = program::manifest_fingerprint(&library, "archive-fixture").unwrap();
     let archived = fixture.archive().await.unwrap();
     let manifest_path = library.join(".langame-clean-package.json");
     let mut manifest: serde_json::Value =
         serde_json::from_slice(&fs::read(&manifest_path).unwrap()).unwrap();
+    manifest["archive_sha256"] = serde_json::json!("a".repeat(64));
     manifest["verified_files"] = serde_json::json!({"unsupported": "advisory cache"});
     fs::write(&manifest_path, serde_json::to_vec(&manifest).unwrap()).unwrap();
     assert_eq!(
