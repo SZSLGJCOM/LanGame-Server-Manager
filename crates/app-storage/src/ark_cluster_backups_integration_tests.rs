@@ -43,23 +43,49 @@ async fn ark_cluster_backup_public_api_restores_games_and_preserves_database_reg
     sync_modules(&paths, std::slice::from_ref(&descriptor))
         .await
         .unwrap();
+    let library = paths.games_root.join("arksurvivalevolved");
+    fs::write(library.join("fixture-program.bin"), b"server program").unwrap();
+    record_library_program_baseline(&library, &descriptor, true, None).unwrap();
+    sync_game_installs(
+        &paths,
+        &[GameInstallSyncRecord {
+            module_id: descriptor.summary.id.clone(),
+            install_root: library.to_string_lossy().into_owned(),
+            install_state: InstallState::Installed,
+            current_version: Some("fixture-version".into()),
+            mark_verified: true,
+        }],
+    )
+    .await
+    .unwrap();
     let transfer = root.join("exclusive-transfer");
     fs::create_dir(&transfer).unwrap();
     fs::write(transfer.join("upload"), b"original-transfer").unwrap();
     let mut original = Vec::new();
     for (name, map) in [("Island", "TheIsland"), ("Center", "TheCenter")] {
         replenish_test_library(&paths, &descriptor).await;
-        let created = create_instance(
+        let exclusive = name == "Island";
+        let created = create_instance_with_options(
             &paths,
             &descriptor,
             CreateInstanceInput {
                 name: name.to_owned(),
                 module_id: "arksurvivalevolved".to_owned(),
             },
+            InstanceCreationOptions {
+                prefer_existing_install: exclusive,
+                require_clean_program: exclusive,
+                ..Default::default()
+            },
         )
         .await
         .unwrap();
-        let details = update_gameplay(&paths, &created.summary.id, &transfer, map, 20).await;
+        let id = &created.provisioning.summary.id;
+        assert_eq!(
+            instance_uses_exclusive_program(&paths.instances_root.join(id)).unwrap(),
+            exclusive
+        );
+        let details = update_gameplay(&paths, id, &transfer, map, 20).await;
         fs::create_dir_all(&details.saves_path).unwrap();
         fs::write(
             Path::new(&details.saves_path).join("world.ark"),
@@ -71,6 +97,14 @@ async fn ark_cluster_backup_public_api_restores_games_and_preserves_database_reg
     let anchor = &original[0].summary.id;
     let report = read_ark_cluster_report(&paths, anchor).await.unwrap();
     assert!(!report.start_blocked, "{:?}", report.issues);
+    for details in &original {
+        let member = report
+            .members
+            .iter()
+            .find(|member| member.summary.id == details.summary.id)
+            .unwrap();
+        assert_eq!(member.saves_path, details.saves_path);
+    }
     let identity = report.identity.unwrap();
     assert_eq!(identity.member_ids.len(), 2);
 

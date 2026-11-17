@@ -395,8 +395,8 @@ class RuntimeReliabilityShardingTests(unittest.TestCase):
                            "target": {"name": name, "kind": [kind], "doctest": doctest}})
 
     def build_output(self, *artifacts):
-        return "\n".join(["[OPC] Source snapshot captured: fixture input abc123", *artifacts,
-                          '{"reason":"build-finished","success":true}', "[OPC] Completed"])
+        return "\n".join(["[builder] Source snapshot captured: fixture input abc123", *artifacts,
+                          '{"reason":"build-finished","success":true}', "[builder] Completed"])
 
     def metadata(self):
         package = {"name": "langame-desktop", "id": "path+file:///desktop#langame-desktop@0.1.0",
@@ -467,7 +467,7 @@ class RuntimeReliabilityShardingTests(unittest.TestCase):
 
     def test_failed_or_incomplete_cargo_inventory_cannot_pass(self):
         success = self.build_output(self.artifact())
-        for output in ("[OPC] build done", self.build_output(), success.replace('"success":true', '"success":false'),
+        for output in ("[builder] build done", self.build_output(), success.replace('"success":true', '"success":false'),
                        success.replace('"bin"', '"bench"'), success + "\n{broken-json}"):
             with self.subTest(output=output), self.assertRaises(ValueError):
                 reliability.desktop_targets(output)

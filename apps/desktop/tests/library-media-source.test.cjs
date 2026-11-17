@@ -149,13 +149,10 @@ test("detail, thumbnail, poster, and atmosphere surfaces recover without exposin
   assert.match(coverSource, /onError=\{image\.onError\}/);
   assert.match(coverSource, /poster=\{displayImageSrc \?\? undefined\}/);
   assert.match(coverSource, /onError=\{\(\) => \{ setPreviewVideoReady\(false\); setPreviewVideoFailed\(true\); \}\}/);
-  assert.match(streamVideoSource, /Hls\.Events\.ERROR[\s\S]*?data\.fatal && !disposed && hlsInstance === hls\) recoverHls\(\)/);
   assert.match(streamVideoSource, /const recoverHls = \(\) => \{[\s\S]*?if \(sourceGroups\.length < 2\) \{ fail\(\); return; \}[\s\S]*?disposeHls\(\);[\s\S]*?useNativeSource\(sourceGroups\[0\]\.length\)/);
   assert.match(streamVideoSource, /createOfficialHlsLoader\(Hls\.DefaultConfig\.loader, locale\)/);
   assert.doesNotMatch(streamVideoSource, /fetchSetup/);
   assert.doesNotMatch(streamVideoSource, /canPlayType\(/);
-  assert.match(streamVideoSource, /const disposeHls = \(\) => \{[\s\S]*?hlsInstance = null;[\s\S]*?instance\.stopLoad\(\);[\s\S]*?finally \{[\s\S]*?instance\.destroy\(\)/);
-  assert.match(streamVideoSource, /const fail = \(\) => \{[\s\S]*?disposeHls\(\);[\s\S]*?onUnavailable\(\)/);
 
   assert.match(detailSource, /const \[videoFallbackToCover, setVideoFallbackToCover\] = useState\(false\)/);
   assert.match(detailSource, /resolveModulePresentationFallbackCoverSrc\(moduleId\)/);

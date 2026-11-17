@@ -81,6 +81,13 @@ function createFixture(t) {
   return { repositoryRoot, scriptRoot, desktopRoot, configPath, artifactRoot, outputRoot, tempRoot };
 }
 
+function configureManagedAdapter(fixture, source) {
+  const directory = path.join(fixture.tempRoot, "scripts");
+  fs.mkdirSync(directory, { recursive: true });
+  fixture.adapterPath = path.join(directory, "build-adapter.ps1");
+  fs.writeFileSync(fixture.adapterPath, source);
+}
+
 function runPreparation(fixture, args = [], outputRoot = fixture.outputRoot) {
   return spawnSync("powershell", [
     "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass",
@@ -88,7 +95,7 @@ function runPreparation(fixture, args = [], outputRoot = fixture.outputRoot) {
     ...(outputRoot === null ? [] : ["-OutputRoot", outputRoot]), ...args,
   ], {
     cwd: fixture.repositoryRoot, encoding: "utf8", timeout: preparationTimeoutMs,
-    env: { ...process.env, TAURI_SIGNING_PRIVATE_KEY: "" },
+    env: { ...process.env, TAURI_SIGNING_PRIVATE_KEY: "", LGSM_DESKTOP_BUILD_ADAPTER: fixture.adapterPath ?? "" },
   });
 }
 function readJson(file) { return JSON.parse(fs.readFileSync(file, "utf8").replace(/^\uFEFF/u, "")); }
@@ -330,16 +337,19 @@ test("release export rejects missing, malformed and wrong-key signatures", async
 
 test("managed workstations cannot accidentally invoke portable Cargo builds", (t) => {
   const fixture = createFixture(t);
-  const managedScripts = path.join(fixture.tempRoot, "scripts");
-  fs.mkdirSync(managedScripts);
-  fs.writeFileSync(path.join(managedScripts, "invoke-codex-cargo.ps1"), "throw 'The marker must never be executed.'");
-  expectFailure(runPreparation(fixture, ["-BuildPortable"]), /managed OPC host/);
+  configureManagedAdapter(fixture, "throw 'The marker must never be executed.'");
+  expectFailure(runPreparation(fixture, ["-BuildPortable"]), /managed build adapter is configured/);
+  const adapterPath = fixture.adapterPath;
+  delete fixture.adapterPath;
+  expectFailure(runPreparation(fixture, ["-BuildPortable", "-ManagedBuildAdapter", adapterPath]), /managed build adapter is configured/);
   assert.equal(fs.existsSync(fixture.outputRoot), false);
 });
 
-test("managed installer builds require the workstation entry and do not silently use portable Cargo", (t) => {
+test("managed installer builds require an explicit adapter and do not silently use portable Cargo", (t) => {
   const fixture = createFixture(t);
-  expectFailure(runPreparation(fixture, ["-BuildManaged"]), /managed Cargo entry/);
+  expectFailure(runPreparation(fixture, ["-BuildManaged"]), /requires -ManagedBuildAdapter or LGSM_DESKTOP_BUILD_ADAPTER/);
+  expectFailure(runPreparation(fixture, ["-BuildManaged", "-ManagedBuildAdapter", path.join(fixture.tempRoot, "missing.ps1")]),
+    /must point to an existing PowerShell script/);
   assert.equal(fs.existsSync(fixture.outputRoot), false);
 });
 
@@ -356,26 +366,30 @@ for (const value of [undefined, null, false, "true", 1]) {
 
 test("managed local installer builds reach the snapshot bundler with updates disabled and no key", (t) => {
   const fixture = createFixture(t);
-  const managedScripts = path.join(fixture.tempRoot, "scripts");
-  fs.mkdirSync(managedScripts);
-  fs.writeFileSync(path.join(managedScripts, "invoke-codex-cargo.ps1"), `
-param($Project, $CargoCommand, [switch]$SourceSnapshot, $DesktopBundle, $BundleConfigPath,
-  $SnapshotReceiptPath, $SnapshotArtifacts, $WaitTimeoutSeconds,
+  configureManagedAdapter(fixture, `
+param($Action, $ReceiptPath, $Project, $CargoCommand, [switch]$SourceSnapshot, $DesktopBundle, $BundleConfigPath,
+  $SnapshotReceiptPath, $SnapshotArtifacts, $WaitTimeoutSeconds, [switch]$FreshTarget, $PreferVolume,
   [switch]$DesktopUpdatesEnabled, [Parameter(ValueFromRemainingArguments=$true)]$CargoArguments)
-@{project=$Project; command=$CargoCommand; snapshot=[bool]$SourceSnapshot; bundle=$DesktopBundle;
+@{action=$Action; project=$Project; command=$CargoCommand; snapshot=[bool]$SourceSnapshot; bundle=$DesktopBundle;
   config=$BundleConfigPath; artifacts=$SnapshotArtifacts; updates=[bool]$DesktopUpdatesEnabled;
+  freshTarget=[bool]$FreshTarget; preferVolume=$PreferVolume; waitTimeoutSeconds=$WaitTimeoutSeconds;
   arguments=$CargoArguments; staticVcruntime=$env:STATIC_VCRUNTIME} | ConvertTo-Json | Set-Content -Encoding UTF8 -LiteralPath
   (Join-Path (Split-Path -Parent $SnapshotReceiptPath) 'managed-invocation.json')
 exit 42
 `.replace("-LiteralPath\n  ", "-LiteralPath "));
-  expectFailure(runPreparation(fixture, ["-BuildManaged"]), /Managed desktop build failed/);
+  expectFailure(runPreparation(fixture, ["-BuildManaged", "-FreshTarget", "-PreferVolume", "C:", "-WaitTimeoutSeconds", "13"]),
+    /Managed desktop build failed/);
   const invocation = readJson(path.join(fixture.outputRoot, "managed-invocation.json"));
   const config = readJson(path.join(fixture.outputRoot, "tauri.release.conf.json"));
+  assert.equal(invocation.action, "Build");
   assert.equal(invocation.project, "LanGameServerManager");
   assert.equal(invocation.command, "build");
   assert.equal(invocation.snapshot, true);
   assert.equal(invocation.bundle, "LanGameServerManager");
   assert.equal(invocation.updates, false);
+  assert.equal(invocation.freshTarget, true);
+  assert.equal(invocation.preferVolume, "C:");
+  assert.equal(Number(invocation.waitTimeoutSeconds), 13);
   assert.equal(invocation.staticVcruntime, null);
   assert.equal(config.build.windows.staticVCRuntime, true);
   assert.ok(invocation.artifacts.includes(`release/bundle/nsis/${artifactName}`));
@@ -389,15 +403,15 @@ exit 42
 
 test("managed GitHub builds fail before writing output when no update signing key is provided", (t) => {
   const fixture = createFixture(t);
-  const managedScripts = path.join(fixture.tempRoot, "scripts");
-  fs.mkdirSync(managedScripts);
-  fs.writeFileSync(path.join(managedScripts, "invoke-codex-cargo.ps1"), "throw 'Must not build without a key.'");
+  configureManagedAdapter(fixture, "throw 'Must not build without a key.'");
   expectFailure(runPreparation(fixture, ["-BuildManaged", "-EnableGitHubUpdates"]), /TAURI_SIGNING_PRIVATE_KEY/);
   assert.equal(fs.existsSync(fixture.outputRoot), false);
 });
 
-for (const { name, changedConfig, runtimeReceipt, rejection, executable, offline } of [
+for (const { name, changedConfig, receiptFailure, runtimeReceipt, rejection, executable, offline } of [
   { name: "accepts the matching build configuration", runtimeReceipt: "staticVcruntime=$buildConfig.build.windows.staticVCRuntime;" },
+  { name: "rejects a failed adapter receipt verification", receiptFailure: true,
+    runtimeReceipt: "staticVcruntime=$true;", rejection: /receipt verification failed with exit code 53/ },
   { name: "rejects a changed build configuration", changedConfig: true,
     runtimeReceipt: "staticVcruntime=$buildConfig.build.windows.staticVCRuntime;", rejection: /receipt configuration does not match/ },
   { name: "rejects dynamic VC runtime linkage", runtimeReceipt: "staticVcruntime=$false;", rejection: /static Visual C\+\+ runtime/ },
@@ -414,21 +428,16 @@ for (const { name, changedConfig, runtimeReceipt, rejection, executable, offline
 ].flatMap((scenario) => [false, true].map((offline) => ({ ...scenario, offline })))) {
   test(`managed ${offline ? "offline" : "small"} installer export ${name}`, (t) => {
     const fixture = createFixture(t);
-    const managedScripts = path.join(fixture.tempRoot, "scripts");
-    fs.mkdirSync(managedScripts);
     fs.writeFileSync(path.join(fixture.artifactRoot, "langame-desktop.exe"), executable === "invalid"
       ? Buffer.from("invalid PE fixture")
       : fixtureExecutable(executable === "dynamic" ? "VCRUNTIME140.dll" : undefined, executable === "console" ? 3 : 2));
     // Replace only the external workstation builder/receipt-reader boundary.
     // This verifies the product export decision, not real compilation or signing.
-    fs.writeFileSync(path.join(managedScripts, "codex-snapshot-build.psm1"), `
-function Read-CodexSnapshotBuildReceipt { param($Path) Get-Content -Raw -LiteralPath $Path | ConvertFrom-Json }
-Export-ModuleMember -Function Read-CodexSnapshotBuildReceipt
-`);
-    fs.writeFileSync(path.join(managedScripts, "invoke-codex-cargo.ps1"), `
-param($Project, $CargoCommand, [switch]$SourceSnapshot, $DesktopBundle, $BundleConfigPath,
+    configureManagedAdapter(fixture, `
+param($Action, $ReceiptPath, $Project, $CargoCommand, [switch]$SourceSnapshot, $DesktopBundle, $BundleConfigPath,
   $SnapshotReceiptPath, $SnapshotArtifacts, $WaitTimeoutSeconds,
   [switch]$DesktopUpdatesEnabled, [Parameter(ValueFromRemainingArguments=$true)]$CargoArguments)
+if ($Action -eq 'ReadReceipt') { ${receiptFailure ? "exit 53" : "Get-Content -Raw -LiteralPath $ReceiptPath; exit 0"} }
 $repo = Join-Path (Split-Path -Parent $PSScriptRoot) 'repository'
 Import-Module (Join-Path $PSHOME 'Modules/Microsoft.PowerShell.Utility/Microsoft.PowerShell.Utility.psd1')
 $payload = Join-Path (Split-Path -Parent $PSScriptRoot) 'artifacts/${artifactName}'
@@ -473,9 +482,7 @@ exit 0
 for (const previousValue of [null, "false", "caller-value"]) {
   test(`managed build failure restores ${JSON.stringify(previousValue)} runtime environment`, (t) => {
     const fixture = createFixture(t);
-    const managedScripts = path.join(fixture.tempRoot, "scripts");
-    fs.mkdirSync(managedScripts);
-    fs.writeFileSync(path.join(managedScripts, "invoke-codex-cargo.ps1"), `
+    configureManagedAdapter(fixture, `
 param($SnapshotReceiptPath, [Parameter(ValueFromRemainingArguments=$true)]$OtherArguments)
 [IO.File]::WriteAllText((Join-Path (Split-Path -Parent $SnapshotReceiptPath) 'runtime-environment.txt'), $env:STATIC_VCRUNTIME)
 exit 42
@@ -492,7 +499,7 @@ catch { $failure = $_.Exception.Message }
 `);
     const result = spawnSync("powershell", ["-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-File", caller], {
       cwd: fixture.repositoryRoot, encoding: "utf8", timeout: preparationTimeoutMs,
-      env: { ...process.env, TAURI_SIGNING_PRIVATE_KEY: "" },
+      env: { ...process.env, TAURI_SIGNING_PRIVATE_KEY: "", LGSM_DESKTOP_BUILD_ADAPTER: fixture.adapterPath ?? "" },
     });
     expectSuccess(result);
     const restored = readJson(path.join(fixture.repositoryRoot, "restored-environment.json"));

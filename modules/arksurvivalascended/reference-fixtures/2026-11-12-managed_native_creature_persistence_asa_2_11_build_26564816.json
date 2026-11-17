@@ -58,7 +58,6 @@
       "--locked",
       "--no-run"
     ],
-    "entry_point": "invoke-codex-cargo.ps1",
     "entry_point_sha256": "a49fe85bfed0b558354bc5a605e84b5a2f9a30c251c2bc57ff4ddc51503223b2",
     "source_identity_sha256": "8ecd9d4866d8f0f204e3a30f378304100a7ac168ace58870e997327c72740c9a",
     "source_manifest_sha256": "084d23b719f1af47e7229e531476217f44b979c8f55b50ffece94f9db007a1ed",

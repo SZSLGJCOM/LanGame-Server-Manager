@@ -565,8 +565,7 @@ impl WorkshopCacheTransaction {
     /// Restore even when cancelled, after the native child has exited. Recovery
     /// cannot be cancelled halfway through and then release the protected paths.
     pub fn rollback(&mut self) -> io::Result<Option<VerifiedWorkshopCache>> {
-        for index in 0..self.entries.len() {
-            let entry = &self.entries[index];
+        for entry in &self.entries {
             plain_existing_ancestors(&entry.path)?;
             match &entry.saved {
                 Saved::Directory(files)
@@ -585,8 +584,7 @@ impl WorkshopCacheTransaction {
                 _ => {}
             }
         }
-        for index in 0..self.entries.len() {
-            let entry = &self.entries[index];
+        for (index, entry) in self.entries.iter().enumerate() {
             match fs::symlink_metadata(&entry.path) {
                 Ok(metadata) => {
                     steam_depot::check_plain(&entry.path, metadata.is_dir())?;

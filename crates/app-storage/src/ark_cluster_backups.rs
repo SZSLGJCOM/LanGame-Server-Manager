@@ -331,7 +331,9 @@ where
         validate_report(&report, &expected)?;
         for member in &report.members {
             let config = Path::new(&member.config_file_path).parent().ok_or_else(|| invalid(&storage.instances_root, "Missing member configuration root"))?;
-            let runtime = config.parent().ok_or_else(|| invalid(config, "Missing member root"))?.join("runtime");
+            let record = records.iter().find(|record| record.summary.id == member.summary.id)
+                .ok_or_else(|| invalid(config, "Backup member is no longer registered"))?;
+            let runtime = crate::instances::effective_instance_install_root(record)?;
             crate::instance_isolation::ensure_instance_paths_available(&storage, &mut tx, &member.summary.id, &member.summary.module_id, &runtime, config, Path::new(&member.saves_path)).await?;
         }
         let forbidden = records.iter().flat_map(|record| [record.config_dir.clone(), record.saves_dir.clone()]).collect::<Vec<_>>();
@@ -523,11 +525,12 @@ fn build_plan(
             .parent()
             .ok_or_else(|| invalid(&config, "Missing instance root"))?;
         crate::instances::validate_managed_instance_root(instance_root, &storage.instances_root)?;
-        let saved = instance_root.join("runtime/ShooterGame/Saved");
+        let saved = crate::program_runtime::resolve_instance_runtime_root(instance_root)?
+            .join("ShooterGame/Saved");
         if !Path::new(&member.saves_path).starts_with(&saved) {
             return Err(invalid(
                 &saved,
-                "ARK world is outside its private Saved directory",
+                "ARK world is outside its owned Saved directory",
             ));
         }
         for (kind, target) in [("config", config), ("saved", saved)] {

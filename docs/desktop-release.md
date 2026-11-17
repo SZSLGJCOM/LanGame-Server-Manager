@@ -68,7 +68,12 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts/build_desktop_update
 
 `-BuildPortable` is explicit. It runs Tauri from `apps/desktop`, pins `x86_64-pc-windows-msvc` and NSIS, forwards Cargo `--locked`, applies the generated merge configuration, and restores the caller's frontend and static-runtime environment settings afterward. Both the exact current-version installer and its `.exe.sig` must be freshly generated. Omitting both `-EnableGitHubUpdates` and `-EnableRegionalUpdates` produces a signed build whose update checks remain disabled.
 
-`-BuildPortable` refuses managed build hosts. Follow that environment's approved build entry instead of bypassing its resource controls.
+Managed build environments supply an external PowerShell script through `-ManagedBuildAdapter` or `LGSM_DESKTOP_BUILD_ADAPTER` and select `-BuildManaged`. With an adapter configured, `-BuildPortable` is rejected. The repository does not discover workstation scripts or import private build modules.
+
+The adapter runs in a separate Windows PowerShell process and supports two actions:
+
+- `-Action Build` receives `-Project LanGameServerManager`, `-CargoCommand build`, `-SourceSnapshot`, `-DesktopBundle LanGameServerManager`, `-BundleConfigPath`, `-SnapshotReceiptPath`, the comma-separated `-SnapshotArtifacts`, and `-WaitTimeoutSeconds`. It also receives requested `-FreshTarget`, `-PreferVolume` and `-DesktopUpdatesEnabled` options, followed by `--locked`. The adapter owns resource admission, source capture, compilation and artifact receipts.
+- `-Action ReadReceipt -ReceiptPath <path>` verifies the captured source and artifact hashes, then emits only the verified JSON object on standard output. That object contains `receipt` (project, static-runtime setting, source identity and artifacts), `source.source.files` (captured paths and hashes), and `desktopBundle` (kind, input configuration hash, update setting and signing setting). Verification failures must return a nonzero exit code. The release script independently checks the requested configuration, main executable imports and exported installer hash.
 
 If the managed host cannot safely reuse a target directory, `-BuildManaged -FreshTarget` requests a new isolated target through the same resource manager. It retains memory admission, storage limits, source snapshots and artifact receipts; it does not stop another build or remove its cache. Use the default reusable target for ordinary builds.
 
@@ -178,7 +183,7 @@ References: [Tauri updater and static JSON](https://v2.tauri.app/plugin/updater/
 完整参数与验收要求见上文；以下按实际发布顺序执行：
 
 1. 将 Cargo、npm、Tauri 及对应锁文件版本统一为待发布版本。保留精确候选提交的完整 CI 结果；同一候选已通过完整检查时无需重复运行。
-2. 在仓库外的新目录准备 UTF-8 更新说明。普通 Windows 主机使用 `-BuildPortable`；受管主机使用 `-BuildManaged`，签名和更新选项沿用受管发行入口。无法安全复用构建目录时，可加 `-FreshTarget` 申请受管独立目录，仍遵守资源准入与容量限制。私钥通过发行环境传入，保留现有 updater 公钥。
+2. 在仓库外的新目录准备 UTF-8 更新说明。普通 Windows 主机使用 `-BuildPortable`；受管主机通过 `-ManagedBuildAdapter` 或 `LGSM_DESKTOP_BUILD_ADAPTER` 指定仓库外 PowerShell 适配器并使用 `-BuildManaged`；适配器执行构建及回执验证，签名和更新选项保持一致。无法安全复用构建目录时，可加 `-FreshTarget` 申请受管独立目录，仍遵守资源准入与容量限制。私钥通过发行环境传入，保留现有 updater 公钥。
 3. 小包使用 `embedBootstrapper`，缺 WebView2 时从微软联网安装。用独立输出目录加 `-OfflineInstaller` 构建内嵌完整 WebView2 的离线包；两包版本、更新通道与签名密钥一致。
 4. `-EnableGitHubUpdates` 启用 GitHub 更新；`-EnableRegionalUpdates` 同时启用官网地区清单。地区服务、GitCode 附件与匿名读取须先通过[部署验收](../deploy/desktop-updates/README.md)。
 5. 检查实际安装包、两份 updater 签名、微软 WebView2 载荷签名和两个应用可执行文件的运行库依赖。在隔离 Windows 环境执行安装、升级、卸载、数据保留、真实开服和旧版在线更新验收。编译夹具或配置回执不能替代实际安装。

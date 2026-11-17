@@ -1640,18 +1640,18 @@ Authors metadata / 作者元数据: Nikolai Vazquez <hello@nikolaivazquez.com>
 Legal text / 法律文本: cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30 — checksum-verified crate file embed_plist-1.2.2/LICENSE-APACHE
 Legal text / 法律文本: daacc37f680c7dd0a758ac99a109f2f57d9f21d3683df9e9245055922842a695 — checksum-verified crate file embed_plist-1.2.2/LICENSE-MIT
 --------------------------------------------------------------------------------
-Package / 软件包: encoding_rs@0.8.42
+Package / 软件包: encoding_rs@0.8.44
 Declared license / 声明许可证: (Apache-2.0 OR MIT) AND BSD-3-Clause
 Selected reviewed terms / 选用审计条款: packaged upstream texts
-Archive SHA-256: 8e985e0451871ad22fb8d2b6b076e2028a502a0d3950998c2c5c0a4f9b5d9679
-Source archive / 源码归档: https://static.crates.io/crates/encoding_rs/encoding_rs-0.8.42.crate
+Archive SHA-256: 89253175e704ab869b04f9db224d38630e0211a53841a79181deae0889e169f5
+Source archive / 源码归档: https://static.crates.io/crates/encoding_rs/encoding_rs-0.8.44.crate
 Repository / 仓库: https://github.com/hsivonen/encoding_rs
-VCS commit / 版本提交: a155adc7271c9e507556d053c95b459186671d2a
+VCS commit / 版本提交: 8e8556af3cf976392b993a9dbe07456a5ef58469
 Authors metadata / 作者元数据: Henri Sivonen <hsivonen@hsivonen.fi>
-Legal text / 法律文本: 11789f45bb180841cd362a5eee6789c68ddb573a11105e30768c308a6add0190 — checksum-verified crate file encoding_rs-0.8.42/COPYRIGHT
-Legal text / 法律文本: 3fa4ca83dcc9237839b1bdeb2e6d16bdfb5ec0c5ce42b24694d8bbf0dcbef72c — checksum-verified crate file encoding_rs-0.8.42/LICENSE-MIT
-Legal text / 法律文本: 838118388fe5c2e7f1dbbaeed13e1c7f3ebf88be91319c7c1d77c18e987d1a50 — checksum-verified crate file encoding_rs-0.8.42/LICENSE-WHATWG
-Legal text / 法律文本: cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30 — checksum-verified crate file encoding_rs-0.8.42/LICENSE-APACHE
+Legal text / 法律文本: 11789f45bb180841cd362a5eee6789c68ddb573a11105e30768c308a6add0190 — checksum-verified crate file encoding_rs-0.8.44/COPYRIGHT
+Legal text / 法律文本: 3fa4ca83dcc9237839b1bdeb2e6d16bdfb5ec0c5ce42b24694d8bbf0dcbef72c — checksum-verified crate file encoding_rs-0.8.44/LICENSE-MIT
+Legal text / 法律文本: 838118388fe5c2e7f1dbbaeed13e1c7f3ebf88be91319c7c1d77c18e987d1a50 — checksum-verified crate file encoding_rs-0.8.44/LICENSE-WHATWG
+Legal text / 法律文本: cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30 — checksum-verified crate file encoding_rs-0.8.44/LICENSE-APACHE
 --------------------------------------------------------------------------------
 Package / 软件包: endi@1.1.1
 Declared license / 声明许可证: MIT
@@ -5866,15 +5866,15 @@ Authors metadata / 作者元数据: Alex Crichton <alex@alexcrichton.com>
 Legal text / 法律文本: 6efb0476a1cc085077ed49357026d8c173bf33017278ef440f222fb9cbcb66e6 — checksum-verified crate file toml-0.8.2/LICENSE-MIT
 Legal text / 法律文本: c6596eb7be8581c18be736c846fb9173b69eccf6ef94c5135893ec56bd92ba08 — checksum-verified crate file toml-0.8.2/LICENSE-APACHE
 --------------------------------------------------------------------------------
-Package / 软件包: toml@1.1.8+spec-1.1.0
+Package / 软件包: toml@1.2.0+spec-1.1.0
 Declared license / 声明许可证: MIT OR Apache-2.0
 Selected reviewed terms / 选用审计条款: packaged upstream texts
-Archive SHA-256: 20489e00e4d8741d6be680764cc12e270655e375a20d1011e844a9c3379e678d
-Source archive / 源码归档: https://static.crates.io/crates/toml/toml-1.1.8%2Bspec-1.1.0.crate
+Archive SHA-256: c5ffcdf8f50436dbbfd675c1fe1b8e0854f42b7defea8584bdebe1aee900e561
+Source archive / 源码归档: https://static.crates.io/crates/toml/toml-1.2.0%2Bspec-1.1.0.crate
 Repository / 仓库: https://github.com/toml-rs/toml
-VCS commit / 版本提交: ceac6e4412420d5a5c19e4f7293ad005cf1a31b2
-Legal text / 法律文本: 249fdb6694467dd615b259f7ddde07be3f8ae5a72cecebb0e24f6629af4215fe — checksum-verified crate file toml-1.1.8+spec-1.1.0/LICENSE-APACHE
-Legal text / 法律文本: 6efb0476a1cc085077ed49357026d8c173bf33017278ef440f222fb9cbcb66e6 — checksum-verified crate file toml-1.1.8+spec-1.1.0/LICENSE-MIT
+VCS commit / 版本提交: 8ffe3c590d69fab440fedb2ebb396ae1596c3e34
+Legal text / 法律文本: 249fdb6694467dd615b259f7ddde07be3f8ae5a72cecebb0e24f6629af4215fe — checksum-verified crate file toml-1.2.0+spec-1.1.0/LICENSE-APACHE
+Legal text / 法律文本: 6efb0476a1cc085077ed49357026d8c173bf33017278ef440f222fb9cbcb66e6 — checksum-verified crate file toml-1.2.0+spec-1.1.0/LICENSE-MIT
 --------------------------------------------------------------------------------
 Package / 软件包: toml_datetime@0.6.3
 Declared license / 声明许可证: MIT OR Apache-2.0
@@ -5939,15 +5939,15 @@ VCS commit / 版本提交: ceac6e4412420d5a5c19e4f7293ad005cf1a31b2
 Legal text / 法律文本: 249fdb6694467dd615b259f7ddde07be3f8ae5a72cecebb0e24f6629af4215fe — checksum-verified crate file toml_parser-1.1.5+spec-1.1.0/LICENSE-APACHE
 Legal text / 法律文本: 6efb0476a1cc085077ed49357026d8c173bf33017278ef440f222fb9cbcb66e6 — checksum-verified crate file toml_parser-1.1.5+spec-1.1.0/LICENSE-MIT
 --------------------------------------------------------------------------------
-Package / 软件包: toml_writer@1.1.3+spec-1.1.0
+Package / 软件包: toml_writer@1.2.0+spec-1.1.0
 Declared license / 声明许可证: MIT OR Apache-2.0
 Selected reviewed terms / 选用审计条款: packaged upstream texts
-Archive SHA-256: 06bdbd8cfc056b8d2e2e85f29b56a3bdbecb527cef81eb39e3e7b98af4652770
-Source archive / 源码归档: https://static.crates.io/crates/toml_writer/toml_writer-1.1.3%2Bspec-1.1.0.crate
+Archive SHA-256: 009dbb7700f11c55ef83aebbe4c0e9cf1f1ac0844bd8d6f00dc38f302026e13a
+Source archive / 源码归档: https://static.crates.io/crates/toml_writer/toml_writer-1.2.0%2Bspec-1.1.0.crate
 Repository / 仓库: https://github.com/toml-rs/toml
-VCS commit / 版本提交: f72038c2508112dfaaedb227a511f91bf9b2015c
-Legal text / 法律文本: 249fdb6694467dd615b259f7ddde07be3f8ae5a72cecebb0e24f6629af4215fe — checksum-verified crate file toml_writer-1.1.3+spec-1.1.0/LICENSE-APACHE
-Legal text / 法律文本: 6efb0476a1cc085077ed49357026d8c173bf33017278ef440f222fb9cbcb66e6 — checksum-verified crate file toml_writer-1.1.3+spec-1.1.0/LICENSE-MIT
+VCS commit / 版本提交: 8ffe3c590d69fab440fedb2ebb396ae1596c3e34
+Legal text / 法律文本: 249fdb6694467dd615b259f7ddde07be3f8ae5a72cecebb0e24f6629af4215fe — checksum-verified crate file toml_writer-1.2.0+spec-1.1.0/LICENSE-APACHE
+Legal text / 法律文本: 6efb0476a1cc085077ed49357026d8c173bf33017278ef440f222fb9cbcb66e6 — checksum-verified crate file toml_writer-1.2.0+spec-1.1.0/LICENSE-MIT
 --------------------------------------------------------------------------------
 Package / 软件包: tower-http@0.6.11
 Declared license / 声明许可证: MIT
@@ -6198,14 +6198,14 @@ Authors metadata / 作者元数据: Sean Gillespie <sean@swgillespie.me>
 Legal text / 法律文本: 98a817e7b85e5fe4e79d165c656a4a139793b8b643d0f3d9cbcc3538ef82ec82 — checksum-verified crate file unicode_categories-0.1.1/LICENSE-MIT
 Legal text / 法律文本: c6596eb7be8581c18be736c846fb9173b69eccf6ef94c5135893ec56bd92ba08 — checksum-verified crate file unicode_categories-0.1.1/LICENSE-APACHE
 --------------------------------------------------------------------------------
-Package / 软件包: unrar-rs@0.15.3
+Package / 软件包: unrar-rs@0.16.1
 Declared license / 声明许可证: license-file: LICENSE (custom terms)
 Selected reviewed terms / 选用审计条款: Apache-2.0 with the additional UnRAR restriction (custom license)
-Archive SHA-256: ce151d8edd4f1429540498ffddf43e9773e6864c8ac4b022816e7ae663daa595
-Source archive / 源码归档: https://static.crates.io/crates/unrar-rs/unrar-rs-0.15.3.crate
+Archive SHA-256: 99544e98c65185431a5e022f75ca1e86dd002342f6085bc9acbefd92b438866a
+Source archive / 源码归档: https://static.crates.io/crates/unrar-rs/unrar-rs-0.16.1.crate
 Repository / 仓库: https://github.com/scryer-media/rarpar
-VCS commit / 版本提交: 71d56c86f620a67ce9428186adf46b524e5a3d06
-Legal text / 法律文本: 97dfd1950dfb0901afbf6e51cae496e12281e97f670fdb2a2aab3252d2561086 — checksum-verified crate file unrar-rs-0.15.3/LICENSE
+VCS commit / 版本提交: 5680fce6cbf972bf28206b8cf3a40fcddd9e399f
+Legal text / 法律文本: 97dfd1950dfb0901afbf6e51cae496e12281e97f670fdb2a2aab3252d2561086 — checksum-verified crate file unrar-rs-0.16.1/LICENSE
 --------------------------------------------------------------------------------
 Package / 软件包: untrusted@0.9.0
 Declared license / 声明许可证: ISC
@@ -7225,15 +7225,15 @@ VCS commit / 版本提交: c56bbb5a7b47409759113903764c456f13b418e5
 Authors metadata / 作者元数据: The ICU4X Project Developers
 Legal text / 法律文本: f367c1b8e1aa262435251e442901da4607b4650e0e63a026f5044473ecfb90f2 — checksum-verified crate file zerovec-0.11.8/LICENSE
 --------------------------------------------------------------------------------
-Package / 软件包: zip@9.5.0
+Package / 软件包: zip@9.5.1
 Declared license / 声明许可证: MIT
 Selected reviewed terms / 选用审计条款: packaged upstream texts
-Archive SHA-256: 0700e6c427aff64acdbf02e85fbfd946c2ee12319d1af013092f3a2178914ff8
-Source archive / 源码归档: https://static.crates.io/crates/zip/zip-9.5.0.crate
+Archive SHA-256: e3476fd497ac8af5b1ec7b51acab7bef380f7e8dd8e0487595bafd839417a302
+Source archive / 源码归档: https://static.crates.io/crates/zip/zip-9.5.1.crate
 Repository / 仓库: https://github.com/zip-rs/zip2
-VCS commit / 版本提交: ddf3ec36017345b8936dd1a3516d9bc4632a0480
+VCS commit / 版本提交: ee616771beda6d563a28159b834748fb611b4db2
 Authors metadata / 作者元数据: Mathijs van de Nes <git@mathijs.vd-nes.nl>; Marli Frost <marli@frost.red>; Ryan Levick <ryan.levick@gmail.com>; Chris Hennick <hennickc@amazon.com>
-Legal text / 法律文本: 58545fed1565e42d687aecec6897d35c6d37ccb71479a137c0deb2203e125c79 — checksum-verified crate file zip-9.5.0/LICENSE
+Legal text / 法律文本: 58545fed1565e42d687aecec6897d35c6d37ccb71479a137c0deb2203e125c79 — checksum-verified crate file zip-9.5.1/LICENSE
 --------------------------------------------------------------------------------
 Package / 软件包: zlib-rs@0.6.8
 Declared license / 声明许可证: Zlib
@@ -9374,7 +9374,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 
 Text SHA-256 / 文本 SHA-256: 11789f45bb180841cd362a5eee6789c68ddb573a11105e30768c308a6add0190
-Source / 来源: checksum-verified crate file encoding_rs-0.8.42/COPYRIGHT
+Source / 来源: checksum-verified crate file encoding_rs-0.8.44/COPYRIGHT
 --------------------------------------------------------------------------------
 encoding_rs is copyright Mozilla Foundation.
 
@@ -11028,11 +11028,11 @@ DEALINGS IN THE SOFTWARE.
 
 Text SHA-256 / 文本 SHA-256: 249fdb6694467dd615b259f7ddde07be3f8ae5a72cecebb0e24f6629af4215fe
 Source / 来源: checksum-verified crate file serde_spanned-1.1.2/LICENSE-APACHE
-Source / 来源: checksum-verified crate file toml-1.1.8+spec-1.1.0/LICENSE-APACHE
+Source / 来源: checksum-verified crate file toml-1.2.0+spec-1.1.0/LICENSE-APACHE
 Source / 来源: checksum-verified crate file toml_datetime-1.1.2+spec-1.1.0/LICENSE-APACHE
 Source / 来源: checksum-verified crate file toml_edit-0.25.17+spec-1.1.0/LICENSE-APACHE
 Source / 来源: checksum-verified crate file toml_parser-1.1.5+spec-1.1.0/LICENSE-APACHE
-Source / 来源: checksum-verified crate file toml_writer-1.1.3+spec-1.1.0/LICENSE-APACHE
+Source / 来源: checksum-verified crate file toml_writer-1.2.0+spec-1.1.0/LICENSE-APACHE
 --------------------------------------------------------------------------------
                                  Apache License
                            Version 2.0, January 2004
@@ -13542,7 +13542,7 @@ IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 Text SHA-256 / 文本 SHA-256: 3fa4ca83dcc9237839b1bdeb2e6d16bdfb5ec0c5ce42b24694d8bbf0dcbef72c
-Source / 来源: checksum-verified crate file encoding_rs-0.8.42/LICENSE-MIT
+Source / 来源: checksum-verified crate file encoding_rs-0.8.44/LICENSE-MIT
 Source / 来源: checksum-verified crate file multiversion_no_op-1.0.0/LICENSE-MIT
 Source / 来源: checksum-verified crate file utf8_iter-1.0.4/LICENSE-MIT
 --------------------------------------------------------------------------------
@@ -16252,7 +16252,7 @@ SOFTWARE.
 
 Text SHA-256 / 文本 SHA-256: 58545fed1565e42d687aecec6897d35c6d37ccb71479a137c0deb2203e125c79
 Source / 来源: checksum-verified crate file tracing-core-0.1.36/src/spin/LICENSE
-Source / 来源: checksum-verified crate file zip-9.5.0/LICENSE
+Source / 来源: checksum-verified crate file zip-9.5.1/LICENSE
 --------------------------------------------------------------------------------
 The MIT License (MIT)
 
@@ -19290,13 +19290,13 @@ Text SHA-256 / 文本 SHA-256: 6efb0476a1cc085077ed49357026d8c173bf33017278ef440
 Source / 来源: checksum-verified crate file serde_spanned-0.6.9/LICENSE-MIT
 Source / 来源: checksum-verified crate file serde_spanned-1.1.2/LICENSE-MIT
 Source / 来源: checksum-verified crate file toml-0.8.2/LICENSE-MIT
-Source / 来源: checksum-verified crate file toml-1.1.8+spec-1.1.0/LICENSE-MIT
+Source / 来源: checksum-verified crate file toml-1.2.0+spec-1.1.0/LICENSE-MIT
 Source / 来源: checksum-verified crate file toml_datetime-1.1.2+spec-1.1.0/LICENSE-MIT
 Source / 来源: checksum-verified crate file toml_edit-0.19.15/LICENSE-MIT
 Source / 来源: checksum-verified crate file toml_edit-0.20.2/LICENSE-MIT
 Source / 来源: checksum-verified crate file toml_edit-0.25.17+spec-1.1.0/LICENSE-MIT
 Source / 来源: checksum-verified crate file toml_parser-1.1.5+spec-1.1.0/LICENSE-MIT
-Source / 来源: checksum-verified crate file toml_writer-1.1.3+spec-1.1.0/LICENSE-MIT
+Source / 来源: checksum-verified crate file toml_writer-1.2.0+spec-1.1.0/LICENSE-MIT
 --------------------------------------------------------------------------------
 Copyright (c) Individual contributors
 
@@ -21375,7 +21375,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 
 Text SHA-256 / 文本 SHA-256: 838118388fe5c2e7f1dbbaeed13e1c7f3ebf88be91319c7c1d77c18e987d1a50
-Source / 来源: checksum-verified crate file encoding_rs-0.8.42/LICENSE-WHATWG
+Source / 来源: checksum-verified crate file encoding_rs-0.8.44/LICENSE-WHATWG
 --------------------------------------------------------------------------------
 Copyright © WHATWG (Apple, Google, Mozilla, Microsoft).
 
@@ -23954,7 +23954,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 Text SHA-256 / 文本 SHA-256: 97dfd1950dfb0901afbf6e51cae496e12281e97f670fdb2a2aab3252d2561086
-Source / 来源: checksum-verified crate file unrar-rs-0.15.3/LICENSE
+Source / 来源: checksum-verified crate file unrar-rs-0.16.1/LICENSE
 --------------------------------------------------------------------------------
 unrar-rs license
 
@@ -30249,7 +30249,7 @@ Text SHA-256 / 文本 SHA-256: cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3e
 Source / 来源: checksum-verified crate file cmov-0.5.4/LICENSE-APACHE
 Source / 来源: checksum-verified crate file ctutils-0.4.4/LICENSE-APACHE
 Source / 来源: checksum-verified crate file embed_plist-1.2.2/LICENSE-APACHE
-Source / 来源: checksum-verified crate file encoding_rs-0.8.42/LICENSE-APACHE
+Source / 来源: checksum-verified crate file encoding_rs-0.8.44/LICENSE-APACHE
 Source / 来源: checksum-verified crate file lru-slab-0.1.3/LICENSE-APACHE
 Source / 来源: checksum-verified crate file multiversion_no_op-1.0.0/LICENSE-APACHE
 Source / 来源: checksum-verified crate file ort-2.0.0-rc.15/LICENSE-APACHE

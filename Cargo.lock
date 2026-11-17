@@ -101,7 +101,7 @@ checksum = "330a5ed07fa54e4702c9d6c4174f74427fc0ef6e214bbd677ae50a5099946470"
 
 [[package]]
 name = "app-core"
-version = "0.2.2"
+version = "0.2.3"
 dependencies = [
  "dunce",
  "serde",
@@ -110,7 +110,7 @@ dependencies = [
 
 [[package]]
 name = "app-knowledge"
-version = "0.2.2"
+version = "0.2.3"
 dependencies = [
  "app-network",
  "dom_query 0.29.0",
@@ -127,7 +127,7 @@ dependencies = [
  "thiserror 2.0.21",
  "tokenizers",
  "tokio",
- "toml 1.1.8+spec-1.1.0",
+ "toml 1.2.0+spec-1.1.0",
  "uuid",
  "windows-sys 0.61.2",
  "zip",
@@ -135,7 +135,7 @@ dependencies = [
 
 [[package]]
 name = "app-modules"
-version = "0.2.2"
+version = "0.2.3"
 dependencies = [
  "app-core",
  "image",
@@ -143,12 +143,12 @@ dependencies = [
  "serde",
  "serde_json",
  "thiserror 2.0.21",
- "toml 1.1.8+spec-1.1.0",
+ "toml 1.2.0+spec-1.1.0",
 ]
 
 [[package]]
 name = "app-network"
-version = "0.2.2"
+version = "0.2.3"
 dependencies = [
  "httpdate",
  "reqwest",
@@ -161,7 +161,7 @@ dependencies = [
 
 [[package]]
 name = "app-platform-win"
-version = "0.2.2"
+version = "0.2.3"
 dependencies = [
  "app-core",
  "app-runtime",
@@ -171,7 +171,7 @@ dependencies = [
 
 [[package]]
 name = "app-runtime"
-version = "0.2.2"
+version = "0.2.3"
 dependencies = [
  "app-core",
  "app-modules",
@@ -183,7 +183,7 @@ dependencies = [
 
 [[package]]
 name = "app-steamcmd"
-version = "0.2.2"
+version = "0.2.3"
 dependencies = [
  "app-core",
  "app-network",
@@ -200,7 +200,7 @@ dependencies = [
 
 [[package]]
 name = "app-storage"
-version = "0.2.2"
+version = "0.2.3"
 dependencies = [
  "app-core",
  "app-modules",
@@ -717,7 +717,7 @@ checksum = "82f4b26e751e711a5302649417f2da046dce6391b2ea30a4820f37462314f0b9"
 dependencies = [
  "semver",
  "serde",
- "toml 1.1.8+spec-1.1.0",
+ "toml 1.2.0+spec-1.1.0",
 ]
 
 [[package]]
@@ -1532,7 +1532,7 @@ dependencies = [
  "cc",
  "memchr",
  "rustc_version",
- "toml 1.1.8+spec-1.1.0",
+ "toml 1.2.0+spec-1.1.0",
  "vswhom",
  "winreg",
 ]
@@ -1545,9 +1545,9 @@ checksum = "4ef6b89e5b37196644d8796de5268852ff179b44e96276cf4290264843743bb7"
 
 [[package]]
 name = "encoding_rs"
-version = "0.8.42"
+version = "0.8.44"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8e985e0451871ad22fb8d2b6b076e2028a502a0d3950998c2c5c0a4f9b5d9679"
+checksum = "89253175e704ab869b04f9db224d38630e0211a53841a79181deae0889e169f5"
 dependencies = [
  "cfg-if",
  "core_detect",
@@ -2853,7 +2853,7 @@ dependencies = [
 
 [[package]]
 name = "langame-desktop"
-version = "0.2.2"
+version = "0.2.3"
 dependencies = [
  "app-core",
  "app-knowledge",
@@ -2887,7 +2887,7 @@ dependencies = [
  "tauri-plugin-updater",
  "thiserror 2.0.21",
  "tokio",
- "toml 1.1.8+spec-1.1.0",
+ "toml 1.2.0+spec-1.1.0",
  "unrar-rs",
  "uuid",
  "webview2-com",
@@ -5823,7 +5823,7 @@ dependencies = [
  "serde_with",
  "swift-rs",
  "thiserror 2.0.21",
- "toml 1.1.8+spec-1.1.0",
+ "toml 1.2.0+spec-1.1.0",
  "url",
  "urlpattern",
  "uuid",
@@ -5838,7 +5838,7 @@ checksum = "cc65d45c68858bfe420dd29e834b5d15dbecf8a07a8a16cf4d532c7b1f69d4b6"
 dependencies = [
  "dunce",
  "embed-resource",
- "toml 1.1.8+spec-1.1.0",
+ "toml 1.2.0+spec-1.1.0",
 ]
 
 [[package]]
@@ -6057,9 +6057,9 @@ dependencies = [
 
 [[package]]
 name = "toml"
-version = "1.1.8+spec-1.1.0"
+version = "1.2.0+spec-1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "20489e00e4d8741d6be680764cc12e270655e375a20d1011e844a9c3379e678d"
+checksum = "c5ffcdf8f50436dbbfd675c1fe1b8e0854f42b7defea8584bdebe1aee900e561"
 dependencies = [
  "indexmap 2.14.2",
  "serde_core",
@@ -6135,9 +6135,9 @@ dependencies = [
 
 [[package]]
 name = "toml_writer"
-version = "1.1.3+spec-1.1.0"
+version = "1.2.0+spec-1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "06bdbd8cfc056b8d2e2e85f29b56a3bdbecb527cef81eb39e3e7b98af4652770"
+checksum = "009dbb7700f11c55ef83aebbe4c0e9cf1f1ac0844bd8d6f00dc38f302026e13a"
 
 [[package]]
 name = "tower"
@@ -6344,9 +6344,9 @@ checksum = "39ec24b3121d976906ece63c9daad25b85969647682eee313cb5779fdd69e14e"
 
 [[package]]
 name = "unrar-rs"
-version = "0.15.3"
+version = "0.16.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ce151d8edd4f1429540498ffddf43e9773e6864c8ac4b022816e7ae663daa595"
+checksum = "99544e98c65185431a5e022f75ca1e86dd002342f6085bc9acbefd92b438866a"
 dependencies = [
  "aes 0.9.3",
  "blake2s_simd",
@@ -7366,9 +7366,9 @@ dependencies = [
 
 [[package]]
 name = "zip"
-version = "9.5.0"
+version = "9.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0700e6c427aff64acdbf02e85fbfd946c2ee12319d1af013092f3a2178914ff8"
+checksum = "e3476fd497ac8af5b1ec7b51acab7bef380f7e8dd8e0487595bafd839417a302"
 dependencies = [
  "constant_time_eq 0.6.1",
  "crc32fast",

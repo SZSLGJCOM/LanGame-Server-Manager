@@ -116,10 +116,9 @@ fn open_archive(
         preflight::rar(&mut source, size, signature[6] == 1)?;
         let mut archive = unrar_rs::RarArchive::open(source)
             .map_err(|error| format!("Cannot read RAR Mod archive: {error}"))?;
-        archive.set_limits(unrar_rs::Limits {
-            max_dict_size: DECODER_MEMORY_BYTES,
-            ..Default::default()
-        });
+        let mut limits = unrar_rs::Limits::default();
+        limits.max_dict_size = DECODER_MEMORY_BYTES;
+        archive.set_limits(limits);
         archive.set_decode_mode(unrar_rs::DecodeMode::Serial);
         Ok(Some((
             AdditionalModArchiveFormat::Rar,

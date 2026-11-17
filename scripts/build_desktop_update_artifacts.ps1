@@ -9,12 +9,13 @@ param(
     [switch]$BuildPortable,
     [Parameter(Mandatory = $true, ParameterSetName = 'Managed')]
     [switch]$BuildManaged,
+    [string]$ManagedBuildAdapter = $env:LGSM_DESKTOP_BUILD_ADAPTER,
     [Parameter(ParameterSetName = 'Managed')]
     [switch]$SignUpdates,
     [Parameter(ParameterSetName = 'Managed')]
     [switch]$FreshTarget,
     [Parameter(ParameterSetName = 'Managed')]
-    [AllowEmptyString()][ValidateSet('', 'D:', 'E:')][string]$PreferVolume = '',
+    [AllowEmptyString()][ValidatePattern('^(?:[A-Za-z]:)?$')][string]$PreferVolume = '',
     [Parameter(ParameterSetName = 'Managed')]
     [ValidateRange(0, 21600)][int]$WaitTimeoutSeconds = 1800,
     [Parameter(Mandatory = $true, ParameterSetName = 'Export')]
@@ -154,22 +155,19 @@ $mergeConfig = @{
     }
 }
 
-# Portable builds never bypass the workstation's snapshot and resource policy.
-$managedAncestor = Get-Item -LiteralPath $root
-$managedCargoEntry = $null
-while ($null -ne $managedAncestor) {
-    $candidateEntry = Join-Path $managedAncestor.FullName 'scripts/invoke-codex-cargo.ps1'
-    if (Test-Path -LiteralPath $candidateEntry -PathType Leaf) {
-        $managedCargoEntry = $candidateEntry
-        break
+# Build environments supply their own snapshot and resource-policy adapter.
+$hasManagedAdapter = -not [string]::IsNullOrWhiteSpace($ManagedBuildAdapter)
+if ($BuildPortable -and $hasManagedAdapter) {
+    throw 'BuildPortable is unavailable while a managed build adapter is configured. Use -BuildManaged.'
+}
+if ($BuildManaged) {
+    if (-not $hasManagedAdapter) {
+        throw 'BuildManaged requires -ManagedBuildAdapter or LGSM_DESKTOP_BUILD_ADAPTER.'
     }
-    $managedAncestor = $managedAncestor.Parent
-}
-if ($BuildPortable -and $managedCargoEntry) {
-    throw 'BuildPortable is unavailable on the managed OPC host. Use -BuildManaged for the snapshot-based desktop bundle.'
-}
-if ($BuildManaged -and -not $managedCargoEntry) {
-    throw 'BuildManaged requires the managed Cargo entry on this workstation.'
+    if (-not (Test-Path -LiteralPath $ManagedBuildAdapter -PathType Leaf)) {
+        throw 'ManagedBuildAdapter must point to an existing PowerShell script.'
+    }
+    $ManagedBuildAdapter = (Resolve-Path -LiteralPath $ManagedBuildAdapter).Path
 }
 if (($BuildPortable -or ($BuildManaged -and $signedArtifacts)) -and [string]::IsNullOrWhiteSpace($env:TAURI_SIGNING_PRIVATE_KEY)) {
     throw 'TAURI_SIGNING_PRIVATE_KEY is required for signed builds and must match the configured updater public key.'
@@ -223,7 +221,7 @@ if ($BuildManaged) {
     if ($signedArtifacts) { $artifacts += "release/bundle/nsis/$artifactName.sig" }
     $buildArguments = @(
         '-NoLogo', '-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass',
-        '-File', $managedCargoEntry, '-Project', 'LanGameServerManager', '-CargoCommand', 'build',
+        '-File', $ManagedBuildAdapter, '-Action', 'Build', '-Project', 'LanGameServerManager', '-CargoCommand', 'build',
         '-SourceSnapshot', '-DesktopBundle', 'LanGameServerManager', '-BundleConfigPath', $mergeConfigPath,
         '-SnapshotReceiptPath', $receiptPath, '-SnapshotArtifacts', ($artifacts -join ','),
         '-WaitTimeoutSeconds', [string]$WaitTimeoutSeconds
@@ -246,8 +244,10 @@ if ($BuildManaged) {
             [Environment]::SetEnvironmentVariable('STATIC_VCRUNTIME', $oldStaticVcruntime, 'Process')
         }
     }
-    Import-Module (Join-Path (Split-Path -Parent $managedCargoEntry) 'codex-snapshot-build.psm1') -Force
-    $verified = Read-CodexSnapshotBuildReceipt -Path $receiptPath
+    $receiptJson = & powershell.exe -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass `
+        -File $ManagedBuildAdapter -Action ReadReceipt -ReceiptPath $receiptPath
+    if ($LASTEXITCODE -ne 0) { throw "Managed build receipt verification failed with exit code $LASTEXITCODE. No installer was exported." }
+    $verified = ($receiptJson -join [Environment]::NewLine) | ConvertFrom-Json
     if ($verified.receipt.project -cne 'LanGameServerManager') { throw 'Build receipt belongs to another project.' }
     if ($verified.receipt.staticVcruntime -isnot [bool] -or -not $verified.receipt.staticVcruntime) {
         throw 'Build receipt does not confirm static Visual C++ runtime linkage.'

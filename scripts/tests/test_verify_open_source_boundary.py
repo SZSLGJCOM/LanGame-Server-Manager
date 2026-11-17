@@ -281,9 +281,9 @@ class OpenSourceBoundaryTests(unittest.TestCase):
 
     def test_rejects_workstation_paths_in_public_documentation(self):
         roots = (
-            ("D:", "LanGame", "scripts", "invoke-codex-cargo.ps1"),
+            ("D:", "LanGame", "scripts", "build-wrapper.ps1"),
             ("D:", "LanGame", "projects", "Example"),
-            ("D:", "LanGameTemp", "cargo-target", "codex"),
+            ("D:", "LanGameTemp", "cargo-target", "isolated"),
             ("C:", "Users", "developer", "source"),
         )
         for parts in roots:

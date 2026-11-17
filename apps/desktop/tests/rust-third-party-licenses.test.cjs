@@ -48,7 +48,7 @@ test("Tauri installs the Rust legal inventory as an explicit resource", () => {
 
 test("the RAR decoder retains its custom terms separately from permissive fixture licenses", () => {
   const output = fs.readFileSync(outputPath, "utf8");
-  const unrar = output.split("Package / 软件包: unrar-rs@0.15.3\n")[1]?.split("\n---")[0];
+  const unrar = output.split("Package / 软件包: unrar-rs@0.16.1\n")[1]?.split("\n---")[0];
   assert.ok(unrar, "The locked RAR decoder must be present in the inventory.");
   assert.match(unrar, /Declared license \/ 声明许可证: license-file: LICENSE \(custom terms\)/u);
   assert.match(unrar, /Apache-2\.0 with the additional UnRAR restriction/u);

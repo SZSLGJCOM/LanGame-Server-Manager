@@ -47,7 +47,6 @@
     "independently_verified_source_files": 4746,
     "test_binary_sha256": "857b23e645ea65ee7c3023aa42a4ee57feb80713bdbbbda29a77ae6f8a36bb9b",
     "test_binary_bytes": 234145280,
-    "entry_point": "invoke-codex-cargo.ps1",
     "entry_point_sha256": "3d4d69868642e10ab39ed39b711b6e9cba2bf00db9c6b9e9e1fd17623f03cf59",
     "cargo_arguments": [
       "-p",

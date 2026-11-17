@@ -43,11 +43,11 @@ AUDITED_SOURCES = {
 # Custom license-file declarations require review of the exact packaged text;
 # they must never be reduced to an SPDX license that omits an extra restriction.
 LICENSE_FILE_RULES = {
-    "unrar-rs@0.15.3": {
+    "unrar-rs@0.16.1": {
         "license_file": "LICENSE",
         "sha256": "97dfd1950dfb0901afbf6e51cae496e12281e97f670fdb2a2aab3252d2561086",
         "repository": "https://github.com/scryer-media/rarpar",
-        "vcs_sha1": "71d56c86f620a67ce9428186adf46b524e5a3d06",
+        "vcs_sha1": "5680fce6cbf972bf28206b8cf3a40fcddd9e399f",
         "selected_license": "Apache-2.0 with the additional UnRAR restriction (custom license)",
     },
 }

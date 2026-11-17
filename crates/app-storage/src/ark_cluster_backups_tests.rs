@@ -77,6 +77,7 @@ impl Fixture {
             let saved = instance.join("runtime/ShooterGame/Saved");
             fs::create_dir_all(&config).unwrap();
             fs::create_dir_all(&saved).unwrap();
+            fs::write(instance.join("runtime/.langame-private-runtime"), b"managed\n").unwrap();
             member.config_file_path = config.join("instance.json").to_string_lossy().into_owned();
             member.saves_path = saved.join("world").to_string_lossy().into_owned();
             member.cluster_directory = report.cluster_directory.clone();

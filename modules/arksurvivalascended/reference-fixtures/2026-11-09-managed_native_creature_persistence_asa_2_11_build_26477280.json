@@ -66,7 +66,6 @@
       "--no-run"
     ],
     "exit_code": 0,
-    "entry_point": "invoke-codex-cargo.ps1",
     "entry_point_sha256": "a49fe85bfed0b558354bc5a605e84b5a2f9a30c251c2bc57ff4ddc51503223b2",
     "source_identity_sha256": "10b0933cb439fdb2b455b7497c1c09e9be17f91c4d4972940eab7af84a54eb7d",
     "source_manifest_sha256": "32980966b09fdd8b92bd8e2eb040db2a4d45f829c123456f7a1dca90b6e189d4",

@@ -176,7 +176,8 @@ fn project_member(
             &read_instance_settings_json(&config).map_err(|error| error.to_string())?,
         )
         .map_err(|error| error.to_string())?;
-        let runtime = root.join("runtime");
+        let runtime = crate::instances::effective_instance_install_root(&record)
+            .map_err(|error| error.to_string())?;
         let saves = plan_instance_saves_dir(
             descriptor,
             &InstanceSavePathContext {
