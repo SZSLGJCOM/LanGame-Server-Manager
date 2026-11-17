@@ -930,6 +930,8 @@ test("Unturned anonymous package validate and first-party server scripts are rec
   const ledger = read(path.join(unturnedRoot, "config-sources.toml"));
   const schema = JSON.parse(read(path.join(unturnedRoot, "schema.json")));
   const configTemplate = read(path.join(unturnedRoot, "templates", "Config.txt.hbs"));
+  const currentNative = JSON.parse(read(path.join(unturnedRoot,
+    "reference-fixtures/2026-11-15-managed_lifecycle_build_26627066.json")));
 
   assert.match(moduleToml, /steam_app_id = 1110390/);
   assert.match(moduleToml, /executable = "Unturned\.exe"/);
@@ -937,7 +939,14 @@ test("Unturned anonymous package validate and first-party server scripts are rec
   assert.doesNotMatch(moduleToml, /UseLegacyJsonGameplayConfig|gameplay_config_file_args/);
   assert.match(moduleToml, /Commands\.dat, Config\.txt, and WorkshopDownloadConfig\.json/);
 
-  assert.match(ledger, /last_verified = "2026-09-28"/);
+  assert.equal(currentNative.verified_on, "2026-11-15");
+  assert.equal(currentNative.steam_build_id, "26627066");
+  assert.equal(currentNative.status, "passed");
+  assert.equal(currentNative.test.exit_code, 0);
+  assert.equal(/^last_verified = "([^"]+)"\r?$/m.exec(ledger)?.[1], currentNative.verified_on);
+  const historical = parseTomlArrayTables(ledger, "sources").find((source) =>
+    source.id === "native_config_3_26_3_12");
+  assert.match(historical?.description ?? "", /^2026-09-28 full inventory:/);
   assert.match(ledger, /steamcmd_anonymous_app_1110390/);
   assert.match(ledger, /app_update 1110390 validate/);
   assert.match(ledger, /buildid 24080174/);

@@ -1,12 +1,20 @@
 -- Conan Exiles Enhanced verified profiles. Native world-persistence flush only.
 -- The separate native bridge pins complete image/loader hashes and its ABI.
-local SAVE_CONFIG = { project = "ConanSandbox", executable = "ConanSandboxServer-Win64-Shipping.exe", launch_identity = true, world_from_netdriver = true, fingerprint = {} }
+local SAVE_CONFIG = { project = "ConanSandbox", executable = "ConanSandboxServer-Win64-Shipping.exe", launch_identity = true, world_from_netdriver = true, diagnose_probe_dispatch = true, fingerprint = {} }
 local function build_save_target(api)
+    -- Install the pinned UE4SS dispatcher during mod loading: its first hook
+    -- registration can exceed the short request queue deadline. The empty
+    -- callback reads no world and neither publishes nor invokes a save.
+    ExecuteInGameThread(function() end, EGameThreadMethod.EngineTick)
     local source = debug.getinfo(1, "S").source:gsub("^@", "")
     local root = source:match("^(.+)[/\\]ConanSandbox[/\\]Binaries[/\\]Win64[/\\]ue4ss[/\\]Mods[/\\]LgsmWorldSave[/\\]Scripts[/\\]")
     api.check(root ~= nil, "api_unavailable")
     local directory = root .. "\\langame_world_save\\"
-    local native
+    local native = { prepare = package.loadlib(root .. "\\ConanSandbox\\Binaries\\Win64\\ue4ss\\Mods\\LgsmWorldSave\\native\\LgsmConanSaveControl.dll", "luaopen_lgsm_conan_prepare") }
+    api.check(type(native.prepare) == "function", "api_unavailable")
+    print("[LgsmWorldSave] Preparing fixed native files before accepting requests.\n")
+    native.prepare()
+    print("[LgsmWorldSave] Fixed native preparation returned; readiness still requires a world probe.\n")
     local counter = 0
     local checked_target, native_pid, native_creation
     local function next_nonce()
@@ -15,9 +23,9 @@ local function build_save_target(api)
             math.random(0, 0x7fffffff), counter % 0x7fffffff)
     end
     local function bridge(operation, proxy, instance, world, validate, frame, enter_native)
-        if not native then
+        if not native.invoke then
             local loaded = package.loadlib(root .. "\\ConanSandbox\\Binaries\\Win64\\ue4ss\\Mods\\LgsmWorldSave\\native\\LgsmConanSaveControl.dll", "luaopen_lgsm_conan_save")
-            api.check(type(loaded) == "function", "api_unavailable"); native = loaded
+            api.check(type(loaded) == "function", "api_unavailable"); native.invoke = loaded
         end
         if not frame then
             local id = next_nonce()
@@ -38,7 +46,7 @@ local function build_save_target(api)
         api.check(os.rename(temporary, directory .. "native-request.txt"), "api_unavailable")
         validate() -- No native entry may follow a cancelled or stale closure.
         if enter_native then enter_native() end
-        native()
+        native.invoke()
         local response = io.open(directory .. "native-response.txt", "rb")
         api.check(response ~= nil, "save_call_unknown")
         local text = response:read(513); response:close()
@@ -56,11 +64,14 @@ local function build_save_target(api)
                 and api.same(value:GetOuter(), world.AuthorityGameMode)
         end)
     end
-    return function(world, instance)
+    return function(world, instance, observe)
+        if observe then observe("target_begin") end
         local proxy = target(world, instance)
         local game_mode = world.AuthorityGameMode
         if not api.same(checked_target, proxy) then
+            if observe then observe("native_probe_begin") end
             local status, pid, creation = bridge("probe", proxy, world.AuthorityGameMode, world, function() end)
+            if observe then observe("native_probe_end") end
             api.check(status == "ready", "api_unavailable")
             checked_target, native_pid, native_creation = proxy, pid, creation
         end

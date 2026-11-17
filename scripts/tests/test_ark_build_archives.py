@@ -63,6 +63,8 @@ class ArkBuildArchiveTests(unittest.TestCase):
         wrapper.write_text(
             f"""$ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
+[Console]::OutputEncoding = [Text.UTF8Encoding]::new($false)
+$OutputEncoding = [Console]::OutputEncoding
 Add-Type -AssemblyName System.Net.Http
 $tokens = $null; $errors = $null
 $ast = [Management.Automation.Language.Parser]::ParseFile({quote(BUILDER)}, [ref]$tokens, [ref]$errors)
@@ -82,7 +84,7 @@ Write-Output ('RESULT:' + (ConvertTo-Json -Compress -InputObject $resolved))
         )
         result = subprocess.run(
             ["powershell.exe", "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-File", str(wrapper)],
-            cwd=ROOT, capture_output=True, text=True, timeout=20, check=False,
+            cwd=ROOT, capture_output=True, text=True, encoding="utf-8", timeout=20, check=False,
         )
         return result
 
@@ -154,7 +156,7 @@ Write-Output ('RESULT:' + (ConvertTo-Json -Compress -InputObject $resolved))
         result = subprocess.run(
             ["powershell.exe", "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-File", str(BUILDER),
              "-OutDir", str(self.cache / "output")],
-            env=environment, capture_output=True, text=True, timeout=20, check=False,
+            env=environment, capture_output=True, text=True, encoding="utf-8", timeout=20, check=False,
         )
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("outside the read-only archive cache", result.stderr)
@@ -166,7 +168,7 @@ Write-Output ('RESULT:' + (ConvertTo-Json -Compress -InputObject $resolved))
         result = subprocess.run(
             ["powershell.exe", "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-File", str(BUILDER),
              "-OutDir", str(self.output)],
-            env=environment, capture_output=True, text=True, timeout=20, check=False,
+            env=environment, capture_output=True, text=True, encoding="utf-8", timeout=20, check=False,
         )
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("Missing ARK archive in LANGAME_ARK_ARCHIVE_DIR", result.stderr)

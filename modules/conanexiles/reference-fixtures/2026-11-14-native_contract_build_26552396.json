@@ -1,0 +1,331 @@
+{
+  "schema_version": 1,
+  "module_id": "conanexiles",
+  "observed_on": "2026-11-14",
+  "steam_app_id": 443030,
+  "build_id": "26552396",
+  "evidence_classification": "static_contract_and_isolated_native_sql_completion_manual_checkpoint_reload_and_standard_lifecycle",
+  "package": {
+    "source": "Official SteamCMD anonymous package acquired on an isolated Windows validation host; static copies matched remote and local SHA-256.",
+    "state_flags": 4,
+    "update_result": 0,
+    "appmanifest_sha256": "5f4c2209374fb14be9f15726c75400388acc1e532210c8aeb52eeec24586c0ac",
+    "executable_relative_path": "ConanSandbox/Binaries/Win64/ConanSandboxServer-Win64-Shipping.exe",
+    "executable_bytes": 187447800,
+    "executable_sha256": "fe11b4c2292f468b7d3d017261ee7cf5b850537f690bebc6854a4260a05e4394",
+    "provider_relative_path": "ConanSandbox/Binaries/Win64/Dreamworld.dll",
+    "provider_bytes": 5231096,
+    "provider_sha256": "66d26b63424218b8831a8478ff2cb5166bdd9dad35107727c2b5e57a442fafdf"
+  },
+  "static_save_contract": {
+    "abi": "void whole_world_flush(WorldPersistenceComponent*, NativeJob*); native writer consumes the owned callable on the game thread.",
+    "profile": {
+      "save_prologue": "48895c24184889742420574881ec80000000488b0587e53a064833c448894424",
+      "save": "0x44e9560",
+      "component_class": "0xab67430",
+      "weak_owner": "0x1684500"
+    },
+    "method": "Reconstructed from current PE class registration, constructors, complete unwind-bounded save functions, provider exports and worker control flow. Worker executable bytes and embedded switch tables were validated separately.",
+    "class": {
+      "getter": "0x44a9530",
+      "singleton": "0xab67430",
+      "class_size": "0x240",
+      "package": "/Script/UE4Dreamworld",
+      "name": "WorldPersistenceComponent",
+      "component_cached_world": "0xc0",
+      "component_weak_owner": "0x150",
+      "pending_actor_set": "0x158",
+      "game_mode_database": "0x5a0",
+      "database_status_vtable": "0x70",
+      "ready_status": 2
+    },
+    "functions": {
+      "save": {
+        "rva": "0x44e9560",
+        "bytes": 225,
+        "raw_sha256": "a7f8c9c5a76831402c3a84c89360ff307f30a63edb17bb4f14ba15f1877996d6"
+      },
+      "writer": {
+        "rva": "0x44e9650",
+        "bytes": 1406,
+        "raw_sha256": "35f7071869cacdeb902fa50fe8a0675a681029d829a4e4245f9dab6a73be5fa0"
+      },
+      "pre_removal": {
+        "rva": "0x44eaaf0",
+        "bytes": 834,
+        "raw_sha256": "9a43b128a82599dde234fee2811842753100be28ebf85fb2c9d3408faccb1d5c"
+      },
+      "transfer": {
+        "rva": "0x4ea6920",
+        "bytes": 467,
+        "raw_sha256": "4577cc4f9c7e5c2f7d037e2b07bee0438dd9784fe0d830bd7aa1aaa7bf5fa745"
+      },
+      "class_getter": {
+        "rva": "0x44a9530",
+        "bytes": 225,
+        "raw_sha256": "fb302d7f26affe633cc008141e159909b97ecffd40d1a7c55d4a76d899d02aad"
+      },
+      "component_constructor": {
+        "rva": "0x44e4a50",
+        "bytes": 451,
+        "raw_sha256": "25beafbc3d73488e9ff9d25fcb8b88b7698ee2fb8757cbe682ed6149c9131036"
+      },
+      "weak_owner": {
+        "rva": "0x1684500",
+        "bytes": 84,
+        "raw_sha256": "c4a8926a80fb645e3ead452bf31c1195931a7aeb0c633080a94c73542709dfdd"
+      },
+      "callable_move": {
+        "rva": "0x44cd600",
+        "bytes": 126,
+        "raw_sha256": "99ab5110857c55c00a10be7b6cf0fd1f5f2f57c54a3a8f9bdec6d57f809693ea"
+      }
+    },
+    "native_writer": "Compacts pending actors at component +0x158; resolves weak owner +0x150; requires database +0x5a0 status slot +0x70 == 2; appends BEGIN/END TRANSACTION around native serialization and submits via database slot +0xb0.",
+    "callback": {
+      "native_job_bytes": "0x48",
+      "std_function_bytes": "0x40",
+      "std_function_callable_pointer": "0x38",
+      "thread_id": "0x40",
+      "shared_ptr_bytes": "0x10",
+      "sqlite_query_success_job": "0x30",
+      "sqlite_query_success_thread": "0x70",
+      "sqlite_query_error_job": "0x78",
+      "sqlite_query_error_thread": "0xb8",
+      "result_vtable": "0x37be08",
+      "result_begin": "0x8",
+      "result_end": "0x10",
+      "result_index": "0x20",
+      "result_done": "0x24",
+      "statement_record_bytes": "0x88"
+    }
+  },
+  "static_provider_contract": {
+    "existing_export_rvas_and_all_ten_byte_guards_match": true,
+    "exports": {
+      "?GetNumResults@QueryResultSQLite@Database@dw@@UEBA_KXZ": "0x3378",
+      "?GetStatus@QueryResultSQLite@Database@dw@@UEBA?AW4QueryStatus@23@I@Z": "0x9fa2",
+      "?IsDone@QueryResultSQLite@Database@dw@@UEBA_NXZ": "0x2fe0",
+      "?GetResultIndex@QueryResultSQLite@Database@dw@@UEBAIXZ": "0x10dc",
+      "?GetCurrentThreadId@Thread@dw@@SA?AVid@thread@std@@XZ": "0x6bae"
+    },
+    "database_async_query": {
+      "vtable": "0x37c4b8",
+      "slot": "0xb0",
+      "target": "0x5ab0"
+    },
+    "thread_id_abi": "Export 0x6bae jumps to 0x7a030; writes uint32 through RCX and returns the same pointer.",
+    "async_query_abi": "Export 0x5ab0 jumps to 0x1182f0: RCX database, RDX shared_ptr output, R8 builder reference, R9 NativeJob; returns output pointer in RAX.",
+    "functions": {
+      "async_query": {
+        "rva": "0x1182f0",
+        "bytes": 471,
+        "raw_sha256": "cb6474d4d5819f7df189760858602e3173024dab3d9bcc5095051c76c821abff"
+      },
+      "push_query": {
+        "rva": "0x11ef90",
+        "bytes": 956,
+        "raw_sha256": "12ffabfa19444fd39a942a9b5179fb1889d13e32e5cb2997ff7a8e2930b0dff9"
+      },
+      "worker": {
+        "rva": "0x11bb90",
+        "bytes": 8772,
+        "raw_sha256": "db038306458c39e23fce7e91c44249c86b35d4bbe82633aa1630159e70931851"
+      },
+      "result_ctor": {
+        "rva": "0x106a40",
+        "bytes": 64,
+        "raw_sha256": "3e84c0d164cf62956a661a15b70ebe5777cf1cbdeee2753187e08a9743565850"
+      },
+      "owned_callback": {
+        "rva": "0x116820",
+        "bytes": 104,
+        "raw_sha256": "c6359b920ef41f57390624b926ae5ebfbc3091092be2e09b1c0c4c4a514af3d4"
+      }
+    },
+    "worker_code_range": [
+      "0x11bb90",
+      "0x11dce8"
+    ],
+    "worker_switch_data_range": [
+      "0x11dce8",
+      "0x11ddd4"
+    ],
+    "completion": "Per-statement results preserve index and status; aggregate dispatch waits for its final result. IsDone is assigned before final SQL execution and cannot independently confirm completion. The adapter must continue observing the original owned callback sequence."
+  },
+  "evidence_artifacts": [
+    {
+      "name": "static-evidence-26552396-r2.json",
+      "sha256": "6fcf9bfe5df532f69cbd80ce9870d8b86fca34c47f9aa28a69cbda8a6c230926"
+    },
+    {
+      "name": "extra-layout-evidence.json",
+      "sha256": "e3d362696513d8d5e20a77fe1c9865f5ac7386ba73aa11bb74c813b477b17bc1"
+    }
+  ],
+  "scope_limits": [
+    "Old build 25792439 executable/provider were unavailable; no complete old/new byte equivalence is claimed for this update.",
+    "New isolated empty-player worlds only; native completion confirms the owned pending persistent-actor SQL transaction, not hardware fsync or unrelated game state.",
+    "Manual checkpoint reload is separate from backup/archive restoration. Full restored-world content identity remains unsupported for Conan and was not enabled in the standard lifecycle acceptance.",
+    "No populated-world migration, live players, buildings, real-player moderation, GUI, multiplayer discovery or external-connectivity acceptance.",
+    "Native binding used the existing default and non-elevated firewall policy; no public connectivity success is inferred.",
+    "Official package acquisition was separate. The tests reused its checked copy with pinned updates; no network update or signed desktop installation was exercised.",
+    "Full logs, private paths, host identifiers, credentials, game packages and saved data remain outside the repository."
+  ],
+  "startup_readiness": {
+    "observed_native_message": "[2026.11.14-05.09.10:118][  0]LogFuncomUtils: Display: Entered application state 'WorldPersistenceDone'.",
+    "initial_trial": {
+      "status": "failed",
+      "reason": "The complete world-ready message with one terminal period was rejected by the exact no-period match despite an owned complete A2S reply.",
+      "startup_timeout_seconds": 600,
+      "rust_test_exit_code": 101,
+      "native_output_sha256": "f7bae82ec1212423f828e89c7c519eaf289a717a10f21af1708be0112e1436f9",
+      "cleanup": "The harness retained its package after unconfirmed shutdown; a separate process inventory subsequently found zero task-owned Conan processes. No normal-stop success is claimed.",
+      "native_message_evidence": {
+        "name": "conan-server.log",
+        "sha256": "d047c7f54188fe0aa381cf5966a569991abd841d94ff14fc0d90a7df56489753",
+        "line": 1334,
+        "ue4ss_log_sha256": "54ec227ab71896e9160fceb561179d7a9abf4dc767abe0ff722b8da248bdb930"
+      }
+    },
+    "fix": "Accept the exact native final message with or without one terminal period; retain the native log envelope and owned A2S requirement.",
+    "regression_cases": [
+      "Actual timestamped LogFuncomUtils message accepted.",
+      "Previously supported no-period message preserved.",
+      "Trailing pending text, duplicate periods and server-name echoes rejected."
+    ],
+    "native_revalidation": "passed in both independent native acceptances"
+  },
+  "native_acceptance": {
+    "status": "passed_with_explicit_scope_limits",
+    "build": {
+      "source_identity_sha256": "d891c45d537206183019541ad73c51a05e0adacb1033ac2f381a3728ec11fd08",
+      "source_manifest_sha256": "599f0c81c17a97a2dea8400974701a1b8b7b88b7d5d2bad1b0299f2fae3d8b03",
+      "independently_verified_source_files": 4746,
+      "test_binary_sha256": "857b23e645ea65ee7c3023aa42a4ee57feb80713bdbbbda29a77ae6f8a36bb9b",
+      "test_binary_bytes": 234145280,
+      "entry_point": "invoke-codex-cargo.ps1",
+      "entry_point_sha256": "3d4d69868642e10ab39ed39b711b6e9cba2bf00db9c6b9e9e1fd17623f03cf59",
+      "cargo_arguments": [
+        "-p",
+        "langame-desktop",
+        "--bin",
+        "langame-desktop",
+        "--features",
+        "custom-protocol",
+        "--locked",
+        "--no-run"
+      ]
+    },
+    "strict_manual_save": {
+      "status": "passed",
+      "selector": "commands::tests::manual_runtime_tests::native_lifecycle_tests::native_manual_save",
+      "started_utc": "2026-11-14T06:14:03Z",
+      "completed_utc": "2026-11-14T06:17:46Z",
+      "duration_seconds": 222.48,
+      "exit_code": 0,
+      "tests_passed": 1,
+      "non_elevated": true,
+      "host_class": "isolated Windows validation host",
+      "flags": {
+        "LANGAME_NATIVE_MANUAL_SAVE": "true",
+        "LANGAME_NATIVE_MANUAL_SAVE_RESTART": "true",
+        "LANGAME_NATIVE_EXACT_SAVE_READBACK": "true",
+        "LANGAME_NATIVE_SAVE_REQUIRE_COMPLETED": "true"
+      },
+      "normal_exit_zero_cycles": [
+        {
+          "cycle": "initial",
+          "run_id": 1,
+          "active_run_after_stop": null
+        },
+        {
+          "cycle": "restart",
+          "run_id": 2,
+          "active_run_after_stop": null
+        }
+      ],
+      "native_sql_confirmed_receipts": 1,
+      "log_sha256": "9c2ef3bbc1eb7eb20bd2a6776c0a125f56de716c3f7c7270a2a8688545e4a534",
+      "result_sha256": "ca87a67a1021012d41b506e21be75648eac76a28ccef1349cbfab90cd3e0d079",
+      "cleanup_failures": [],
+      "checkpoint": {
+        "captured_before_stop": true,
+        "restored_after_normal_stop": true,
+        "shutdown_snapshot_excluded": true,
+        "fresh_native_load": true,
+        "second_save_sent": false,
+        "files": [
+          {
+            "relative": "game_0.db",
+            "bytes": 262144,
+            "sha256": "1e56733d2272844e9f0643c7aed5f7029b6aaadb22f1463fd3e58151a3b1e7af"
+          },
+          {
+            "relative": "serveruid.txt",
+            "bytes": 32,
+            "sha256": "612357b7a4ed2515568f83c4f434d1fa27584c54efbc429accdf700125644830"
+          }
+        ]
+      },
+      "readback_scope": "The exact manual SQLite checkpoint and server UID were restored before a fresh native run. Its persisted DLC controllers were loaded instead of spawned; no populated-player or building-content identity is established."
+    },
+    "standard_lifecycle": {
+      "status": "passed",
+      "selector": "commands::tests::manual_runtime_tests::native_lifecycle_tests::native_package_lifecycle",
+      "started_utc": "2026-11-14T06:17:47Z",
+      "completed_utc": "2026-11-14T06:25:40Z",
+      "duration_seconds": 473.07,
+      "exit_code": 0,
+      "tests_passed": 1,
+      "non_elevated": true,
+      "host_class": "isolated Windows validation host",
+      "flags": {
+        "LANGAME_NATIVE_MANUAL_SAVE": "true",
+        "LANGAME_NATIVE_MANUAL_SAVE_RESTART": "true",
+        "LANGAME_NATIVE_SAVE_REQUIRE_COMPLETED": "true"
+      },
+      "normal_exit_zero_cycles": [
+        {
+          "cycle": "initial",
+          "run_id": 1,
+          "active_run_after_stop": null
+        },
+        {
+          "cycle": "restart",
+          "run_id": 2,
+          "active_run_after_stop": null
+        },
+        {
+          "cycle": "after_restore",
+          "run_id": 3,
+          "active_run_after_stop": null
+        },
+        {
+          "cycle": "after_archive_restore",
+          "run_id": 4,
+          "active_run_after_stop": null
+        }
+      ],
+      "native_sql_confirmed_receipts": 4,
+      "log_sha256": "ee821e957e93e1373976ee7e548138fd926a2da59bc4770a6fc27c27625bb479",
+      "result_sha256": "30b2e5011add9c9ccd99b121cc5c94df4e8393813426075c243f3e8634b9776f",
+      "cleanup_failures": [],
+      "backup_restored_files": 13,
+      "uninstall_retained_save_files": 15,
+      "uninstall_retained_native_config_files": 1,
+      "interrupted_archive_commit_recovered": true,
+      "restoration_scope": "Stopped backup/archive byte preservation plus fresh native readiness and confirmed save requests. Content-level identity of the restored world is not verified by this standard lifecycle mode.",
+      "program_update": "pinned; network maintenance not selected"
+    },
+    "retained_failed_combined_trial": {
+      "status": "failed",
+      "exit_code": 101,
+      "log_sha256": "6476528ea4f2ca895be3a7ac1d8054f07077337feffe67f20eca1337c40d8a17",
+      "reason": "The optional restored-world content identity contract deliberately does not admit Conan. The combined trial stopped after two normal exits, confirmed save, exact checkpoint reload and file-level backup restoration.",
+      "terminal_failure_origin": "Unsupported test-only restored-world content binding",
+      "test_assertions_changed": false,
+      "resolution": "Run the existing native_manual_save selector with all strict flags, and separately run the existing standard native_package_lifecycle selector without the optional exact-readback flag. Preserve this failed result."
+    }
+  }
+}

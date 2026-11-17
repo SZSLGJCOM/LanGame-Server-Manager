@@ -1,10 +1,8 @@
 use super::*;
-use std::os::windows::io::{AsRawHandle, FromRawHandle, OwnedHandle};
 
-use windows_sys::Win32::Foundation::{ERROR_INVALID_PARAMETER, STILL_ACTIVE};
-use windows_sys::Win32::System::Threading::{
-    GetExitCodeProcess, OpenProcess, PROCESS_QUERY_LIMITED_INFORMATION,
-};
+#[path = "workshop_cancellation_fixture.rs"]
+pub(crate) mod cancellation_fixture;
+use cancellation_fixture::OwnedProcessTree;
 
 const APP_ID: u32 = 42;
 const ITEM_ID: &str = "123456";
@@ -36,12 +34,18 @@ using System.Diagnostics;
 using System.IO;
 using System.Threading;
 public static class WorkshopCancellationFixture {
+  private static void PublishPid(string path) {
+    // Existence must mean the complete PID is closed and readable before cancellation.
+    string pending = path + ".pending";
+    File.WriteAllText(pending, Process.GetCurrentProcess().Id.ToString());
+    File.Move(pending, path);
+  }
   private static void Runtime() {
     Console.WriteLine("Steam Console Client (c) Valve Corporation - fixture");
     Console.WriteLine("Loading Steam API...OK");
   }
   private static void Stall() {
-    File.WriteAllText("parent-pid", Process.GetCurrentProcess().Id.ToString());
+    PublishPid("parent-pid");
     var child = new ProcessStartInfo(Process.GetCurrentProcess().MainModule.FileName, "--child");
     child.UseShellExecute = false;
     child.CreateNoWindow = true;
@@ -53,7 +57,7 @@ public static class WorkshopCancellationFixture {
   }
   public static int Main(string[] args) {
     if (args.Length == 1 && args[0] == "--child") {
-      File.WriteAllText("child-pid", Process.GetCurrentProcess().Id.ToString());
+      PublishPid("child-pid");
       new ManualResetEvent(false).WaitOne();
       return 0;
     }
@@ -186,40 +190,6 @@ public static class WorkshopCancellationFixture {
             on_progress,
         )
         .await
-    }
-
-    fn assert_owned_processes_exited(&self) {
-        for name in ["parent-pid", "child-pid"] {
-            let pid: u32 = fs::read_to_string(self.native().join(name))
-                .unwrap()
-                .parse()
-                .unwrap();
-            let raw = unsafe {
-                // SAFETY: the PID was recorded by this fixture's owned process.
-                OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, 0, pid)
-            };
-            if raw.is_null() {
-                assert_eq!(
-                    std::io::Error::last_os_error().raw_os_error(),
-                    Some(ERROR_INVALID_PARAMETER as i32)
-                );
-                continue;
-            }
-            let process = unsafe {
-                // SAFETY: OpenProcess returned an owned process handle.
-                OwnedHandle::from_raw_handle(raw)
-            };
-            let mut exit_code = 0;
-            let queried = unsafe {
-                // SAFETY: both handle and exit-code buffer remain valid.
-                GetExitCodeProcess(process.as_raw_handle().cast(), &mut exit_code)
-            };
-            assert_ne!(queried, 0);
-            assert_ne!(
-                exit_code, STILL_ACTIVE as u32,
-                "{name} survived cancellation"
-            );
-        }
     }
 }
 
@@ -359,10 +329,12 @@ async fn workshop_download_cancellation_reaps_parent_and_descendant_before_retur
     fs::write(fixture.native().join("download-stall"), "").unwrap();
     let cancellation = InstallCancellation::new();
     let token = cancellation.clone();
+    let mut processes = None;
     let result = tokio::time::timeout(
         Duration::from_secs(8),
-        fixture.download(&cancellation, move |progress| {
-            if progress.output_excerpt.contains("fixture running") {
+        fixture.download(&cancellation, |progress| {
+            if processes.is_none() && progress.output_excerpt.contains("fixture running") {
+                processes = Some(OwnedProcessTree::capture_running(fixture.native()));
                 token.cancel();
             }
         }),
@@ -373,7 +345,9 @@ async fn workshop_download_cancellation_reaps_parent_and_descendant_before_retur
         result,
         Err(SteamCmdError::InstallCancelled { .. })
     ));
-    fixture.assert_owned_processes_exited();
+    processes
+        .expect("cancellation observed the live parent and child")
+        .assert_exited();
     assert_eq!(fs::read_to_string(fixture.payload()).unwrap(), "cached");
     let path = fs::read_to_string(fixture.native().join("captured-script-path")).unwrap();
     assert!(
@@ -394,10 +368,12 @@ async fn workshop_readiness_cancellation_reaps_tree_without_recording_ready_or_d
     fs::write(fixture.native().join("verify-stall"), "").unwrap();
     let cancellation = InstallCancellation::new();
     let token = cancellation.clone();
+    let mut processes = None;
     let result = tokio::time::timeout(
         Duration::from_secs(8),
-        fixture.download(&cancellation, move |progress| {
-            if progress.output_excerpt.contains("fixture running") {
+        fixture.download(&cancellation, |progress| {
+            if processes.is_none() && progress.output_excerpt.contains("fixture running") {
+                processes = Some(OwnedProcessTree::capture_running(fixture.native()));
                 token.cancel();
             }
         }),
@@ -408,7 +384,9 @@ async fn workshop_readiness_cancellation_reaps_tree_without_recording_ready_or_d
         result,
         Err(SteamCmdError::InstallCancelled { .. })
     ));
-    fixture.assert_owned_processes_exited();
+    processes
+        .expect("cancellation observed the live parent and child")
+        .assert_exited();
     assert_eq!(fixture.calls(), ["verify", "verify"]);
     assert_eq!(
         fs::read(fixture.native().join(READY_RECORD)).unwrap(),

@@ -47,11 +47,12 @@ using System;
 using System.IO;
 public static class SteamCmdInputProbe {
   public static int Main(string[] args) {
-    if (args.Length != 2 || args[0] != "+runscript" || !File.Exists(args[1])) return 81;
+    if (args.Length != 4 || args[0] != "+app_info_http_min" || args[1] != "1000000000"
+      || args[2] != "+runscript" || !File.Exists(args[3])) return 81;
     using (Stream input = Console.OpenStandardInput()) {
       if (input.ReadByte() != -1) return 82;
     }
-    File.WriteAllText(Path.Combine(Path.GetDirectoryName(args[1]), "spawned"), "stdin EOF");
+    File.WriteAllText(Path.Combine(Path.GetDirectoryName(args[3]), "spawned"), "stdin EOF");
     Console.WriteLine("Success! App '42' fully installed.");
     Console.Error.WriteLine("fixture stderr captured");
     return 0;

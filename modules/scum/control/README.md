@@ -4,7 +4,7 @@
 
 ## 绑定版本与调用范围
 
-原生桥为 Steam app `3792580` 的以下四个构建提供固定配置，按 `SCUM/Binaries/Win64/SCUMServer.exe` 完整 SHA-256 选择：
+原生桥为 Steam app `3792580` 的以下五个构建提供固定配置，按 `SCUM/Binaries/Win64/SCUMServer.exe` 完整 SHA-256 选择：
 
 | Build | SHA-256 |
 | --- | --- |
@@ -12,6 +12,7 @@
 | 25803875 | `070fcad918ba04eb9797db29674cadbd6691427b936fe354bca23b008c8c9971` |
 | 26320224 | `a862d658271f26d082de5df7bba01e8af9c3d051cb9634e908bb94d8a9efbc7a` |
 | 26593814 | `805396516e64d17f1713f24ce97a7d525a6d761db46ce069f40cf63114add6d9` |
+| 26621903 | `b75567d63f2a9948c739b7cbaab2208b926da6e08c7394a7f83b835cd2a50ddf` |
 
 加载器为官方 UE4SS `3.0.1-1125-g527a483b`，核心 SHA-256 为 `91d5444f41d19d0bb502f0fbdc15d76421e20359e898caa39e41e134c8f87958`，配置见 `extensions/UE4SS-settings.ini`。其他构建需要重新核对 ABI、对象布局及真实调用，不能只更新哈希。
 
@@ -54,6 +55,10 @@ MSVC `/W4 /WX /MT` 构建生产 DLL，并运行对象归属、authority、生命
 同日的[正式管理后端生命周期验收](../reference-fixtures/2026-11-12-managed_lifecycle_build_26593814.json)对 build 26593814 完成初次启动、重启、备份恢复后启动及归档恢复后启动。四轮各发送一次 `AutoSave(true)`，均收到 `ready/invoked/call_returned=true`、`write_confirmed=false`，回执状态保持 `Requested`。四次正式停止均为原生 exit 0、`crash_flag=false`，active run 清除；59 个世界文件的备份恢复、归档提交中断恢复、保留 81 个保存文件的程序库卸载和最终清理通过。
 
 该运行使用冻结的 native-build-04，显式配置 `max_ping=400`；其内嵌 inventory 仍为旧默认 200，不能据此宣称后续默认值修正已被该二进制覆盖。[默认值证据](../reference-fixtures/2026-11-12-generated_defaults_build_26593814.json)单独记录最终源码构建：更新后的完整 inventory/schema 字节已进入 storage 测试产物，18 项 SCUM 回归通过；这些既有测试没有直接断言 MaxPing 的数值。没有把停服后的备份恢复等同于某次手动保存的完整因果落盘，也未验证客户端战斗或每个子系统的持久性。
+
+2026-11-14 的 build 26621903 将 `AutoSave`、类 singleton、vtable 和 GetWorld 分别移到 `0x1bcce30`、`0x75c5e90`、`0x5f893d0` 和 `0x1555cb0`，三个状态字段保持 `+0x7a8/+0x7aa/+0x7ab`。本次保留了真实旧版 EXE；九个完整 unwind 函数在明确归一化重定位引用后唯一匹配，调用边和区域元数据构造也独立复核。隔离 Windows 测试机普通用户会话中的只读观察通过十一项对象与就绪检查，区域注册表和 schema 77 公共数据库读写通过；437 项生成配置没有新增或遗漏，434 项未显式配置的默认值只保留既有两项管理器文案差异。详见[当前原生契约](../reference-fixtures/2026-11-14-native_contract_build_26621903.json)。
+
+同日[正式管理流程](../reference-fixtures/2026-11-14-managed_lifecycle_build_26621903.json)完成初次启动、重启、备份恢复及归档恢复四轮。四次保存调用仍报告 `Requested`，四次停止均为原生 exit 0、无 crash flag；59 个文件的备份恢复、归档提交中断恢复、程序库卸载保留 81 个保存文件及最终清理通过。只读观察使用有意的 owned-Job 回收，正常停止由这份独立流程证明；没有扩大为每次保存的持久落盘或客户端战斗保证。
 
 固定版本曾在全新私有空服世界中执行一次真实 `AutoSave(true)`：原生返回 `returned`，生产协议的 `ready/invoked/call_returned=true`、`write_confirmed=false`，服务器继续运行。正常重启后同世界从数据库加载实体，数据库 `quick_check=ok`。此证据表明原生入口可以调用且世界可以重新加载，不证明每个子系统的因果落盘或真实多人行为；每次版本适配仍需重新验证。
 

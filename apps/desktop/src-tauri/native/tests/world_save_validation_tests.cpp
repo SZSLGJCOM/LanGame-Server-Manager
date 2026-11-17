@@ -1,5 +1,5 @@
 // Real transport invoke/validate/replay/receipt code. Only module discovery,
-// game-thread API and the adapter are synthetic external environment boundaries.
+// game-thread API, static provider hook and adapter are synthetic external boundaries.
 // All files are physical copies/ordinary files in a fresh external fixture.
 #include <windows.h>
 #include <algorithm>
@@ -14,8 +14,8 @@
 namespace {
 namespace fixture_fs=std::filesystem;
 fixture_fs::path fixture_root;
-unsigned checks{},contract_calls{},save_calls{},observe_calls{};
-bool on_game_thread=true,throw_target=true,nonstandard_exception{};
+unsigned checks{},contract_calls{},save_calls{},observe_calls{},initialization_calls{},game_thread_calls{};
+bool on_game_thread=true,throw_target=true,nonstandard_exception{},throw_initialization=true;
 std::string target_reason="fixture_native_guard",fingerprint_hash;
 std::string_view GAME_HASH,UE4SS_HASH;
 constexpr wchar_t GAME_NAME[]=L"WorldSaveValidationTests.exe";
@@ -25,7 +25,7 @@ uintptr_t SAVE_RVA{};
 constexpr std::string_view SAVE_PROLOGUE="7a3c1928";
 const auto core_handle=reinterpret_cast<HMODULE>(static_cast<uintptr_t>(2));
 const auto bridge_handle=reinterpret_cast<HMODULE>(static_cast<uintptr_t>(3));
-bool game_thread_boundary() {return on_game_thread;}
+bool game_thread_boundary() {++game_thread_calls;return on_game_thread;}
 HMODULE WINAPI module_handle_boundary(LPCWSTR name) {
     if(!name)return GetModuleHandleW(nullptr);
     if(std::wstring_view(name)==L"UE4SS.dll")return core_handle;
@@ -44,11 +44,13 @@ FARPROC WINAPI procedure_boundary(HMODULE module,LPCSTR name) {
     SetLastError(ERROR_PROC_NOT_FOUND);return nullptr;
 }
 void target_contract(uintptr_t,uintptr_t,uintptr_t,uintptr_t);
+void initialize_native_contract();
 struct Request;
 const char* native_save_async(uintptr_t,const Request&);
 const char* native_observe_async(uintptr_t,const Request&);
 }
 #define LGSM_NATIVE_SAVE_ASYNC
+#define LGSM_NATIVE_INITIALIZE_CONTRACT
 #define LGSM_SAVE_EXPORT validation_fixture_export
 #define GetModuleHandleW module_handle_boundary
 #define GetModuleFileNameW module_path_boundary
@@ -61,6 +63,10 @@ const char* native_observe_async(uintptr_t,const Request&);
 #undef GetProcAddress
 
 namespace {
+void initialize_native_contract() {
+    ++initialization_calls;
+    if(throw_initialization)throw std::runtime_error("fixture_static_provider_guard");
+}
 void target_contract(uintptr_t,uintptr_t,uintptr_t,uintptr_t) {
     ++contract_calls;if(nonstandard_exception)throw 7;
     if(throw_target)throw std::runtime_error(target_reason);
@@ -118,6 +124,32 @@ int wmain(int argc,wchar_t** argv) {try {
     GAME_HASH=UE4SS_HASH=fingerprint_hash;
     SAVE_RVA=reinterpret_cast<uintptr_t>(fingerprint)-reinterpret_cast<uintptr_t>(GetModuleHandleW(nullptr));
 
+    const auto exchange=fixture_root/L"langame_world_save";
+    const auto pending=request();publish(pending);const auto pending_text=read_plain(exchange/L"native-request.txt");
+    on_game_thread=false;
+    {
+        Initialization unavailable;
+        check(!unavailable.image && initialization_calls==1,"static_provider_failure_published_image");
+        for(const auto& path:{win64/GAME_NAME,win64/L"ue4ss/UE4SS.dll"}) {
+            Handle released(CreateFileW(path.c_str(),GENERIC_READ,0,nullptr,OPEN_EXISTING,FILE_FLAG_OPEN_REPARSE_POINT,nullptr));
+            check(released.value!=INVALID_HANDLE_VALUE,"static_provider_failure_retained_image_handle");
+        }
+    }
+    check(read_plain(exchange/L"native-request.txt")==pending_text && !fs::exists(exchange/L"native-response.txt"),"failed_preparation_consumed_request_or_created_response");
+    throw_initialization=false;
+    {
+        auto pending_lock=open_file(exchange/L"native-request.txt",GENERIC_READ,OPEN_EXISTING,0);
+        auto& prepared=initialization();
+        check(prepared.image!=nullptr && !on_game_thread && game_thread_calls==0,"static_preparation_requires_game_thread_or_request");
+        const auto* image=prepared.image.get();
+        auto& cached=initialization();
+        check(&cached==&prepared && cached.image.get()==image && initialization_calls==2,"static_preparation_initialized_more_than_once");
+    }
+    check(read_plain(exchange/L"native-request.txt")==pending_text && !fs::exists(exchange/L"native-response.txt") && !fs::exists(exchange/L"native-diagnostic.txt"),"preparation_changed_exchange");
+    check(std::all_of(recent.begin(),recent.end(),[](const Receipt& slot){return slot.key.empty() && slot.text.empty() && !slot.pending;}),"preparation_consumed_nonce");
+    check(contract_calls==0 && save_calls==0 && observe_calls==0 && game_thread_calls==0,"preparation_entered_dynamic_game_contract");
+    on_game_thread=true;
+
     auto value=request();call_rejected(value);expect_reason("fixture_native_guard");
     check(contract_calls==1,"validate_did_not_execute_real_adapter_boundary_once");
     const auto first_response=read_plain(fixture_root/L"langame_world_save/native-response.txt");
@@ -146,5 +178,6 @@ int wmain(int argc,wchar_t** argv) {try {
     check(read_plain(fixture_root/L"langame_world_save/native-response.txt")==receipt(value,"ready") && save_calls==0 && observe_calls==0,"valid_probe_state_changed");
     const auto before_conflict=contract_calls;value.operation="save";publish(value);check(validation_fixture_export(nullptr)==0,"conflict_export");
     expect_reason("nonce_conflict");check(contract_calls==before_conflict && save_calls==0,"outer_exception_changed_nonce_replay_guard");
-    std::cout<<"world_save_validation_checks="<<checks<<" real_transport_validate_receipt_replay=true optional_diagnostic_failure_preserves_rejected=true physical_self_copy_only=true game_images_loaded=0 game_launches=0 save_calls=0\n";return 0;
+    check(initialization_calls==2,"request_reinitialized_static_contract");
+    std::cout<<"world_save_validation_checks="<<checks<<" real_transport_validate_receipt_replay=true optional_diagnostic_failure_preserves_rejected=true static_preparation_outside_game_thread=true failed_static_contract_releases_image_handles=true physical_self_copy_only=true game_images_loaded=0 game_launches=0 save_calls=0\n";return 0;
 }catch(const std::exception& error){std::cerr<<error.what()<<'\n';return 1;}}

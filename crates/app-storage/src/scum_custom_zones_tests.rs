@@ -21,7 +21,9 @@ impl Fixture {
 
     async fn with_layout(layout: NativeLayout) -> Self {
         let root = std::env::temp_dir().join(format!("lgsm-scum-zones-{}", uuid::Uuid::new_v4()));
-        let repo = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..");
+        let repo = std::env::var_os("LANGAME_SMOKE_SOURCE_ROOT")
+            .map(PathBuf::from)
+            .unwrap_or_else(|| PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../.."));
         let paths = StoragePaths {
             app_data_root: root.join("appdata"),
             settings_path: root.join("appdata/settings.json"),

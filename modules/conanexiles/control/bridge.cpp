@@ -21,6 +21,12 @@ constexpr GameProfile PROFILES[]{
     {"d0ea317e7e037e68454414f12828d5995cc9e519b9c34eda264be1954d352b14",
      "2eec9aa9aa443fb476db583cfdc5044285ccc246df0a60e93155fb37e14324b6",
      "48895c24184889742420574881ec80000000488b0597e133064833c448894424", 0x44e3350, 0xaaf0d70, 0x167faf0},
+    {"fe11b4c2292f468b7d3d017261ee7cf5b850537f690bebc6854a4260a05e4394",
+     "66d26b63424218b8831a8478ff2cb5166bdd9dad35107727c2b5e57a442fafdf",
+     "48895c24184889742420574881ec80000000488b0587e53a064833c448894424", 0x44e9560, 0xab67430, 0x1684500},
+    {"1954037ce360eb330d0ee90bbc1ae0d9beb9d1ea42fe7cc7fb31db4c0306be6a",
+     "bef60c18c3a8aa9cf8677da6bb0de0d7ee8b341991abb8b898ddb9d944ee8b32",
+     "48895c24184889742420574881ec80000000488b05e7f53a064833c448894424", 0x44e9500, 0xab68430, 0x16844d0},
 };
 const GameProfile* selected_profile{};
 bool select_game_profile(std::string_view identity) {
@@ -31,6 +37,7 @@ bool select_game_profile(std::string_view identity) {
     return false;
 }
 const GameProfile& game_profile();
+void initialize_native_contract();
 void target_contract(uintptr_t, uintptr_t, uintptr_t, uintptr_t);
 struct Request;
 const char* native_save_async(uintptr_t, const Request&);
@@ -39,6 +46,7 @@ const char* native_observe_async(uintptr_t, const Request&);
 #define LGSM_SAVE_EXPORT luaopen_lgsm_conan_save
 #define LGSM_NATIVE_SAVE_ASYNC
 #define LGSM_SELECT_GAME_PROFILE
+#define LGSM_NATIVE_INITIALIZE_CONTRACT
 #define SAVE_RVA game_profile().save
 #define SAVE_PROLOGUE game_profile().save_prologue
 #include "../../../apps/desktop/src-tauri/native/world_save_bridge.hpp"
@@ -95,6 +103,7 @@ struct Provider {
     }
 };
 Provider& provider() { static Provider value; return value; }
+void initialize_native_contract() { (void)provider(); }
 void target_contract(uintptr_t image, uintptr_t component, uintptr_t game_mode, uintptr_t world) {
     provider().verify();
     auto cls = read<uintptr_t>(image + game_profile().component_class);
@@ -182,4 +191,12 @@ const char* native_observe_async(uintptr_t, const Request& request) {
     require(active && same_request(active->request, request), "native_save_identity");
     return lgsm_conan::text(active->completion->observe(GetTickCount64()));
 }
+}
+
+// Called while the Lua module loads, outside any request and outside DllMain.
+// Only fixed files/modules are checked here; failed initialization stays cached
+// as unavailable. Every real probe/save still validates its current world.
+extern "C" __declspec(dllexport) int luaopen_lgsm_conan_prepare(void*) noexcept {
+    (void)initialization();
+    return 0;
 }

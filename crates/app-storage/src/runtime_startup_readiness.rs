@@ -213,8 +213,13 @@ pub(super) fn simple_ready_signal(module_id: &str, line: &str) -> bool {
     match module_id {
         "arksurvivalascended" => ark_readiness::has_asa_ready_marker(&line.to_ascii_lowercase()),
         "arksurvivalevolved" => unreal_message(line).is_some_and(ase_full_startup),
-        "conanexiles" => unreal_record_message(line)
-            == Some("Entered application state 'WorldPersistenceDone'"),
+        "conanexiles" => matches!(
+            unreal_record_message(line),
+            Some(
+                "Entered application state 'WorldPersistenceDone'"
+                    | "Entered application state 'WorldPersistenceDone'."
+            )
+        ),
         "rust" => line == "Server startup complete",
         "abioticfactor" => unreal_message(line)
             .map(|message| message.strip_prefix("LogAbiotic: Warning: ").unwrap_or(message))

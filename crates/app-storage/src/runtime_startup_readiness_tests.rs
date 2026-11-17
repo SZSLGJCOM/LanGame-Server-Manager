@@ -180,6 +180,8 @@ fn a2s_world_logs_require_complete_final_messages_at_the_native_boundary() {
         "LogGameState: Entered application state 'WorldPersistenceDone'",
         "[2026.10.01-08.50.50:548][  0]LogGameState:Display: Entered application state 'WorldPersistenceDone'",
         "ApplicationState: Display: Entered application state 'WorldPersistenceDone'",
+        // Official Conan build 26552396, observed after its fresh world loaded.
+        "[2026.11.14-05.09.10:118][  0]LogFuncomUtils: Display: Entered application state 'WorldPersistenceDone'.",
     ] {
         assert!(simple_ready_signal("conanexiles", line), "{line}");
     }
@@ -210,6 +212,18 @@ fn a2s_world_logs_require_complete_final_messages_at_the_native_boundary() {
         (
             "conanexiles",
             "LogGameState: Display: Entered application state 'WorldPersistenceDone' pending",
+        ),
+        (
+            "conanexiles",
+            "LogFuncomUtils: Display: Entered application state 'WorldPersistenceDone'. pending",
+        ),
+        (
+            "conanexiles",
+            "LogFuncomUtils: Display: Entered application state 'WorldPersistenceDone'..",
+        ),
+        (
+            "conanexiles",
+            "ServerName: Entered application state 'WorldPersistenceDone'.",
         ),
         (
             "conanexiles",

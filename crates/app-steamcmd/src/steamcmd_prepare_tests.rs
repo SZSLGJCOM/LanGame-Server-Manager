@@ -1,5 +1,9 @@
 use super::*;
 
+#[cfg(windows)]
+#[path = "steamcmd_prepare_handoff_fixture.rs"]
+mod fixture;
+
 #[test]
 fn update_bytes_only_come_from_valid_steamcmd_download_counts() {
     assert_eq!(
@@ -85,6 +89,7 @@ fn extracting_and_installing_do_not_reuse_download_completion_bytes() {
 
 #[cfg(windows)]
 mod windows {
+    use super::fixture::HandoffFixture;
     use super::*;
 
     #[tokio::test]
@@ -137,15 +142,9 @@ mod windows {
         );
     }
 
-    fn command(script: &str) -> Command {
-        let mut command = Command::new("powershell");
-        apply_no_window(&mut command);
-        command.args(["-NoProfile", "-NonInteractive", "-Command", script]);
-        command
-    }
-
     #[tokio::test]
     async fn successful_self_update_requires_fresh_successful_verification() {
+        let fixture = HandoffFixture::new().await;
         let mut attempts = 0;
         let mut phases = Vec::new();
         let result = verify_with_command_factory(
@@ -155,11 +154,9 @@ mod windows {
             || {
                 attempts += 1;
                 if attempts == 1 {
-                    command("[Console]::WriteLine('Update complete, launching...'); [Console]::WriteLine('Steam Console Client (c) Valve Corporation - version fixture'); [Console]::WriteLine('Loading Steam API...OK'); exit 0")
+                    fixture.command("update-ready")
                 } else {
-                    command(
-                        "[Console]::Error.WriteLine('fresh runtime failed validation'); exit 17",
-                    )
+                    fixture.command("failure")
                 }
             },
         )
@@ -174,15 +171,18 @@ mod windows {
 
     #[tokio::test]
     async fn stalled_self_update_handoff_is_allowed_only_once() {
+        let fixture = HandoffFixture::new().await;
         let mut attempts = 0;
         let result = verify_with_command_factory(
             InstallDeadline::new("one bounded handoff", Duration::from_secs(15)),
-            Duration::from_secs(3), &mut PrepareReporter::new(|_| {}),
+            Duration::from_secs(3),
+            &mut PrepareReporter::new(|_| {}),
             || {
                 attempts += 1;
-                command("[Console]::WriteLine('Update complete, launching...'); Start-Sleep -Seconds 10")
+                fixture.command("update-stall")
             },
-        ).await;
+        )
+        .await;
         assert_eq!(attempts, 2);
         assert!(
             matches!(result, Err(SteamCmdError::SteamCmdPreparationStalled { output_excerpt, .. }) if output_excerpt.contains("Update complete, launching"))
@@ -191,54 +191,47 @@ mod windows {
 
     #[tokio::test]
     async fn self_update_handoff_waits_for_owned_tree_exit_before_verification() {
+        let fixture = HandoffFixture::new().await;
         let mut attempts = 0;
-        let mut reporter = PrepareReporter::new(|_| {});
+        let started = std::time::Instant::now();
+        let mut handoff_observed = false;
+        let mut reporter = PrepareReporter::new(|progress: SteamCmdPrepareProgress| {
+            if !handoff_observed
+                && progress
+                    .output_excerpt
+                    .contains("Update complete, launching")
+            {
+                handoff_observed = true;
+                eprintln!(
+                    "native parent and child ready after {:?}",
+                    started.elapsed()
+                );
+            }
+        });
         // The second command checks its predecessor using a fixture file so the
         // same handoff code controls cleanup and the new process creation.
-        let pid_path = std::env::temp_dir().join(format!(
-            "langame-handoff-pid-{}-{}",
-            std::process::id(),
-            std::time::SystemTime::now()
-                .duration_since(std::time::UNIX_EPOCH)
-                .unwrap()
-                .as_nanos()
-        ));
-        let child_script = pid_path.with_extension("ps1");
-        std::fs::write(&child_script, format!(
-            "[IO.File]::WriteAllText({}, [string]$PID); [Console]::WriteLine('restarted child'); Start-Sleep -Seconds 10",
-            ps_literal(&pid_path),
-        )).unwrap();
-        let parent_script = format!(
-            concat!(
-                "$info=New-Object Diagnostics.ProcessStartInfo; $info.FileName='powershell.exe'; ",
-                "$info.Arguments='-NoProfile -NonInteractive -ExecutionPolicy Bypass -File \"' + {child} + '\"'; ",
-                "$info.UseShellExecute=$false; $info.CreateNoWindow=$true; ",
-                "$child=[Diagnostics.Process]::Start($info); ",
-                "while (-not [IO.File]::Exists({pid})) {{ Start-Sleep -Milliseconds 20 }}; ",
-                "[Console]::WriteLine('Update complete, launching...'); exit 0"
-            ),
-            child = ps_literal(&child_script),
-            pid = ps_literal(&pid_path)
-        );
         let result = verify_with_command_factory(
-            InstallDeadline::new("handoff cleanup", Duration::from_secs(15)), Duration::from_secs(3), &mut reporter,
+            InstallDeadline::new("handoff cleanup", Duration::from_secs(15)),
+            Duration::from_secs(3),
+            &mut reporter,
             || {
                 attempts += 1;
                 if attempts == 1 {
-                    command(&parent_script)
+                    fixture.command("parent")
                 } else {
-                    command(&format!("$oldPid=[int][IO.File]::ReadAllText({}); if (Get-Process -Id $oldPid -ErrorAction SilentlyContinue) {{ exit 19 }}; [Console]::WriteLine('Steam Console Client (c) Valve Corporation - version fixture'); [Console]::WriteLine('Loading Steam API...OK'); exit 0", ps_literal(&pid_path)))
+                    fixture.command("verify-cleanup")
                 }
             },
-        ).await;
-        let _ = std::fs::remove_file(&pid_path);
-        let _ = std::fs::remove_file(&child_script);
+        )
+        .await;
         assert_eq!(attempts, 2);
+        assert!(handoff_observed);
         assert!(result.is_ok(), "fresh verification failed: {result:?}");
     }
 
     #[tokio::test]
     async fn independent_verification_may_cleanly_complete_another_update() {
+        let fixture = HandoffFixture::new().await;
         let mut attempts = 0;
         let result = verify_with_command_factory(
             InstallDeadline::new("clean independent verification", Duration::from_secs(15)),
@@ -246,7 +239,7 @@ mod windows {
             &mut PrepareReporter::new(|_| {}),
             || {
                 attempts += 1;
-                command("[Console]::WriteLine('Update complete, launching...'); [Console]::WriteLine('Steam Console Client (c) Valve Corporation - version fixture'); [Console]::WriteLine('Loading Steam API...OK'); exit 0")
+                fixture.command("update-ready")
             },
         )
         .await;

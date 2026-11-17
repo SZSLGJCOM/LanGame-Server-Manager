@@ -36,6 +36,7 @@ const details: InstanceDetails = {
   backup_uses_declared_saves_path: true, auto_backup_on_stop: false, backup_retention_count: 5
 };
 let checks = 0, generation = 0, patches = 0;
+const layouts: { editor: string; before_height: number; after_height: number }[] = [];
 let mode: "levels" | "engrams" | "rule" | "commit" = "levels";
 let settings: SettingsObject = {};
 let editorDisabled = false;
@@ -84,8 +85,11 @@ function paint() {
 }
 async function mount(next: typeof mode) {
   mode = next; editorDisabled = false; generation++;
-  await act(async () => { paint(); await document.fonts.ready; });
+  await act(async () => paint());
   await until(() => fixture.querySelector("#editor")?.getAttribute("data-scene") === next, "ARK editor did not finish loading its locale");
+  // The locale's editor must be committed before its fonts can start loading.
+  await act(async () => { await document.fonts.ready; });
+  check(document.fonts.status === "loaded", "ARK layout measurement started before its fonts loaded");
   check(store.getSnapshot().length === 0, "A prior editor left a stale activity notice");
 }
 function verifyError(target: HTMLInputElement | HTMLTextAreaElement) {
@@ -122,7 +126,9 @@ async function run() {
     const writes = patches;
     await click(disclosure.querySelector<HTMLButtonElement>("button")!);
     verifyError(csv);
-    check(Math.abs(element(".ark-editor").getBoundingClientRect().height - height) < 1, "Validation shifted the ARK editor layout");
+    const afterHeight = element(".ark-editor").getBoundingClientRect().height;
+    layouts.push({ editor: next, before_height: height, after_height: afterHeight });
+    check(Math.abs(afterHeight - height) < 1, `Validation shifted the ARK editor layout: ${height} -> ${afterHeight}`);
     await until(() => getComputedStyle(csv).borderColor !== normalBorder, "CSV error border did not become visible");
     check(getComputedStyle(csv).borderColor !== normalBorder, "CSV failure did not retain a visible red border");
     check(csv.value === invalid && settings[field] === raw && patches === writes, "A failed CSV import lost its draft or partially changed settings");
@@ -174,7 +180,7 @@ async function run() {
     await Promise.all(capturedCsv.getAnimations().map((animation) => animation.finished));
     await frame();
   });
-  return { status: "passed", checks, csv_editors: 2, browser_errors: errors };
+  return { status: "passed", checks, csv_editors: 2, layouts, browser_errors: errors };
 }
 Object.assign(globalThis, { __reliabilityFixtureCleanup: async () => {
   await act(async () => root.unmount());

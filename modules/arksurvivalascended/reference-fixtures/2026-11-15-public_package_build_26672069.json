@@ -1,0 +1,146 @@
+{
+  "schema_version": 1,
+  "module_id": "arksurvivalascended",
+  "observed_on": "2026-11-15",
+  "evidence_classification": "official_package_identity_and_matching_symbol_http_head_availability",
+  "status": "passed",
+  "package": {
+    "steam_app_id": 2430930,
+    "steam_build_id": "26672069",
+    "state_flags": 4,
+    "update_result": 0,
+    "acquisition": "Official anonymous SteamCMD public app_update 2430930 validate on an isolated Windows validation host, using a physical copy of the prior package and its matching retained depot manifests.",
+    "acquisition_exit_code": 0,
+    "acquisition_recorded_utc": "2026-11-15T03:41:12.2031078Z",
+    "appmanifest_sha256": "bf75fcb7b55086f3ced5fcfbf7de8daf4732a1dda60d22af788a09c280838470",
+    "declared_size_on_disk_bytes": 12316675055,
+    "installed_depots": [
+      {
+        "depot_id": "1004",
+        "manifest_id": "7604377918839582995",
+        "declared_size_bytes": 67863136
+      },
+      {
+        "depot_id": "2430931",
+        "manifest_id": "4519749548211725039",
+        "declared_size_bytes": 12248811919
+      }
+    ],
+    "executable_relative_path": "ShooterGame/Binaries/Win64/ArkAscendedServer.exe",
+    "executable_bytes": 215565416,
+    "executable_sha256": "91558e0a9f3aabe711c16e0999ec06c9481d7f2b5bc7afecf39aa8c60453670e",
+    "downloaded_bytes": 2614775376,
+    "staged_bytes": 12094945829,
+    "download_and_stage_counters_complete": true
+  },
+  "comparison": {
+    "previous_tested_build": "26613730",
+    "previous_executable_sha256": "e30393b42f1698b77347f4815f86f060843e0f897e8b9460c3fc58de347647fc",
+    "executable_changed": true,
+    "executable_path_unchanged": true,
+    "relative_file_count_before": 161,
+    "relative_file_count_after": 161,
+    "added_relative_paths": [],
+    "removed_relative_paths": [],
+    "unchanged_loose_ini_files": 17,
+    "configuration_limit": "The shipped StagedBuild INI is empty; the remaining INIs belong to BattlEye. The unstarted package contains no Game.ini or GameUserSettings.ini. This comparison cannot establish configuration defaults or embedded parser changes.",
+    "symbol_selection": "Current executable SHA-256; no substitution of a prior executable cache.",
+    "prior_package_executable_and_manifest_unchanged": true,
+    "inventory_limit": "Filename and length comparison is not whole-package content equality; the executable, INIs and staged manifests have separate SHA-256 checks."
+  },
+  "publisher_update": {
+    "public_branch_query_completed_utc": "2026-11-15T03:30:33.150338+00:00",
+    "public_build_updated_asia_shanghai": "2026-11-15T10:34:06+08:00",
+    "client_public_build": "26659174",
+    "client_public_build_updated_asia_shanghai": "2026-11-14T12:56:23+08:00",
+    "latest_indexed_notes_version": "98.2",
+    "notes_url": "https://survivetheark.com/index.php?/forums/topic/773786-asa-server-patch-notes-server-v982-updated-11132026/",
+    "notes_retrieval": "Direct page retrieval returned HTTP 403. The official-domain search index still presented 98.2 dated November 13; official Steam announcements did not identify this later dedicated-server build.",
+    "version_limit": "The older notes and empty PE FileVersion/ProductVersion do not establish the native version of build 26672069. Only the separate native startup observation can establish it.",
+    "latest_asaapi_release": "2.11",
+    "asaapi_release_url": "https://github.com/ArkServerApi/AsaApi/releases/tag/2.11",
+    "integration_assessment": "No new configuration or launch requirement follows from the available official notes. Fresh matching symbols are available for the changed executable; production preparation and runtime behavior require separate native acceptance."
+  },
+  "matching_symbols": {
+    "method": "HEAD",
+    "body_bytes_read": 0,
+    "provider_source": "apps/desktop/src-tauri/src/ark_tools_symbols.rs",
+    "provider_source_sha256": "1956019dfc2a4e5653807d796411c563b6667ce181ec34f23d280e1be7cec54d",
+    "probes": [
+      {
+        "url": "https://cdn.pelayori.com/cache/91558e0a9f3aabe711c16e0999ec06c9481d7f2b5bc7afecf39aa8c60453670e.zip",
+        "checked_utc": "2026-11-15T03:41:38.042394+00:00",
+        "status": 200,
+        "content_type": "application/zip",
+        "content_length": 23134895,
+        "last_modified": "Sun, 15 Nov 2026 02:38:56 GMT"
+      },
+      {
+        "url": "https://cdn.shadowhunter.co.za/cache/91558e0a9f3aabe711c16e0999ec06c9481d7f2b5bc7afecf39aa8c60453670e.zip",
+        "checked_utc": "2026-11-15T03:41:38.044137+00:00",
+        "status": 200,
+        "content_type": "application/zip",
+        "content_length": 23134895,
+        "last_modified": "Sun, 15 Nov 2026 02:38:56 GMT"
+      },
+      {
+        "url": "https://cdn.shadowhunter-systems.co.za/cache/91558e0a9f3aabe711c16e0999ec06c9481d7f2b5bc7afecf39aa8c60453670e.zip",
+        "checked_utc": "2026-11-15T03:41:38.044688+00:00",
+        "status": 200,
+        "content_type": "application/zip",
+        "content_length": 23134895,
+        "last_modified": "Sun, 15 Nov 2026 02:38:56 GMT"
+      }
+    ],
+    "interpretation": "Availability only; ZIP contents, executable binding and ABI compatibility require production preparation and native execution."
+  },
+  "acquisition_observation": "SteamCMD exited 0 and fully installed the target build. The external acquisition helper then incorrectly required the literal Logged in OK and marked its postprocessing failed. A separately retained audit verified the actual Connecting anonymously to Steam Public...OK and Waiting for user info...OK markers, installed state, build/depot identity, complete byte counters, exited process and unchanged source package identities. The failed worker result is retained; no second download or game run was used to replace it. This helper issue did not change manager production code.",
+  "artifacts_retained_outside_repository": [
+    {
+      "name": "public-build-query-01.json",
+      "bytes": 2430,
+      "sha256": "85e2fd96ea662a993735a22aa6b2cfa4deb3cd2e491ec98f5765778e9a887f91"
+    },
+    {
+      "name": "acquisition.json",
+      "bytes": 3903,
+      "sha256": "3eb8d650476d3215bede2b30434a8520c451b7334e4aa95341cc4c76e335682b"
+    },
+    {
+      "name": "appmanifest_2430930.acf",
+      "bytes": 948,
+      "sha256": "bf75fcb7b55086f3ced5fcfbf7de8daf4732a1dda60d22af788a09c280838470"
+    },
+    {
+      "name": "package-static.json",
+      "bytes": 26714,
+      "sha256": "303600b4a55a17ccfdfb27b079860baee5bc525d686471b20f4bb8fb69dfa912"
+    },
+    {
+      "name": "matching-symbols-head.json",
+      "bytes": 2543,
+      "sha256": "fa08712bf44bc8ef17a166717b0f794fc19ef73a61c4914789355b249c76c476"
+    },
+    {
+      "name": "acquisition-worker-01-result.json",
+      "bytes": 292,
+      "sha256": "b24ceda27aa371c26da5a6ee1e20e29f41f456627e7cb5df44245e2a13b26142"
+    },
+    {
+      "name": "acquisition-cleanup.json",
+      "bytes": 597,
+      "sha256": "906ddfcc4f28d097d955dbee1c0b49d965440d0dafc367846b4b52001853f96e"
+    },
+    {
+      "name": "official-metadata-receipt.json",
+      "bytes": 6742,
+      "sha256": "20397b72dfaa09cccd61b51b372da72cac9dfcd36c2c4a3ab21aeb4999678443"
+    }
+  ],
+  "scope_limits": [
+    "This record establishes package identity, static file observations and HTTP availability only; no native runtime success or configuration-default verification is claimed.",
+    "No existing-world migration, multiplayer login or cross-map survivor-transfer acceptance.",
+    "Full acquisition logs, host identifiers, credentials and private paths remain outside the repository."
+  ],
+  "native_acceptance": "2026-11-15-managed_native_creature_persistence_asa_2_11_build_26672069.json"
+}

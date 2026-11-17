@@ -238,3 +238,23 @@ pub(crate) fn verify_dragonwilds_player_query_probe(root: &Path) -> Result<(), S
     }
     Ok(())
 }
+
+#[cfg(all(test, windows))]
+#[test]
+#[ignore = "requires a marked stopped LGSM_DRAGONWILDS_PROBE_ROOT with the verified player-query loader; installs bundled control without starting a game"]
+fn prepare_owned_dragonwilds_native_control() {
+    use crate::live_players::dragonwilds_control::{bundled_payload, installation};
+
+    let root = std::path::PathBuf::from(std::env::var_os("LGSM_DRAGONWILDS_PROBE_ROOT").unwrap());
+    assert!(root.is_absolute());
+    assert!(root.join(".lgsm-isolated-player-probe").is_file());
+    ensure_program_stopped(&root).unwrap();
+    verify_dragonwilds_player_query_probe(&root).unwrap();
+    let (script, bridge) = bundled_payload();
+    installation::install(&root, script, bridge).unwrap();
+    assert!(installation::is_complete(&root, script, bridge).unwrap());
+    println!(
+        "DRAGONWILDS_NATIVE_CONTROL prepared=true bridge_bytes={} server_started=false",
+        bridge.len()
+    );
+}

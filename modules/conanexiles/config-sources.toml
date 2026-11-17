@@ -3,6 +3,13 @@ last_verified = "2026-09-28"
 notes = "The Engine.ini, Game.ini, and 229-key ServerSettings.ini inventory from Enhanced build 24080934 is crosswalked to typed settings or precise generated/derived exclusions. RCON startup and command responses were rechecked against installed build 24922388: Game.ini owns enablement, while the true command-line override disables the listener. The official Enhanced settings reference is explicitly non-exhaustive, so status remains best_effort_verified. Official Enhanced INI documentation was rechecked on 2026-09-28. Thirty-five documented settings absent from the generated-file inventory now cover Maelstrom, siege creatures, Siptah events, player needs and persistence load policy. Their types, defaults and native output are covered by fixtures; gameplay effects have not been exercised on a newly updated server. Semantic review on 2026-09-30 checked all 292 fields against the official Enhanced settings page and the emitted INI inventory. Corrected duplicate weekday labels, damage direction, access/follower/survival classification and twelve documented float types. Fractional fixture values cover every corrected type through schema validation and native INI readback. The follow-up current-executable analysis below resolves the previously ambiguous decay/PvP/prediction units, corrects the new-instance knockout default while preserving explicit values, and adds two verified decay controls. The official settings page remains non-exhaustive."
 
 [[sources]]
+id = "native_contract_build_26672347"
+kind = "runtime_probe"
+path = "reference-fixtures/2026-11-16-native_contract_build_26672347.json"
+authority = "official_package_static_contract_and_compiled_manager_native_acceptance"
+description = "2026-11-16 Asia/Shanghai: Enhanced public build 26672347 passed the immutable manager's strict manual-save acceptance with native SQL completion, an exact pre-stop SQLite checkpoint restored and loaded by a fresh process without a second save, and two normal exits. Its separate standard lifecycle passed four confirmed saves and normal exits, 13-file backup restoration, library uninstall preserving 16 save files and one native config, and interrupted archive-commit recovery. The executable/provider pair and relocated native contract remain pinned. This is isolated empty-player native scope, not a complete fresh INI inventory, populated-world migration, GUI or multiplayer acceptance. The shared queue now measures its existing 3000 ms budget with the fixed loader's steady-clock delayed-action API."
+
+[[sources]]
 id = "managed_native_manual_save_20261031"
 kind = "runtime_probe"
 path = "reference-fixtures/2026-10-31-managed_native_manual_save.json"

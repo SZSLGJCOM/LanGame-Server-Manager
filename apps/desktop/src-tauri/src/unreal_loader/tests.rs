@@ -70,8 +70,15 @@ fn save_image_admission_preserves_game_and_provider_pairing() {
     let prior_scum = prior_scum_evidence["package"]["executable_sha256"]
         .as_str()
         .unwrap();
-    let scum_evidence: serde_json::Value = serde_json::from_str(include_str!(
+    let november_12_scum_evidence: serde_json::Value = serde_json::from_str(include_str!(
         "../../../../../modules/scum/reference-fixtures/2026-11-12-native_contract_build_26593814.json"
+    ))
+    .unwrap();
+    let november_12_scum = november_12_scum_evidence["package"]["executable_sha256"]
+        .as_str()
+        .unwrap();
+    let scum_evidence: serde_json::Value = serde_json::from_str(include_str!(
+        "../../../../../modules/scum/reference-fixtures/2026-11-14-native_contract_build_26621903.json"
     ))
     .unwrap();
     let latest_scum = scum_evidence["package"]["executable_sha256"]
@@ -93,6 +100,7 @@ fn save_image_admission_preserves_game_and_provider_pairing() {
         Profile::get("scum").unwrap().game_hash,
         current_scum,
         prior_scum,
+        november_12_scum,
         latest_scum,
     ] {
         assert_eq!(verify_game_image("scum", image).unwrap(), None);
@@ -111,6 +119,68 @@ fn save_image_admission_preserves_game_and_provider_pairing() {
     ] {
         assert!(verify_game_image(module_id, image).is_err(), "{module_id}");
     }
+}
+
+#[test]
+fn conan_reviewed_images_retain_strict_provider_pairing() {
+    for source in [
+        include_str!(
+            "../../../../../modules/conanexiles/reference-fixtures/2026-11-14-native_contract_build_26552396.json"
+        ),
+        include_str!(
+            "../../../../../modules/conanexiles/reference-fixtures/2026-11-16-native_contract_build_26672347.json"
+        ),
+    ] {
+        let evidence: serde_json::Value = serde_json::from_str(source).unwrap();
+        let image = evidence["package"]["executable_sha256"].as_str().unwrap();
+        let provider = evidence["package"]["provider_sha256"].as_str().unwrap();
+        assert_eq!(
+            verify_game_image("conanexiles", image).unwrap(),
+            Some(provider)
+        );
+        for prior_image in [
+            Profile::get("conanexiles").unwrap().game_hash,
+            "d0ea317e7e037e68454414f12828d5995cc9e519b9c34eda264be1954d352b14",
+        ] {
+            let prior_provider = verify_game_image("conanexiles", prior_image).unwrap();
+            assert!(prior_provider.is_some());
+            assert_ne!(prior_provider, Some(provider));
+        }
+        assert!(verify_game_image("conanexiles", provider).is_err());
+        assert!(verify_game_image("conanexiles", &image[..image.len() - 1]).is_err());
+        let mut changed = image.as_bytes().to_vec();
+        changed[0] = if changed[0] == b'0' { b'1' } else { b'0' };
+        assert!(verify_game_image("conanexiles", std::str::from_utf8(&changed).unwrap()).is_err());
+        for module in ["scum", "returntomoria", "nightingale", "palworld"] {
+            assert!(verify_game_image(module, image).is_err(), "{module}");
+        }
+    }
+}
+
+#[test]
+fn conan_provider_mismatch_prevents_loader_publication() {
+    let fixture = Fixture::new();
+    // Admit an inert empty fixture image to isolate the real file/provider
+    // validation boundary. Neither binary is loaded or executed.
+    let profile = Profile {
+        game_hash: "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        ..Profile::get("conanexiles").unwrap()
+    };
+    let win64 = profile.win64(&fixture.0);
+    fs::create_dir_all(&win64).unwrap();
+    fs::write(win64.join(profile.executable), b"").unwrap();
+    fs::write(win64.join("Dreamworld.dll"), b"unreviewed provider").unwrap();
+    assert!(profile.verify_game_image(&hash(b"")).unwrap().is_some());
+    let error = installation::install(&fixture.0, profile, &payload(1)).unwrap_err();
+    assert!(error.contains("outside the verified automatic UE4SS save contract"));
+    assert_eq!(fs::read(win64.join(profile.executable)).unwrap(), b"");
+    assert_eq!(
+        fs::read(win64.join("Dreamworld.dll")).unwrap(),
+        b"unreviewed provider"
+    );
+    assert!(!win64.join(profile.proxy).exists());
+    assert!(!win64.join("ue4ss").exists());
+    assert!(!win64.join(".langame-ue4ss-loader.json").exists());
 }
 
 #[test]

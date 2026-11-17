@@ -32,7 +32,9 @@ impl NativeLayout {
             "a862d658271f26d082de5df7bba01e8af9c3d051cb9634e908bb94d8a9efbc7a" => {
                 Some(Self::Build26320224)
             }
-            "805396516e64d17f1713f24ce97a7d525a6d761db46ce069f40cf63114add6d9" => {
+            "805396516e64d17f1713f24ce97a7d525a6d761db46ce069f40cf63114add6d9"
+            | "b75567d63f2a9948c739b7cbaab2208b926da6e08c7394a7f83b835cd2a50ddf" => {
+                // Build 26621903 retains the observed schema-77 registry layout.
                 Some(Self::Build26593814)
             }
             _ => None,

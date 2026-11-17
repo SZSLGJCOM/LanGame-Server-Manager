@@ -165,7 +165,10 @@ def main() -> None:
         require(args.steam_log.stat().st_size <= MAX_RESPONSE, "Steam metadata exceeds read budget")
         output = args.steam_log.read_text(encoding="utf-8-sig")
     else:
-        result = subprocess.run([str(args.steamcmd.resolve()), "+login", "anonymous", "+app_info_update", "1",
+        result = subprocess.run([str(args.steamcmd.resolve()),
+                                 "+@ShutdownOnFailedCommand", "1", "+@NoPromptForPassword", "1",
+                                 "+app_info_http_min", "1000000000",
+                                 "+login", "anonymous", "+app_info_update", "1",
                                  "+app_info_print", APP_ID, "+quit"], capture_output=True,
                                 encoding="utf-8", errors="replace", timeout=240, check=False)
         require(result.returncode == 0, "SteamCMD metadata refresh failed")

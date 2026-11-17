@@ -15,8 +15,8 @@ local function object(id, class)
 end
 local function text(value) return {ToString=function() return value end} end
 local invalid = {IsValid=function() return false end}
-local function harness(missing_launch)
-    local s={now=1000, files={}, queue={}, serial=0, calls=0, probes=0, random=0, polls=0}
+local function harness(missing_launch, dispatcher_install_seconds, static_prepare_seconds, static_prepare_rejected)
+    local s={now=1000, files={}, queue={}, serial=0, calls=0, probes=0, random=0, polls=0, dispatches=0, lookups=0, preparations=0, diagnostics={}, timer_serial=0, timers={}, milliseconds=0}
     s.instance=object(1,"instance")
     s.gs=object(3,"gs");s.gs.bReplicatedHasBegunPlay=true
     s.gm=object(5,"gm")
@@ -32,6 +32,7 @@ local function harness(missing_launch)
     s.proxy.GetClass=function() return {GetFullName=function() return s.wrong_class and "Class Foreign" or native_path end} end
     s.proxy.GetOuter=function() return s.foreign and object(99,"foreign") or (conan and s.gm or s.instance) end
     local env=setmetatable({}, {__index=_G})
+    env.print=function(message) s.diagnostics[#s.diagnostics+1]=message end
     env.debug={getinfo=function() return {source="@D:/fixture/"..project.."/Binaries/Win64/ue4ss/Mods/LgsmWorldSave/Scripts/main.lua"} end}
     env.math=setmetatable({random=function() s.random=s.random+1;return s.random end},{__index=math})
     env.os={getenv=function(key) assert(key=="LGSM_UNREAL_WORLD_SAVE_RUN");if missing_launch then return nil end;return "LGSM_UWS_"..string.rep("a",32) end,time=function() return s.now end,remove=function(path)
@@ -51,6 +52,13 @@ local function harness(missing_launch)
     end}
     env.package={loadlib=function(path,entry)
         assert(path=="D:/fixture\\"..project.."\\Binaries\\Win64\\ue4ss\\Mods\\LgsmWorldSave\\native\\"..dll)
+        if conan and entry=="luaopen_lgsm_conan_prepare" then
+            return function()
+                assert(not s.in_game, "static preparation must precede request dispatch")
+                s.preparations=s.preparations+1;s.now=s.now+(static_prepare_seconds or 0)
+                s.prepared=not static_prepare_rejected
+            end
+        end
         assert(entry==export)
         if s.no_native then return nil end
         return function()
@@ -59,7 +67,7 @@ local function harness(missing_launch)
             local id,op,time,proxy,instance,world=req:match("^schema=1\nnonce=([0-9a-f]+)\nop=([a-z]+)\nrequested_at=(%d+)\nproxy_address=(%d+)\ninstance_address=(%d+)\nworld_address=(%d+)\n$")
             assert(id and proxy=="6" and instance==(conan and "5" or "1") and world==tostring(s.world:GetAddress()))
             local status="ready"
-            if op=="probe" then s.probes=s.probes+1;if s.bad_native then status="rejected" end
+            if op=="probe" then s.probes=s.probes+1;if s.bad_native or (conan and not s.prepared) then status="rejected" end
             else
                 assert(op=="save")
                 if s.save_frame then
@@ -79,9 +87,27 @@ local function harness(missing_launch)
     end}
     env.IsInGameThread=function() return s.in_game==true end
     env.EGameThreadMethod={EngineTick=1}
-    env.ExecuteInGameThread=function(fn,method) assert(method==1);s.queue[#s.queue+1]=fn end
+    env.EngineTickAvailable=true
+    env.ExecuteInGameThreadWithDelay=function(delay,fn)
+        assert(delay==3000);s.timer_serial=s.timer_serial+1
+        s.timers[s.timer_serial]={started=s.now*1000+s.milliseconds,delay=delay,callback=fn}
+        return s.timer_serial
+    end
+    env.GetDelayedActionTimeElapsed=function(handle)
+        local timer=s.timers[handle]
+        if s.missing_timer or not timer then return -1 end
+        return math.min(timer.delay,math.max(0,s.now*1000+s.milliseconds-timer.started))
+    end
+    env.ExecuteInGameThread=function(fn,method)
+        assert(method==1)
+        -- UE4SS registers its hook synchronously on the first call, before
+        -- enqueueing the callback. Later dispatches reuse that hook.
+        if s.dispatches==0 then s.now=s.now+(dispatcher_install_seconds or 0) end
+        s.dispatches=s.dispatches+1;s.queue[#s.queue+1]=fn
+    end
     env.LoopAsync=function(_,fn) s.tick=fn end
     env.FindAllOf=function(kind)
+        s.lookups=s.lookups+1
         if kind=="World" then error("These policies must select the driver, not scan asset worlds") end
         if kind=="NetDriver" then return s.ambiguous and {s.driver,s.driver} or {s.driver} end
         if kind==native_class then return s.duplicate_target and {s.proxy,s.proxy} or {s.proxy} end
@@ -89,6 +115,8 @@ local function harness(missing_launch)
     end
     assert(load(source,"@fixed-native-save","t",env))()
     function s.dispatch() local fn=table.remove(s.queue,1);if fn then s.in_game=true;fn();s.in_game=false end end
+    s.startup_dispatches=#s.queue
+    for _=1,s.startup_dispatches do s.dispatch() end
     function s.write(action,boot,world)
         s.serial=s.serial+1;s.id=string.format("%032x",s.serial)
         s.files[base.."request.json"]=string.format('{"protocol":1,"request_id":"%s","requested_at":%d,"action":"%s","boot_id":"%s","world_token":"%s"}',s.id,s.now,action,boot or "",world or "")
@@ -127,6 +155,48 @@ if not conan then
 end
 test("probe returns native identity without saving",function() local s=harness();local r=s.probe();assert(s.calls==0 and s.probes==1 and r.pid=="11" and r.creation=="123456789012345678") end)
 if conan then
+test("dispatcher initialization does not consume the first save request budget",function()
+    local s=harness(false,4)
+    assert(s.now==1004 and s.startup_dispatches==1 and s.lookups==0
+        and s.calls==0 and s.probes==0 and next(s.files)==nil, "initialization must not inspect or save the world")
+    local r=s.save(s.probe())
+    assert(r.confirmed and r.invoked and r.returned and not r.error and s.calls==1 and s.probes==1)
+end)
+test("static file verification finishes before any request is stamped",function()
+    local s=harness(false,0,4)
+    assert(s.now==1004 and s.preparations==1 and s.calls==0 and s.probes==0
+        and s.lookups==0 and next(s.files)==nil)
+    local r=s.save(s.probe())
+    assert(r.confirmed and r.returned and not r.error and s.calls==1 and s.preparations==1)
+end)
+test("failed static preparation cannot be retried by new probe requests",function()
+    local s=harness(false,0,0,true)
+    assert(not s.exchange("saveprobe").ready and not s.exchange("saveprobe").ready)
+    assert(s.preparations==1 and s.calls==0)
+end)
+test("subsecond queue crossing three Unix seconds keeps its full budget",function()
+    local s=harness();local p=s.probe();s.milliseconds=897
+    s.write("save",p.boot,p.world);s.tick()
+    s.now=s.now+3;s.milliseconds=226;s.tick();s.dispatch();s.tick();s.dispatch();s.tick()
+    local r=s.receipt();assert(r.confirmed and s.calls==1 and s.polls==1)
+end)
+test("three thousand queued milliseconds reject a late callback",function()
+    local s=harness();local p=s.probe();s.milliseconds=897
+    s.write("save",p.boot,p.world);s.tick()
+    s.now=s.now+3;s.tick();s.dispatch();s.tick()
+    local r=s.receipt();assert(not r.invoked and r.error=="dispatcher_timeout" and s.calls==0)
+end)
+test("a missing queue timer cannot admit native entry",function()
+    local s=harness();local p=s.probe();s.write("save",p.boot,p.world);s.tick()
+    s.missing_timer=true;s.dispatch();s.tick()
+    assert(not s.receipt().invoked and s.calls==0)
+end)
+test("an old queue sentinel cannot expire a later poll of the same save",function()
+    local s=harness();local p=s.probe();s.write("save",p.boot,p.world);s.tick()
+    local expired=s.timers[s.timer_serial].callback
+    s.dispatch();s.tick();expired();s.dispatch();s.tick()
+    local r=s.receipt();assert(r.confirmed and s.calls==1 and s.polls==1)
+end)
 test("owned async completion is confirmed exactly once",function() local s=harness();local r=s.save(s.probe());assert(r.confirmed and r.invoked and r.returned and not r.error and s.calls==1 and s.polls==1 and s.probes==1);s.tick();s.dispatch();assert(s.calls==1) end)
 end
 test("false remains unknown",function() local s=harness();local p=s.probe();s.native_false=true;local r=s.save(p);assert(r.invoked and not r.confirmed and (conan and not r.error or not conan and r.error=="save_call_unknown") and s.calls==1) end)

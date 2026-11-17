@@ -29,11 +29,18 @@ impl Profile {
             ("conanexiles", "d0ea317e7e037e68454414f12828d5995cc9e519b9c34eda264be1954d352b14") => {
                 Ok(Some("2eec9aa9aa443fb476db583cfdc5044285ccc246df0a60e93155fb37e14324b6"))
             }
+            ("conanexiles", "fe11b4c2292f468b7d3d017261ee7cf5b850537f690bebc6854a4260a05e4394") => {
+                Ok(Some("66d26b63424218b8831a8478ff2cb5166bdd9dad35107727c2b5e57a442fafdf"))
+            }
+            ("conanexiles", "1954037ce360eb330d0ee90bbc1ae0d9beb9d1ea42fe7cc7fb31db4c0306be6a") => {
+                Ok(Some("bef60c18c3a8aa9cf8677da6bb0de0d7ee8b341991abb8b898ddb9d944ee8b32"))
+            }
             (
                 "scum",
                 "070fcad918ba04eb9797db29674cadbd6691427b936fe354bca23b008c8c9971"
                 | "a862d658271f26d082de5df7bba01e8af9c3d051cb9634e908bb94d8a9efbc7a"
-                | "805396516e64d17f1713f24ce97a7d525a6d761db46ce069f40cf63114add6d9",
+                | "805396516e64d17f1713f24ce97a7d525a6d761db46ce069f40cf63114add6d9"
+                | "b75567d63f2a9948c739b7cbaab2208b926da6e08c7394a7f83b835cd2a50ddf",
             ) => Ok(None),
             _ => Err("This game build is outside the verified native save contract; no files were changed.".into()),
         }

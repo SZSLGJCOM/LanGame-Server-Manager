@@ -96,6 +96,7 @@ fn steamcmd_script_command(
     // Scripts accept no interactive input. Native console detach/attach can
     // invalidate inherited stdin, so give this child an independent EOF source.
     command
+        .args(super::STEAMCMD_APPINFO_ARGS)
         .arg("+runscript")
         .arg(script_path)
         .current_dir(working_directory)
@@ -675,7 +676,7 @@ mod command_tests {
     use super::*;
 
     #[test]
-    fn managed_script_launch_uses_bootstrap_override_before_native_script_arguments() {
+    fn script_launch_selects_cm_appinfo_before_script_login_and_preserves_bootstrap_override() {
         let source = "http://127.0.0.1:12345";
         let script = Path::new("installation script.txt");
         let managed = steamcmd_script_command("steamcmd.exe", script, ".", Some(source));
@@ -689,6 +690,8 @@ mod command_tests {
             [
                 "-overridepackageurl",
                 source,
+                "+app_info_http_min",
+                "1000000000",
                 "+runscript",
                 "installation script.txt"
             ]
@@ -699,7 +702,15 @@ mod command_tests {
             .get_args()
             .map(|arg| arg.to_str().unwrap())
             .collect::<Vec<_>>();
-        assert_eq!(arguments, ["+runscript", "installation script.txt"]);
+        assert_eq!(
+            arguments,
+            [
+                "+app_info_http_min",
+                "1000000000",
+                "+runscript",
+                "installation script.txt"
+            ]
+        );
     }
 
     #[tokio::test]

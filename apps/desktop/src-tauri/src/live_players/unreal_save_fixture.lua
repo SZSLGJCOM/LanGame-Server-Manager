@@ -13,7 +13,7 @@ local function object(id, kind)
 end
 local function harness(missing_launch)
     local s = { now=1000, files={}, queue={}, calls=0, reflected_calls=0, factories=0, serial=0, random=0,
-        clock=0, binary_reads=0, properties={} }
+        binary_reads=0, properties={}, timers={}, timer_serial=0 }
     s.environment_token="LGSM_UWS_"..string.rep("a",32)
     if missing_launch then s.environment_token=nil end
     s.instance = object(1, class); s.gs = object(3, "gs"); s.gs.bReplicatedHasBegunPlay = true
@@ -36,11 +36,8 @@ local function harness(missing_launch)
     local env = setmetatable({}, {__index=_G})
     env.debug={ getinfo=function() return {source="@D:/fixture/"..project.."/Binaries/Win64/ue4ss/Mods/LgsmWorldSave/Scripts/main.lua"} end }
     env.math=setmetatable({random=function() s.random=s.random+1; return s.random end},{__index=math})
-    env.os={ getenv=function(key) assert(key=="LGSM_UNREAL_WORLD_SAVE_RUN");return s.environment_token end, time=function()
-        s.clock=s.clock+1
-        if s.on_time then s.on_time(s.clock) end
-        return s.now
-    end, remove=function(path) if s.files[path] then s.files[path]=nil; return true end return nil,"missing",2 end,
+    env.os={ getenv=function(key) assert(key=="LGSM_UNREAL_WORLD_SAVE_RUN");return s.environment_token end, time=function() return s.now end,
+        remove=function(path) if s.files[path] then s.files[path]=nil; return true end return nil,"missing",2 end,
         rename=function(a,b) s.files[b]=s.files[a];s.files[a]=nil;return true end }
     env.io={ open=function(path, mode)
         if path:sub(-4)==".exe" then
@@ -55,7 +52,17 @@ local function harness(missing_launch)
     end }
     env.IsInGameThread=function() return s.in_game == true end
     env.EGameThreadMethod={EngineTick=1}
+    env.EngineTickAvailable=true
     env.ExecuteInGameThread=function(fn, method) assert(method==1);s.queue[#s.queue+1]=fn end
+    env.ExecuteInGameThreadWithDelay=function(delay_ms,fn)
+        s.timer_serial=s.timer_serial+1
+        s.timers[s.timer_serial]={started_ms=s.now*1000,delay_ms=delay_ms,callback=fn}
+        return s.timer_serial
+    end
+    env.GetDelayedActionTimeElapsed=function(handle)
+        local timer=s.timers[handle];if not timer then return -1 end
+        return math.min(timer.delay_ms,math.max(0,math.ceil(s.now*1000-timer.started_ms)))
+    end
     env.LoopAsync=function(_,fn) s.tick=fn end
     env.PropertyTypes={ByteProperty=1,IntProperty=2,Int64Property=3}
     env.RegisterCustomProperty=function(info)
@@ -70,7 +77,10 @@ local function harness(missing_launch)
     end
     local function native(path, flags, params, callback)
         local fn=object(100,path)
-        fn.GetFunctionFlags=function() return s.bad_signature and 0 or flags end
+        fn.GetFunctionFlags=function()
+            if s.on_signature then s.on_signature(path) end
+            return s.bad_signature and 0 or flags
+        end
         fn.ForEachProperty=function(_,visit)
             for _,entry in ipairs(params) do
                 visit({GetFName=function() return text(entry[1]) end,
@@ -105,7 +115,13 @@ local function harness(missing_launch)
     end
     assert(load(source,"@bundled-native-save","t",env))()
     function s.dispatch()
-        local fn=table.remove(s.queue,1);if fn then s.in_game=true;fn();s.in_game=false end
+        s.in_game=true
+        local fn=table.remove(s.queue,1);if fn then fn() end
+        -- Timed actions are separate from the immediate EngineTick queue.
+        for handle,timer in pairs(s.timers) do
+            if s.now*1000-timer.started_ms>=timer.delay_ms then timer.callback();s.timers[handle]=nil end
+        end
+        s.in_game=false
     end
     function s.write(action,run,world)
         s.serial=s.serial+1;s.id=string.format("%032x",s.serial)
@@ -159,8 +175,15 @@ test("server connection is rejected",function() local s=harness();local p=s.prob
 test("pre-call timeout cannot invoke later",function() local s=harness();local p=s.probe();s.write("save",p.boot,p.world);s.tick();s.now=s.now+3;s.tick();s.dispatch();s.tick();local r=s.receipt();assert(not r.invoked and s.calls==0) end)
 test("timeout inside native stays unknown",function() local s=harness();local p=s.probe();s.on_call=function() s.now=s.now+31;s.tick() end;local r=s.save(p);assert(r.invoked and not r.returned and r.error=="save_call_unknown" and s.calls==1);s.tick();s.dispatch();assert(s.calls==1) end)
 test("timeout at final gate stays unknown",function()
-    local s=harness();local p=s.probe();s.write("save",p.boot,p.world);s.tick();s.clock=0
-    s.on_time=function(n) if n==7 then s.on_time=nil;s.now=s.now+3;s.tick() end end
+    local s=harness();local p=s.probe();s.write("save",p.boot,p.world);s.tick()
+    local entry_checks=0
+    s.on_signature=function(entry)
+        if entry~=(moria and "save" or "factory") then return end
+        entry_checks=entry_checks+1
+        -- The initial context reads once; the final target recheck reads again
+        -- after invocation is marked, before the reflected entry can run.
+        if entry_checks==2 then s.on_signature=nil;s.now=s.now+3;s.tick() end
+    end
     s.dispatch();s.tick();local r=s.receipt();assert(r.invoked and r.error=="save_call_unknown" and s.calls==0)
 end)
 test("unknown moderation action cannot invoke",function() local s=harness();s.write("kick");s.tick();s.dispatch();s.tick();assert(s.calls==0 and not s.files[base.."response.json"]) end)

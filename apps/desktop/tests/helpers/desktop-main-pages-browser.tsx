@@ -122,12 +122,12 @@ async function compactAction(selector: string) {
   // border box rather than mistaking a transient transform for control sizing.
   await settleUntil(() => Math.abs(target.getBoundingClientRect().height - target.offsetHeight) < 0.01,
     `${selector} did not settle at its layout size`);
-  const style = getComputedStyle(target);
-  const height = target.offsetHeight;
   const maximized = element(".shell-header").dataset.windowMaximized === "true";
   const bodyFont = maximized ? "16px" : "13px";
   await settleUntil(() => getComputedStyle(target).fontSize === bodyFont,
     `${selector} did not settle at the current window's text size`);
+  const style = getComputedStyle(target);
+  const height = target.offsetHeight;
   check(style.fontSize === bodyFont && style.fontWeight === "500",
     `${selector} must use compact medium-weight text: ${style.fontSize}/${style.fontWeight}, expected ${bodyFont}/500`);
   check(height >= (maximized ? 36 : 28) && height <= (maximized ? 38.5 : 30.5),

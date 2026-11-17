@@ -145,7 +145,7 @@ export const EN_US_BAROTRAUMA_MESSAGES: MessageCatalog = {
   "settings.schema.barotrauma.max_lag_compensation.title": "Weapon lag compensation (ms)",
   "settings.schema.barotrauma.max_lag_compensation.description": "Maximum time the server rewinds hit detection for delayed weapon input, from 0 to 500 milliseconds.",
   "settings.schema.barotrauma.require_authentication.title": "Require account authentication",
-  "settings.schema.barotrauma.require_authentication.description": "Verify joining clients through Steam or Epic ownership authentication; disabling this removes that account check.",
+  "settings.schema.barotrauma.require_authentication.description": "Authenticate joining clients and verify game ownership; disabling this skips that account check.",
   "settings.schema.barotrauma.max_transport_time.title": "Respawn shuttle duration (seconds)",
   "settings.schema.barotrauma.max_transport_time.description": "Time available to reach the main submarine before the respawn shuttle leaves the level; 0 removes the time limit.",
   "settings.schema.barotrauma.min_respawn_ratio.title": "Minimum respawn ratio",

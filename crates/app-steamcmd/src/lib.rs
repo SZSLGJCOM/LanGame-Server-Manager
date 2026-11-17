@@ -170,6 +170,8 @@ const MINECRAFT_VERSION_MANIFEST_URL: &str =
 // SteamCMD self-update retries, downloads, and verification share one deadline.
 const MODULE_INSTALL_TIMEOUT: Duration = Duration::from_secs(6 * 60 * 60);
 const WORKSHOP_DOWNLOAD_TIMEOUT: Duration = Duration::from_secs(2 * 60 * 60);
+// Prefer CM app-info before login: HTTP appinfo CDN failures can block user-info completion.
+const STEAMCMD_APPINFO_ARGS: [&str; 2] = ["+app_info_http_min", "1000000000"];
 const STEAMCMD_UNINSTALL_TIMEOUT: Duration = Duration::from_secs(2 * 60);
 const GAME_INSTALL_LIFECYCLE_TIMEOUT: Duration = Duration::from_secs(2 * 60);
 const CHILD_REAP_TIMEOUT: Duration = Duration::from_secs(5);

@@ -1,0 +1,178 @@
+{
+  "schema_version": 1,
+  "module_id": "soulmask",
+  "evidence_classification": "official_package_static_config_comparison",
+  "reviewed_on": "2026-11-15",
+  "reviewed_at_utc": "2026-11-15T02:37:08.680499+00:00",
+  "acquisition": {
+    "steam_app_id": 3017310,
+    "steam_build_id": "26610298",
+    "completed_at_utc": "2026-11-15T02:32:07.4758854Z",
+    "steamcmd_exit_code": 0,
+    "state_flags": 4,
+    "update_result": 0,
+    "manifest_path": "steamapps/appmanifest_3017310.acf",
+    "manifest_sha256": "e51d21a12a4d45a211ffa4da48a8efaf120239a285caa77326f083b68ab2c76a",
+    "size_on_disk": 5757404617,
+    "bytes_to_download": 83031648,
+    "bytes_downloaded": 83031648,
+    "bytes_to_stage": 2024065934,
+    "bytes_staged": 2024065934,
+    "package_file_count": 486,
+    "package_file_bytes": 5886012589,
+    "reproduction_command": "steamcmd +force_install_dir <isolated-package> +login anonymous +app_update 3017310 validate +quit",
+    "seed_method": "Physical copy of the retained prior package; no hardlinks; Saved, Servers, logs, temp and downloading directories excluded.",
+    "prior_executable_and_manifest_hashes_unchanged": true,
+    "initial_validation_exit_code": 8,
+    "recovery": {
+      "cause": "The initial validation obtained the current public depot manifest, but fetching the old seed depot manifest returned Access Denied.",
+      "method": "Copied only the retained official old depot manifest cache into the isolated SteamCMD cache and repeated official anonymous app_update validate. The first failure was preserved.",
+      "retained_depot_manifest": "3017311_5792858920154479448.manifest",
+      "retained_depot_manifest_sha256": "5169a359f45fcaa4c111ba9c35b2ceec23c05807bd8367c42836707c8f9420ca",
+      "retained_depot_manifest_source_unchanged": true
+    }
+  },
+  "executable": {
+    "path": "WS/Binaries/Win64/WSServer-Win64-Shipping.exe",
+    "sha256": "f2103245e7586a71bdd3c2f28ccecfbe8dcde629e931370a78a95abc8778b017",
+    "bytes": 53439328
+  },
+  "prior": {
+    "fixture": "native-evidence/2026-11-07-public-build-26480169-static.json",
+    "steam_build_id": "26480169"
+  },
+  "configuration": {
+    "files": [
+      {
+        "path": "WS/Config/GameplaySettings/GameXishuConfig_Template.json",
+        "sha256": "c9f9128fe1df1608c18a7873f9bf9c5a50877fc3393fc7a439f91b0ae02cd00c",
+        "prior_sha256": "c9f9128fe1df1608c18a7873f9bf9c5a50877fc3393fc7a439f91b0ae02cd00c",
+        "baseline_bytes_match": true,
+        "profile_key_counts": {
+          "0": 282,
+          "1": 282,
+          "2": 282
+        }
+      },
+      {
+        "path": "WS/Config/GameplaySettings/GameXishu_Template.json",
+        "sha256": "687d3351fd0706583348decc95cdb9f07b4ad0e8d5e07ac89a62918cf5fe9768",
+        "prior_sha256": "687d3351fd0706583348decc95cdb9f07b4ad0e8d5e07ac89a62918cf5fe9768",
+        "baseline_bytes_match": true,
+        "profile_key_counts": {
+          "0": 282,
+          "1": 282,
+          "2": 282
+        }
+      }
+    ],
+    "all_template_files": {
+      "file_count": 137,
+      "inventory_sha256": "db6834f73fb9236e26c9a0171779f54c43551a9f843fa8e2bfa64cb83130c9a4",
+      "prior_inventory_sha256": "db6834f73fb9236e26c9a0171779f54c43551a9f843fa8e2bfa64cb83130c9a4",
+      "matches_prior_inventory": true,
+      "added_files": [],
+      "removed_files": [],
+      "changed_files": [],
+      "inventory_encoding": "UTF-8; filenames sorted case-sensitively; filename TAB byte length TAB lowercase SHA256 LF"
+    },
+    "schema_mapped_key_count": 282,
+    "profiles": {
+      "0": {
+        "native_key_count": 282,
+        "metadata_key_count": 282,
+        "added_native_keys": [],
+        "removed_native_keys": [],
+        "missing_schema_keys": [],
+        "stale_schema_keys": [],
+        "metadata_keys_match_values": true,
+        "metadata_default_mismatches": [],
+        "template_key_count": 282,
+        "missing_template_keys": [],
+        "extra_template_keys": [],
+        "schema_default_differences_float32_normalized": [],
+        "shared_schema_default_differences_match_prior": true,
+        "native_value_changes": [],
+        "native_metadata_changes": []
+      },
+      "1": {
+        "native_key_count": 282,
+        "metadata_key_count": 282,
+        "added_native_keys": [],
+        "removed_native_keys": [],
+        "missing_schema_keys": [],
+        "stale_schema_keys": [],
+        "metadata_keys_match_values": true,
+        "metadata_default_mismatches": [],
+        "template_key_count": 282,
+        "missing_template_keys": [],
+        "extra_template_keys": [],
+        "schema_default_differences_float32_normalized": [
+          {
+            "native_key": "GameWorldDayTimePortion",
+            "schema_key": "xishu_game_world_day_time_portion",
+            "schema_default": 0.69999999,
+            "native_default": 0.800000011920929
+          },
+          {
+            "native_key": "JianZhuChuanSongMenPlusKaiGuan",
+            "schema_key": "xishu_jian_zhu_chuan_song_men_plus_kai_guan",
+            "schema_default": 1,
+            "native_default": 0
+          },
+          {
+            "native_key": "GongHuiMaxZhaoMuCount",
+            "schema_key": "xishu_gong_hui_max_zhao_mu_count",
+            "schema_default": 50,
+            "native_default": 40
+          },
+          {
+            "native_key": "ManRenChuZhanCount",
+            "schema_key": "xishu_man_ren_chu_zhan_count",
+            "schema_default": 3,
+            "native_default": 1
+          },
+          {
+            "native_key": "AnimalFollowerMaxCount",
+            "schema_key": "xishu_animal_follower_max_count",
+            "schema_default": 3,
+            "native_default": 1
+          }
+        ],
+        "shared_schema_default_differences_match_prior": true,
+        "native_value_changes": [],
+        "native_metadata_changes": []
+      },
+      "2": {
+        "native_key_count": 282,
+        "metadata_key_count": 282,
+        "added_native_keys": [],
+        "removed_native_keys": [],
+        "missing_schema_keys": [],
+        "stale_schema_keys": [],
+        "metadata_keys_match_values": true,
+        "metadata_default_mismatches": [],
+        "template_key_count": 282,
+        "missing_template_keys": [],
+        "extra_template_keys": [],
+        "schema_default_differences_float32_normalized": [],
+        "shared_schema_default_differences_match_prior": true,
+        "native_value_changes": [],
+        "native_metadata_changes": []
+      }
+    }
+  },
+  "reviewed_module_files": {
+    "schema.json": "fb0c616802aff1891317c177e59726fccba88f50219ea7c17ee422c16455db43",
+    "module.toml": "f27fc73a46d9fff05d65424c6378e991393542e171089455d1c20d3d5cf78c5f",
+    "templates/GameXishu.profile-0.json.hbs": "446e717236adad8c3f9b755bb71db34ff1482cbb26e53598e0044a9e027d9727",
+    "templates/GameXishu.profile-1.json.hbs": "90e7793d4edb1c03f00099b17c6b5b004f84953de85666cdc56374d0e16b5931",
+    "templates/GameXishu.profile-2.json.hbs": "6500c1c0b8cd9ba32b9c0b50b3211b1aa3b6f84eaf3867bd2b90c280e4fe29a3"
+  },
+  "analysis": {
+    "analyzer_sha256": "9a18978fee6fc0b0067c64c621d9dda861c6b180037cde0d39c36491e637e2ff",
+    "method": "Recomputed the complete GameplaySettings filename/length/SHA256 inventory from both official package copies; compared both GameXishu JSON files and all three profile key sets, values and metadata; compared current schema defaults after float32 normalization and current HBS property-key coverage.",
+    "inventory_artifact_sha256": "687952780fcd01d1bda72cfdbf4c7059a8ad9a425f2f4e5c9d54f88d8c9edef9"
+  },
+  "scope": "Read-only JSON and SHA256 comparison of the freshly validated official public Windows package. All 137 GameplaySettings files and both GameXishu templates match the retained prior package bytes. Each profile has 282 native keys with complete current schema and template key coverage. The five existing profile-1 differences from shared schema defaults are unchanged. This static evidence does not establish game startup, Echo/RCON, save, shutdown, restart, recovery, migration or game-client behavior; native lifecycle evidence is separate."
+}

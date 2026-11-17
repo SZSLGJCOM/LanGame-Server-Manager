@@ -198,6 +198,7 @@ async fn verify_cached_login(
         command.args(["-overridepackageurl", source]);
     }
     command
+        .args(super::STEAMCMD_APPINFO_ARGS)
         .arg("+runscript")
         .arg(&script.path)
         .current_dir(&steamcmd.root);

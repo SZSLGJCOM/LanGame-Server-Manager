@@ -1,0 +1,659 @@
+{
+  "schema_version": 1,
+  "module_id": "runescapedragonwilds",
+  "verified_on": "2026-11-14",
+  "verification_timezone": "Asia/Shanghai",
+  "evidence_classification": "static_verified_native_acceptance_record_linked",
+  "package": {
+    "steam_app_id": 4019830,
+    "steam_build_id": "26574459",
+    "windows_depot_id": 4019831,
+    "depot_manifest_id": "1253963320067096086",
+    "file_version": "++dominion+live-CL-260223",
+    "acquisition": "Official anonymous SteamCMD app_update on an isolated Windows validation host into a new isolated task package; observed completion receipt and ACF before copying the Shipping executable for static inspection.",
+    "steamcmd_exit_code": 0,
+    "state_flags": 4,
+    "appmanifest_sha256": "c89be0aa5009d7e914a967afe096c0befd83d94b6003393c4804c6358d51133d",
+    "shipping_relative_path": "RSDragonwilds/Binaries/Win64/RSDragonwildsServer-Win64-Shipping.exe",
+    "shipping_size_bytes": 205298848,
+    "shipping_sha256": "c0fe936373671887173ddf99d7665e9308a6a7561b414d738aaf0c71b64839f9",
+    "remote_and_local_hashes_match": true,
+    "pdb_available": false
+  },
+  "baseline": {
+    "steam_build_id": "26419371",
+    "file_version": "++dominion+staging-CL-258140",
+    "shipping_size_bytes": 205259424,
+    "shipping_sha256": "f7840d934fccb6f3ca0b01e781abf4463f3718ebb29418985cd9281bbd3a8fb2",
+    "source": "Read-only SCP copy of the existing validation-host package; ACF build 26419371/state 4 and Shipping identity match the prior native evidence.",
+    "remote_and_local_hashes_match": true,
+    "prior_native_evidence": "2026-11-10-public-build-26419371-native.json"
+  },
+  "native_profile": {
+    "factory": {
+      "rva": "0x59ac680",
+      "prologue": "48895c240848896c2410488974241848897c242041564883"
+    },
+    "ban": {
+      "rva": "0x5d73610",
+      "prologue": "4055534154488d6c24e04881ec20010000488b059884a705"
+    },
+    "unban": {
+      "rva": "0x5d724e0",
+      "prologue": "48895c241848896c2420565741564881ec90000000488b05"
+    },
+    "known_players": {
+      "rva": "0x5976d10",
+      "prologue": "405741544155415641574883ec30488bb9d00000004532f6"
+    },
+    "save_bans": {
+      "rva": "0x5d72d00",
+      "prologue": "405553574155488d6c24d84881ec28010000488b05a78da7"
+    },
+    "matchmaker_class": "0xbb584d0",
+    "settings_class": "0xbb44098",
+    "matchmaker_vtable": "0x9e16910",
+    "state_vtable": "0xa106c10"
+  },
+  "static_contract": {
+    "method": "Independent current-PE wrapper CALL targets, class registrations, constructors, ownership publication, property metadata, factory arguments and persistence/release paths; no shared RVA delta inferred.",
+    "independent_assertions_passed": 146,
+    "settings_size": "0x108",
+    "matchmaker_size": "0x730",
+    "state_allocation": "0x3e0 (0x10 shared controller + 0x3d0 state)",
+    "matchmaker_state_offset": "0x6c8",
+    "state_owner_offset": "0x8",
+    "state_session_offsets": [
+      "0x388",
+      "0x398"
+    ],
+    "world_owning_game_instance_offset": "0x228",
+    "known_players_offset": "0xd0",
+    "known_player_size": "0x58",
+    "known_player_name_offset": "0x30",
+    "known_player_banned_offset": "0x41",
+    "native_ban_map_offset": "0x298",
+    "factory_abi": "RCX=KnownPlayer source, RDX=16-byte SharedUser return storage. Copies unique identity and FString, returning one owned shared reference.",
+    "ownership": "Ban and unban consume the owned shared reference. Offline ban retains the explicit SaveBans call; unban persists internally.",
+    "dispatch_layout_changed": false
+  },
+  "reflection_contract": [
+    {
+      "function": "/Script/Dominion.PersistenceSubsystem:SaveGame",
+      "flags": "0x4020401",
+      "descriptor_rva": "0xb714770",
+      "parameters": [
+        {
+          "name": "bAdditionalLogging",
+          "property_kind": "0x4c",
+          "flags": "0x10000000000082",
+          "descriptor_rva": "0x9e3f240"
+        }
+      ]
+    },
+    {
+      "function": "/Script/SPUD.SpudSubsystem:IsSavingGame",
+      "flags": "0x54020401",
+      "descriptor_rva": "0xb6decf0",
+      "parameters": [
+        {
+          "name": "ReturnValue",
+          "property_kind": "0x4c",
+          "flags": "0x10000000000580",
+          "descriptor_rva": "0x9a527f0"
+        }
+      ]
+    },
+    {
+      "function": "/Script/RedpointEOSFramework.RedpointFrameworkBlueprintLibrary:KickPlayerController",
+      "flags": "0x4022405",
+      "descriptor_rva": "0xb76a658",
+      "parameters": [
+        {
+          "name": "PlayerController",
+          "property_kind": "0x12",
+          "flags": "0x10000000000080",
+          "descriptor_rva": "0xa583370"
+        },
+        {
+          "name": "KickReason",
+          "property_kind": "0x1d",
+          "flags": "0x10000000000080",
+          "descriptor_rva": "0xa5833b0"
+        },
+        {
+          "name": "ReturnValue",
+          "property_kind": "0x4c",
+          "flags": "0x10000000000580",
+          "descriptor_rva": "0xa5833f0"
+        }
+      ]
+    },
+    {
+      "function": "/Script/Dominion.DominionPlayerController:IsPlayerReady",
+      "flags": "0x54020401",
+      "descriptor_rva": "0xb734cf0",
+      "parameters": [
+        {
+          "name": "ReturnValue",
+          "property_kind": "0x4c",
+          "flags": "0x10000000000580",
+          "descriptor_rva": "0xa047140"
+        }
+      ]
+    }
+  ],
+  "body_comparison": {
+    "baseline": "26419371",
+    "current": "26574459",
+    "method": "Follow x64 .pdata chained unwind records for each contiguous function range. Retain instruction boundaries, member offsets, constants and internal branch displacements; neutralize external PC-relative references. SaveBans also neutralizes five independently inspected image-relative variant-table operands.",
+    "functions": {
+      "factory": {
+        "old_rva": "0x59ab310",
+        "new_rva": "0x59ac680",
+        "sizes": [
+          396,
+          396
+        ],
+        "instruction_counts": [
+          108,
+          108
+        ],
+        "old_regions": [
+          [
+            "0x59ab310",
+            "0x59ab49c"
+          ]
+        ],
+        "new_regions": [
+          [
+            "0x59ac680",
+            "0x59ac80c"
+          ]
+        ],
+        "relocation_neutralized_equal": true,
+        "normalized_sha256": "697b7e76225c71e15146684ffe60b4b666b7c0d69a76253babd05cb58c09fd23"
+      },
+      "ban": {
+        "old_rva": "0x5d721e0",
+        "new_rva": "0x5d73610",
+        "sizes": [
+          1445,
+          1445
+        ],
+        "instruction_counts": [
+          376,
+          376
+        ],
+        "old_regions": [
+          [
+            "0x5d721e0",
+            "0x5d7225f"
+          ],
+          [
+            "0x5d7225f",
+            "0x5d7226f"
+          ],
+          [
+            "0x5d7226f",
+            "0x5d72534"
+          ],
+          [
+            "0x5d72534",
+            "0x5d725b6"
+          ],
+          [
+            "0x5d725b6",
+            "0x5d726bb"
+          ],
+          [
+            "0x5d726bb",
+            "0x5d726db"
+          ],
+          [
+            "0x5d726db",
+            "0x5d72719"
+          ],
+          [
+            "0x5d72719",
+            "0x5d72785"
+          ]
+        ],
+        "new_regions": [
+          [
+            "0x5d73610",
+            "0x5d7368f"
+          ],
+          [
+            "0x5d7368f",
+            "0x5d7369f"
+          ],
+          [
+            "0x5d7369f",
+            "0x5d73964"
+          ],
+          [
+            "0x5d73964",
+            "0x5d739e6"
+          ],
+          [
+            "0x5d739e6",
+            "0x5d73aeb"
+          ],
+          [
+            "0x5d73aeb",
+            "0x5d73b0b"
+          ],
+          [
+            "0x5d73b0b",
+            "0x5d73b49"
+          ],
+          [
+            "0x5d73b49",
+            "0x5d73bb5"
+          ]
+        ],
+        "relocation_neutralized_equal": true,
+        "normalized_sha256": "ee03eba871dd0535d38c4bc23a2af3b8862a4533a828099e1bf960204eddb73b"
+      },
+      "unban": {
+        "old_rva": "0x5d710b0",
+        "new_rva": "0x5d724e0",
+        "sizes": [
+          648,
+          648
+        ],
+        "instruction_counts": [
+          177,
+          177
+        ],
+        "old_regions": [
+          [
+            "0x5d710b0",
+            "0x5d71338"
+          ]
+        ],
+        "new_regions": [
+          [
+            "0x5d724e0",
+            "0x5d72768"
+          ]
+        ],
+        "relocation_neutralized_equal": true,
+        "normalized_sha256": "9e786e879e63fa20d12f763e52f9d19259b1be534056e70d3b9a24c7f94ad1dc"
+      },
+      "known_players": {
+        "old_rva": "0x5975950",
+        "new_rva": "0x5976d10",
+        "sizes": [
+          436,
+          436
+        ],
+        "instruction_counts": [
+          123,
+          123
+        ],
+        "old_regions": [
+          [
+            "0x5975950",
+            "0x5975985"
+          ],
+          [
+            "0x5975985",
+            "0x5975ab8"
+          ],
+          [
+            "0x5975ab8",
+            "0x5975af0"
+          ],
+          [
+            "0x5975af0",
+            "0x5975b04"
+          ]
+        ],
+        "new_regions": [
+          [
+            "0x5976d10",
+            "0x5976d45"
+          ],
+          [
+            "0x5976d45",
+            "0x5976e78"
+          ],
+          [
+            "0x5976e78",
+            "0x5976eb0"
+          ],
+          [
+            "0x5976eb0",
+            "0x5976ec4"
+          ]
+        ],
+        "relocation_neutralized_equal": true,
+        "normalized_sha256": "0d72a108a27b2e83547c8995be1b716f2fb18b42bda5541c732677b21909381a"
+      },
+      "save_bans": {
+        "old_rva": "0x5d718d0",
+        "new_rva": "0x5d72d00",
+        "sizes": [
+          1075,
+          1075
+        ],
+        "instruction_counts": [
+          268,
+          268
+        ],
+        "old_regions": [
+          [
+            "0x5d718d0",
+            "0x5d71933"
+          ],
+          [
+            "0x5d71933",
+            "0x5d71ce5"
+          ],
+          [
+            "0x5d71ce5",
+            "0x5d71d03"
+          ]
+        ],
+        "new_regions": [
+          [
+            "0x5d72d00",
+            "0x5d72d63"
+          ],
+          [
+            "0x5d72d63",
+            "0x5d73115"
+          ],
+          [
+            "0x5d73115",
+            "0x5d73133"
+          ]
+        ],
+        "relocation_neutralized_equal": true,
+        "normalized_sha256": "f84b93695aa082163e3a3fc52c74654ed94557e61e106d6246db133d1b58721f"
+      },
+      "owned_ref_release": {
+        "old_rva": "0x12be520",
+        "new_rva": "0x12bf420",
+        "sizes": [
+          77,
+          77
+        ],
+        "instruction_counts": [
+          25,
+          25
+        ],
+        "old_regions": [
+          [
+            "0x12be520",
+            "0x12be52f"
+          ],
+          [
+            "0x12be52f",
+            "0x12be567"
+          ],
+          [
+            "0x12be567",
+            "0x12be56d"
+          ]
+        ],
+        "new_regions": [
+          [
+            "0x12bf420",
+            "0x12bf42f"
+          ],
+          [
+            "0x12bf42f",
+            "0x12bf467"
+          ],
+          [
+            "0x12bf467",
+            "0x12bf46d"
+          ]
+        ],
+        "relocation_neutralized_equal": true,
+        "normalized_sha256": "0c7d0619aa36fa083241af9779588aae7f30e4f70e4b9f16ea360af0c519274b"
+      },
+      "identity_copy": {
+        "old_rva": "0x38c0f00",
+        "new_rva": "0x38c1c10",
+        "sizes": [
+          177,
+          177
+        ],
+        "instruction_counts": [
+          51,
+          51
+        ],
+        "old_regions": [
+          [
+            "0x38c0f00",
+            "0x38c0f56"
+          ],
+          [
+            "0x38c0f56",
+            "0x38c0f6c"
+          ],
+          [
+            "0x38c0f6c",
+            "0x38c0f8d"
+          ],
+          [
+            "0x38c0f8d",
+            "0x38c0fa8"
+          ],
+          [
+            "0x38c0fa8",
+            "0x38c0fb1"
+          ]
+        ],
+        "new_regions": [
+          [
+            "0x38c1c10",
+            "0x38c1c66"
+          ],
+          [
+            "0x38c1c66",
+            "0x38c1c7c"
+          ],
+          [
+            "0x38c1c7c",
+            "0x38c1c9d"
+          ],
+          [
+            "0x38c1c9d",
+            "0x38c1cb8"
+          ],
+          [
+            "0x38c1cb8",
+            "0x38c1cc1"
+          ]
+        ],
+        "relocation_neutralized_equal": true,
+        "normalized_sha256": "9218df530cafdd516c2c479104a17ca69c797d0a0e53045c792fa136b8930ab3"
+      },
+      "user_copy": {
+        "old_rva": "0x5981280",
+        "new_rva": "0x5982640",
+        "sizes": [
+          155,
+          155
+        ],
+        "instruction_counts": [
+          47,
+          47
+        ],
+        "old_regions": [
+          [
+            "0x5981280",
+            "0x59812c7"
+          ],
+          [
+            "0x59812c7",
+            "0x598130d"
+          ],
+          [
+            "0x598130d",
+            "0x598131b"
+          ]
+        ],
+        "new_regions": [
+          [
+            "0x5982640",
+            "0x5982687"
+          ],
+          [
+            "0x5982687",
+            "0x59826cd"
+          ],
+          [
+            "0x59826cd",
+            "0x59826db"
+          ]
+        ],
+        "relocation_neutralized_equal": true,
+        "normalized_sha256": "5fda04c73f44af5446106633723c7dad9ac3bee9050deab14a73bb1c6befed86"
+      }
+    },
+    "variant_tables": {
+      "copy": {
+        "old_rva": "0x930cf10",
+        "new_rva": "0x930f128",
+        "new_targets": [
+          "0x38b1a40",
+          "0x14610e0"
+        ]
+      },
+      "release": {
+        "old_rva": "0x9039250",
+        "new_rva": "0x903a270",
+        "new_targets": [
+          "0x12bf420",
+          "0x123fb30"
+        ]
+      },
+      "copy_and_noop_release_leaf_bytes_unchanged": true,
+      "shared_reference_release_comparison": "included among the eight functions"
+    },
+    "scope": "Relocation-neutralized body equality does not prove equivalence of every referenced external function, noncontiguous exception handler or runtime behavior."
+  },
+  "native_component_validation": {
+    "compiler": "MSVC 19.51.36257.0",
+    "sdk": "10.0.26100.0",
+    "configuration": "x64 Release",
+    "flags_retained": [
+      "/W4",
+      "/WX",
+      "/guard:cf"
+    ],
+    "read_only_sec_image_no_execute": true,
+    "before_profile": {
+      "exit_code": 1,
+      "error": "build_26574459_rejected_by_native_bridge",
+      "test_binary_sha256": "bc1fe7e085786e47eb38ebd8fa34a86e3bccbc344183157f1c1cbdaf0ca5b0e0"
+    },
+    "after_profile": {
+      "test_binary_sha256": "65ea2a5d7e978d2bf62d1bc1369ef6695920cf6261a52f7019c195307ced1f14",
+      "real_pe_results": [
+        {
+          "steam_build_id": "26574459",
+          "exit_code": 0,
+          "output_sha256": "31b0d0c02f94bbe36a9f1292b5e5dc00d032ff963110d6a2ef5500d45326ebd2"
+        },
+        {
+          "steam_build_id": "26419371",
+          "exit_code": 0,
+          "output_sha256": "2d6bf714b1c9e44d6fd451df9ed9bc951cde2e56e2299305de8626c25870fbbb"
+        }
+      ],
+      "unknown_and_altered_hashes_rejected": true,
+      "mutated_entry_bytes_rejected_for_all_five_native_targets": true,
+      "historical_profiles_preserved": true
+    },
+    "standalone_bridge": {
+      "exit_code": 0,
+      "size_bytes": 205824,
+      "sha256": "0b0bec65d76f1835b7cd951100425d5819a70414e4c5238d202a98c975c2e0a9",
+      "deployed_or_embedded_in_application": false
+    },
+    "game_code_executed": false
+  },
+  "source_files": [
+    {
+      "path": "modules/runescapedragonwilds/control/bridge.cpp",
+      "sha256": "a01a63bdbc9a45f9e67950a942a03793eb6e586a0dc1e2d7ac90dea0b9f11f03"
+    },
+    {
+      "path": "modules/runescapedragonwilds/control/tests/native_profile_tests.cpp",
+      "sha256": "8de35acba00fbd92d751f3ed9f3aa5777298567c37be796d033d7129b39bd05c"
+    },
+    {
+      "path": "apps/desktop/src-tauri/src/commands_dragonwilds_player_query_files.rs",
+      "sha256": "0c825ae131adf6377b18edc852e1f12322d53550fa1f25f3e44e3095fd365afb"
+    }
+  ],
+  "retained_static_evidence": {
+    "directory_label": "game-updates-20261114-01a1d7f0/dragonwilds-analysis",
+    "files": [
+      {
+        "name": "inspect_dragonwilds.py",
+        "sha256": "f76093e1dd614b53060fa05aaf1458bbf4f937766021b9cbf16002a71dd06ba0"
+      },
+      {
+        "name": "verify_current_contract.py",
+        "sha256": "212f8b17ffec6f5c56ec1180348a5eb17c32457c58a0ed9e6016355a59cfe84a"
+      },
+      {
+        "name": "verified-static-contract-26574459.json",
+        "sha256": "cfb94e8025909ed6826adbdce6475600ebff733c793bb5e238725d9f11007cea"
+      },
+      {
+        "name": "compare_reviewed_bodies.py",
+        "sha256": "05777e8bc97d4c6fe62f911932d57e8ba0ffd09006bbac665e9d4d610d6de624"
+      },
+      {
+        "name": "normalized-native-body-comparison.json",
+        "sha256": "2f08b792e4168f7130584cfda137cb4d75e056627349c906f10e7d31ed10c309"
+      },
+      {
+        "name": "native-profile-before-build.log",
+        "sha256": "649d688fff6751da5daa900e32c38c825527e5f78a57cc24b53d89de582293ca"
+      },
+      {
+        "name": "native-profile-before-test.log",
+        "sha256": "46b9c592e3a369414542bdf9d0f5a4c658f0cf982d7d0f8bc14ef580289b4e21"
+      },
+      {
+        "name": "native-profile-after-build.log",
+        "sha256": "649d688fff6751da5daa900e32c38c825527e5f78a57cc24b53d89de582293ca"
+      },
+      {
+        "name": "native-profile-test-26574459.log",
+        "sha256": "31b0d0c02f94bbe36a9f1292b5e5dc00d032ff963110d6a2ef5500d45326ebd2"
+      },
+      {
+        "name": "native-profile-test-26419371.log",
+        "sha256": "2d6bf714b1c9e44d6fd451df9ed9bc951cde2e56e2299305de8626c25870fbbb"
+      },
+      {
+        "name": "control-configure.log",
+        "sha256": "b972bb9e241d25562df1340ec61d212cf16cf028e08011ed44ecc284b8528bc0"
+      },
+      {
+        "name": "control-build.log",
+        "sha256": "515365cca976a63f658deceef2185ff24737960f5c4287a7eb37f6a0a33dd32e"
+      }
+    ]
+  },
+  "pending_native_checks": [],
+  "limits": [
+    "No game/server process was started for this static fixture; no runtime save, moderation, player connection or durable storage result is asserted.",
+    "The standalone DLL was only built locally. The separate linked native acceptance used the exact DLL embedded by the application snapshot pipeline.",
+    "Real PE tests ran for 26574459 and 26419371. Older profile records and the 26161880 test branch remain, but their binary fixtures were not rerun.",
+    "The same fixed UE4SS core, exact Shipping hashes, entry guards and ownership/session checks remain required. Unknown images are not admitted.",
+    "This evidence does not verify cross-version saved worlds, real client kick/ban/reconnect, authentication or combat."
+  ],
+  "native_acceptance_fixture": "2026-11-14-public-build-26574459-native.json"
+}

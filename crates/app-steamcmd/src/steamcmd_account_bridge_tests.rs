@@ -28,7 +28,11 @@ public static class AccountBridgeFixture {
   }
   public static int Main(string[] args) {
     if (args.Length == 1 && args[0] == "+quit") { Runtime(); return 0; }
+    int appInfo = Array.IndexOf(args, "+app_info_http_min");
+    int expectedAppInfo = args.Length > 0 && args[0] == "-overridepackageurl" ? 2 : 0;
+    if (appInfo != expectedAppInfo || appInfo + 1 >= args.Length || args[appInfo + 1] != "1000000000") return 90;
     int script = Array.IndexOf(args, "+runscript");
+    if (script >= 0 && script != appInfo + 2) return 91;
     string phase = script < 0 ? "interactive" : "cache";
     if (Array.IndexOf(args, "+login") >= 0 || Array.IndexOf(args, "selected_account") >= 0
       || Array.IndexOf(args, "7Q9XW") >= 0 || Array.IndexOf(args, "MAIL7") >= 0

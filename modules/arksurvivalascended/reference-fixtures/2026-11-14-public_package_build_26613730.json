@@ -1,0 +1,97 @@
+{
+  "schema_version": 1,
+  "module_id": "arksurvivalascended",
+  "observed_on": "2026-11-14",
+  "evidence_classification": "official_package_identity_and_matching_symbol_http_head_availability",
+  "status": "passed",
+  "package": {
+    "steam_app_id": 2430930,
+    "steam_build_id": "26613730",
+    "state_flags": 4,
+    "update_result": 0,
+    "acquisition": "Official SteamCMD public package on an isolated Windows validation host",
+    "acquisition_exit_code": 0,
+    "acquisition_recorded_utc": "2026-11-14T05:28:56.7238348Z",
+    "appmanifest_sha256": "a46918d63be9f3d8bfd1589772126b5421e5113a81981d614c9d4d33d1a224b7",
+    "declared_size_on_disk_bytes": 12314094059,
+    "installed_depots": [
+      {
+        "depot_id": "1004",
+        "manifest_id": "7604377918839582995",
+        "declared_size_bytes": 67863136
+      },
+      {
+        "depot_id": "2430931",
+        "manifest_id": "1699900905164446885",
+        "declared_size_bytes": 12246230923
+      }
+    ],
+    "executable_relative_path": "ShooterGame/Binaries/Win64/ArkAscendedServer.exe",
+    "executable_bytes": 215553640,
+    "executable_sha256": "e30393b42f1698b77347f4815f86f060843e0f897e8b9460c3fc58de347647fc"
+  },
+  "comparison": {
+    "previous_tested_build": "26564816",
+    "previous_executable_sha256": "79b0ce800a05e254f0a591967acea9ae0fcd0c03becf75ab04182e2c3cd0ab02",
+    "executable_changed": true,
+    "symbol_selection": "Current executable SHA-256; existing cache bindings reject the old executable cache."
+  },
+  "publisher_update": {
+    "version": "98.2",
+    "public_build_updated_asia_shanghai": "2026-11-14T03:14:05+08:00",
+    "notes_url": "https://survivetheark.com/index.php?/forums/topic/773786-asa-server-patch-notes-server-v982-updated-11132026/",
+    "notes_retrieval": "Official search-index text from the 98.2 heading through the following v97 heading; direct page retrieval returned HTTP 403.",
+    "scope": "Giga balance, creature and gameplay fixes, and unofficial survivor-transfer handling. This section documents no new INI key, launch option, port, RCON protocol or executable path.",
+    "integration_assessment": "Existing six v97 Game.ini keys and launch/cluster configuration already cover documented settings. The unchanged AsaApi 2.11 runtime matches the latest upstream release; compatibility still requires separate native acceptance."
+  },
+  "matching_symbols": {
+    "checked_utc": "2026-11-14T05:30:48Z",
+    "method": "HEAD",
+    "body_bytes_read": 0,
+    "probes": [
+      {
+        "url": "https://cdn.pelayori.com/cache/e30393b42f1698b77347f4815f86f060843e0f897e8b9460c3fc58de347647fc.zip",
+        "status": 200,
+        "content_type": "application/zip",
+        "content_length": 23153101
+      },
+      {
+        "url": "https://cdn.shadowhunter.co.za/cache/e30393b42f1698b77347f4815f86f060843e0f897e8b9460c3fc58de347647fc.zip",
+        "status": 200,
+        "content_type": "application/zip",
+        "content_length": 23153101
+      },
+      {
+        "url": "https://cdn.shadowhunter-systems.co.za/cache/e30393b42f1698b77347f4815f86f060843e0f897e8b9460c3fc58de347647fc.zip",
+        "status": 200,
+        "content_type": "application/zip",
+        "content_length": 23153101
+      }
+    ],
+    "interpretation": "Availability only; ZIP contents, executable binding and ABI compatibility require production preparation and native execution."
+  },
+  "acquisition_observation": "The first seeded task copy retained a retired depot manifest and exited 8 with AccessDenied. Preserving that copied ACF and acquiring the current public manifest completed with exit 0. The original previous-build package remained unchanged; this is separate from Steam app-info CDN 502.",
+  "artifacts_retained_outside_repository": [
+    {
+      "name": "acquisition.json",
+      "bytes": 492,
+      "sha256": "d9328ae16859f4e53dc8fd2d2d24831dd9231aa8d86ddfaf442f70121fb053ea"
+    },
+    {
+      "name": "appmanifest_2430930.acf",
+      "bytes": 943,
+      "sha256": "a46918d63be9f3d8bfd1589772126b5421e5113a81981d614c9d4d33d1a224b7"
+    },
+    {
+      "name": "matching-symbols-head.json",
+      "bytes": 1564,
+      "sha256": "28a16887e3ba94bb38f2f4142d6536202eb843e65e17d9b622aaaeb5942e9535"
+    }
+  ],
+  "scope_limits": [
+    "This record establishes package identity and HTTP availability only; no native runtime success or configuration-default verification is claimed.",
+    "No existing-world migration, multiplayer login or cross-map survivor-transfer acceptance.",
+    "Full acquisition logs, host identifiers, credentials and private paths remain outside the repository."
+  ],
+  "native_acceptance": "2026-11-14-managed_native_creature_persistence_asa_2_11_build_26613730.json"
+}

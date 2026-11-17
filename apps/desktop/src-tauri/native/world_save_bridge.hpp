@@ -162,6 +162,9 @@ struct Image {
         prologue(base, SAVE_RVA, SAVE_PROLOGUE);
         game_thread = reinterpret_cast<bool (*)()>(GetProcAddress(core, "?IsInGameThreadRaw@Unreal@RC@@YA_NXZ"));
         require(game_thread != nullptr, "thread_api");
+#ifdef LGSM_NATIVE_INITIALIZE_CONTRACT
+        initialize_native_contract();
+#endif
     }
 };
 struct Request { std::string nonce, operation; uint64_t requested_at{}; uintptr_t proxy{}, instance{}, world{}; };

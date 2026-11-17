@@ -15,7 +15,7 @@ end
 local function text(value) return {ToString=function() return value end} end
 local invalid = {IsValid=function() return false end}
 local function harness(missing_launch)
-    local s={now=1000, files={}, queue={}, serial=0, calls=0, probes=0, random=0}
+    local s={now=1000, files={}, queue={}, serial=0, calls=0, probes=0, random=0, timers={}, timer_serial=0}
     s.instance=object(1,"/Script/SCUM.ConZGameInstance")
     s.gs=object(3,"/Script/SCUM.ConZGameState");s.gs.bReplicatedHasBegunPlay=true
     s.gm=object(5,"/Script/SCUM.ConZGameMode")
@@ -75,7 +75,17 @@ local function harness(missing_launch)
     end}
     env.IsInGameThread=function() return s.in_game==true end
     env.EGameThreadMethod={EngineTick=1}
+    env.EngineTickAvailable=true
     env.ExecuteInGameThread=function(fn,method) assert(method==1);s.queue[#s.queue+1]=fn end
+    env.ExecuteInGameThreadWithDelay=function(delay_ms,fn)
+        s.timer_serial=s.timer_serial+1
+        s.timers[s.timer_serial]={started_ms=s.now*1000,delay_ms=delay_ms,callback=fn}
+        return s.timer_serial
+    end
+    env.GetDelayedActionTimeElapsed=function(handle)
+        local timer=s.timers[handle];if not timer then return -1 end
+        return math.min(timer.delay_ms,math.max(0,math.ceil(s.now*1000-timer.started_ms)))
+    end
     env.LoopAsync=function(_,fn) s.tick=fn end
     env.FindAllOf=function(kind)
         if kind=="World" then error("These policies must select the driver, not scan asset worlds") end
@@ -84,7 +94,15 @@ local function harness(missing_launch)
         return {}
     end
     assert(load(source,"@fixed-native-save","t",env))()
-    function s.dispatch() local fn=table.remove(s.queue,1);if fn then s.in_game=true;fn();s.in_game=false end end
+    function s.dispatch()
+        s.in_game=true
+        local fn=table.remove(s.queue,1);if fn then fn() end
+        -- Timed actions are separate from the immediate EngineTick queue.
+        for handle,timer in pairs(s.timers) do
+            if s.now*1000-timer.started_ms>=timer.delay_ms then timer.callback();s.timers[handle]=nil end
+        end
+        s.in_game=false
+    end
     function s.write(action,boot,world)
         s.serial=s.serial+1;s.id=string.format("%032x",s.serial)
         s.files[base.."request.json"]=string.format('{"protocol":1,"request_id":"%s","requested_at":%d,"action":"%s","boot_id":"%s","world_token":"%s"}',s.id,s.now,action,boot or "",world or "")

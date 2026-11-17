@@ -145,7 +145,7 @@ export const ZH_CN_BAROTRAUMA_MESSAGES: MessageCatalog = {
   "settings.schema.barotrauma.max_lag_compensation.title": "武器延迟补偿（毫秒）",
   "settings.schema.barotrauma.max_lag_compensation.description": "服务器为延迟到达的开火输入回溯命中判定的最长时间，范围为 0–500 毫秒。",
   "settings.schema.barotrauma.require_authentication.title": "要求账号认证",
-  "settings.schema.barotrauma.require_authentication.description": "通过 Steam 或 Epic 所有权认证验证加入的客户端；关闭后不执行此账号检查。",
+  "settings.schema.barotrauma.require_authentication.description": "验证加入客户端的账号身份与游戏所有权；关闭后跳过此项账号检查。",
   "settings.schema.barotrauma.max_transport_time.title": "重生艇运输时限（秒）",
   "settings.schema.barotrauma.max_transport_time.description": "重生穿梭艇离开关卡前，留给玩家前往主潜艇的时间；0 表示不限时。",
   "settings.schema.barotrauma.min_respawn_ratio.title": "最低待重生玩家比例",

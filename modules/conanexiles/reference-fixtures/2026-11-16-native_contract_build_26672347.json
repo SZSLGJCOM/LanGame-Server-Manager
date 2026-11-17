@@ -1,0 +1,1555 @@
+{
+  "schema_version": 1,
+  "module_id": "conanexiles",
+  "observed_on": "2026-11-16",
+  "steam_app_id": 443030,
+  "build_id": "26672347",
+  "evidence_classification": "static_contract_and_isolated_native_sql_completion_manual_checkpoint_reload_and_standard_lifecycle",
+  "package": {
+    "source": "Official SteamCMD anonymous app_update validate, followed by the existing trusted-main-app dependency completion. The original incomplete-dependency acquisition remains retained separately.",
+    "state_flags": 4,
+    "update_result": 0,
+    "appmanifest_sha256": "3345e82cb81887790fe0d70304c22caf5c3cdc8f44d7e5fdecd294f983b53ed6",
+    "executable_relative_path": "ConanSandbox/Binaries/Win64/ConanSandboxServer-Win64-Shipping.exe",
+    "executable_bytes": 187450872,
+    "executable_sha256": "1954037ce360eb330d0ee90bbc1ae0d9beb9d1ea42fe7cc7fb31db4c0306be6a",
+    "provider_relative_path": "ConanSandbox/Binaries/Win64/Dreamworld.dll",
+    "provider_bytes": 5231096,
+    "provider_sha256": "bef60c18c3a8aa9cf8677da6bb0de0d7ee8b341991abb8b898ddb9d944ee8b32",
+    "shared_dependency_verification": {
+      "appId": "228980",
+      "manifestSha256": "c4b9f9a3911925a0420d1803e258dbbd4f43b7d988e3a7ce6dc9d5ff363b45fd",
+      "stateFlags": 4,
+      "sizeOnDisk": 172065224,
+      "depotCount": 4,
+      "payloadFileCount": 171,
+      "payloadBytes": 172065224,
+      "allPayloadHashesVerified": true,
+      "manifestMetadataAndCrcVerified": true,
+      "auditSha256": "ba54abead5ea3c13eb91c1923337096808f772fe18b9bc3c91e1c36d38012f9b"
+    }
+  },
+  "static_save_contract": {
+    "abi": "void whole_world_flush(WorldPersistenceComponent*, NativeJob*); native writer consumes the owned callable on the game thread.",
+    "profile": {
+      "save_prologue": "48895c24184889742420574881ec80000000488b05e7f53a064833c448894424",
+      "save": "0x44e9500",
+      "component_class": "0xab68430",
+      "weak_owner": "0x16844d0"
+    },
+    "method": "Read-only comparison with the hash-verified 26552396 baseline: seven unwind-bounded complete functions plus the uniquely located 84-byte leaf weak-owner helper preserve every decoded instruction and internal branch after masking RIP-relative addresses and external branch destinations. New class strings, cross-function calls, SQL text, object offsets and callback layout are independently bound below. This does not establish semantic equivalence of every transitive external callee.",
+    "class": {
+      "getter": "0x44a94d0",
+      "singleton": "0xab68430",
+      "class_size": "0x240",
+      "package": "/Script/UE4Dreamworld",
+      "name": "WorldPersistenceComponent",
+      "component_cached_world": "0xc0",
+      "component_weak_owner": "0x150",
+      "pending_actor_set": "0x158",
+      "game_mode_database": "0x5a0",
+      "database_status_vtable": "0x70",
+      "ready_status": 2
+    },
+    "functions": {
+      "save": {
+        "rva": "0x44e9500",
+        "bytes": 225,
+        "raw_sha256": "92b45a8a19cb22d02455174cf172431f667e0ad4f28a3738aebe0056002011cf",
+        "normalized_sha256": "45f17da5140440606430c756357bb2e0f161662e772437c86d62a3bf0783050e"
+      },
+      "writer": {
+        "rva": "0x44e95f0",
+        "bytes": 1406,
+        "raw_sha256": "ea190e34026d60496bbe70d4d02b3af340e8fb95df104fd9b2d8a558b44532e1",
+        "normalized_sha256": "a092cca9405deac60cecdde3583d068eb35a5ad5d19132d4da689e75533793b4"
+      },
+      "pre_removal": {
+        "rva": "0x44eaa90",
+        "bytes": 834,
+        "raw_sha256": "3efb216ea96ff30a5c48b785a47bf7631e5f8932eb1dd74d41f797dbef15edc6",
+        "normalized_sha256": "eaa30faf5a8f4979975d89260204d5f7d287f4ebe57b3d71eb3b54c7e68fe61e"
+      },
+      "transfer": {
+        "rva": "0x4ea6ca0",
+        "bytes": 467,
+        "raw_sha256": "430a598613ff5bdcfc958157a80dc9ee5453ccc8178c25b02a58f28dba87696a",
+        "normalized_sha256": "b9294a53daef9b0050e71f7206b8da2dffdb1f1165b60b425e04a4c66ab520c0"
+      },
+      "class_getter": {
+        "rva": "0x44a94d0",
+        "bytes": 225,
+        "raw_sha256": "8a39f7a382462339ae7af0b6073ee0d7a0b249d6171af5162c757c19ea0b0e8b",
+        "normalized_sha256": "0cadace7e1eb708738e0b1c0308442a9a50c03b46c68e2725d1701ddce78b8a6"
+      },
+      "component_constructor": {
+        "rva": "0x44e49f0",
+        "bytes": 451,
+        "raw_sha256": "8b53222150183c4fac67ca48533b9d4f3c9fe1a88428dc1439ec17d67d988103",
+        "normalized_sha256": "0a865b4fd61c78124b36bdd8674a9d4d7e4de0231e33331aa6af45b39f4c7d27"
+      },
+      "weak_owner": {
+        "rva": "0x16844d0",
+        "bytes": 84,
+        "raw_sha256": "46820b1cf2bb25594f8aea813281fb033702df7a3947ec161645369ff4937310",
+        "normalized_sha256": "d3546fa14a0119f0434ad953fb7fd3ee421d25cc23d645bd199183cd091f181f"
+      },
+      "callable_move": {
+        "rva": "0x44cd5a0",
+        "bytes": 126,
+        "raw_sha256": "99ab5110857c55c00a10be7b6cf0fd1f5f2f57c54a3a8f9bdec6d57f809693ea",
+        "normalized_sha256": "99ab5110857c55c00a10be7b6cf0fd1f5f2f57c54a3a8f9bdec6d57f809693ea"
+      }
+    },
+    "native_writer": "Compacts pending actors at component +0x158; resolves weak owner +0x150; requires database +0x5a0 status slot +0x70 == 2; appends BEGIN/END TRANSACTION around native serialization and submits via database slot +0xb0.",
+    "callback": {
+      "native_job_bytes": "0x48",
+      "std_function_bytes": "0x40",
+      "std_function_callable_pointer": "0x38",
+      "thread_id": "0x40",
+      "shared_ptr_bytes": "0x10",
+      "sqlite_query_success_job": "0x30",
+      "sqlite_query_success_thread": "0x70",
+      "sqlite_query_error_job": "0x78",
+      "sqlite_query_error_thread": "0xb8",
+      "result_vtable": "0x37be08",
+      "result_begin": "0x8",
+      "result_end": "0x10",
+      "result_index": "0x20",
+      "result_done": "0x24",
+      "statement_record_bytes": "0x88"
+    },
+    "normalization_scope": "External addresses only: RIP-relative memory/code targets and direct branches outside the compared function. Immediate constants, object offsets and all internal branch displacements remain exact.",
+    "independent_bindings": {
+      "strings": {
+        "class_name": {
+          "rva": "0x8cacce0",
+          "value": "WorldPersistenceComponent",
+          "adjacent_64_bytes_equal": false,
+          "declared_string_bytes": 52,
+          "declared_string_equal": true
+        },
+        "class_package": {
+          "rva": "0x8c9a1e8",
+          "value": "/Script/UE4Dreamworld",
+          "adjacent_64_bytes_equal": true,
+          "declared_string_bytes": 44,
+          "declared_string_equal": true
+        },
+        "begin_transaction": {
+          "rva": "0x8cad000",
+          "value": "BEGIN TRANSACTION",
+          "adjacent_64_bytes_equal": true,
+          "declared_string_bytes": 18,
+          "declared_string_equal": true
+        },
+        "end_transaction": {
+          "rva": "0x8cad018",
+          "value": "END TRANSACTION",
+          "adjacent_64_bytes_equal": true,
+          "declared_string_bytes": 16,
+          "declared_string_equal": true
+        }
+      },
+      "cross_function_calls": [
+        {
+          "source": "save",
+          "instruction_offset": 140,
+          "target": "callable_move",
+          "old_rva": "0x44cd600",
+          "new_rva": "0x44cd5a0"
+        },
+        {
+          "source": "save",
+          "instruction_offset": 156,
+          "target": "writer",
+          "old_rva": "0x44e9650",
+          "new_rva": "0x44e95f0"
+        },
+        {
+          "source": "writer",
+          "instruction_offset": 59,
+          "target": "weak_owner",
+          "old_rva": "0x1684500",
+          "new_rva": "0x16844d0"
+        },
+        {
+          "source": "writer",
+          "instruction_offset": 786,
+          "target": "weak_owner",
+          "old_rva": "0x1684500",
+          "new_rva": "0x16844d0"
+        },
+        {
+          "source": "writer",
+          "instruction_offset": 806,
+          "target": "weak_owner",
+          "old_rva": "0x1684500",
+          "new_rva": "0x16844d0"
+        },
+        {
+          "source": "writer",
+          "instruction_offset": 830,
+          "target": "weak_owner",
+          "old_rva": "0x1684500",
+          "new_rva": "0x16844d0"
+        },
+        {
+          "source": "writer",
+          "instruction_offset": 855,
+          "target": "weak_owner",
+          "old_rva": "0x1684500",
+          "new_rva": "0x16844d0"
+        },
+        {
+          "source": "pre_removal",
+          "instruction_offset": 250,
+          "target": "callable_move",
+          "old_rva": "0x44cd600",
+          "new_rva": "0x44cd5a0"
+        },
+        {
+          "source": "pre_removal",
+          "instruction_offset": 265,
+          "target": "writer",
+          "old_rva": "0x44e9650",
+          "new_rva": "0x44e95f0"
+        },
+        {
+          "source": "transfer",
+          "instruction_offset": 15,
+          "target": "weak_owner",
+          "old_rva": "0x1684500",
+          "new_rva": "0x16844d0"
+        },
+        {
+          "source": "transfer",
+          "instruction_offset": 55,
+          "target": "class_getter",
+          "old_rva": "0x44a9530",
+          "new_rva": "0x44a94d0"
+        },
+        {
+          "source": "transfer",
+          "instruction_offset": 149,
+          "target": "class_getter",
+          "old_rva": "0x44a9530",
+          "new_rva": "0x44a94d0"
+        },
+        {
+          "source": "transfer",
+          "instruction_offset": 408,
+          "target": "save",
+          "old_rva": "0x44e9560",
+          "new_rva": "0x44e9500"
+        }
+      ],
+      "layout_instructions": {
+        "save": {
+          "lea      rbx, [rcx + 0x158]": [
+            "044e952c: 488d9958010000                   lea      rbx, [rcx + 0x158]"
+          ],
+          "mov      eax, dword ptr [rdi + 0x40]": [
+            "044e957d: 8b4740                           mov      eax, dword ptr [rdi + 0x40]"
+          ]
+        },
+        "writer": {
+          "add      rcx, 0x150": [
+            "044e9624: 4881c150010000                   add      rcx, 0x150"
+          ],
+          "mov      rbx, qword ptr [rax + 0x5a0]": [
+            "044e9640: 488b98a0050000                   mov      rbx, qword ptr [rax + 0x5a0]"
+          ],
+          "call     qword ptr [rax + 0x70]": [
+            "044e9661: ff5070                           call     qword ptr [rax + 0x70]"
+          ],
+          "cmp      eax, 2": [
+            "044e9664: 83f802                           cmp      eax, 2"
+          ],
+          "mov      rbx, qword ptr [rax + 0xb0]": [
+            "044e9a2b: 488b98b0000000                   mov      rbx, qword ptr [rax + 0xb0]"
+          ],
+          "lea      r9, [rbp - 0x68]": [
+            "044e9a81: 4c8d4d98                         lea      r9, [rbp - 0x68]"
+          ],
+          "lea      r8, [rsp + 0x38]": [
+            "044e9a85: 4c8d442438                       lea      r8, [rsp + 0x38]"
+          ],
+          "lea      rdx, [rsp + 0x48]": [
+            "044e9a8a: 488d542448                       lea      rdx, [rsp + 0x48]"
+          ],
+          "mov      rcx, rdi": [
+            "044e971d: 488bcf                           mov      rcx, rdi",
+            "044e9a8f: 488bcf                           mov      rcx, rdi",
+            "044e9ab2: 488bcf                           mov      rcx, rdi",
+            "044e9ac6: 488bcf                           mov      rcx, rdi",
+            "044e9ae6: 488bcf                           mov      rcx, rdi",
+            "044e9afa: 488bcf                           mov      rcx, rdi"
+          ],
+          "call     rbx": [
+            "044e9720: ffd3                             call     rbx",
+            "044e9a92: ffd3                             call     rbx"
+          ]
+        },
+        "pre_removal": {
+          "mov      rax, qword ptr [rcx + 0xc0]": [
+            "044eaac8: 488b81c0000000                   mov      rax, qword ptr [rcx + 0xc0]"
+          ]
+        },
+        "component_constructor": {
+          "mov      qword ptr [rbx + 0x150]": [
+            "044e4a45: 4889ab50010000                   mov      qword ptr [rbx + 0x150], rbp"
+          ],
+          "mov      qword ptr [rbx + 0x158]": [
+            "044e4a4c: 4889ab58010000                   mov      qword ptr [rbx + 0x158], rbp"
+          ]
+        },
+        "callable_move": {
+          "mov      rcx, qword ptr [rcx + 0x38]": [
+            "044cd5b5: 488b4938                         mov      rcx, qword ptr [rcx + 0x38]"
+          ]
+        }
+      },
+      "unwind_chunks": {
+        "save": [
+          [
+            "0x44e9500",
+            "0x44e95e1"
+          ]
+        ],
+        "writer": [
+          [
+            "0x44e95f0",
+            "0x44e9b6e"
+          ]
+        ],
+        "pre_removal": [
+          [
+            "0x44eaa90",
+            "0x44eadd2"
+          ]
+        ],
+        "transfer": [
+          [
+            "0x4ea6ca0",
+            "0x4ea6e73"
+          ]
+        ],
+        "class_getter": [
+          [
+            "0x44a94d0",
+            "0x44a95b1"
+          ]
+        ],
+        "component_constructor": [
+          [
+            "0x44e49f0",
+            "0x44e4bb3"
+          ]
+        ],
+        "callable_move": [
+          [
+            "0x44cd5a0",
+            "0x44cd61e"
+          ]
+        ]
+      },
+      "weak_owner_leaf_bytes": 84
+    }
+  },
+  "native_acceptance": {
+    "status": "passed_with_explicit_scope_limits",
+    "build": {
+      "candidate": "06",
+      "source_identity_sha256": "1038905602b70c4adf9243c3689d22c4ecf4fd0a9e95ded9f91848ea96e3e90d",
+      "source_manifest_sha256": "8390f0809744621a06a59e0473761cc1a636cd9b1df9b52f8cefaccb93b9b760",
+      "independently_verified_source_files": 4758,
+      "test_binary_sha256": "6580b293c1dcce5922aa3e74548a8de18c93e5051bfb09550970501e689cb29a",
+      "test_binary_bytes": 234194432,
+      "entry_point": "invoke-codex-cargo.ps1",
+      "entry_point_sha256": "3d4d69868642e10ab39ed39b711b6e9cba2bf00db9c6b9e9e1fd17623f03cf59",
+      "cargo_arguments": [
+        "-p",
+        "langame-desktop",
+        "--bin",
+        "langame-desktop",
+        "--features",
+        "custom-protocol",
+        "--locked",
+        "--no-run"
+      ]
+    },
+    "strict_manual_save": {
+      "status": "passed",
+      "selector": "commands::tests::manual_runtime_tests::native_lifecycle_tests::native_manual_save",
+      "started_utc": "2026-11-16T06:03:34Z",
+      "completed_utc": "2026-11-16T06:12:39Z",
+      "duration_seconds": 544.85,
+      "exit_code": 0,
+      "tests_passed": 1,
+      "non_elevated": true,
+      "host_class": "isolated Windows validation host",
+      "flags": {
+        "LANGAME_NATIVE_MANUAL_SAVE": "true",
+        "LANGAME_NATIVE_MANUAL_SAVE_RESTART": "true",
+        "LANGAME_NATIVE_SAVE_REQUIRE_COMPLETED": "true",
+        "LANGAME_NATIVE_EXACT_SAVE_READBACK": "true"
+      },
+      "normal_exit_zero_cycles": [
+        {
+          "cycle": "initial",
+          "run_id": 1,
+          "active_run_after_stop": null
+        },
+        {
+          "cycle": "restart",
+          "run_id": 2,
+          "active_run_after_stop": null
+        }
+      ],
+      "native_sql_confirmed_receipts": 1,
+      "log_sha256": "67928dc7734fcb5323ea8ce287afca8d4dcc57fe423bab3d9017acff251d6d72",
+      "result_sha256": "2f96df6e5c76cc7ecf95a3d06997db35d575043500b7ed621dacb0e978153efe",
+      "status_sha256": "2f96df6e5c76cc7ecf95a3d06997db35d575043500b7ed621dacb0e978153efe",
+      "cleanup_sha256": "a4215fcf6e4f3a3d1e1a90b3de515d4a239c8c45afa4783e5515f55a992c1cf8",
+      "cleanup_failures": [],
+      "owned_processes_remaining": 0,
+      "disposable_runtime_removed": true,
+      "input_package_unchanged": true,
+      "checkpoint": {
+        "captured_before_stop": true,
+        "restored_after_normal_stop": true,
+        "shutdown_snapshot_excluded": true,
+        "fresh_native_load": true,
+        "second_save_sent": false,
+        "files": [
+          {
+            "relative": "game_0.db",
+            "bytes": 262144,
+            "sha256": "05ad3ec5f13a5c5e0700d17fddfe0909ac7514e511eddd80afb61161bab84941"
+          },
+          {
+            "relative": "serveruid.txt",
+            "bytes": 32,
+            "sha256": "d57af7cf51949d10204273eab5d1eafc07508998cdfd92768bb3020c9ef97268"
+          }
+        ]
+      },
+      "readback_scope": "The exact captured manual SQLite checkpoint and server UID were restored after a normal stop and verified by a fresh native process without a second save. No populated-player or building-content identity is established."
+    },
+    "standard_lifecycle": {
+      "status": "passed",
+      "selector": "commands::tests::manual_runtime_tests::native_lifecycle_tests::native_package_lifecycle",
+      "started_utc": "2026-11-16T06:14:17Z",
+      "completed_utc": "2026-11-16T06:28:08Z",
+      "duration_seconds": 831.47,
+      "exit_code": 0,
+      "tests_passed": 1,
+      "non_elevated": true,
+      "host_class": "isolated Windows validation host",
+      "flags": {
+        "LANGAME_NATIVE_MANUAL_SAVE": "true",
+        "LANGAME_NATIVE_MANUAL_SAVE_RESTART": "true",
+        "LANGAME_NATIVE_SAVE_REQUIRE_COMPLETED": "true"
+      },
+      "normal_exit_zero_cycles": [
+        {
+          "cycle": "initial",
+          "run_id": 1,
+          "active_run_after_stop": null
+        },
+        {
+          "cycle": "restart",
+          "run_id": 2,
+          "active_run_after_stop": null
+        },
+        {
+          "cycle": "after_restore",
+          "run_id": 3,
+          "active_run_after_stop": null
+        },
+        {
+          "cycle": "after_archive_restore",
+          "run_id": 4,
+          "active_run_after_stop": null
+        }
+      ],
+      "native_sql_confirmed_receipts": 4,
+      "log_sha256": "1a8858a23e99231f2a41edfd4493db583299af0e4b7d7b0a11c83e83f1dd36ea",
+      "result_sha256": "4f72bf109ff0f97a7aacea1856f5dc15099657e4ee9a4cbf1bbfd37c6f603bdf",
+      "status_sha256": "4f72bf109ff0f97a7aacea1856f5dc15099657e4ee9a4cbf1bbfd37c6f603bdf",
+      "cleanup_sha256": "171d7a9fe8555e42e6f30462cde0352fb0cb856b1126ab4c2d4e1f3f6312e08d",
+      "cleanup_failures": [],
+      "owned_processes_remaining": 0,
+      "disposable_runtime_removed": true,
+      "input_package_unchanged": true,
+      "backup_restored_files": 13,
+      "uninstall_retained_save_files": 16,
+      "uninstall_retained_native_config_files": 1,
+      "interrupted_archive_commit_recovered": true,
+      "restoration_scope": "Stopped backup/archive byte preservation plus fresh native readiness and confirmed save requests. Content-level identity of the restored world is not verified by this standard lifecycle mode.",
+      "program_update": "pinned; network maintenance not selected"
+    },
+    "owned_regressions": [
+      {
+        "group": "save",
+        "selector": "unreal_world_save::",
+        "tests_passed": 27,
+        "tests_ignored": 0,
+        "ignored_tests": [],
+        "exit_code": 0,
+        "log_sha256": "dab9d86fb0cbefa1fad1db59d589d5f338570b06dd1ee96e034f6714c8a4d965"
+      },
+      {
+        "group": "loader",
+        "selector": "unreal_loader::tests::",
+        "tests_passed": 27,
+        "tests_ignored": 1,
+        "ignored_tests": [
+          {
+            "name": "unreal_loader::tests::scum_probe_tests::prepare_owned_scum_contract_loader",
+            "reason": "requires a stopped, explicitly marked disposable SCUM program at LGSM_SCUM_CONTRACT_ROOT"
+          }
+        ],
+        "exit_code": 0,
+        "log_sha256": "4983eea6808e0187e55f5b58800e4dc466a9f81af450b0af3850423d2e2494db"
+      },
+      {
+        "group": "windrose",
+        "selector": "windrose_world_save::",
+        "tests_passed": 7,
+        "tests_ignored": 0,
+        "ignored_tests": [],
+        "exit_code": 0,
+        "log_sha256": "456deea1f3d738f9e9ca98c238bc50797e88ffbc349df2963c1f6149725ee0fa"
+      }
+    ],
+    "owned_cpp_bridge_regression": {
+      "status": "passed",
+      "reused_from": "bridge-contract-tests-02",
+      "exit_code": 0,
+      "selected_inputs_unchanged_and_bound_to_candidate06": true,
+      "selected_input_sha256": {
+        "scripts/build_unreal_save_control.ps1": "02181f8361ccdae5a536616b45617cbf5e21f3873036a06fcb4fed5c34181cc5",
+        "scripts/build_control_output.ps1": "6e6ad6a8716370f8e629f31f51bc34775f8c361a79769cef312248a387acb59b",
+        "apps/desktop/src-tauri/native/world_save_bridge.hpp": "e2dcd0d0862c5255c8a904931235abf99e5305e42329437d95b16023e0395081",
+        "apps/desktop/src-tauri/native/tests/world_save_validation_tests.cpp": "65251fffe43b076bc4074bfdafcb9697abf0c1b260c0fd8c42d6ad242a62df30",
+        "modules/conanexiles/control/bridge.cpp": "d2681db0323a99356f85320ba16b56020924b6d7351460aed68c6e475aaa2828",
+        "modules/conanexiles/control/tests/bridge_tests.cpp": "8f9a0406f9b569e30841de0c78755ed008bf5d21312d7adbc108bca41a1ecf42",
+        "modules/nightingale/control/bridge.cpp": "9642d82fbdba919fa0f7520543ee4b96d3dd1534ffa5569f222d98d031341833",
+        "modules/nightingale/control/tests/bridge_tests.cpp": "c47306fd52a5b3991e36170597ab953d322763a509ba1f7c913109d51975198f"
+      },
+      "real_transport_checks": 136,
+      "conan_owned_sql_assertions": 28,
+      "conan_replay_assertions": 17,
+      "conan_malformed_requests": 12,
+      "nightingale_malformed_requests": 12,
+      "nightingale_periodic_contract_asserted": true,
+      "game_images_loaded": 0,
+      "game_launches": 0,
+      "save_calls": 0,
+      "scope": "Owned C++ transport, static preparation and bridge contract fixtures; no game process or actual game save was invoked.",
+      "result_sha256": "00157106609713ec88b066c918b7d391b64925ab66f8031f709a5fa470bfcfbb",
+      "log_sha256": "304e09e1da29435ecb2408dd663a5d858ba895f9271048942f1ae810faaab188"
+    },
+    "failed_attempts": [
+      {
+        "attempt": "manual-save-01",
+        "status": "failed",
+        "test_exit_code": 101,
+        "source_identity_sha256": "53a2780b84ba4f2a91061f363fad9fa19d560762c1c47b51729e1dedacc5dafc",
+        "test_binary_sha256": "cf5758b616119858394d4fae9c0e99c0fd9741ff418d4d74960f0f08325aad80",
+        "log_sha256": "b9a64b487c427e1641e5d50135f2d99aacffa7bc9c337876fd17a6cfa5ad32cd",
+        "result_sha256": "87ca0e4e261b5d7fe45445d0ee2c1aea18cac526a7dc2e467a1beefb83e9a903",
+        "retention_sha256": "a45b6da93eecdefbfd2f5d117081121c9edc19c672dbd19c0831b37bda8929ef",
+        "original_cleanup_failures": [
+          "native lifecycle cleanup retained its package because process shutdown is unconfirmed"
+        ],
+        "normal_exit_zero_cycles_before_failure": [],
+        "native_sql_confirmed_receipts_before_failure": 0,
+        "failed_cycle": null,
+        "final_cycle_game_exit_code": null,
+        "all_game_cycles_normal_exit_zero_claimed": false,
+        "second_save_invoked": null,
+        "reason": "Startup was refused by the incomplete shared-dependency install gate before game process creation. Its retained disposable directory and failure remain evidence; official dependency completion was separately verified.",
+        "evidence_retained": true,
+        "native_pass_claimed": false,
+        "original_published_reason": "The install gate refused startup before game creation because the initial acquisition had an empty shared-dependency InstalledDepots inventory. Official main-app validation completed those dependencies without changing the EXE/provider pair.",
+        "previously_published_record": {
+          "attempt": "manual-save-01",
+          "test_exit_code": 101,
+          "log_sha256": "b9a64b487c427e1641e5d50135f2d99aacffa7bc9c337876fd17a6cfa5ad32cd",
+          "result_sha256": "87ca0e4e261b5d7fe45445d0ee2c1aea18cac526a7dc2e467a1beefb83e9a903",
+          "reason": "The install gate refused startup before game creation because the initial acquisition had an empty shared-dependency InstalledDepots inventory. Official main-app validation completed those dependencies without changing the EXE/provider pair.",
+          "evidence_retained": true,
+          "native_pass_claimed": false
+        }
+      },
+      {
+        "attempt": "manual-save-02",
+        "status": "failed",
+        "test_exit_code": 101,
+        "source_identity_sha256": "53a2780b84ba4f2a91061f363fad9fa19d560762c1c47b51729e1dedacc5dafc",
+        "test_binary_sha256": "cf5758b616119858394d4fae9c0e99c0fd9741ff418d4d74960f0f08325aad80",
+        "log_sha256": "13a202bafbbded47c67b87bb20e00d27c1a3c5720a8f5188416ea4fac1d2268e",
+        "result_sha256": "dab3813b3f043511bab4415164840f0100c97cbddbea369705f821de96564134",
+        "retention_sha256": "9c990cb2fb05ce39935c3accc86f938822453477a7b4199f832b8c54587d5999",
+        "original_cleanup_failures": [],
+        "normal_exit_zero_cycles_before_failure": [],
+        "native_sql_confirmed_receipts_before_failure": 0,
+        "failed_cycle": "initial",
+        "final_cycle_game_exit_code": null,
+        "all_game_cycles_normal_exit_zero_claimed": false,
+        "second_save_invoked": null,
+        "reason": "The first saveprobe returned dispatcher_timeout before invocation after native readiness. The complete acceptance failed; owned_tree=finished and zero remaining processes do not establish a normal game exit code.",
+        "evidence_retained": true,
+        "native_pass_claimed": false,
+        "original_published_reason": "The managed world and A2S query were ready, but the first saveprobe timed out before invocation while the pinned UE4SS Lua EngineTick dispatcher was being installed. The policy now initializes that dispatcher at module load; verification of that fix is pending.",
+        "previously_published_record": {
+          "attempt": "manual-save-02",
+          "test_exit_code": 101,
+          "log_sha256": "13a202bafbbded47c67b87bb20e00d27c1a3c5720a8f5188416ea4fac1d2268e",
+          "result_sha256": "dab3813b3f043511bab4415164840f0100c97cbddbea369705f821de96564134",
+          "reason": "The managed world and A2S query were ready, but the first saveprobe timed out before invocation while the pinned UE4SS Lua EngineTick dispatcher was being installed. The policy now initializes that dispatcher at module load; verification of that fix is pending.",
+          "evidence_retained": true,
+          "native_pass_claimed": false
+        }
+      },
+      {
+        "attempt": "lifecycle-01",
+        "status": "failed",
+        "test_exit_code": 101,
+        "source_identity_sha256": "42eee45619f4ec3879fac15cc4327e729884cde3fcf834aee1c8dd1dcf2404c3",
+        "test_binary_sha256": "063b634343402773883178a4306d6890b5e9afbb5f76ffc642a873ca411e92c4",
+        "log_sha256": "74df82b59810988e875b0035565f96365fc76d7e3d71fdcff0f3b48e4b73cdde",
+        "result_sha256": "3f7ce619f8c83813cfc12bd51b8e1a59184ef4168a1a908c60a00251367e84b7",
+        "retention_sha256": "52c10e01bac49ff838f2391c938bed9ca80857cb5e00e4bbc8cd86a54bcc2a3c",
+        "original_cleanup_failures": [],
+        "normal_exit_zero_cycles_before_failure": [],
+        "native_sql_confirmed_receipts_before_failure": 0,
+        "failed_cycle": "initial",
+        "final_cycle_game_exit_code": null,
+        "all_game_cycles_normal_exit_zero_claimed": false,
+        "second_save_invoked": null,
+        "reason": "The first saveprobe returned dispatcher_timeout before invocation after native readiness. The complete acceptance failed; owned_tree=finished and zero remaining processes do not establish a normal game exit code.",
+        "evidence_retained": true,
+        "native_pass_claimed": false
+      },
+      {
+        "attempt": "lifecycle-02",
+        "status": "failed",
+        "test_exit_code": 101,
+        "source_identity_sha256": "9fd5734f806cc0e497d3f5724f71f444b077fec599f6b66a4d652b96958d3cc2",
+        "test_binary_sha256": "852ac623e9192d53a8c10e38d524630364f1f7a614b53b3918ab410c33e6cd6d",
+        "log_sha256": "103bc643433b8531d210b794bb8ab487042f6aa3d3afd46fa6f985da3841edf4",
+        "result_sha256": "4d874587941f813dcb0f22709d79dd269d07624a6dbc64e5a956f27841f22ae6",
+        "retention_sha256": "9202d976b1efb482864659d08fc727eaa0235425b164ea0accdcfbd64dbab60f",
+        "original_cleanup_failures": [],
+        "normal_exit_zero_cycles_before_failure": [
+          {
+            "cycle": "initial",
+            "run_id": 1,
+            "exit_code": 0,
+            "active_run_after_stop": null
+          }
+        ],
+        "native_sql_confirmed_receipts_before_failure": 1,
+        "failed_cycle": "restart",
+        "final_cycle_game_exit_code": null,
+        "all_game_cycles_normal_exit_zero_claimed": false,
+        "second_save_invoked": false,
+        "reason": "Candidate04 completed its initial confirmed save and normal exit. The restarted world reached readiness, then saveprobe returned dispatcher_timeout before a second save was invoked. Its final game exit is unknown; the complete lifecycle failed.",
+        "evidence_retained": true,
+        "native_pass_claimed": false
+      }
+    ],
+    "candidate_partial_successes": [
+      {
+        "candidate": "02",
+        "attempt": "manual-save-03",
+        "status": "passed_strict_manual_save_only",
+        "source_identity_sha256": "42eee45619f4ec3879fac15cc4327e729884cde3fcf834aee1c8dd1dcf2404c3",
+        "test_binary_sha256": "063b634343402773883178a4306d6890b5e9afbb5f76ffc642a873ca411e92c4",
+        "strict_manual_save": {
+          "status": "passed",
+          "selector": "commands::tests::manual_runtime_tests::native_lifecycle_tests::native_manual_save",
+          "started_utc": "2026-11-16T04:38:31Z",
+          "completed_utc": "2026-11-16T04:45:41Z",
+          "duration_seconds": 429.68,
+          "exit_code": 0,
+          "tests_passed": 1,
+          "non_elevated": true,
+          "host_class": "isolated Windows validation host",
+          "flags": {
+            "LANGAME_NATIVE_MANUAL_SAVE": "true",
+            "LANGAME_NATIVE_MANUAL_SAVE_RESTART": "true",
+            "LANGAME_NATIVE_SAVE_REQUIRE_COMPLETED": "true",
+            "LANGAME_NATIVE_EXACT_SAVE_READBACK": "true"
+          },
+          "normal_exit_zero_cycles": [
+            {
+              "cycle": "initial",
+              "run_id": 1,
+              "active_run_after_stop": null
+            },
+            {
+              "cycle": "restart",
+              "run_id": 2,
+              "active_run_after_stop": null
+            }
+          ],
+          "native_sql_confirmed_receipts": 1,
+          "log_sha256": "461f7d7432ab9367aab39b5c8fcbf47af3fad31ce3907e7c81a7ed288c8cad64",
+          "result_sha256": "5b4bdd8b1794f2ba9652ea15d1eaa00f2b47ca03e120ad47952551af65f92025",
+          "status_sha256": "5b4bdd8b1794f2ba9652ea15d1eaa00f2b47ca03e120ad47952551af65f92025",
+          "cleanup_sha256": "db85d036750769f0c04add10fb5579329f61e768d1872e087737072d7faa98f3",
+          "cleanup_failures": [],
+          "owned_processes_remaining": 0,
+          "disposable_runtime_removed": true,
+          "input_package_unchanged": true,
+          "checkpoint": {
+            "captured_before_stop": true,
+            "restored_after_normal_stop": true,
+            "shutdown_snapshot_excluded": true,
+            "fresh_native_load": true,
+            "second_save_sent": false,
+            "files": [
+              {
+                "relative": "game_0.db",
+                "bytes": 262144,
+                "sha256": "606e7e71ebe92c1f9eaa57e28419fce66faf50e3e5551b2271c2b321b60d405a"
+              },
+              {
+                "relative": "serveruid.txt",
+                "bytes": 32,
+                "sha256": "0e85702e032da7d52b78dfcfc819de1f1f489f4d4e651629ab767d482d6cb267"
+              }
+            ]
+          },
+          "readback_scope": "The exact captured manual SQLite checkpoint and server UID were restored after a normal stop and verified by a fresh native process without a second save. No populated-player or building-content identity is established."
+        },
+        "complete_candidate_acceptance_claimed": false,
+        "limitation": "The same candidate failed lifecycle-01; this history does not satisfy candidate06 acceptance."
+      },
+      {
+        "candidate": "04",
+        "attempt": "manual-save-04",
+        "status": "passed_strict_manual_save_only",
+        "source_identity_sha256": "9fd5734f806cc0e497d3f5724f71f444b077fec599f6b66a4d652b96958d3cc2",
+        "test_binary_sha256": "852ac623e9192d53a8c10e38d524630364f1f7a614b53b3918ab410c33e6cd6d",
+        "strict_manual_save": {
+          "status": "passed",
+          "selector": "commands::tests::manual_runtime_tests::native_lifecycle_tests::native_manual_save",
+          "started_utc": "2026-11-16T05:17:28Z",
+          "completed_utc": "2026-11-16T05:26:08Z",
+          "duration_seconds": 520.38,
+          "exit_code": 0,
+          "tests_passed": 1,
+          "non_elevated": true,
+          "host_class": "isolated Windows validation host",
+          "flags": {
+            "LANGAME_NATIVE_MANUAL_SAVE": "true",
+            "LANGAME_NATIVE_MANUAL_SAVE_RESTART": "true",
+            "LANGAME_NATIVE_SAVE_REQUIRE_COMPLETED": "true",
+            "LANGAME_NATIVE_EXACT_SAVE_READBACK": "true"
+          },
+          "normal_exit_zero_cycles": [
+            {
+              "cycle": "initial",
+              "run_id": 1,
+              "active_run_after_stop": null
+            },
+            {
+              "cycle": "restart",
+              "run_id": 2,
+              "active_run_after_stop": null
+            }
+          ],
+          "native_sql_confirmed_receipts": 1,
+          "log_sha256": "87acc8f587ce5770c3484aafda057a54145ee49bc3a17e7d6e5af0a9914b52cb",
+          "result_sha256": "868d04e1a08bd2081ff8db8dd9f7aff3777d40e5c0b77f6a2d2e0850c1058780",
+          "status_sha256": "868d04e1a08bd2081ff8db8dd9f7aff3777d40e5c0b77f6a2d2e0850c1058780",
+          "cleanup_sha256": "62236e2f9207fbf009755e7f04984e778f7eda5efbd9da276cb8fac3f254d377",
+          "cleanup_failures": [],
+          "owned_processes_remaining": 0,
+          "disposable_runtime_removed": true,
+          "input_package_unchanged": true,
+          "checkpoint": {
+            "captured_before_stop": true,
+            "restored_after_normal_stop": true,
+            "shutdown_snapshot_excluded": true,
+            "fresh_native_load": true,
+            "second_save_sent": false,
+            "files": [
+              {
+                "relative": "game_0.db",
+                "bytes": 262144,
+                "sha256": "815ff65f36427b138be8862835e66dd67347c7d84e84fb2dc666795b46715565"
+              },
+              {
+                "relative": "serveruid.txt",
+                "bytes": 32,
+                "sha256": "72fd48f33d2238eaf5d70c2ba61e0cfe6e282924c38b0199e3a69e44e525dd39"
+              }
+            ]
+          },
+          "readback_scope": "The exact captured manual SQLite checkpoint and server UID were restored after a normal stop and verified by a fresh native process without a second save. No populated-player or building-content identity is established."
+        },
+        "complete_candidate_acceptance_claimed": false,
+        "limitation": "The same candidate failed lifecycle-02 during restart after one initial normal exit and confirmed save; this history does not satisfy candidate06 acceptance."
+      }
+    ]
+  },
+  "static_provider_contract": {
+    "existing_export_rvas_and_all_ten_byte_guards_match": true,
+    "exports": {
+      "?GetNumResults@QueryResultSQLite@Database@dw@@UEBA_KXZ": "0x3378",
+      "?GetStatus@QueryResultSQLite@Database@dw@@UEBA?AW4QueryStatus@23@I@Z": "0x9fa2",
+      "?IsDone@QueryResultSQLite@Database@dw@@UEBA_NXZ": "0x2fe0",
+      "?GetResultIndex@QueryResultSQLite@Database@dw@@UEBAIXZ": "0x10dc",
+      "?GetCurrentThreadId@Thread@dw@@SA?AVid@thread@std@@XZ": "0x6bae"
+    },
+    "database_async_query": {
+      "vtable": "0x37c4b8",
+      "slot": "0xb0",
+      "target": "0x5ab0"
+    },
+    "thread_id_abi": "Export 0x6bae jumps to 0x7a030; writes uint32 through RCX and returns the same pointer.",
+    "async_query_abi": "Export 0x5ab0 jumps to 0x1182f0: RCX database, RDX shared_ptr output, R8 builder reference, R9 NativeJob; returns output pointer in RAX.",
+    "functions": {
+      "async_query": {
+        "rva": "0x1182f0",
+        "bytes": 471,
+        "raw_sha256": "cb6474d4d5819f7df189760858602e3173024dab3d9bcc5095051c76c821abff"
+      },
+      "push_query": {
+        "rva": "0x11ef90",
+        "bytes": 956,
+        "raw_sha256": "12ffabfa19444fd39a942a9b5179fb1889d13e32e5cb2997ff7a8e2930b0dff9"
+      },
+      "worker": {
+        "rva": "0x11bb90",
+        "bytes": 8772,
+        "raw_sha256": "db038306458c39e23fce7e91c44249c86b35d4bbe82633aa1630159e70931851"
+      },
+      "result_ctor": {
+        "rva": "0x106a40",
+        "bytes": 64,
+        "raw_sha256": "3e84c0d164cf62956a661a15b70ebe5777cf1cbdeee2753187e08a9743565850"
+      },
+      "owned_callback": {
+        "rva": "0x116820",
+        "bytes": 104,
+        "raw_sha256": "c6359b920ef41f57390624b926ae5ebfbc3091092be2e09b1c0c4c4a514af3d4"
+      },
+      "result_count": {
+        "rva": "0x108400",
+        "bytes": 39,
+        "raw_sha256": "8c7a80405c64cc5ce7829d904c0f7728eb11a8c0e8495ebc4acbf1ed8031feeb"
+      },
+      "result_status": {
+        "rva": "0x108490",
+        "bytes": 64,
+        "raw_sha256": "6ecd8dcbe73fdd403864a7f5b67d01874bed3e9040950bbdbf3254c7835193f0"
+      },
+      "result_index": {
+        "rva": "0x108480",
+        "bytes": 4,
+        "raw_sha256": "07ad3a50b1c271e07fb57fb47d2f0e77f3342d41bfa410990cb1320a45035fb2"
+      },
+      "result_done": {
+        "rva": "0x1089e0",
+        "bytes": 5,
+        "raw_sha256": "00add268430e2ccfd289c00b0e69c6af5a29fa5dd7c8af4ada93d6b62edef6da"
+      },
+      "thread_id": {
+        "rva": "0x7a030",
+        "bytes": 25,
+        "raw_sha256": "43e4df4a2518c4ececf8c49d6b2703620730e1198f72775c48b42d3ee9f05b76"
+      }
+    },
+    "worker_code_range": [
+      "0x11bb90",
+      "0x11dce8"
+    ],
+    "worker_switch_data_range": [
+      "0x11dce8",
+      "0x11ddd4"
+    ],
+    "completion": "Per-statement results preserve index and status; aggregate dispatch waits for its final result. IsDone is assigned before final SQL execution and cannot independently confirm completion. The adapter must continue observing the original owned callback sequence.",
+    "method": "All nine provider PE sections, import/export tables, ten complete function bodies, and every existing byte guard are byte-identical to the verified baseline. Full-file hash changes only in PE checksum and certificate table.",
+    "binary_comparison": {
+      "changed_bytes": 592,
+      "checksum_changed_bytes": 2,
+      "certificate_changed_bytes": 590,
+      "checksum_file_range": [
+        "0x188",
+        "0x18c"
+      ],
+      "certificate_file_range": [
+        "0x4fa800",
+        "0x4fd1f8"
+      ],
+      "all_changes_within_checksum_and_certificate": true,
+      "all_nine_section_raw_bytes_equal": true,
+      "certificate_trust_validation_claimed": false
+    }
+  },
+  "static_loader_layout": {
+    "classification": "bounded_static_property_layout_comparison_not_native_initialization",
+    "existing_engine_override": {
+      "MajorVersion": 5,
+      "MinorVersion": 8,
+      "settings_sha256": "e74b1dc6d2c2eee8798d31120facdceaa5e6a4ca04a7a36c1d1a6942fede3226"
+    },
+    "existing_layout_sha256": "20bd7529e536c9267b60f8b13990785401bf3cb4c091d2f59dd94105ccba2c10",
+    "type_name_anchors": {
+      "FField": {
+        "utf16_rva": "0x7f94c38",
+        "bytes": 14,
+        "sha256": "d6dedd7ccaa2d2897755181438a206a83065c6697ae1f4ab7333916924e95712",
+        "bound_function": "FField_registration",
+        "old_new_exact_name_equal": true
+      },
+      "FProperty": {
+        "utf16_rva": "0x7fabf90",
+        "bytes": 20,
+        "sha256": "ed199cf1265c0d94cd68ec6afbb1044f803665e6faa2c550b859c178b6fa1faf",
+        "bound_function": "FProperty_registration",
+        "old_new_exact_name_equal": true
+      },
+      "FIntProperty": {
+        "utf16_rva": "0x7fb07d0",
+        "bytes": 26,
+        "sha256": "dba13faff5005aa73d0f6f09d92356bd559d8901bbfafdfb697cb7d60b879674",
+        "bound_function": "FIntProperty_registration",
+        "old_new_exact_name_equal": true
+      },
+      "FBoolProperty": {
+        "utf16_rva": "0x7fafab0",
+        "bytes": 28,
+        "sha256": "af19c5bb80323f773cb46c1b2750108a087bd020df017bdb03664e30ca27786a",
+        "bound_function": "FBoolProperty_factory",
+        "old_new_exact_name_equal": true
+      },
+      "FStructProperty": {
+        "utf16_rva": "0x7fb21b8",
+        "bytes": 32,
+        "sha256": "feab2b6a6f3277ae752020357aa540ec796b93a67c10a691ddb27213494c3af3",
+        "bound_function": "FStructProperty_factory",
+        "old_new_exact_name_equal": true
+      }
+    },
+    "FProperty_registration_calls_FField_registration": true,
+    "complete_registration_and_factory_count": 7,
+    "complete_registration_and_factory_comparisons": {
+      "FField_registration": {
+        "old_ranges": [
+          [
+            "0x159d9b0",
+            "0x159da50"
+          ]
+        ],
+        "new_ranges": [
+          [
+            "0x159d980",
+            "0x159da20"
+          ]
+        ],
+        "bytes": 160,
+        "old_raw_sha256": "6f3dc993273709639aa03b37e10e393d1b1d5404cc56fcc3ccb3f6a677ca7312",
+        "new_raw_sha256": "f07d349102641f2e9f36766013a849c1136412b479fbea7b26da76bc2c44c603",
+        "normalized_sha256": "b6f5a18f7dbbb7812e2e3a79d05e3fca2558a094657146338d6dc9aa21efc882",
+        "normalized_equal": true
+      },
+      "FProperty_registration": {
+        "old_ranges": [
+          [
+            "0x15ee540",
+            "0x15ee5e4"
+          ]
+        ],
+        "new_ranges": [
+          [
+            "0x15ee510",
+            "0x15ee5b4"
+          ]
+        ],
+        "bytes": 164,
+        "old_raw_sha256": "5f46d686badb52592d8633d3a7a51d0c3bf320079188e6eddf2bce74d86e2a74",
+        "new_raw_sha256": "32c7dbf5fdf56579a472c3fd470eb0962cffa3dee212d65df1b3569db642293c",
+        "normalized_sha256": "d4707d0765fbd5ecfe851023854c6de66f4d7b0f83df1e2c6ac6f034e17dacc8",
+        "normalized_equal": true
+      },
+      "FIntProperty_registration": {
+        "old_ranges": [
+          [
+            "0x1610e30",
+            "0x1610ed4"
+          ]
+        ],
+        "new_ranges": [
+          [
+            "0x1610e00",
+            "0x1610ea4"
+          ]
+        ],
+        "bytes": 164,
+        "old_raw_sha256": "6b4d028093a5e7d079c1302872bbd3f5bfa8320c6cd8979d77bcbe22a69336b7",
+        "new_raw_sha256": "bdb9cb374b48815e2b2dc3b592508197bfa5afc3e593640ed006342af055b16f",
+        "normalized_sha256": "d113c3c805b652201b4ce909fe0f82f52e4ec80d73fead449e493eabc82a2242",
+        "normalized_equal": true
+      },
+      "FProperty_factory": {
+        "old_ranges": [
+          [
+            "0x15e36b0",
+            "0x15e36ef"
+          ],
+          [
+            "0x15e36ef",
+            "0x15e37cb"
+          ],
+          [
+            "0x15e37cb",
+            "0x15e37dc"
+          ],
+          [
+            "0x15e37dc",
+            "0x15e3847"
+          ]
+        ],
+        "new_ranges": [
+          [
+            "0x15e3680",
+            "0x15e36bf"
+          ],
+          [
+            "0x15e36bf",
+            "0x15e379b"
+          ],
+          [
+            "0x15e379b",
+            "0x15e37ac"
+          ],
+          [
+            "0x15e37ac",
+            "0x15e3817"
+          ]
+        ],
+        "bytes": 407,
+        "old_raw_sha256": "38ac3e7000444eb8574b415b28758ee1a224ec107a4984e939b9aa231c090a6f",
+        "new_raw_sha256": "42d3e1437689c9bcedb19d32fe49aa314f1b2d9a52d416db1178a1ff08fd421b",
+        "normalized_sha256": "a2153bd5f5e2732276ef8d39341b4fcf1c7498d7a7d7ec4697e7e28fe68039cf",
+        "normalized_equal": true
+      },
+      "FIntProperty_factory": {
+        "old_ranges": [
+          [
+            "0x15f8970",
+            "0x15f89ac"
+          ],
+          [
+            "0x15f89ac",
+            "0x15f8b25"
+          ],
+          [
+            "0x15f8b25",
+            "0x15f8b2e"
+          ],
+          [
+            "0x15f8b2e",
+            "0x15f8b99"
+          ]
+        ],
+        "new_ranges": [
+          [
+            "0x15f8940",
+            "0x15f897c"
+          ],
+          [
+            "0x15f897c",
+            "0x15f8af5"
+          ],
+          [
+            "0x15f8af5",
+            "0x15f8afe"
+          ],
+          [
+            "0x15f8afe",
+            "0x15f8b69"
+          ]
+        ],
+        "bytes": 553,
+        "old_raw_sha256": "bf0ab5f0958b49c317f3b7af6759d1eab5438b151e5bbe0b46ba76bbd27c9ce8",
+        "new_raw_sha256": "c1fdd7d61b149c485051cebd3b78b34269f3da4b5925a5caf36cddce6509b4b2",
+        "normalized_sha256": "04bcc49ec46421b1c11dd806167805002fdd9d3755a14bab71eea736725e9474",
+        "normalized_equal": true
+      },
+      "FBoolProperty_factory": {
+        "old_ranges": [
+          [
+            "0x15f7790",
+            "0x15f78d2"
+          ]
+        ],
+        "new_ranges": [
+          [
+            "0x15f7760",
+            "0x15f78a2"
+          ]
+        ],
+        "bytes": 322,
+        "old_raw_sha256": "27bded26b1dc76942330bc32e7e57d81579731d2fc427cef29d40412e27cf51d",
+        "new_raw_sha256": "fc361d7aa8dafef770a61fb245d36f82fa14510cb667d3631d0571a0510a3e93",
+        "normalized_sha256": "b2c3d09159a2fff5728029f001d94de440806c8d623d56e5c460bd1024ad2b3f",
+        "normalized_equal": true
+      },
+      "FStructProperty_factory": {
+        "old_ranges": [
+          [
+            "0x161e820",
+            "0x161e85f"
+          ],
+          [
+            "0x161e85f",
+            "0x161e922"
+          ],
+          [
+            "0x161e922",
+            "0x161e933"
+          ],
+          [
+            "0x161e933",
+            "0x161e99e"
+          ]
+        ],
+        "new_ranges": [
+          [
+            "0x161e7f0",
+            "0x161e82f"
+          ],
+          [
+            "0x161e82f",
+            "0x161e8f2"
+          ],
+          [
+            "0x161e8f2",
+            "0x161e903"
+          ],
+          [
+            "0x161e903",
+            "0x161e96e"
+          ]
+        ],
+        "bytes": 382,
+        "old_raw_sha256": "5d3744a10ad177969a64a36ed58c43bbf502a591b7219a1c9c9292fad32f5dc8",
+        "new_raw_sha256": "e69c1607c39e55b96d19d526d9762be3159afd12518a7b0ba4bc961fc54c867c",
+        "normalized_sha256": "aa7d1ac6fefab0e7868e8bbadc46a227433b023762448c6650836050f5a8775d",
+        "normalized_equal": true
+      }
+    },
+    "slot_index_evidence": {
+      "FField_entries": 12,
+      "overridden_destructor_entries": 1,
+      "FProperty_relative_index": 35,
+      "GetMinAlignment_slot": 46
+    },
+    "constructor_bound_slot46": {
+      "FProperty": {
+        "old_vtable_rva": "0x7f6e360",
+        "new_vtable_rva": "0x7f6e360",
+        "new_vtable_lea": "0x15e36ea",
+        "vtable_store": "qword ptr [rdi], r14",
+        "new_vtable_store_instructions": [
+          "0x15e36f1",
+          "0x15e3758"
+        ],
+        "slot": 46,
+        "old_function_rva": "0xf53c70",
+        "new_function_rva": "0xf53c70",
+        "bytes": 6,
+        "old_raw_sha256": "2db31f4e09597946e56e859813bfdad7046d457c32332c3a882654d1e3ffdf67",
+        "new_raw_sha256": "2db31f4e09597946e56e859813bfdad7046d457c32332c3a882654d1e3ffdf67",
+        "normalized_sha256": "2db31f4e09597946e56e859813bfdad7046d457c32332c3a882654d1e3ffdf67",
+        "normalized_equal": true
+      },
+      "FIntProperty": {
+        "old_vtable_rva": "0x7f6fb48",
+        "new_vtable_rva": "0x7f6fb48",
+        "new_vtable_lea": "0x15f89b6",
+        "vtable_store": "qword ptr [rdi], r12",
+        "new_vtable_store_instructions": [
+          "0x15f89d1",
+          "0x15f8ae4"
+        ],
+        "slot": 46,
+        "old_function_rva": "0x12e1720",
+        "new_function_rva": "0x12e1720",
+        "bytes": 6,
+        "old_raw_sha256": "e36623525b7c35b277173e56616b2d865cf6515aa2be1d12d6814ef725cecffb",
+        "new_raw_sha256": "e36623525b7c35b277173e56616b2d865cf6515aa2be1d12d6814ef725cecffb",
+        "normalized_sha256": "e36623525b7c35b277173e56616b2d865cf6515aa2be1d12d6814ef725cecffb",
+        "normalized_equal": true
+      },
+      "FBoolProperty": {
+        "old_vtable_rva": "0x7f71a90",
+        "new_vtable_rva": "0x7f71a90",
+        "new_vtable_lea": "0x15f77dc",
+        "vtable_store": "qword ptr [rbx], rax",
+        "new_vtable_store_instructions": [
+          "0x15f77e3"
+        ],
+        "slot": 46,
+        "old_function_rva": "0x1603950",
+        "new_function_rva": "0x1603920",
+        "bytes": 231,
+        "old_raw_sha256": "2e87291206bf0bb12eb9dbce33394a6cd155a8a79dc57a046d48e663459b3807",
+        "new_raw_sha256": "1f0a0059375cabde5fc3281a18409ce6a77722cef6bef27393ec2982bed7de83",
+        "normalized_sha256": "dff0bbdff2766f4cbb2adfc68a456b9a70c89a2367ad793a8715b6a75b0812e4",
+        "normalized_equal": true
+      },
+      "FStructProperty": {
+        "old_vtable_rva": "0x7f73f20",
+        "new_vtable_rva": "0x7f73f20",
+        "new_vtable_lea": "0x161e85a",
+        "vtable_store": "qword ptr [rdi], r14",
+        "new_vtable_store_instructions": [
+          "0x161e875",
+          "0x161e8cc"
+        ],
+        "slot": 46,
+        "old_function_rva": "0x16255c0",
+        "new_function_rva": "0x1625590",
+        "bytes": 9,
+        "old_raw_sha256": "34f176575b8d57702ad7e0e2389855138cf077304e557e451dc106cf163254c6",
+        "new_raw_sha256": "34f176575b8d57702ad7e0e2389855138cf077304e557e451dc106cf163254c6",
+        "normalized_sha256": "34f176575b8d57702ad7e0e2389855138cf077304e557e451dc106cf163254c6",
+        "normalized_equal": true
+      }
+    },
+    "observed_slot46_semantics": {
+      "FProperty": "mov eax, 1; ret",
+      "FIntProperty": "mov eax, 4; ret",
+      "FBoolProperty": "231-byte size-dependent implementation, full body normalized-equal",
+      "FStructProperty": "loads Struct pointer at property +0x70 and signed 16-bit alignment at Struct +0x5c"
+    },
+    "limits": [
+      "Only the named FField/FProperty registration/factory functions and four concrete slot46 implementations are compared. This is not an exhaustive proof of every UE5.8 virtual table.",
+      "FProperty inherited registration still selects FField, supporting the existing hierarchy override. The engine version is not inferred solely from this slot comparison.",
+      "No new executable was loaded; actual UE4SS initialization remains a separate native acceptance requirement."
+    ]
+  },
+  "evidence_artifacts": [
+    {
+      "name": "comparison-initial.json",
+      "sha256": "76240330bedf4ca3615a79775851150722eab470fca538773aba247598a0caa4"
+    },
+    {
+      "name": "function-relocations-r2.json",
+      "sha256": "c798a8297bd7497aea5d42148eab4451556f5e1db771dd5bdfe82868f2f1f37e"
+    },
+    {
+      "name": "compare_conan.py",
+      "sha256": "d8382cb2f64a1315e248032a4ee80c364b7d1f060cfb230ff82bcc0d2b51230b"
+    },
+    {
+      "name": "locate_contract_v2.py",
+      "sha256": "57178e3eceaa256be21726578de57411c194dc0b139013d1b75649189e5029f9"
+    },
+    {
+      "name": "bind_contract_v3.py",
+      "sha256": "a07bb83bdd87d7e87df1d874ee9e5f6fc73b7815d922f93b5ea5ec175bc75155"
+    },
+    {
+      "name": "conan_pe.py",
+      "sha256": "7338c2d7e51f413c1681a4b2a27f7fb113d37e5c6836fca491742722c6864c94"
+    },
+    {
+      "name": "acquisition.json",
+      "sha256": "117a2e81aed7427fa4fa163da76325a711b86192c75c31e0bfa49d31b2746815"
+    },
+    {
+      "name": "binary-transfer-receipt.json",
+      "sha256": "6a0ca48284aeced3564349431826abe3cc395e6ae91231372c23020205515b49"
+    },
+    {
+      "name": "package-metadata.json",
+      "sha256": "4f5c44294140359f149a3ccfb35db1e484520769b62d28f2ae91ad12323e0750"
+    },
+    {
+      "name": "static-contract-26672347-draft.json",
+      "sha256": "f1010925eec76f1f59d1ba9cc9eea5d237225d390e5b062b491682e2853eb1a0"
+    },
+    {
+      "name": "property-layout-26672347.json",
+      "sha256": "62781c066b56fbe016551c78751366c5d49bd22dea889768a4616cb9aebe58f7"
+    },
+    {
+      "name": "property_layout.py",
+      "sha256": "eb6b50c8bc8f8444907bf90fe21fe98ac13bc27c5e8a3a6bfd37165f0c9b160b"
+    },
+    {
+      "name": "property_layout_v2.py",
+      "sha256": "88bc7587b525b53e6b888c24312b5fc231171bcb156d8399350b0952d77c5f48"
+    },
+    {
+      "name": "bind_contract.py",
+      "sha256": "bd9333c02b0cf8abb81a858319491a6c29ed80e5db93214973376f9ec842708c"
+    },
+    {
+      "name": "bind_contract_v2.py",
+      "sha256": "dc6d923027bc6dbc48b820ee9bb6680836d4fda6898a7da4b4321c0e4dfc287f"
+    },
+    {
+      "name": "locate_contract.py",
+      "sha256": "39e49fc2ea37a01912f8f6cae96dcd7570de5be36e595534b68317b99ae859b4"
+    },
+    {
+      "name": "analysis-run-observations.json",
+      "sha256": "64578b9c7532f6eed89c61dc3756990420207fa1dbb4f398d7b254f87adb67e7"
+    },
+    {
+      "name": "finalize_review.py",
+      "sha256": "63f3919f97044afd5a59deb9352d8a69c1e39f5a107ee9f135ad222cecad0db5"
+    },
+    {
+      "name": "static-contract-26672347.json",
+      "sha256": "818292f94c607171e8286df009496b5c9f4b6ae7873ef3deeb2d7849915b705f"
+    },
+    {
+      "name": "acquisition-02.json",
+      "sha256": "7bd9ded142228b0dda2aed56adc4e9e84d034f80ec9373cf28aba9b3b9d78126"
+    },
+    {
+      "name": "conanexiles/manual-save-01/result.json",
+      "sha256": "87ca0e4e261b5d7fe45445d0ee2c1aea18cac526a7dc2e467a1beefb83e9a903"
+    },
+    {
+      "name": "conanexiles/manual-save-01/status.json",
+      "sha256": "87ca0e4e261b5d7fe45445d0ee2c1aea18cac526a7dc2e467a1beefb83e9a903"
+    },
+    {
+      "name": "conanexiles/manual-save-01/native-output.txt",
+      "sha256": "b9a64b487c427e1641e5d50135f2d99aacffa7bc9c337876fd17a6cfa5ad32cd"
+    },
+    {
+      "name": "conanexiles/manual-save-01/failed-task-retention.json",
+      "sha256": "a45b6da93eecdefbfd2f5d117081121c9edc19c672dbd19c0831b37bda8929ef"
+    },
+    {
+      "name": "conanexiles/manual-save-02/result.json",
+      "sha256": "dab3813b3f043511bab4415164840f0100c97cbddbea369705f821de96564134"
+    },
+    {
+      "name": "conanexiles/manual-save-02/status.json",
+      "sha256": "dab3813b3f043511bab4415164840f0100c97cbddbea369705f821de96564134"
+    },
+    {
+      "name": "conanexiles/manual-save-02/native-output.txt",
+      "sha256": "13a202bafbbded47c67b87bb20e00d27c1a3c5720a8f5188416ea4fac1d2268e"
+    },
+    {
+      "name": "conanexiles/manual-save-02/failed-task-retention.json",
+      "sha256": "9c990cb2fb05ce39935c3accc86f938822453477a7b4199f832b8c54587d5999"
+    },
+    {
+      "name": "conanexiles/manual-save-03/result.json",
+      "sha256": "5b4bdd8b1794f2ba9652ea15d1eaa00f2b47ca03e120ad47952551af65f92025"
+    },
+    {
+      "name": "conanexiles/manual-save-03/status.json",
+      "sha256": "5b4bdd8b1794f2ba9652ea15d1eaa00f2b47ca03e120ad47952551af65f92025"
+    },
+    {
+      "name": "conanexiles/manual-save-03/native-output.txt",
+      "sha256": "461f7d7432ab9367aab39b5c8fcbf47af3fad31ce3907e7c81a7ed288c8cad64"
+    },
+    {
+      "name": "conanexiles/manual-save-03/cleanup.json",
+      "sha256": "db85d036750769f0c04add10fb5579329f61e768d1872e087737072d7faa98f3"
+    },
+    {
+      "name": "conanexiles/manual-save-04/result.json",
+      "sha256": "868d04e1a08bd2081ff8db8dd9f7aff3777d40e5c0b77f6a2d2e0850c1058780"
+    },
+    {
+      "name": "conanexiles/manual-save-04/status.json",
+      "sha256": "868d04e1a08bd2081ff8db8dd9f7aff3777d40e5c0b77f6a2d2e0850c1058780"
+    },
+    {
+      "name": "conanexiles/manual-save-04/native-output.txt",
+      "sha256": "87acc8f587ce5770c3484aafda057a54145ee49bc3a17e7d6e5af0a9914b52cb"
+    },
+    {
+      "name": "conanexiles/manual-save-04/cleanup.json",
+      "sha256": "62236e2f9207fbf009755e7f04984e778f7eda5efbd9da276cb8fac3f254d377"
+    },
+    {
+      "name": "conanexiles/lifecycle-01/result.json",
+      "sha256": "3f7ce619f8c83813cfc12bd51b8e1a59184ef4168a1a908c60a00251367e84b7"
+    },
+    {
+      "name": "conanexiles/lifecycle-01/status.json",
+      "sha256": "3f7ce619f8c83813cfc12bd51b8e1a59184ef4168a1a908c60a00251367e84b7"
+    },
+    {
+      "name": "conanexiles/lifecycle-01/native-output.txt",
+      "sha256": "74df82b59810988e875b0035565f96365fc76d7e3d71fdcff0f3b48e4b73cdde"
+    },
+    {
+      "name": "conanexiles/lifecycle-01/failed-task-retention.json",
+      "sha256": "52c10e01bac49ff838f2391c938bed9ca80857cb5e00e4bbc8cd86a54bcc2a3c"
+    },
+    {
+      "name": "conanexiles/lifecycle-02/result.json",
+      "sha256": "4d874587941f813dcb0f22709d79dd269d07624a6dbc64e5a956f27841f22ae6"
+    },
+    {
+      "name": "conanexiles/lifecycle-02/status.json",
+      "sha256": "4d874587941f813dcb0f22709d79dd269d07624a6dbc64e5a956f27841f22ae6"
+    },
+    {
+      "name": "conanexiles/lifecycle-02/native-output.txt",
+      "sha256": "103bc643433b8531d210b794bb8ab487042f6aa3d3afd46fa6f985da3841edf4"
+    },
+    {
+      "name": "conanexiles/lifecycle-02/failed-task-retention.json",
+      "sha256": "9202d976b1efb482864659d08fc727eaa0235425b164ea0accdcfbd64dbab60f"
+    },
+    {
+      "name": "conanexiles/manual-save-04/independent-validation.json",
+      "sha256": "6f59178e51554a7c9c16f69840045a157db7a68d0d7f29e366cbd854d5536625"
+    },
+    {
+      "name": "native-build-06.json",
+      "sha256": "1110556fa9face59a76a40d39e1fab5ac04f67ca243988056a9181aef0be2739"
+    },
+    {
+      "name": "native-build-06-status.json",
+      "sha256": "03d9d29b3804d91e7fde054a1f95254df89b7613face3ac43a3f5ac610c57c69"
+    },
+    {
+      "name": "native-build-06-portable/receipt.json",
+      "sha256": "1110556fa9face59a76a40d39e1fab5ac04f67ca243988056a9181aef0be2739"
+    },
+    {
+      "name": "native-build-06-portable/source-proof.json",
+      "sha256": "d206dcef76e507ecdfcad7266bc3cb9f48177d9c3112a4017cb9e5194cef83d2"
+    },
+    {
+      "name": "native-build-06-portable/source-manifest.json",
+      "sha256": "8390f0809744621a06a59e0473761cc1a636cd9b1df9b52f8cefaccb93b9b760"
+    },
+    {
+      "name": "candidate-06-regressions/result.json",
+      "sha256": "43bc7747e61def3823d40fd929ca20f0fac6b0ff18678a66d79ce9883a9cd62c"
+    },
+    {
+      "name": "candidate-06-regressions/save.log",
+      "sha256": "dab9d86fb0cbefa1fad1db59d589d5f338570b06dd1ee96e034f6714c8a4d965"
+    },
+    {
+      "name": "candidate-06-regressions/loader.log",
+      "sha256": "4983eea6808e0187e55f5b58800e4dc466a9f81af450b0af3850423d2e2494db"
+    },
+    {
+      "name": "candidate-06-regressions/windrose.log",
+      "sha256": "456deea1f3d738f9e9ca98c238bc50797e88ffbc349df2963c1f6149725ee0fa"
+    },
+    {
+      "name": "bridge-contract-tests-02/result.json",
+      "sha256": "00157106609713ec88b066c918b7d391b64925ab66f8031f709a5fa470bfcfbb"
+    },
+    {
+      "name": "bridge-contract-tests-02/build-and-tests.log",
+      "sha256": "304e09e1da29435ecb2408dd663a5d858ba895f9271048942f1ae810faaab188"
+    },
+    {
+      "name": "conanexiles/manual-save-06/result.json",
+      "sha256": "2f96df6e5c76cc7ecf95a3d06997db35d575043500b7ed621dacb0e978153efe"
+    },
+    {
+      "name": "conanexiles/manual-save-06/status.json",
+      "sha256": "2f96df6e5c76cc7ecf95a3d06997db35d575043500b7ed621dacb0e978153efe"
+    },
+    {
+      "name": "conanexiles/manual-save-06/native-output.txt",
+      "sha256": "67928dc7734fcb5323ea8ce287afca8d4dcc57fe423bab3d9017acff251d6d72"
+    },
+    {
+      "name": "conanexiles/manual-save-06/cleanup.json",
+      "sha256": "a4215fcf6e4f3a3d1e1a90b3de515d4a239c8c45afa4783e5515f55a992c1cf8"
+    },
+    {
+      "name": "conanexiles/lifecycle-04/result.json",
+      "sha256": "4f72bf109ff0f97a7aacea1856f5dc15099657e4ee9a4cbf1bbfd37c6f603bdf"
+    },
+    {
+      "name": "conanexiles/lifecycle-04/status.json",
+      "sha256": "4f72bf109ff0f97a7aacea1856f5dc15099657e4ee9a4cbf1bbfd37c6f603bdf"
+    },
+    {
+      "name": "conanexiles/lifecycle-04/native-output.txt",
+      "sha256": "1a8858a23e99231f2a41edfd4493db583299af0e4b7d7b0a11c83e83f1dd36ea"
+    },
+    {
+      "name": "conanexiles/lifecycle-04/cleanup.json",
+      "sha256": "171d7a9fe8555e42e6f30462cde0352fb0cb856b1126ab4c2d4e1f3f6312e08d"
+    },
+    {
+      "name": "conan-acquisition/acquisition-02.json",
+      "sha256": "7bd9ded142228b0dda2aed56adc4e9e84d034f80ec9373cf28aba9b3b9d78126"
+    },
+    {
+      "name": "conan-acquisition/dependency-payload-audit-02.json",
+      "sha256": "ba54abead5ea3c13eb91c1923337096808f772fe18b9bc3c91e1c36d38012f9b"
+    },
+    {
+      "name": "finalize-conan-06.py",
+      "sha256": "6b9ec2f157a7e76fbb838288de37fe7cb56b6a577e928255fc27c0e0a633a14b"
+    },
+    {
+      "name": "finalize-conan-06-prepared.json",
+      "sha256": "d007e258667acfe800933de6b8d37aa40e20f388dba3241f1b32da2be0c687f6"
+    }
+  ],
+  "scope_limits": [
+    "Static comparison covers the named save functions, provider contract and FField/FProperty hierarchy and selected alignment slots, not all gameplay code or all engine virtual tables.",
+    "New isolated empty-player worlds only; native completion confirms the owned pending persistent-actor SQL transaction, not hardware fsync or unrelated game state.",
+    "Exact manual checkpoint reload is separate from backup/archive restoration. Full restored-world content identity remains unsupported for Conan and was not enabled in the standard lifecycle acceptance.",
+    "No populated-world migration, live players, buildings, real-player moderation, GUI, multiplayer discovery or external-connectivity acceptance.",
+    "Native binding used the existing default and non-elevated firewall policy; no public connectivity success is inferred.",
+    "Official package acquisition was separate. The tests reused its checked copy with pinned updates; no network update or signed desktop installation was exercised.",
+    "Candidate02 and candidate04 strict-save successes and all failed attempts are retained independently; only candidate06 supplies the current complete native acceptance.",
+    "Full logs, private paths, host identifiers, credentials, game packages and saved data remain outside the repository."
+  ],
+  "dispatcher_initialization": {
+    "upstream_commit": "527a483b63b4dd0104fe1ca1a3934a06b87fcfb2",
+    "source_url": "https://github.com/UE4SS-RE/RE-UE4SS/blob/527a483b63b4dd0104fe1ca1a3934a06b87fcfb2/UE4SS/src/Mod/LuaMod.cpp#L4169",
+    "change": "During Conan Lua module loading, initialize the pinned EngineTick dispatcher once and invoke the fixed native prepare export before accepting request files. Preparation validates fixed image/loader/provider files without looking up the current world or publishing/invoking a save. Each queue dispatch now receives its own pinned UE4SS steady-clock delayed-action budget of 3000 ms, avoiding Unix-second quantization. Missing/negative elapsed results reject admission, and an old sentinel can expire only its captured budget. World/generation checks, the original 30-second completion window and no-resend behavior remain in force.",
+    "regression": "A synchronous first hook registration longer than the three-second queue budget must finish before the first probe is stamped; first probe/save then runs once.",
+    "validation_status": "passed_current_candidate_native_acceptances_and_owned_regressions",
+    "successful_native_log_sha256": "67928dc7734fcb5323ea8ce287afca8d4dcc57fe423bab3d9017acff251d6d72",
+    "successful_standard_lifecycle_log_sha256": "1a8858a23e99231f2a41edfd4493db583299af0e4b7d7b0a11c83e83f1dd36ea",
+    "fixed_native_preparation": {
+      "export": "luaopen_lgsm_conan_prepare",
+      "phase": "module_loading_before_request_acceptance",
+      "scope": "fixed image, loader and provider identity/contract preparation only; current-world validation remains per request",
+      "candidate": "06"
+    },
+    "queue_timing": {
+      "clock": "pinned UE4SS delayed-action steady_clock elapsed milliseconds",
+      "admission_budget_ms": 3000,
+      "budget_origin": "Pinned delayed-action registration before the actual work callback is enqueued; this does not bound total host response latency.",
+      "diagnostic_trace_scope": "The queued trace precedes timer registration and can include registration preparation or scheduling; its timestamp difference is not a measured timer elapsed value.",
+      "per_dispatch_budget": true,
+      "negative_or_missing_elapsed_rejected": true,
+      "old_sentinel_scope": "only its captured budget",
+      "completion_budget_seconds": 30,
+      "request_replayed_or_resent": false,
+      "source": "apps/desktop/src-tauri/src/live_players/unreal_save_protocol.lua",
+      "source_sha256": "2f6a6c063fedf07bcd91a86f9a955c29d89efed85f9dfd57efbc688f56a59a10"
+    }
+  }
+}

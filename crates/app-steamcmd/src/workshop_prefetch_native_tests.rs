@@ -1,4 +1,5 @@
 use super::*;
+use crate::workshop_download_cancellation_tests::cancellation_fixture::OwnedProcessTree;
 use crate::{apply_no_window, ps_literal, run_command_capture, run_powershell};
 
 async fn workers(fixture: &Fixture) -> (PathBuf, PathBuf) {
@@ -14,9 +15,15 @@ using System.IO;
 using System.Diagnostics;
 using System.Threading;
 public static class PrivateWorkshopFixture {
+  private static void PublishPid(string path) {
+    // Existence must mean the complete PID is closed and readable before cancellation.
+    string pending = path + ".pending";
+    File.WriteAllText(pending, Process.GetCurrentProcess().Id.ToString());
+    File.Move(pending, path);
+  }
   public static int Main(string[] args) {
     if (Array.IndexOf(args, "--child") >= 0) {
-      File.WriteAllText("child-pid", Process.GetCurrentProcess().Id.ToString());
+      PublishPid("child-pid");
       new ManualResetEvent(false).WaitOne();
       return 0;
     }
@@ -59,7 +66,7 @@ public static class PrivateWorkshopFixture {
       return 0;
     }
     if (File.Exists("stall")) {
-      File.WriteAllText("parent-pid", Process.GetCurrentProcess().Id.ToString());
+      PublishPid("parent-pid");
       var start = new ProcessStartInfo(Process.GetCurrentProcess().MainModule.FileName, "--child");
       start.UseShellExecute = false;
       start.CreateNoWindow = true;
@@ -237,9 +244,11 @@ async fn native_workers_overlap_and_ready_snapshot_survives_runtime_reuse_and_ca
         })
         .await
         .unwrap();
+        let processes = OwnedProcessTree::capture_running(&a);
         cancelled.cancel();
+        processes
     };
-    let (result, ()) = tokio::join!(
+    let (result, processes) = tokio::join!(
         fetch(&settings, &a, &stalled_root, "571001", &cancelled),
         cancel_after_child_starts,
     );
@@ -247,10 +256,7 @@ async fn native_workers_overlap_and_ready_snapshot_survives_runtime_reuse_and_ca
         result,
         Err(SteamCmdError::InstallCancelled { .. })
     ));
-    for name in ["parent-pid", "child-pid"] {
-        let pid: u32 = fs::read_to_string(a.join(name)).unwrap().parse().unwrap();
-        assert_process_exited(pid);
-    }
+    processes.assert_exited();
     assert_worker_clean(&a);
     // Returning cancellation has released the runtime only after owned children exited.
     let lease = ResourceLocks::acquire(crate::test_install_lock_context(), &[], &[a], deadline())
@@ -275,30 +281,4 @@ fn assert_worker_clean(root: &Path) {
     );
     assert!(root.join("package/steam_cmd_win64.manifest").exists());
     assert!(root.join("steamcmd.exe").exists());
-}
-
-fn assert_process_exited(pid: u32) {
-    use windows_sys::Win32::Foundation::{CloseHandle, ERROR_INVALID_PARAMETER, STILL_ACTIVE};
-    use windows_sys::Win32::System::Threading::{
-        GetExitCodeProcess, OpenProcess, PROCESS_QUERY_LIMITED_INFORMATION,
-    };
-    // SAFETY: these PIDs are written only by the owned fixture process tree.
-    unsafe {
-        let handle = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, 0, pid);
-        if handle.is_null() {
-            assert_eq!(
-                std::io::Error::last_os_error().raw_os_error(),
-                Some(ERROR_INVALID_PARAMETER as i32)
-            );
-            return;
-        }
-        let mut exit = 0;
-        let result = GetExitCodeProcess(handle, &mut exit);
-        CloseHandle(handle);
-        assert_ne!(result, 0);
-        assert_ne!(
-            exit, STILL_ACTIVE as u32,
-            "owned process survived cancellation"
-        );
-    }
 }

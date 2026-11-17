@@ -30,6 +30,12 @@ let root = createRoot(fixture), scenarios = 0;
 const terminal = () => fixture.querySelector<HTMLElement>("pre.server-runtime-console")!;
 const region = (name: string) => fixture.querySelector<HTMLElement>(`[data-log-region='${name}']`);
 const text = () => terminal()?.textContent ?? "";
+const initialReadiness: { phase: string; console_mounted: boolean; listeners: string[]; startup_text: string | null }[] = [];
+function captureInitialReadiness(phase: string) {
+  initialReadiness.push({ phase, console_mounted: Boolean(terminal()),
+    listeners: bridge.entries.filter(entry => bridge.active.has(entry.id)).map(entry => entry.name).sort(),
+    startup_text: region("startup")?.textContent?.slice(-160) ?? null });
+}
 const frame = () => new Promise<void>(resolve => requestAnimationFrame(() => resolve()));
 function check(condition: unknown, message: string): asserts condition { if (!condition) throw new Error(message); }
 async function settleUntil(predicate: () => boolean, message: string) {
@@ -113,16 +119,23 @@ async function run() {
   check(operation, "Missing startup operation");
   receipt = { ...receipt, attempt_id: operation.startupAttemptId! };
   await operation.ready;
+  captureInitialReadiness("operation-ready");
   const props: ComponentProps<typeof RuntimeSurfaceWorkbench> = { details, moduleDetails, runtime, runtimeWindows: null,
     startupPending: true, startupBoundary: operation.boundary, launchHostSurface: "managed_terminal" };
   const render = () => root.render(<StrictMode><I18nProvider><RuntimeSurfaceWorkbench {...props} /></I18nProvider></StrictMode>);
   await act(async () => { await prepareBrowserLocaleCatalogs(); render(); await frame(); });
+  captureInitialReadiness("after-render");
+  // operation.ready owns its capture; the rendered Workbench subscribes separately.
+  await settleUntil(() => Boolean(terminal()) && bridge.active.size === 4,
+    "The startup Workbench did not mount its console and runtime subscriptions");
+  captureInitialReadiness("before-emission");
   const emit = (revision: number, lines: string[], partial_lines: string[] = []) => bridge.emit({ instance_id: original.id,
     process_key: "startup", log_path: receipt.source_path, run_id: null, lines, byte_offset: revision * 100,
     emitted_at_unix_ms: 101 + revision, console: { stream_id: "startup-a", started_at_unix_ms: 101, revision,
       previous_revision: revision - 1, reset: revision === 1, partial_lines } } satisfies RuntimeLogStreamEvent);
   await act(async () => { emit(1, initialLines, ["VALIDATING_10%"]); emit(2, [], ["VALIDATING_90%"]); await frame(); });
-  check(text().includes("VALIDATING_90%") && !text().includes("VALIDATING_10%"), "Active progress was appended instead of replaced");
+  captureInitialReadiness("after-emission");
+  check(text().includes("VALIDATING_90%") && !text().includes("VALIDATING_10%"), `Active progress was appended instead of replaced: ${JSON.stringify(initialReadiness)}`);
   const beforeRead = { attempt: region("startup")?.dataset.startupAttemptId, revision: region("startup")?.dataset.streamRevision };
   held = false;
   await act(async () => { releases.splice(0).forEach(resolve => resolve()); await frame(); });
@@ -357,7 +370,7 @@ async function run() {
   await act(async () => { root.unmount(); await frame(); });
   check(bridge.active.size === 0, "Startup session teardown leaked subscriptions");
   check(errors.length === 0, `Unexpected browser errors: ${errors.join("; ")}`);
-  return { status: "passed", scenarios, reads, persisted_diagnostics: diagnosticIds.size, browser_errors: errors };
+  return { status: "passed", scenarios, reads, persisted_diagnostics: diagnosticIds.size, initial_readiness: initialReadiness, browser_errors: errors };
 }
 
 let watchdog: ReturnType<typeof setTimeout>;

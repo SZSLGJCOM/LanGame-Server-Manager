@@ -278,6 +278,27 @@
         "real_player_authentication_completion",
         "real_owner_authorization"
       ]
+    },
+    {
+      "observed_at": "2026-11-14",
+      "steam_build_id": 26574459,
+      "shipping_sha256": "c0fe936373671887173ddf99d7665e9308a6a7561b414d738aaf0c71b64839f9",
+      "native_evidence": "../native-evidence/2026-11-14-public-build-26574459-native.json",
+      "source_identity_sha256": "e930698b94c69d6e47879ddcb52d5c9df6fbb6baa31c65d86f6c859125fe643b",
+      "test_binary_sha256": "2114f476330508a2dff64213a6feef3ff733e51caa93d3090b0376c159855e71",
+      "native_loader_boots": 2,
+      "complete_empty_snapshots_per_boot": 2,
+      "stopped_process_rejected": true,
+      "bridge": {
+        "sha256": "74c806dd7e7df7566430a64838772e64963878b295510aa18bff85995c49cc94",
+        "bytes": 205824,
+        "wholePayloadUniquelyEmbeddedInVerifiedArtifact": true
+      },
+      "synthetic_ban_unban_fresh_process_readback": "passed",
+      "managed_lifecycle_normal_stops": 4,
+      "exact_manual_checkpoint_native_reload": "passed",
+      "real_clients": 0,
+      "existing_user_data_modified": false
     }
   ],
   "not_verified": [

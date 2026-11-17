@@ -352,7 +352,7 @@
     "require_authentication": {
       "type": "boolean",
       "title": "Require account authentication",
-      "description": "Verify joining clients through Steam or Epic ownership authentication; disabling this removes that account check.",
+      "description": "Authenticate joining clients and verify game ownership; disabling this skips that account check.",
       "default": true,
       "x-lsgm-section": "access",
       "x-lsgm-order": 1005,

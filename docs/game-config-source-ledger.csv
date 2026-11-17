@@ -1,10 +1,10 @@
 module,status,schema_fields,ledger_items,exclusions,sources
 abioticfactor,best_effort_verified,67,67,12,20
-arksurvivalascended,best_effort_verified,283,295,315,50
+arksurvivalascended,best_effort_verified,283,295,315,52
 arksurvivalevolved,exhaustive_verified,375,414,137,36
 astroneer,best_effort_verified,20,20,6,21
 barotrauma,best_effort_verified,125,125,4,39
-conanexiles,best_effort_verified,305,305,47,34
+conanexiles,best_effort_verified,305,305,47,35
 corekeeper,verified_with_direct_connection,15,24,19,27
 dontstarve,best_effort_verified,335,335,32,34
 enshrouded,best_effort_verified,75,75,9,29
@@ -23,11 +23,11 @@ satisfactory,best_effort_verified,20,24,16,33
 scum,best_effort_verified,11,481,10,38
 sevendaystodie,best_effort_verified,70,70,6,29
 sonsoftheforest,exhaustive_verified,44,44,4,19
-soulmask,best_effort_verified,292,292,6,17
+soulmask,best_effort_verified,292,292,6,19
 squad,best_effort_verified,62,62,5,37
 terraria,best_effort_verified,40,40,9,16
 theforest,exhaustive_verified,22,22,6,17
-unturned,best_effort_verified,301,301,13,62
+unturned,best_effort_verified,301,301,13,64
 valheim,best_effort_verified,18,18,7,48
 vrising,best_effort_verified,194,197,8,29
 windrose,best_effort_verified,23,23,13,11

@@ -1,0 +1,223 @@
+{
+  "schema_version": 1,
+  "module_id": "unturned",
+  "evidence_classification": "isolated_managed_backend_native_full_lifecycle",
+  "verified_on": "2026-11-15",
+  "verification_timezone": "Asia/Shanghai",
+  "status": "passed",
+  "steam_app_id": 1110390,
+  "steam_build_id": "26627066",
+  "package": {
+    "acquisition": "Physical package copy excluding mutable data, followed by official anonymous SteamCMD public app_update validate; acquisition and native lifecycle are separate runs.",
+    "completed_utc": "2026-11-15T02:34:49.4515987Z",
+    "steamcmd_exit_code": 0,
+    "state_flags": 4,
+    "update_result": 0,
+    "acquired_package_file_count": 10361,
+    "acquired_package_bytes": 1863677823,
+    "copied_source_bytes": 1863677823,
+    "files": {
+      "steamapps/appmanifest_1110390.acf": {
+        "sha256": "a4a2c97d9db5679f7cd082ee219d476f7e7f0f4dfd0df622ee7bbc2bba65036d"
+      },
+      "Unturned.exe": {
+        "bytes": 674016,
+        "sha256": "09e862f6895d3ecb3bbc6b2059a3105f2530a08cb04cac22503478c8f154c6da"
+      }
+    },
+    "recorded_manifest_and_executable_unchanged_during_lifecycle": true,
+    "provenance_boundary": "The lifecycle selector labels copied source provenance unverified. The separately completed acquisition receipt and independently matching manifest/executable hashes establish the selected official package; the pinned lifecycle does not validate network acquisition or upgrading.",
+    "related_static_evidence": "reference-fixtures/2026-11-15-public-build-26627066-static.json"
+  },
+  "build": {
+    "source_identity_sha256": "5bfb28b9866dd54855aefe72675c1c6544e634b9545b64e77419b344aaa48567",
+    "source_manifest_sha256": "ca217fafb74b687488756dd2cb20d4cdb2b7f29649d59f2841feb0c295a3c79e",
+    "source_file_count": 4751,
+    "independently_verified_source_files_before_run": 4751,
+    "test_binary_sha256": "dcae93cc3e0571e127dcbdce97617be94ede6c846cd11b38e78ff82b6e3f984b",
+    "test_binary_bytes": 234149376,
+    "captured_utc": "2026-11-15T02:37:56.5677781Z",
+    "cargo_command": "test",
+    "cargo_arguments": [
+      "-p",
+      "langame-desktop",
+      "--bin",
+      "langame-desktop",
+      "--features",
+      "custom-protocol",
+      "--locked",
+      "--no-run"
+    ],
+    "actual_entry_point": "Standard managed-workstation Cargo wrapper; local path omitted; no task-specific resource override.",
+    "actual_entry_point_sha256": "3d4d69868642e10ab39ed39b711b6e9cba2bf00db9c6b9e9e1fd17623f03cf59",
+    "resource_binding": "The runner verifies all frozen source files and selects frozen modules and migrations through the isolated storage fixture."
+  },
+  "test": {
+    "selector": "commands::tests::manual_runtime_tests::native_lifecycle_tests::native_package_lifecycle",
+    "arguments": [
+      "--exact",
+      "--ignored",
+      "--nocapture",
+      "--test-threads=1"
+    ],
+    "started_utc": "2026-11-15T02:56:20Z",
+    "completed_utc": "2026-11-15T03:04:31Z",
+    "duration_seconds": 490.28,
+    "exit_code": 0,
+    "tests_passed": 1,
+    "tests_failed": 0,
+    "settings": {
+      "program_update": {
+        "policy": "pinned"
+      }
+    },
+    "flags": {
+      "LANGAME_NATIVE_MANUAL_SAVE": "true",
+      "LANGAME_NATIVE_MANUAL_SAVE_RESTART": "true"
+    },
+    "platform": "Windows x86_64",
+    "elevated": false,
+    "program_mode": "Independent",
+    "creation_scope": "storage",
+    "acquisition_scope": "existing_local_package"
+  },
+  "observations": {
+    "cycles": [
+      "initial",
+      "restart",
+      "after_restore",
+      "after_archive_restore"
+    ],
+    "native_ready_cycles": 4,
+    "normal_process_exit_codes": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "crash_flags": [
+      false,
+      false,
+      false,
+      false
+    ],
+    "active_run_after_each_stop": "none",
+    "distinct_managed_runs": 4,
+    "program_maintenance": {
+      "outcome": "not_tested",
+      "reason": "network_update_not_selected"
+    },
+    "prestart_update_policy_each_cycle": "pinned",
+    "restart": "persisted configuration readback and fresh managed run verified",
+    "manual_save": {
+      "receipts": 4,
+      "attempts_per_cycle": 1,
+      "retried": false,
+      "routes": [
+        "managed_process_generation",
+        "managed_process_generation",
+        "managed_process_generation",
+        "managed_process_generation"
+      ],
+      "completion_by_cycle": [
+        "requested",
+        "requested",
+        "requested",
+        "requested"
+      ],
+      "response_present_by_cycle": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "response_bytes_by_cycle": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "write_confirmation_pending_by_cycle": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "instance_run_session_correlation": true,
+      "managed_generations_alive": true,
+      "durable_write": "not_assessed",
+      "request_caused_checkpoint": "not_assessed",
+      "exact_checkpoint_readback_requested": false,
+      "log_cycle_mapping": "The receipt formatter prints after_restore and after_archive_restore as other; order is correlated with surrounding native-ready and stopped cycle markers."
+    },
+    "declared_data_root": "Servers/<managed-instance>",
+    "save_observation_after_stop": "generated",
+    "backup_restore": {
+      "status": "passed",
+      "restored_files": 23,
+      "safeguard": "verified",
+      "program_and_configuration": "preserved",
+      "following_native_cycle": "passed",
+      "scope": "The complete declared data directory, which can contain configuration, logs and world files; file counts do not count independent worlds or prove entity persistence."
+    },
+    "library_uninstall": {
+      "outcome": "library_only_instance_program_unchanged",
+      "program_entries": "preserved",
+      "saved_inventory_entries_preserved": 23,
+      "retained_native_configuration_entries": 0
+    },
+    "archive_recovery": {
+      "archive": "verified",
+      "interruption": "deferred commit failure with restoring journal and absent instance row",
+      "configuration_saves_and_declared_program_entry_inventory": "preserved",
+      "recovery": "stopped ownership readback verified",
+      "following_native_cycle": "passed"
+    },
+    "final_instance_delete": {
+      "program": "independent_program_removed",
+      "library_record": "preserved",
+      "cleanup": "verified"
+    },
+    "final_library_uninstall": {
+      "unused_programs": "removed",
+      "retained_data_paths": 0
+    },
+    "owned_fixture_cleanup": "passed; the successful harness path asserts the disposable fixture directory is absent",
+    "external_cleanup": {
+      "completed_utc": "2026-11-15T03:04:59.1039666Z",
+      "native_exit_code": 0,
+      "worker_exit_code": 0,
+      "runtime_fixture_entries_remaining": 0,
+      "owned_executable_processes_remaining": 0,
+      "temporary_scheduled_task_removed": true,
+      "input_package_retained": true,
+      "raw_evidence_retained": true
+    }
+  },
+  "artifacts": {
+    "native-output.txt": {
+      "bytes": 124058,
+      "sha256": "01322a13c3861c3115e63a34a8464b63193ca5f62bbb2c21e3d8f709b32b7d41",
+      "retention": "Raw combined stdout/stderr retained outside the repository; not published."
+    },
+    "result.json": {
+      "bytes": 1248,
+      "sha256": "ce332f4f3508704dabe55a7a88c1f0911d5560474caa0be19fda05a0ae98e7e6",
+      "retention": "Raw runner receipt retained outside the repository; not published."
+    },
+    "cleanup.json": {
+      "bytes": 328,
+      "sha256": "3e82c4f1e7849c4fcca7b675d607ab20b9313176783ad141de7f518a5b7e7ec4",
+      "retention": "Independent cleanup receipt retained outside the repository; sanitized observations included above."
+    }
+  },
+  "scope_limits": [
+    "Formal save receipts retain their observed completion class. Requested or Unconfirmed receipts prove correlated dispatch, not causal durable persistence or exact manual-saved content reload.",
+    "Normal shutdown can save again; no pre-shutdown exact checkpoint was restored for independent content readback in this run.",
+    "Backup and archive checks compare the declared data-directory file inventory, byte lengths and content fingerprints. These directories can include configuration and logs; generated entries are not evidence of populated world or player state.",
+    "Program preservation compares the module's declared verification and executable entry files, not every game asset. Package, build and raw-log identities use SHA256.",
+    "This run contains no independent world-database observation, native save-content decoder or previously recorded populated-world proof.",
+    "No network program update/validate, general administration actions, live-client gameplay, populated player behavior, existing-user-world migration or GUI acceptance was selected.",
+    "The public record omits local paths, hostnames, instance/run identifiers, credentials, connection codes and raw native-log excerpts."
+  ]
+}

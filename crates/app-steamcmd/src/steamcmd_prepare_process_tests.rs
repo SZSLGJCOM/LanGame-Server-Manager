@@ -1,5 +1,9 @@
 use super::*;
 
+#[cfg(windows)]
+#[path = "steamcmd_prepare_process_fixture.rs"]
+mod fixture;
+
 #[tokio::test]
 async fn preparation_raw_output_keeps_all_records_and_per_pipe_offsets() {
     use tokio::io::AsyncWriteExt;
@@ -76,13 +80,11 @@ fn completion_marker_survives_chunk_boundaries_in_an_oversized_line() {
 #[cfg(windows)]
 mod windows {
     use std::fs;
-    use std::os::windows::io::{AsRawHandle, FromRawHandle, OwnedHandle};
     use std::path::{Path, PathBuf};
 
+    use super::fixture::{PreparedProcess, assert_running, exited_code, open_process};
     use super::*;
     use crate::{apply_no_window, ps_literal, run_powershell};
-    use windows_sys::Win32::Foundation::{WAIT_OBJECT_0, WAIT_TIMEOUT};
-    use windows_sys::Win32::System::Threading::{OpenProcess, WaitForSingleObject};
 
     struct TestDirectory(PathBuf);
 
@@ -200,16 +202,17 @@ mod windows {
         let root = TestDirectory::new();
         let gate = root.0.join("progress-observed");
         let gate_literal = ps_literal(&gate);
+        let setup = "[Console]::Write('partial stdout'); [Console]::Out.Flush(); \
+                     [Console]::Error.Write('partial stderr'); [Console]::Error.Flush()";
         let script = format!(
             concat!(
-                "[Console]::Write('partial stdout'); [Console]::Out.Flush(); ",
-                "[Console]::Error.Write('partial stderr'); [Console]::Error.Flush(); ",
                 "$end=[DateTime]::UtcNow.AddSeconds(10); ",
                 "while (-not [IO.File]::Exists({gate}) -and [DateTime]::UtcNow -lt $end) {{ Start-Sleep -Milliseconds 20 }}; ",
                 "if (-not [IO.File]::Exists({gate})) {{ exit 8 }}; [Console]::WriteLine('Steam Console Client (c) Valve Corporation - version fixture'); [Console]::WriteLine('Loading Steam API...OK'); exit 0"
             ),
             gate = gate_literal
         );
+        let fixture = PreparedProcess::start(&root.0, setup, &script).await;
         let mut reporter = PrepareReporter::new(|progress: SteamCmdPrepareProgress| {
             if progress.output_excerpt.contains("partial stdout")
                 && progress.output_excerpt.contains("partial stderr")
@@ -217,36 +220,31 @@ mod windows {
                 fs::write(&gate, b"observed while running").unwrap();
             }
         });
-        let outcome = run_preparation_command(
-            command(&script),
-            deadline(),
-            Duration::from_secs(3),
-            false,
-            &mut reporter,
-        )
-        .await
-        .unwrap();
-        assert_eq!(outcome, PreparationAttempt::Verified);
+        let (outcome, process) = fixture
+            .capture(deadline(), Duration::from_secs(3), false, &mut reporter)
+            .await;
+        assert_eq!(outcome.unwrap(), PreparationAttempt::Verified);
+        assert_eq!(exited_code(&process), 0);
         assert!(gate.exists());
     }
 
     #[tokio::test]
     async fn idle_timeout_retains_both_streams_and_reaps_the_process() {
         let root = TestDirectory::new();
-        let pid_path = root.0.join("pid");
-        let script = format!(
-            "[IO.File]::WriteAllText({}, [string]$PID); [Console]::Write('last stdout'); [Console]::Error.Write('last stderr'); Start-Sleep -Seconds 10",
-            ps_literal(&pid_path)
-        );
-        let error = run_preparation_command(
-            command(&script),
-            deadline(),
-            Duration::from_secs(3),
-            false,
-            &mut PrepareReporter::new(|_| {}),
-        )
-        .await
-        .unwrap_err();
+        let fixture = PreparedProcess::start(
+            &root.0,
+            "[Console]::Write('last stdout'); [Console]::Out.Flush(); [Console]::Error.Write('last stderr'); [Console]::Error.Flush()",
+            "(New-Object Threading.ManualResetEvent($false)).WaitOne()",
+        ).await;
+        let (result, process) = fixture
+            .capture(
+                deadline(),
+                Duration::from_secs(3),
+                false,
+                &mut PrepareReporter::new(|_| {}),
+            )
+            .await;
+        let error = result.unwrap_err();
         match error {
             SteamCmdError::SteamCmdPreparationStalled { output_excerpt, .. } => {
                 assert!(output_excerpt.contains("last stdout"));
@@ -254,86 +252,44 @@ mod windows {
             }
             error => panic!("expected idle timeout, got {error}"),
         }
-        assert_process_gone(&pid_path).await;
+        exited_code(&process);
     }
 
     #[tokio::test]
     async fn total_timeout_retains_output_and_reaps_the_process() {
         let root = TestDirectory::new();
-        let output_path = root.0.join("output-flushed");
         let release_path = root.0.join("release");
         let completed_path = root.0.join("completed");
         let script = format!(
             concat!(
-                "[Console]::Write('deadline diagnostic'); [Console]::Out.Flush(); ",
-                "[IO.File]::WriteAllText({}, 'flushed'); ",
                 "while (-not [IO.File]::Exists({})) {{ Start-Sleep -Milliseconds 10 }}; ",
                 "[IO.File]::WriteAllText({}, 'completed')"
             ),
-            ps_literal(&output_path),
             ps_literal(&release_path),
             ps_literal(&completed_path),
         );
-        let mut command = command(&script);
-        command
-            .stdin(Stdio::null())
-            .stdout(Stdio::piped())
-            .stderr(Stdio::piped());
-        let (mut child, mut guard) = crate::spawn_managed_command(&mut command).await.unwrap();
-        const SYNCHRONIZE: u32 = 0x00100000;
-        // Keep the actual process object so PID reuse cannot satisfy cleanup.
-        let raw = unsafe { OpenProcess(SYNCHRONIZE, 0, child.id().unwrap()) };
-        if raw.is_null() {
-            let error = std::io::Error::last_os_error();
-            terminate_and_reap_preparation_tree(&mut child, &mut guard)
-                .await
-                .unwrap();
-            panic!("open owned fixture process: {error}");
-        }
-        let process = unsafe { OwnedHandle::from_raw_handle(raw) };
-        // PowerShell cold startup has a separate bounded handshake. The output
-        // is already in the real pipe before testing the unchanged 3s budget.
-        let ready = tokio::time::timeout(Duration::from_secs(20), async {
-            while !output_path.exists() {
-                if child.try_wait()?.is_some() {
-                    return Err(std::io::Error::other("fixture exited before readiness"));
-                }
-                tokio::time::sleep(Duration::from_millis(10)).await;
-            }
-            Ok::<_, std::io::Error>(())
-        })
-        .await;
-        if !matches!(ready, Ok(Ok(()))) {
-            terminate_and_reap_preparation_tree(&mut child, &mut guard)
-                .await
-                .unwrap();
-            panic!("fixture must finish its output handshake: {ready:?}");
-        }
-        assert_eq!(
-            unsafe { WaitForSingleObject(process.as_raw_handle().cast(), 0) },
-            WAIT_TIMEOUT
-        );
-        let total = InstallDeadline::new("preparation total", Duration::from_secs(3));
-        let error = capture_preparation_process(
-            child,
-            guard,
-            None,
-            total,
-            Duration::from_secs(10),
-            false,
-            &mut PrepareReporter::new(|_| {}),
+        let fixture = PreparedProcess::start(
+            &root.0,
+            "[Console]::Write('deadline diagnostic'); [Console]::Out.Flush()",
+            &script,
         )
-        .await
-        .unwrap_err();
+        .await;
+        let total = InstallDeadline::new("preparation total", Duration::from_secs(3));
+        let (result, process) = fixture
+            .capture(
+                total,
+                Duration::from_secs(10),
+                false,
+                &mut PrepareReporter::new(|_| {}),
+            )
+            .await;
+        let error = result.unwrap_err();
         assert!(
             matches!(&error, SteamCmdError::SteamCmdPreparationTimedOut { timeout_seconds: 3, output_excerpt } if output_excerpt.contains("deadline diagnostic")),
             "expected timeout with emitted diagnostics, got {error:?}"
         );
         assert!(Instant::now() >= total.expires_at());
-        assert_eq!(
-            unsafe { WaitForSingleObject(process.as_raw_handle().cast(), 0) },
-            WAIT_OBJECT_0
-        );
+        exited_code(&process);
         assert!(!completed_path.exists());
     }
 
@@ -369,32 +325,47 @@ mod windows {
         let root = TestDirectory::new();
         let pid_path = root.0.join("child-pid");
         let child_script = root.0.join("child.ps1");
-        fs::write(&child_script, format!("[IO.File]::WriteAllText({}, [string]$PID); [Console]::Write('inherited pipe diagnostic'); Start-Sleep -Seconds 10", ps_literal(&pid_path))).unwrap();
+        // Publish only after the inherited stdout is flushed; rename makes
+        // existence a complete PID publication, not an empty-file race.
+        fs::write(&child_script, format!(
+            "[Console]::Write('inherited pipe diagnostic'); [Console]::Out.Flush(); [IO.File]::WriteAllText({pending}, [string]$PID); [IO.File]::Move({pending}, {pid}); (New-Object Threading.ManualResetEvent($false)).WaitOne()",
+            pending = ps_literal(&pid_path.with_extension("pending")),
+            pid = ps_literal(&pid_path),
+        )).unwrap();
+        // .NET Framework sets STARTF_USESTDHANDLES when a stream is redirected.
+        // Redirect only stdin so stdout/stderr use the parent's existing pipes;
+        // without this, a no-window child can run with no captured stdout.
         let script = format!(
             concat!(
                 "$info=New-Object Diagnostics.ProcessStartInfo; $info.FileName='powershell.exe'; ",
                 "$info.Arguments='-NoProfile -NonInteractive -ExecutionPolicy Bypass -File \"' + {child} + '\"'; ",
                 "$info.UseShellExecute=$false; $info.CreateNoWindow=$true; ",
-                "$child=[Diagnostics.Process]::Start($info); ",
-                "while (-not [IO.File]::Exists({pid})) {{ Start-Sleep -Milliseconds 20 }}; exit 0"
+                "$info.RedirectStandardInput=$true; ",
+                "$child=[Diagnostics.Process]::Start($info); $child.StandardInput.Close(); ",
+                "while (-not [IO.File]::Exists({pid})) {{ Start-Sleep -Milliseconds 20 }}"
             ),
             child = ps_literal(&child_script),
             pid = ps_literal(&pid_path)
         );
-        let error = run_preparation_command(
-            command(&script),
-            deadline(),
-            Duration::from_secs(3),
-            false,
-            &mut PrepareReporter::new(|_| {}),
-        )
-        .await
-        .unwrap_err();
-        assert!(matches!(
-            error,
-            SteamCmdError::SteamCmdPreparationStalled { .. }
-        ));
-        assert_process_gone(&pid_path).await;
+        let fixture = PreparedProcess::start(&root.0, &script, "exit 0").await;
+        let descendant = open_process(fs::read_to_string(&pid_path).unwrap().parse().unwrap());
+        assert_running(&descendant);
+        let (result, process) = fixture
+            .capture(
+                deadline(),
+                Duration::from_secs(3),
+                false,
+                &mut PrepareReporter::new(|_| {}),
+            )
+            .await;
+        let error = result.unwrap_err();
+        assert!(
+            matches!(&error, SteamCmdError::SteamCmdPreparationStalled { output_excerpt, timeout_seconds: 3 }
+                if output_excerpt.contains("inherited pipe diagnostic")),
+            "expected inherited output and idle timeout, got {error:?}"
+        );
+        assert_eq!(exited_code(&process), 0, "parent must exit before cleanup");
+        exited_code(&descendant);
     }
 
     #[tokio::test]
@@ -476,17 +447,26 @@ mod windows {
 
     #[tokio::test]
     async fn successful_bootstrap_exit_without_console_api_readiness_is_rejected() {
-        let error = run_preparation_command(
-            command("[Console]::WriteLine('Verification complete'); exit 0"),
-            deadline(),
-            Duration::from_secs(3),
-            false,
-            &mut PrepareReporter::new(|_| {}),
+        let root = TestDirectory::new();
+        let fixture = PreparedProcess::start(
+            &root.0,
+            "[Console]::WriteLine('Verification complete'); [Console]::Out.Flush()",
+            "exit 0",
         )
-        .await
-        .unwrap_err();
+        .await;
+        let (result, process) = fixture
+            .capture(
+                deadline(),
+                Duration::from_secs(3),
+                false,
+                &mut PrepareReporter::new(|_| {}),
+            )
+            .await;
+        let error = result.unwrap_err();
         assert!(
-            matches!(error, SteamCmdError::PrepareSteamCmd { output_excerpt } if output_excerpt.contains("Bootstrap verification alone is insufficient"))
+            matches!(&error, SteamCmdError::PrepareSteamCmd { output_excerpt } if output_excerpt.contains("Bootstrap verification alone is insufficient")),
+            "expected bootstrap-readiness rejection, got {error:?}"
         );
+        assert_eq!(exited_code(&process), 0);
     }
 }

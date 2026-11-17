@@ -1,8 +1,10 @@
 import json
+from pathlib import Path
+import subprocess
 import unittest
 from unittest.mock import patch
 
-from scripts.track_enshrouded_build import ensure_issue, steam_public_build
+from scripts.track_enshrouded_build import ensure_issue, main, steam_public_build
 
 
 def metadata(build="25988414"):
@@ -21,6 +23,41 @@ Unloading Steam API...OK
 
 
 class SteamMetadataTests(unittest.TestCase):
+    def test_live_query_selects_cm_appinfo_before_anonymous_login(self):
+        manifest = {"version": "1.0.0", "revision": 1,
+                    "profiles": [{"game_build_id": "25988414"}]}
+        with patch("sys.argv", ["track_enshrouded_build.py", "--steamcmd", "steamcmd.exe", "--issue"]), \
+                patch("scripts.track_enshrouded_build.subprocess.run",
+                      return_value=subprocess.CompletedProcess([], 0, metadata(), "")) as run, \
+                patch("scripts.track_enshrouded_build.published_manifest", return_value=manifest) as feed, \
+                patch("scripts.track_enshrouded_build.ensure_issue") as issue, patch("builtins.print"):
+            main()
+        run.assert_called_once_with(
+            [str(Path("steamcmd.exe").resolve()),
+             "+@ShutdownOnFailedCommand", "1", "+@NoPromptForPassword", "1",
+             "+app_info_http_min", "1000000000", "+login", "anonymous",
+             "+app_info_update", "1", "+app_info_print", "2278520", "+quit"],
+            capture_output=True, encoding="utf-8", errors="replace", timeout=240, check=False)
+        feed.assert_called_once_with("node")
+        issue.assert_not_called()
+
+    def test_failed_live_refresh_stops_before_feed_or_issue_even_with_cached_metadata(self):
+        cases = [
+            (subprocess.CompletedProcess([], 5, metadata(), "HTTP 502"), ValueError),
+            (subprocess.TimeoutExpired("steamcmd.exe", 240, output=metadata()), subprocess.TimeoutExpired),
+            (subprocess.CompletedProcess([], 0, metadata().replace('"2278520"', '"1203620"'), ""), ValueError),
+        ]
+        for result, error in cases:
+            with self.subTest(result=result), \
+                    patch("sys.argv", ["track_enshrouded_build.py", "--steamcmd", "steamcmd.exe", "--issue"]), \
+                    patch("scripts.track_enshrouded_build.subprocess.run", side_effect=[result]), \
+                    patch("scripts.track_enshrouded_build.published_manifest") as feed, \
+                    patch("scripts.track_enshrouded_build.ensure_issue") as issue:
+                with self.assertRaises(error):
+                    main()
+                feed.assert_not_called()
+                issue.assert_not_called()
+
     def test_reads_only_public_dedicated_server_branch(self):
         self.assertEqual(steam_public_build(metadata())["game_build_id"], "25988414")
         self.assertEqual(steam_public_build(metadata())["steam_app_id"], "2278520")

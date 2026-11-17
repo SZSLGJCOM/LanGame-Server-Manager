@@ -29,7 +29,7 @@ async fn prepare_owned_scum_contract_loader() {
         b"isolated-scum-native-contract\n"
     );
     let evidence: serde_json::Value = serde_json::from_str(include_str!(
-        "../../../../../modules/scum/reference-fixtures/2026-11-12-native_contract_build_26593814.json"
+        "../../../../../modules/scum/reference-fixtures/2026-11-14-native_contract_build_26621903.json"
     ))
     .unwrap();
     let expected = evidence["package"]["executable_sha256"].as_str().unwrap();

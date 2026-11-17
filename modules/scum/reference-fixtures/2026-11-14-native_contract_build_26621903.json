@@ -1,0 +1,1061 @@
+{
+  "schema_version": 1,
+  "observed_on": "2026-11-14",
+  "steam_app_id": 3792580,
+  "build_id": "26621903",
+  "game_version": "1.3.6.1.177547",
+  "official_announcement": "https://store.steampowered.com/news/app/513710/view/687522235410284826",
+  "evidence_classification": "static_and_native_contract_database_roundtrip_and_managed_lifecycle_verified",
+  "package": {
+    "source": "Official SteamCMD anonymous app_update 3792580 validate on an isolated Windows validation host; exit 0, complete latest manifest; historical source package preserved",
+    "state_flags": 4,
+    "update_result": 0,
+    "depot_id": 3792581,
+    "depot_manifest": "3394620202910016273",
+    "executable_relative_path": "SCUM/Binaries/Win64/SCUMServer.exe",
+    "executable_sha256": "b75567d63f2a9948c739b7cbaab2208b926da6e08c7394a7f83b835cd2a50ddf",
+    "executable_bytes": 130656768,
+    "steam_manifest_content_sha1": "4eafa77ad06958829840704b2e9e17bbf2d7c3af",
+    "pdb_available": false
+  },
+  "static_save_contract": {
+    "abi": "void UEntitySystem::AutoSave(this, bool force); caller passes true once on game thread",
+    "profile": {
+      "entity_class": "0x75c5e90",
+      "entity_vtable": "0x5f893d0",
+      "save": "0x1bcce30",
+      "get_world": "0x1555cb0",
+      "save_prologue": "48895c2420574881ecb0000000488b05c49898054833c4488984249000000080",
+      "entity_loading": "0x7a8",
+      "entity_saving": "0x7aa",
+      "entity_shutdown": "0x7ab"
+    },
+    "baseline_build": "26593814",
+    "baseline_executable_sha256": "805396516e64d17f1713f24ce97a7d525a6d761db46ce069f40cf63114add6d9",
+    "method": "Complete x64 unwind-bounded instruction comparison. External RIP-relative and call references normalized; internal branch displacements, member offsets, constants and instruction boundaries retained. All nine functions uniquely matched.",
+    "functions": {
+      "AutoSave": {
+        "rva": "0x1bcce30",
+        "bytes": 515,
+        "chunks": [
+          [
+            "0x1bcce30",
+            "0x1bccee4"
+          ],
+          [
+            "0x1bccee4",
+            "0x1bcceec"
+          ],
+          [
+            "0x1bcceec",
+            "0x1bccfcb"
+          ],
+          [
+            "0x1bccfcb",
+            "0x1bcd012"
+          ],
+          [
+            "0x1bcd012",
+            "0x1bcd033"
+          ]
+        ],
+        "canonical_sha256": "f2ab0e58a0b2bdcfb2c99433df2d5dde74c419f3ce85565c8df93d1f646fd322",
+        "raw_sha256": "213221726230e2a0cdadbcda7ebd2d94676ee78cb2a1c628271a4f3b1c711d50"
+      },
+      "SaveGlobal": {
+        "rva": "0x1be0190",
+        "bytes": 328,
+        "chunks": [
+          [
+            "0x1be0190",
+            "0x1be02d8"
+          ]
+        ],
+        "canonical_sha256": "f3ea5251309f3682dc006bde646e82d49348227e39e01e4de9eba1e7143df7bd",
+        "raw_sha256": "1010bfa2e71d7215c0b03e489ffedcdfd37683ca28c3320a0a6dac5958b19afa"
+      },
+      "SaveCoordinates": {
+        "rva": "0x1bcdcd0",
+        "bytes": 1191,
+        "chunks": [
+          [
+            "0x1bcdcd0",
+            "0x1bcdd11"
+          ],
+          [
+            "0x1bcdd11",
+            "0x1bcdd35"
+          ],
+          [
+            "0x1bcdd35",
+            "0x1bcdfa0"
+          ],
+          [
+            "0x1bcdfa0",
+            "0x1bce150"
+          ],
+          [
+            "0x1bce150",
+            "0x1bce177"
+          ]
+        ],
+        "canonical_sha256": "1639df85dc10a3424d0d4e7f51b0bc15e77e3988b7092c35159f936a9fde6e99",
+        "raw_sha256": "86b0ef2e119817e20e39195196e307ea3673b43c75e95f97bddf38bfe0e1a34e"
+      },
+      "SaveEntities": {
+        "rva": "0x1bcd040",
+        "bytes": 2523,
+        "chunks": [
+          [
+            "0x1bcd040",
+            "0x1bcd094"
+          ],
+          [
+            "0x1bcd094",
+            "0x1bcd421"
+          ],
+          [
+            "0x1bcd421",
+            "0x1bcda1b"
+          ]
+        ],
+        "canonical_sha256": "4cfcb53827436e04074b8e29188b55057f5cff138b95977d81a73b6448c47e60",
+        "raw_sha256": "fc01a3754f27669bb48c621cc3ac559cca1d18696645202f99e191a9250da910"
+      },
+      "EntityClassRegistration": {
+        "rva": "0x2843b10",
+        "bytes": 178,
+        "chunks": [
+          [
+            "0x2843b10",
+            "0x2843bc2"
+          ]
+        ],
+        "canonical_sha256": "33f3becce6f30aa5a906694931e79f1b02000c6b442b7b9d9f499ff9a180454b",
+        "raw_sha256": "6c1a9f966a7fa15ca9f68006b78bc944cf103c7b82cf72d5b22dd357d3a532db"
+      },
+      "EntityConstructor": {
+        "rva": "0x2845810",
+        "bytes": 1664,
+        "chunks": [
+          [
+            "0x2845810",
+            "0x2845e90"
+          ]
+        ],
+        "canonical_sha256": "cc88b182092cc47c7fc5211dc12f8732e495e32cdd03486d67eb77afb2717b1a",
+        "raw_sha256": "fd463949b74b5869177c8d47fa953d77b0bfcf2c68d77346776dc386309a4a08"
+      },
+      "CreateEntity": {
+        "rva": "0x1bd3e30",
+        "bytes": 1791,
+        "chunks": [
+          [
+            "0x1bd3e30",
+            "0x1bd3f3f"
+          ],
+          [
+            "0x1bd3f3f",
+            "0x1bd3fe8"
+          ],
+          [
+            "0x1bd3fe8",
+            "0x1bd44d2"
+          ],
+          [
+            "0x1bd44d2",
+            "0x1bd450e"
+          ],
+          [
+            "0x1bd450e",
+            "0x1bd452f"
+          ]
+        ],
+        "canonical_sha256": "248fb412516a3ccb33d330802a43a201111ac7ffccb223695c958cabf9a58d4b",
+        "raw_sha256": "2cabfe785a1424d49c2ce394f83f1d349ea97881f8297018a79f97f54a5cf13f"
+      },
+      "Shutdown": {
+        "rva": "0x1be2ae0",
+        "bytes": 1876,
+        "chunks": [
+          [
+            "0x1be2ae0",
+            "0x1be2b0d"
+          ],
+          [
+            "0x1be2b0d",
+            "0x1be2b11"
+          ],
+          [
+            "0x1be2b11",
+            "0x1be2b15"
+          ],
+          [
+            "0x1be2b15",
+            "0x1be2def"
+          ],
+          [
+            "0x1be2def",
+            "0x1be2f6e"
+          ],
+          [
+            "0x1be2f6e",
+            "0x1be3228"
+          ],
+          [
+            "0x1be3228",
+            "0x1be3234"
+          ]
+        ],
+        "canonical_sha256": "646819a3973f0f3223f865ca49253e0129d6cdb464ff1bbb6a22f2bdcbb97f77",
+        "raw_sha256": "5788fbbd9d2eaf6f8d5203c0f4c7b928b7f7a05ff45cbd4db21726bb65cb325b"
+      },
+      "EntityTick": {
+        "rva": "0x1c06d60",
+        "bytes": 646,
+        "chunks": [
+          [
+            "0x1c06d60",
+            "0x1c06d8d"
+          ],
+          [
+            "0x1c06d8d",
+            "0x1c06da8"
+          ],
+          [
+            "0x1c06da8",
+            "0x1c06e9c"
+          ],
+          [
+            "0x1c06e9c",
+            "0x1c06f6b"
+          ],
+          [
+            "0x1c06f6b",
+            "0x1c06fc6"
+          ],
+          [
+            "0x1c06fc6",
+            "0x1c06fe6"
+          ]
+        ],
+        "canonical_sha256": "020a55f1c7444e03be46a8397f4a00c2de5986dac9d117360bfbb1809b8d6e91",
+        "raw_sha256": "70d64bf20ccb0705050c8b9862ea3a2dc4350b059d706ec5c3fe0682d511d927"
+      }
+    },
+    "stage_call_targets": [
+      {
+        "function": "AutoSave",
+        "offset": 301,
+        "expected": "0x1be0190",
+        "actual": "0x1be0190",
+        "matches": true
+      },
+      {
+        "function": "AutoSave",
+        "offset": 340,
+        "expected": "0x1bcdcd0",
+        "actual": "0x1bcdcd0",
+        "matches": true
+      },
+      {
+        "function": "AutoSave",
+        "offset": 354,
+        "expected": "0x1bcd040",
+        "actual": "0x1bcd040",
+        "matches": true
+      },
+      {
+        "function": "Shutdown",
+        "offset": 273,
+        "expected": "0x1bcce30",
+        "actual": "0x1bcce30",
+        "matches": true
+      },
+      {
+        "function": "EntityTick",
+        "offset": 619,
+        "expected": "0x1bcce30",
+        "actual": "0x1bcce30",
+        "matches": true
+      }
+    ],
+    "get_world": {
+      "rva": "0x1555cb0",
+      "bytes": 22,
+      "raw": "488b49204885c9740a488b0148ffa06001000033c0c3",
+      "canonical_sha256": "cb355c39c284fb6dc01156959189b5d07810ea86136ca1cecee39e82eccc5e51"
+    },
+    "pointer_evidence": {
+      "entity_class": {
+        "function": "EntityClassRegistration",
+        "instruction_offsets": [
+          10,
+          50,
+          163
+        ]
+      },
+      "entity_vtable": {
+        "function": "EntityConstructor",
+        "instruction_offsets": [
+          27
+        ]
+      }
+    }
+  },
+  "pending_native_checks": [],
+  "evidence_sha256": {
+    "analyze_scum.py": "c01e04ca274e983b20f8031a64899b782a20cfc8d2b10c64bf1968be12a1dd58",
+    "scum_pe.py": "e526d62aca7a12467d43d0705c5410b880d1c28d90475509b85ffb4c8ef85b77",
+    "compare-26621903.json": "88f4587c5bd088eb29432ee850530e85ef77de07d7bb577564c68a7301412f57",
+    "zones-26621903.json": "7837b1f4b0d4de9eaa9eb584a81042c5b97682eca76efd42b80ac44f2181e244",
+    "manifest-gate-26621903-complete.json": "80f3791bc64dee1dadd02e326ec08056b6e024f35c714af6bb33b8698d3a440f",
+    "profile-independent-26621903.json": "ce962e7e8d389caad49819503b2b68d00e26289e54b04366b41abf31e79c0e60",
+    "zone-metadata-independent-26621903.json": "9f026c45addfdc49c6c7dbcb6eaf3eb797cdb4cdc228f711c636f886578c6b71",
+    "review_zone_metadata.py": "7c8a8fc9e7d9b119297081e6e2a5a5ae1509ef28ce6d4557e95297cb59d4a8db"
+  },
+  "limits": [
+    "Static equivalence does not establish equivalence of arbitrary external callees.",
+    "The void save ABI acknowledges invocation, not asynchronous SQL or durable disk completion.",
+    "No client combat or multiplayer persistence assessment."
+  ],
+  "custom_zone_static_layout": {
+    "registration": {
+      "rva": "0x5f37680",
+      "array_dim": 16,
+      "offset": 88,
+      "raw_48": "1079f345010000000000000000000000010000000000100019000000450000001000000058000000a0de814201000000"
+    },
+    "structures": {
+      "outer_struct": {
+        "rva": "0x72d5530",
+        "name": "CustomZoneDamageEventDamageChannelList",
+        "size": 16,
+        "alignment": 8
+      },
+      "inner_struct": {
+        "rva": "0x72d5580",
+        "name": "CustomZoneDamageEventDamageChannelHandlingMethodPair",
+        "size": 3,
+        "alignment": 1
+      }
+    },
+    "property_metadata_construction": {
+      "ArrayDim": [
+        {
+          "rva": "0x2e1a09f",
+          "offset": 6975,
+          "bytes": "418b442420",
+          "normalized": "418b442420",
+          "instruction": "mov eax, dword ptr [r12 + 0x20]"
+        },
+        {
+          "rva": "0x2e1a0b4",
+          "offset": 6996,
+          "bytes": "41894738",
+          "normalized": "41894738",
+          "instruction": "mov dword ptr [r15 + 0x38], eax"
+        }
+      ],
+      "StructAndElementSize": [
+        {
+          "rva": "0x2e0b3cc",
+          "offset": 140,
+          "bytes": "48897b78",
+          "normalized": "48897b78",
+          "instruction": "mov qword ptr [rbx + 0x78], rdi"
+        },
+        {
+          "rva": "0x2e0b3d0",
+          "offset": 144,
+          "bytes": "8b4758",
+          "normalized": "8b4758",
+          "instruction": "mov eax, dword ptr [rdi + 0x58]"
+        },
+        {
+          "rva": "0x2e0b3d8",
+          "offset": 152,
+          "bytes": "89433c",
+          "normalized": "89433c",
+          "instruction": "mov dword ptr [rbx + 0x3c], eax"
+        }
+      ],
+      "OffsetInternal": [
+        {
+          "rva": "0x2de1ef5",
+          "offset": 69,
+          "bytes": "8b442460",
+          "normalized": "8b442460",
+          "instruction": "mov eax, dword ptr [rsp + 0x60]"
+        },
+        {
+          "rva": "0x2de1ef9",
+          "offset": 73,
+          "bytes": "89474c",
+          "normalized": "89474c",
+          "instruction": "mov dword ptr [rdi + 0x4c], eax"
+        }
+      ],
+      "ScriptStructSize": [
+        {
+          "rva": "0x2ca47b6",
+          "offset": 38,
+          "bytes": "4d63710c",
+          "normalized": "4d63710c",
+          "instruction": "movsxd r14, dword ptr [r9 + 0xc]"
+        },
+        {
+          "rva": "0x2ca47ba",
+          "offset": 42,
+          "bytes": "49636908",
+          "normalized": "49636908",
+          "instruction": "movsxd rbp, dword ptr [r9 + 8]"
+        },
+        {
+          "rva": "0x2ca47c0",
+          "offset": 48,
+          "bytes": "4c8b742470",
+          "normalized": "4c8b742470",
+          "instruction": "mov r14, qword ptr [rsp + 0x70]"
+        },
+        {
+          "rva": "0x2ca47c5",
+          "offset": 53,
+          "bytes": "488b6c2468",
+          "normalized": "488b6c2468",
+          "instruction": "mov rbp, qword ptr [rsp + 0x68]"
+        },
+        {
+          "rva": "0x2ca4806",
+          "offset": 118,
+          "bytes": "896b58",
+          "normalized": "896b58",
+          "instruction": "mov dword ptr [rbx + 0x58], ebp"
+        }
+      ],
+      "StructParamsSizeArgument": [
+        {
+          "rva": "0x2e1ae2d",
+          "offset": 253,
+          "bytes": "498b4e20",
+          "normalized": "498b4e20",
+          "instruction": "mov rcx, qword ptr [r14 + 0x20]"
+        },
+        {
+          "rva": "0x2e1ae34",
+          "offset": 260,
+          "bytes": "48894c2428",
+          "normalized": "48894c2428",
+          "instruction": "mov qword ptr [rsp + 0x28], rcx"
+        },
+        {
+          "rva": "0x2e1ae44",
+          "offset": 276,
+          "bytes": "e84799e8ff",
+          "normalized": "e800000000",
+          "instruction": "call 0x142ca4790"
+        }
+      ]
+    },
+    "full_functions": {
+      "FPropertyConstructor": {
+        "rva": "0x2de1eb0",
+        "canonical_sha256": "8a27d38bc2eb8b67a48e8f8f540f61b6d9ecb04d43b98226179d466536f34957"
+      },
+      "FStructPropertyConstructor": {
+        "rva": "0x2e0b340",
+        "canonical_sha256": "27fd32ae7955f4acc173b9de4f6dad95c358182183517b91e2b823daf0d3657b"
+      },
+      "ConstructUScriptStruct": {
+        "rva": "0x2e1ad30",
+        "canonical_sha256": "5c0fe5996046d593abe35e2dff4b45155c9a25d8c307a04c3fa613d1d685b13d"
+      },
+      "UScriptStructConstructor": {
+        "rva": "0x2ca4790",
+        "canonical_sha256": "87010912720cd8a8614ac006f666044a794e1fc6e2fb4c3334bf6159f0b4bbfb"
+      },
+      "outer_structFactory": {
+        "rva": "0x281dea0",
+        "canonical_sha256": "75ee39337412ea26b6d371b4ab7b7ba93feb06fc86bdea6ddbaa964316139c15"
+      },
+      "outer_structCppOps": {
+        "rva": "0x281ce00",
+        "canonical_sha256": "3e16cdd641481b0b9298e30207bcca14545ecfa56f94125721cb9ef4802dd8df"
+      },
+      "inner_structFactory": {
+        "rva": "0x281ded0",
+        "canonical_sha256": "75ee39337412ea26b6d371b4ab7b7ba93feb06fc86bdea6ddbaa964316139c15"
+      },
+      "inner_structCppOps": {
+        "rva": "0x281d030",
+        "canonical_sha256": "676e216580d270acd4ecddec63d908ba6778c4e132b974d068d6ba848a74085b"
+      },
+      "PropertyDispatch": {
+        "rva": "0x2e18560",
+        "canonical_sha256": "613d07d72b33b0916c2f7f24d937cd716081e55d1d8888bd22dd633761bbba27"
+      }
+    },
+    "matched_call_edges": 33,
+    "notes": [
+      "A lowercase damageChannel global-name search finds a different property at offset156. The pair property table resolves native generated name DamageChannel at offset0. Live FName display casing is separately observed.",
+      "PropertyDispatch includes an embedded 32-entry jump table. It is explicitly parsed from the decoded base-relative switch; table targets are verified instruction boundaries. It is not treated as contiguous machine code.",
+      "Static construction evidence is paired with the separate read-only native current-world and registry observation below; managed save/lifecycle and stopped-world database roundtrip retain their own acceptance records."
+    ]
+  },
+  "native_contract_observation": {
+    "host_class": "isolated Windows validation host",
+    "non_elevated": true,
+    "source_identity_sha256": "59844d6e519e096025d95b8aa4190238d542d0bf96430101191de574c80d4939",
+    "test_binary_sha256": "0e304e70f1c6e595d3de730a7848d527170f76a7b64ac146c5e49711bdf6086b",
+    "result_sha256": "f19ab635f5d77440f90405395f5071a34db282292cc7cd0761af5c0400c5de46",
+    "reflection_log_sha256": "7d0c0a7ae1ef6d4c1678f5bd01150367187be2079e0f66a82becbaeefa775014",
+    "ready": true,
+    "owner_observation": {
+      "mode": "read_only_process_memory",
+      "native_save_invoked": false,
+      "image_base": "0x7ff6db840000",
+      "checks": {
+        "entity_class_singleton_matches_reflection": true,
+        "entity_vtable_matches_static": true,
+        "entity_outer_matches_instance": true,
+        "world_instance_matches": true,
+        "world_game_mode_matches": true,
+        "world_game_state_matches": true,
+        "objects_alive": true,
+        "get_world_vtable_matches": true,
+        "get_world_bytes_match": true,
+        "save_prologue_matches": true,
+        "native_ready": true
+      },
+      "readiness_raw": {
+        "entity_0x30": 1,
+        "entity_loading_0x7a8": 0,
+        "entity_saving_0x7aa": 0,
+        "entity_shutdown_0x7ab": 0,
+        "game_mode_role_0xf0": 3,
+        "game_mode_actor_state_0x5c": 137,
+        "game_state_actor_state_0x5c": 137
+      },
+      "object_flags": {
+        "entity": 0,
+        "instance": 64,
+        "world": 2621451,
+        "game_mode": 72,
+        "game_state": 72
+      },
+      "custom_zone_registry": {
+        "source_actor": 5,
+        "receiver_actor": 11,
+        "source_actor_slots": 5,
+        "pairs_channel_receiver_handling": [
+          [
+            5,
+            1,
+            1
+          ],
+          [
+            4,
+            1,
+            1
+          ],
+          [
+            6,
+            11,
+            1
+          ],
+          [
+            5,
+            11,
+            1
+          ],
+          [
+            4,
+            11,
+            1
+          ]
+        ],
+        "editable_slots_zero_based": [
+          2,
+          3,
+          4
+        ],
+        "raw_pairs_hex": "050101040101060b01050b01040b01",
+        "fixed_array_metadata": {
+          "array_dim": 16,
+          "element_size": 16,
+          "offset_internal": 88,
+          "struct_size": 16
+        },
+        "pair_stride": 3,
+        "enum_values": {
+          "EDamageActorType::ArmedNPC": 5,
+          "EDamageActorType::Vehicle": 11,
+          "EDamageActorType::Count": 16,
+          "EDamageChannel::MeleeDamage": 6,
+          "EDamageChannel::MeleeWeaponDamage": 5,
+          "EDamageChannel::ProjectileDamage": 4,
+          "ECustomZoneEventHandlingMethod::Ignore": 0,
+          "ECustomZoneEventHandlingMethod::Allow": 1,
+          "ECustomZoneEventHandlingMethod::Block": 2
+        },
+        "live_metadata_matches_new_image_registration": true,
+        "registry_owned_by_current_game_state": true,
+        "memory_read_only": true
+      }
+    },
+    "database_user_version": 77,
+    "database_integrity": [
+      [
+        "ok"
+      ]
+    ],
+    "zone_schema": [
+      [
+        "index",
+        "index_on_custom_zone_configuration_for_map_id",
+        "custom_zone_configuration",
+        "CREATE INDEX index_on_custom_zone_configuration_for_map_id ON custom_zone_configuration(map_id)"
+      ],
+      [
+        "index",
+        "index_on_custom_zone_region_for_map_id",
+        "custom_zone_region",
+        "CREATE INDEX index_on_custom_zone_region_for_map_id ON custom_zone_region(map_id)"
+      ],
+      [
+        "index",
+        "sqlite_autoindex_custom_zone_configuration_1",
+        "custom_zone_configuration",
+        null
+      ],
+      [
+        "index",
+        "sqlite_autoindex_custom_zone_region_1",
+        "custom_zone_region",
+        null
+      ],
+      [
+        "table",
+        "custom_zone_configuration",
+        "custom_zone_configuration",
+        "CREATE TABLE custom_zone_configuration(\n\t\t\tid\t\t\t\t\t\tINTEGER NOT NULL,\n\t\t\tmap_id\t\t\t\t\tINTEGER NOT NULL,\n\t\t\tname\t\t\t\t\tCHAR(100),\n\t\t\tcolor_red\t\t\t\tREAL,\n\t\t\tcolor_green\t\t\t\tREAL,\n\t\t\tcolor_blue\t\t\t\tREAL,\n\t\t\thandling_methods\t\tBIGINT, settings INTEGER, user_id TEXT DEFAULT '', num_handling_methods INTEGER NOT NULL DEFAULT 0,\n\t\t\tPRIMARY KEY(id, map_id),\n\t\t\tFOREIGN KEY(map_id) REFERENCES map(id) ON DELETE CASCADE\n\t\t)"
+      ],
+      [
+        "table",
+        "custom_zone_configuration_damage_handling_methods",
+        "custom_zone_configuration_damage_handling_methods",
+        "CREATE TABLE custom_zone_configuration_damage_handling_methods\n\t\t(\n\t\t\tid\t\t\t\t\t\t\t\tINTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,\n\t\t\tcustom_zone_configuration_id\tINTEGER NOT NULL,\n\t\t\tmap_id\t\t\t\t\t\t\tINTEGER NOT NULL,\n\t\t\tdamage_actor_type\t\t\t\tINTEGER,\n\t\t\tdamage_handling_methods\t\t\tINTEGER, num_damage_handling_methods INTEGER NOT NULL DEFAULT 0,\n\n\t\t\tFOREIGN KEY(custom_zone_configuration_id, map_id) REFERENCES custom_zone_configuration(id, map_id) ON DELETE CASCADE\n\t\t)"
+      ],
+      [
+        "table",
+        "custom_zone_region",
+        "custom_zone_region",
+        "CREATE TABLE custom_zone_region(\n\t\t\tid\t\t\t\t\t\tINTEGER NOT NULL,\n\t\t\tmap_id\t\t\t\t\tINTEGER NOT NULL,\n\t\t\tname\t\t\t\t\tCHAR(100),\n\t\t\tlocation_x\t\t\t\tREAL,\n\t\t\tlocation_y\t\t\t\tREAL,\n\t\t\tsize_x\t\t\t\t\tREAL,\n\t\t\tsize_y\t\t\t\t\tREAL,\n\t\t\tconfiguration_index\t\tTINYINT, default_region_name CHAR(50), default_region_state TINYINT, user_id TEXT DEFAULT '',\n\t\t\tPRIMARY KEY(id, map_id),\n\t\t\tFOREIGN KEY(map_id) REFERENCES map(id) ON DELETE CASCADE\n\t\t)"
+      ]
+    ],
+    "zone_rows": {
+      "custom_zone_configuration": [
+        [
+          1000,
+          1,
+          "Global configuration",
+          0.31854701042175293,
+          0.7835379838943481,
+          0.08021999895572662,
+          6917529028015773013,
+          3,
+          "INVALID",
+          15
+        ],
+        [
+          1,
+          1,
+          "Outposts",
+          0.31854701042175293,
+          0.7835379838943481,
+          0.08021999895572662,
+          6917529028071631530,
+          3,
+          "INVALID",
+          15
+        ]
+      ],
+      "custom_zone_region": [
+        [
+          1,
+          1,
+          "Outpost A0",
+          -610818.5,
+          -556433.0,
+          50000.0,
+          0.0,
+          0,
+          "Outpost A0",
+          1,
+          "INVALID"
+        ],
+        [
+          2,
+          1,
+          "Outpost B4",
+          570708.0,
+          -226174.0,
+          30000.0,
+          0.0,
+          0,
+          "Outposr B4",
+          1,
+          "INVALID"
+        ],
+        [
+          3,
+          1,
+          "Outpost C2",
+          -147082.0,
+          278432.0,
+          50000.0,
+          0.0,
+          0,
+          "Outpost C2",
+          1,
+          "INVALID"
+        ],
+        [
+          4,
+          1,
+          "Outpost Z3",
+          12820.0,
+          -678344.0,
+          50000.0,
+          0.0,
+          0,
+          "Outpost Z3",
+          1,
+          "INVALID"
+        ]
+      ],
+      "custom_zone_configuration_damage_handling_methods": [
+        [
+          1,
+          1000,
+          1,
+          0,
+          5592405,
+          12
+        ],
+        [
+          2,
+          1000,
+          1,
+          1,
+          357913941,
+          15
+        ],
+        [
+          3,
+          1000,
+          1,
+          2,
+          5,
+          2
+        ],
+        [
+          4,
+          1000,
+          1,
+          3,
+          1,
+          1
+        ],
+        [
+          5,
+          1000,
+          1,
+          4,
+          1,
+          1
+        ],
+        [
+          6,
+          1000,
+          1,
+          5,
+          341,
+          5
+        ],
+        [
+          7,
+          1000,
+          1,
+          6,
+          85,
+          4
+        ],
+        [
+          8,
+          1000,
+          1,
+          7,
+          1,
+          1
+        ],
+        [
+          9,
+          1000,
+          1,
+          8,
+          5,
+          2
+        ],
+        [
+          10,
+          1000,
+          1,
+          9,
+          0,
+          0
+        ],
+        [
+          11,
+          1000,
+          1,
+          10,
+          21,
+          3
+        ],
+        [
+          12,
+          1000,
+          1,
+          11,
+          1,
+          1
+        ],
+        [
+          13,
+          1000,
+          1,
+          12,
+          0,
+          0
+        ],
+        [
+          14,
+          1000,
+          1,
+          13,
+          0,
+          0
+        ],
+        [
+          15,
+          1000,
+          1,
+          14,
+          0,
+          0
+        ],
+        [
+          16,
+          1000,
+          1,
+          15,
+          5,
+          2
+        ],
+        [
+          17,
+          1,
+          1,
+          0,
+          11184808,
+          12
+        ],
+        [
+          18,
+          1,
+          1,
+          1,
+          715827882,
+          15
+        ],
+        [
+          19,
+          1,
+          1,
+          2,
+          10,
+          2
+        ],
+        [
+          20,
+          1,
+          1,
+          3,
+          2,
+          1
+        ],
+        [
+          21,
+          1,
+          1,
+          4,
+          2,
+          1
+        ],
+        [
+          22,
+          1,
+          1,
+          5,
+          682,
+          5
+        ],
+        [
+          23,
+          1,
+          1,
+          6,
+          170,
+          4
+        ],
+        [
+          24,
+          1,
+          1,
+          7,
+          2,
+          1
+        ],
+        [
+          25,
+          1,
+          1,
+          8,
+          10,
+          2
+        ],
+        [
+          26,
+          1,
+          1,
+          9,
+          0,
+          0
+        ],
+        [
+          27,
+          1,
+          1,
+          10,
+          42,
+          3
+        ],
+        [
+          28,
+          1,
+          1,
+          11,
+          2,
+          1
+        ],
+        [
+          29,
+          1,
+          1,
+          12,
+          0,
+          0
+        ],
+        [
+          30,
+          1,
+          1,
+          13,
+          0,
+          0
+        ],
+        [
+          31,
+          1,
+          1,
+          14,
+          0,
+          0
+        ],
+        [
+          32,
+          1,
+          1,
+          15,
+          10,
+          2
+        ]
+      ]
+    },
+    "generated_config_scum_key_count": 437,
+    "snapshot_database_sha256": "6a4d420880609489e75896f742f84cf99a7f77399536b80519845b25ba18d87e",
+    "snapshot_method": "SQLite Backup API from a read-only connection; no source SQL mutation or save invocation",
+    "native_save_called": false,
+    "normal_shutdown": false,
+    "forced_cleanup": true,
+    "owned_tree_reclaimed": true,
+    "shutdown_scope": "Intentional owned-Job reclamation after read-only observation; not normal-stop acceptance",
+    "executable_unchanged": true
+  },
+  "native_database_roundtrip": {
+    "state": "completed",
+    "host_class": "isolated Windows validation host",
+    "nonElevated": true,
+    "sourceIdentitySha256": "e930698b94c69d6e47879ddcb52d5c9df6fbb6baa31c65d86f6c859125fe643b",
+    "testBinarySha256": "701369f9ee92605c8f9c63c29333e168a4a463def25ad257934d6827771215f7",
+    "sourceFilesVerified": 4744,
+    "snapshotDatabaseSha256": "6a4d420880609489e75896f742f84cf99a7f77399536b80519845b25ba18d87e",
+    "results": [
+      {
+        "stage": "unit",
+        "exitCode": 0,
+        "passed": true,
+        "testCount": 9,
+        "durationSeconds": 3.81,
+        "logSha256": "d7b39f22a1373f5f734870a5c3b780d2446c1e101b708d83b0da3fd001ef19d9"
+      },
+      {
+        "stage": "native",
+        "exitCode": 0,
+        "passed": true,
+        "testCount": 1,
+        "durationSeconds": 0.71,
+        "logSha256": "c432b6b03bfb49dc82761235d412c4a6c5fdfddf741e487e3f8ae0dd5ba82d63"
+      }
+    ],
+    "sourceDatabaseAndExecutableUnchanged": true
+  },
+  "generated_defaults": {
+    "build": "26621903",
+    "generatedKeyCount": 437,
+    "comparedUnconfiguredDefaults": 434,
+    "excludedExplicitFixtureSettings": [
+      "scum.MaxPlayers",
+      "scum.ServerName",
+      "scum.ServerPassword"
+    ],
+    "missingModeledKeys": [],
+    "unmodeledGeneratedKeys": [],
+    "differences": [
+      {
+        "key": "scum.ServerDescription",
+        "inventory": "Managed by LanGame Server Manager.",
+        "generated": "Server Description"
+      },
+      {
+        "key": "scum.WelcomeMessage",
+        "inventory": "Welcome to this SCUM server.",
+        "generated": "Welcome to our SCUM Server"
+      }
+    ],
+    "sourceIniSha256": "e049e6ebba5b38765898c19f6f1252bbb29c918f35019c4eba4c9eab7bdc9b9c",
+    "scope": "Fresh private world with the pinned reflection-only loader; three explicit fixture settings excluded; no save or setting mutation by this comparison."
+  },
+  "managed_lifecycle_fixture": "2026-11-14-managed_lifecycle_build_26621903.json"
+}

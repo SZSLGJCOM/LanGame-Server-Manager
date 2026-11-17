@@ -48,6 +48,8 @@ public static class ReverificationFixture {
       if (mode == "stall") { Console.Out.Flush(); new System.Threading.ManualResetEvent(false).WaitOne(); }
       return 0;
     }
+    int appInfo = Array.IndexOf(args, "+app_info_http_min");
+    if (appInfo < 0 || appInfo + 1 >= args.Length || args[appInfo + 1] != "1000000000") return 86;
     if (Array.IndexOf(args, "+runscript") < 0) {
       if (Array.IndexOf(args, "+login") >= 0 || Array.IndexOf(args, "+quit") >= 0) return 83;
       File.AppendAllText("native-calls", "interactive\n");
@@ -58,8 +60,8 @@ public static class ReverificationFixture {
       return 0;
     }
     int scriptIndex = Array.IndexOf(args, "+runscript");
-    bool plainScript = args.Length == 2 && scriptIndex == 0;
-    bool managedScript = args.Length == 4 && scriptIndex == 2
+    bool plainScript = args.Length == 4 && appInfo == 0 && scriptIndex == 2;
+    bool managedScript = args.Length == 6 && appInfo == 2 && scriptIndex == 4
       && args[0] == "-overridepackageurl" && args[1].StartsWith("http://127.0.0.1:");
     if (!plainScript && !managedScript) return 80;
     string script = File.ReadAllText(args[scriptIndex + 1]);

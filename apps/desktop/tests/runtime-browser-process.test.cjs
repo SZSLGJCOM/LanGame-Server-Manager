@@ -271,17 +271,58 @@ test("a taskkill error is nonfatal only after every snapshot PID and the root ha
     throw Object.assign(new Error("Exited"), { code: "ESRCH" });
   });
   const child = { pid: 12345, exitCode: 0, signalCode: null };
-  assert.equal(await confirmBrowserExit(child, [12345, 12346], true, new Error("Concurrent exit"), performance.now() + 3000), true);
+  assert.equal(await confirmBrowserExit(child, [12345, 12346], true, new Error("Concurrent exit"), performance.now() + 3000, Promise.resolve()), true);
   assert.deepEqual(checked, [12345, 12346]);
+});
+
+test("an exited browser cannot release its scratch while inherited stderr is still open", async (t) => {
+  const { confirmBrowserExit } = loadLifecycle(t, () => assert.fail("Exit confirmation cannot terminate a process"));
+  t.mock.method(process, "kill", () => { throw Object.assign(new Error("Exited"), { code: "ESRCH" }); });
+  let finishClose;
+  const closed = new Promise((resolve) => { finishClose = resolve; });
+  const child = { pid: 12345, exitCode: 0, signalCode: null };
+  const pending = confirmBrowserExit(child, [12345], true, null, performance.now() + 3000, closed);
+  let settled = false;
+  pending.then(() => { settled = true; }, () => { settled = true; });
+  await nextTurn();
+  const settledBeforeClose = settled;
+  finishClose();
+  assert.equal(await pending, true);
+  assert.equal(settledBeforeClose, false, "Root exit and a PID snapshot do not prove inherited stdio has closed");
+});
+
+test("unclosed browser stdio uses the same cleanup deadline and preserves termination errors", async (t) => {
+  const { confirmBrowserExit } = loadLifecycle(t, () => assert.fail("Exit confirmation cannot terminate a process"));
+  t.mock.method(process, "kill", () => { throw Object.assign(new Error("Exited"), { code: "ESRCH" }); });
+  t.mock.method(performance, "now", () => 60000);
+  t.mock.timers.enable({ apis: ["setTimeout"] });
+  const terminationError = new Error("Concurrent termination failure");
+  const child = { pid: 12345, exitCode: 0, signalCode: null };
+  const pending = confirmBrowserExit(child, [12345], true, terminationError, 74000, new Promise(() => {}));
+  let settled = false;
+  pending.then(() => { settled = true; }, () => { settled = true; });
+  const rejected = assert.rejects(pending, (error) => {
+    assert.ok(error instanceof AggregateError);
+    assert.match(error.message, /^Browser stdio close could not be verified:/);
+    assert.equal(error.errors[0], terminationError);
+    assert.match(error.errors[1].message, /Owned browser stdio close exceeded 14000 ms/);
+    return true;
+  });
+  await nextTurn();
+  t.mock.timers.tick(13999);
+  await nextTurn();
+  assert.equal(settled, false, "Stdio closure keeps the remaining shared budget");
+  t.mock.timers.tick(1);
+  await rejected;
 });
 
 test("a missing snapshot cannot prove tree exit even after its root exited", async (t) => {
   const { confirmBrowserExit } = loadLifecycle(t, () => assert.fail("No command may run during exit verification"));
   t.mock.method(process, "kill", () => assert.fail("No snapshot is available to inspect"));
   const child = { pid: 12345, exitCode: 0, signalCode: null };
-  assert.equal(await confirmBrowserExit(child, [], false, null, performance.now() + 3000), false);
+  assert.equal(await confirmBrowserExit(child, [], false, null, performance.now() + 3000, Promise.resolve()), false);
   const terminationError = new Error("Termination could not verify its tree");
-  await assert.rejects(confirmBrowserExit(child, [], false, terminationError, performance.now() + 3000), (error) => error === terminationError);
+  await assert.rejects(confirmBrowserExit(child, [], false, terminationError, performance.now() + 3000, Promise.resolve()), (error) => error === terminationError);
 });
 
 test("a live descendant fails verification and preserves the original termination error", async (t) => {
@@ -293,8 +334,9 @@ test("a live descendant fails verification and preserves the original terminatio
   });
   t.mock.method(performance, "now", () => 3001);
   const terminationError = new Error("The descendant could not be terminated");
-  await assert.rejects(confirmBrowserExit({ pid: 12345, exitCode: 0, signalCode: null }, [12345, 12346], true, terminationError, 3000), (error) => {
+  await assert.rejects(confirmBrowserExit({ pid: 12345, exitCode: 0, signalCode: null }, [12345, 12346], true, terminationError, 3000, Promise.resolve()), (error) => {
     assert.ok(error instanceof AggregateError);
+    assert.match(error.message, /^Browser tree exit could not be verified:/);
     assert.equal(error.errors[0], terminationError);
     assert.match(error.errors[1].message, /Owned browser cleanup exhausted its shared command time budget/);
     return true;
@@ -303,7 +345,7 @@ test("a live descendant fails verification and preserves the original terminatio
 
 test("an incomplete snapshot cannot certify the owned browser exit", async (t) => {
   const { confirmBrowserExit } = loadLifecycle(t, () => assert.fail("No command may run during exit verification"));
-  await assert.rejects(confirmBrowserExit({ pid: 12345, exitCode: 0, signalCode: null }, [12346], true, null, performance.now() + 3000),
+  await assert.rejects(confirmBrowserExit({ pid: 12345, exitCode: 0, signalCode: null }, [12346], true, null, performance.now() + 3000, Promise.resolve()),
     /snapshot must include the owned browser root/);
 });
 
@@ -389,7 +431,7 @@ test("descendants consume the root's same absolute cleanup budget without restar
     if (pid === 12345) throw Object.assign(new Error("Root exited"), { code: "ESRCH" });
     assert.equal(pid, 12346);
   });
-  const pending = confirmBrowserExit({ pid: 12345, exitCode: 0, signalCode: null }, [12345, 12346], true, null, 74000);
+  const pending = confirmBrowserExit({ pid: 12345, exitCode: 0, signalCode: null }, [12345, 12346], true, null, 74000, Promise.resolve());
   const rejected = assert.rejects(pending, /Owned browser cleanup exhausted its shared command time budget/);
   now = 74000;
   t.mock.timers.tick(10);
@@ -407,7 +449,7 @@ test("a descendant that exits within the remaining budget can outlive its root b
     if (pid === 12345 || !descendantAlive) throw Object.assign(new Error("Exited"), { code: "ESRCH" });
     assert.equal(pid, 12346);
   });
-  const pending = confirmBrowserExit({ pid: 12345, exitCode: 0, signalCode: null }, [12345, 12346], true, null, 74000);
+  const pending = confirmBrowserExit({ pid: 12345, exitCode: 0, signalCode: null }, [12345, 12346], true, null, 74000, Promise.resolve());
   now = 64000;
   descendantAlive = false;
   t.mock.timers.tick(4000);

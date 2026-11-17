@@ -6,8 +6,8 @@ vehicles. Stop the instance before editing. Region creation, geometry and
 player damage remain owned by the game.
 
 The editor binds each inspected executable to its verified database schema:
-build 25803875 to schema 73, build 26320224 to schema 75, and build 26593814 to
-schema 77. Crossed pairs and
+build 25803875 to schema 73, build 26320224 to schema 75, and builds 26593814 and
+26621903 to schema 77. Crossed pairs and
 unknown versions are rejected. Let the game perform its database migration
 before stopping it to edit zones. Paths come from the stored instance.
 Writes retain the instance mutation and storage leases, acquire
@@ -61,3 +61,13 @@ including its two configurations, committed reload, pre-change backup and
 unchanged source DB/WAL. All nine storage regressions passed across the three
 supported synthetic layouts. These checks do not claim an in-game reload of
 edited damage rules or client combat outcomes.
+
+On 2026-11-14 build 26621903 retained schema 77 and the same live registry,
+enum values, fixed-array metadata and vehicle slots. Its new exact executable
+hash selects the existing verified layout. All nine SQLite regressions and the
+public API roundtrip on a consistent native-world snapshot passed on an isolated Windows validation host;
+source database and executable hashes remained unchanged. The portable test
+accepts `LANGAME_SMOKE_SOURCE_ROOT` for its verified source snapshot, so module
+discovery does not depend on another machine's compiled-in checkout path.
+The [current contract](../reference-fixtures/2026-11-14-native_contract_build_26621903.json)
+records the evidence and its separate managed lifecycle result.

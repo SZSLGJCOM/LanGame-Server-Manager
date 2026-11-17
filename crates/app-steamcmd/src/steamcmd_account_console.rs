@@ -41,6 +41,7 @@ pub(crate) async fn run(
     if let Some(source) = lease.update_source() {
         arguments.extend([String::from("-overridepackageurl"), source.to_owned()]);
     }
+    arguments.extend(crate::STEAMCMD_APPINFO_ARGS.map(String::from));
     arguments.extend([
         String::from("+@NoPromptForPassword"),
         String::from("0"),

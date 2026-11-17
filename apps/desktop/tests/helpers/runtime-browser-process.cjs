@@ -551,17 +551,24 @@ async function closeBrowser(child, exited, endpoint, cleanupDeadlineMs) {
   return terminationError;
 }
 
-async function confirmBrowserExit(child, processIds, processSnapshotKnown, terminationError, cleanupDeadlineMs) {
+async function confirmBrowserExit(child, processIds, processSnapshotKnown, terminationError, cleanupDeadlineMs, closed) {
+  let phase = "Browser tree exit";
   try {
     if (!child?.pid) return true;
     if (processSnapshotKnown) {
       assert.ok(processIds.includes(child.pid), "The process snapshot must include the owned browser root");
       await waitForBrowserProcesses(processIds, cleanupDeadlineMs);
-      if (child.exitCode !== null || child.signalCode !== null) return true;
+      if (child.exitCode !== null || child.signalCode !== null) {
+        // Root exit and a CDP PID snapshot can precede closure of inherited
+        // stderr. Wait for ChildProcess.close before deleting its log/profile.
+        phase = "Browser stdio close";
+        await deadline(closed, remainingCleanupTime(cleanupDeadlineMs), "Owned browser stdio close");
+        return true;
+      }
     }
   } catch (error) {
     throw terminationError ? new AggregateError([terminationError, error],
-      `Browser tree exit could not be verified: ${terminationError}; ${error}`) : error;
+      `${phase} could not be verified: ${terminationError}; ${error}`) : error;
   }
   if (terminationError) throw terminationError;
   return false;
@@ -605,6 +612,7 @@ async function runBrowserFixture({ fixturePath = "runtime-browser.html", keyboar
   let server;
   let child;
   let exited;
+  let closed;
   let endpoint;
   let pageTargetId;
   let viewportSession;
@@ -614,7 +622,7 @@ async function runBrowserFixture({ fixturePath = "runtime-browser.html", keyboar
   let terminationError = null;
   const startup = { timeout_ms: browserStartupTimeoutMs, endpoint_ready_ms: null, endpoint_source: null,
     devtools_port_file: null, viewport_ready_ms: null,
-    fixture_requested_ms: null, exit: null, browser_product: null, host_resources: null };
+    fixture_requested_ms: null, exit: null, stdio_closed_ms: null, browser_product: null, host_resources: null };
   function finishStartupObservation() {
     if (startupResourceStart && !startup.host_resources) {
       startup.host_resources = hostResourceUsage(startupResourceStart, sampleHostResources());
@@ -830,6 +838,12 @@ async function runBrowserFixture({ fixturePath = "runtime-browser.html", keyboar
       "--disable-background-networking", "--enable-logging", "--v=1", viewport ? "about:blank" : url,
     ], { windowsHide: true, detached: process.platform !== "win32", stdio: ["ignore", "ignore", "pipe"],
       env: browserLogEnvironment(scratch) });
+    closed = new Promise((resolve) => {
+      child.once("close", () => {
+        startup.stdio_closed_ms = Math.round(performance.now() - browserStartedAt);
+        resolve();
+      });
+    });
     exited = new Promise((resolve) => {
       child.once("error", (error) => {
         startup.exit = { error: String(error), elapsed_ms: Math.round(performance.now() - browserStartedAt) };
@@ -977,6 +991,7 @@ async function runBrowserFixture({ fixturePath = "runtime-browser.html", keyboar
     if (networkDiagnostics) startup.network_at_failure = networkDiagnostics.snapshot();
   } finally {
     let treeExited = false;
+    let exitVerificationFailed = false;
     // Capture the mounted fixture first, then let React finish its own cleanup
     // and report errors from the page and its preview frames before browser exit.
     if (fixtureCleanup && startup.fixture_requested_ms !== null && endpoint && child?.exitCode === null && child.signalCode === null) {
@@ -1006,23 +1021,25 @@ async function runBrowserFixture({ fixturePath = "runtime-browser.html", keyboar
       catch (error) { cleanupErrors.push(error); }
     }
     try {
-      treeExited = await confirmBrowserExit(child, processIds, processSnapshotKnown, terminationError, browserCleanupDeadlineMs);
-    } catch (error) { cleanupErrors.push(error); }
+      treeExited = await confirmBrowserExit(child, processIds, processSnapshotKnown, terminationError, browserCleanupDeadlineMs, closed);
+    } catch (error) { exitVerificationFailed = true; cleanupErrors.push(error); }
     if (server) {
       try { await deadline(server.close(), 5000, "Fixture server shutdown"); } catch (error) { cleanupErrors.push(error); }
     }
     // Read diagnostics before deleting an exited browser's profile. File errors
     // are observations only and must not replace the original test failure.
     if (failure || cleanupErrors.length || !treeExited) browserLog = await readBrowserLog(scratch);
-    // Retain the profile if an owned process did not exit; never delete a live profile.
+    // Retain the profile if process exit or stdio closure could not be verified.
     if (treeExited) {
       try { await removeScratch(scratch); } catch (error) {
+        retainedScratch = scratch;
         cleanupErrors.push(error);
         browserLog ??= await readBrowserLog(scratch);
       }
     } else {
       retainedScratch = scratch;
-      cleanupErrors.push(new Error(`Owned browser process-tree exit is unverified; retained fixture scratch: ${scratch}`));
+      const reason = exitVerificationFailed ? "Owned browser cleanup verification failed" : "Owned browser process-tree exit is unverified";
+      cleanupErrors.push(new Error(`${reason}; retained fixture scratch: ${scratch}`));
     }
   }
   // This fixture has completed its bounded cleanup; its timer must not outlive

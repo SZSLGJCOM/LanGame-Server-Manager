@@ -6,7 +6,7 @@ if not root then print("[LgsmWorldSave] Private runtime path unavailable; disabl
 local directory = root .. "\\langame_world_save\\"
 local pending, outgoing, dispatching, generation = nil, nil, nil, 0
 local recent, current = {}, nil
--- Optional, unbound diagnostics. Only the exact Astro policy opts in; no
+-- Optional, unbound diagnostics. Only the exact named policies may opt in; no
 -- request identity or object data enters a log, and at most eight lines are
 -- attempted per probe. Logging cannot replace or change a mandatory receipt.
 local probe_stages = { queued=true, callback_entered=true, callback_entered_stale=true,
@@ -14,8 +14,9 @@ local probe_stages = { queued=true, callback_entered=true, callback_entered_stal
     native_probe_begin=true, native_probe_end=true, reject=true }
 local probe_phases = { queued=true, preparing=true, observing=true, pending=true, executing=true }
 local function traced_probe(operation)
-    return SAVE_CONFIG.diagnose_probe_dispatch == true and SAVE_CONFIG.project == "Astro"
-        and SAVE_CONFIG.executable == "AstroServer-Win64-Shipping.exe"
+    return SAVE_CONFIG.diagnose_probe_dispatch == true
+        and ((SAVE_CONFIG.project == "Astro" and SAVE_CONFIG.executable == "AstroServer-Win64-Shipping.exe")
+            or (SAVE_CONFIG.project == "ConanSandbox" and SAVE_CONFIG.executable == "ConanSandboxServer-Win64-Shipping.exe"))
         and operation ~= nil and operation.request.action == "saveprobe"
 end
 local function trace_probe(operation, stage)
@@ -169,11 +170,25 @@ end
 local function operation_fresh(operation)
     return fresh(operation.request, (operation.entered or operation.completion) and 30 or 3)
 end
+-- The fixed loader measures delayed actions with steady_clock in milliseconds.
+-- Unix-second subtraction can reject a three-second queue after only two seconds.
+-- Each sentinel captures only its own budget, never a request or world. A late
+-- sentinel cannot expire the next dispatch of the same completion operation.
+local function queue_open(operation)
+    local budget = operation.queue_budget
+    if not budget or budget.expired then return false end
+    local elapsed = GetDelayedActionTimeElapsed(budget.handle)
+    return type(elapsed) == "number" and elapsed >= 0 and elapsed < 3000
+end
 local function schedule()
     local operation, mark = pending, generation
-    dispatching, operation.queued_at, operation.phase = operation, os.time(), "queued"
+    dispatching, operation.phase = operation, "queued"
     trace_probe(operation, "queued")
     local ok = pcall(function()
+        local budget = { expired = false }
+        operation.queue_budget = budget
+        budget.handle = ExecuteInGameThreadWithDelay(3000, function() budget.expired = true end)
+        check(type(budget.handle) == "number" and budget.handle >= 0 and budget.handle % 1 == 0, "dispatcher_unavailable")
         ExecuteInGameThread(function()
             trace_probe(operation, (generation ~= mark or pending ~= operation) and "callback_entered_stale" or "callback_entered")
             if generation ~= mark or pending ~= operation then
@@ -183,8 +198,7 @@ local function schedule()
             local success, result = pcall(function()
                 local function validate()
                     check(generation == mark and pending == operation and operation_fresh(operation), "request_expired")
-                    local elapsed = os.time() - operation.queued_at
-                    check(elapsed >= 0 and (not in_queue(operation) or elapsed < 3), "dispatcher_timeout")
+                    check(not in_queue(operation) or queue_open(operation), "dispatcher_timeout")
                 end
                 -- Every EngineTick dispatch, including a completion poll, has
                 -- the same queue admission limit. Only its running work may
@@ -280,7 +294,7 @@ end
 LoopAsync(250, function()
     flush(); local time = os.time()
     if pending and (not fresh(pending.request, (pending.entered or pending.completion) and 30 or 5)
-        or (dispatching == pending and in_queue(pending) and time - pending.queued_at >= 3)) then
+        or (dispatching == pending and in_queue(pending) and not queue_open(pending))) then
         local expired = pending
         fail(expired, "dispatcher_timeout"); pending = nil; generation = generation + 1
         if dispatching == expired then dispatching = nil end
@@ -292,7 +306,9 @@ LoopAsync(250, function()
     if recent[req.request_id] or count >= 512 then return false end
     recent[req.request_id] = time
     if pending or dispatching then fail({request=req}, "dispatcher_unavailable"); return false end
-    if type(ExecuteInGameThread) ~= "function" or type(EGameThreadMethod) ~= "table" or EGameThreadMethod.EngineTick == nil then
+    if type(ExecuteInGameThread) ~= "function" or type(EGameThreadMethod) ~= "table" or EGameThreadMethod.EngineTick == nil
+        or EngineTickAvailable ~= true or type(ExecuteInGameThreadWithDelay) ~= "function"
+        or type(GetDelayedActionTimeElapsed) ~= "function" then
         fail({request=req}, "dispatcher_unavailable"); return false
     end
     generation = generation + 1; pending = { request = req }; schedule(); return false

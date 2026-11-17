@@ -91,9 +91,10 @@ public static class Installer {
       Console.WriteLine("Steam Console Client (c) Valve Corporation\nLoading Steam API...OK");
       return 0;
     }
-    if (args.Length != 2 || args[0] != "+runscript") return 80;
+    if (args.Length != 4 || args[0] != "+app_info_http_min" || args[1] != "1000000000"
+      || args[2] != "+runscript") return 80;
     string root = null, login = null;
-    foreach (string line in File.ReadAllLines(args[1])) {
+    foreach (string line in File.ReadAllLines(args[3])) {
       if (line.StartsWith("force_install_dir ")) root = line.Substring(18).Trim().Trim('"');
       if (line.StartsWith("login ")) login = line.Trim();
     }

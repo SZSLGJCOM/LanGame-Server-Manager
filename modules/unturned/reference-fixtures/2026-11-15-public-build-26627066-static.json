@@ -1,0 +1,187 @@
+{
+  "schema_version": 1,
+  "module_id": "unturned",
+  "evidence_classification": "official_package_static_configuration_and_runtime_contract_comparison",
+  "verified_on": "2026-11-15",
+  "steam_app_id": 1110390,
+  "steam_build_id": "26627066",
+  "game_version": "3.26.3.15",
+  "acquisition": {
+    "method": "Separate physical copy of the retained official package, followed by anonymous SteamCMD public app_update validate",
+    "steam_app_id": 1110390,
+    "steam_build_id": "26627066",
+    "completed_at_utc": "2026-11-15T02:34:49.4515987Z",
+    "steamcmd_exit_code": 0,
+    "state_flags": 4,
+    "update_result": 0,
+    "seed_build_id": "26491864",
+    "original_seed_identity_unchanged": true,
+    "earlier_failed_acquisition_attempts_retained": 1
+  },
+  "version_source": {
+    "path": "Status.json",
+    "sha256": "abc3fd3548a07b486584cbf03a8e50d2dffa842a141edfe39e2af2bada258a5a",
+    "native_formatter": "SDG.Unturned.GameStatusData.FormatApplicationVersion: 3.{Major_Version}.{Minor_Version}.{Patch_Version}"
+  },
+  "method": {
+    "parser": "Read-only Mono.Cecil metadata/IL; no target assembly loading or game execution",
+    "started_utc": "2026-11-15T02:36:22.4972004Z",
+    "completed_utc": "2026-11-15T02:36:50.0473390Z",
+    "comparison": "Same normalized Cecil instruction/member text, method flags, local-variable types and exception-handler boundaries"
+  },
+  "raw_evidence_sha256": "e5d63a07022d75e020be059a217aea660c682dc394075a8887f67cd759f18c1e",
+  "level_readiness_evidence_sha256": "1309769ef442a81b87a3ec667c572386df514721f89814f1849121660173c72e",
+  "level_readiness_extraction_script_sha256": "0fd5f290265dae7bd51ab826a21210df510e21f95606277d0e1523911f2ef5d1",
+  "analyzer_sha256": "af495cb40d0aa09f02ae5d08635b306f06a0deecfdc20724496d5bcf43546425",
+  "parser_sha256": "b8570aa24c47827f36e8015c7edb8e3fe35323ed6bd9829ab09f58777baf413f",
+  "extraction_script_sha256": "0accdd01d95ed12be9fd1d1802a05b028a9541c21b9f075d7d4fed6df28f3a41",
+  "acquisition_receipt_sha256": "bec75b009e1f6ff1b2a0f8452f0a5d5471d6a1ecc26d52567dcc3c4ddffd15bb",
+  "package_files": {
+    "manifest": {
+      "path": "steamapps/appmanifest_1110390.acf",
+      "sha256": "a4a2c97d9db5679f7cd082ee219d476f7e7f0f4dfd0df622ee7bbc2bba65036d"
+    },
+    "executable": {
+      "path": "Unturned.exe",
+      "sha256": "09e862f6895d3ecb3bbc6b2059a3105f2530a08cb04cac22503478c8f154c6da"
+    },
+    "assembly": {
+      "path": "Unturned_Data/Managed/Assembly-CSharp.dll",
+      "sha256": "d64bee7647a37e25af26101facb6efc3c1cc57f1aadd0e578aba3fe8e6fba4a2"
+    },
+    "status": {
+      "path": "Status.json",
+      "sha256": "abc3fd3548a07b486584cbf03a8e50d2dffa842a141edfe39e2af2bada258a5a"
+    }
+  },
+  "baseline_identity_verified_against_repository_fixture": true,
+  "baseline_build": "26491864",
+  "inventory": {
+    "native_field_count": 282,
+    "category_counts": {
+      "Animals": 9,
+      "Barricades": 11,
+      "Browser": 10,
+      "Events": 30,
+      "Gameplay": 47,
+      "Items": 20,
+      "Objects": 8,
+      "Players": 47,
+      "Server": 27,
+      "Structures": 7,
+      "UnityEvents": 4,
+      "Vehicles": 20,
+      "Zombies": 42
+    },
+    "schema_mapped_count": 274,
+    "ledger_mapped_count": 274,
+    "excluded_count": 8,
+    "unmapped_native_fields": [],
+    "schema_missing_mapped_fields": [],
+    "overlapping_mappings_and_exclusions": [],
+    "non_serialized_fields": [
+      "Server.Chat_Always_Use_Rich_Text",
+      "Server.Max_Packets_Per_Second"
+    ],
+    "schema_native_type_metadata_mismatches": [],
+    "field_inventory_sha256": "9be3f808b5d9f68fdd9ffd00f841c5574446a022fde7270211cbfa193b155407",
+    "delta_from_baseline": {
+      "added": [],
+      "removed": [],
+      "changed": []
+    },
+    "exclusions": {
+      "Server.Max_Packets_Per_Second": "Obsolete and NonSerialized in current official source; not an active supported setting.",
+      "Server.Enable_Scheduled_Shutdown": "Scheduled shutdown, update-triggered shutdown and warnings belong to Maintenance and are not duplicated in Configuration.",
+      "Server.Scheduled_Shutdown_Time": "Scheduled shutdown, update-triggered shutdown and warnings belong to Maintenance and are not duplicated in Configuration.",
+      "Server.Scheduled_Shutdown_Warnings": "Scheduled shutdown, update-triggered shutdown and warnings belong to Maintenance and are not duplicated in Configuration.",
+      "Server.Enable_Update_Shutdown": "Scheduled shutdown, update-triggered shutdown and warnings belong to Maintenance and are not duplicated in Configuration.",
+      "Server.Update_Steam_Beta_Name": "Scheduled shutdown, update-triggered shutdown and warnings belong to Maintenance and are not duplicated in Configuration.",
+      "Server.Update_Shutdown_Warnings": "Scheduled shutdown, update-triggered shutdown and warnings belong to Maintenance and are not duplicated in Configuration.",
+      "Server.Chat_Always_Use_Rich_Text": "Obsolete and NonSerialized in current official source; not an active supported setting."
+    }
+  },
+  "config_method_comparison": {
+    "baseline_count": 21,
+    "current_count": 21,
+    "removed": [],
+    "added": [],
+    "changed": [],
+    "baseline_inventory_sha256": "07f8718e15fa9eade9d1a9f0330bd5a41f16659e3a41ebaede56a13e241b68fd",
+    "current_inventory_sha256": "07f8718e15fa9eade9d1a9f0330bd5a41f16659e3a41ebaede56a13e241b68fd"
+  },
+  "runtime_contract": {
+    "missing_types": [],
+    "method_comparison": {
+      "baseline_count": 42,
+      "current_count": 42,
+      "removed": [],
+      "added": [],
+      "changed": [],
+      "baseline_inventory_sha256": "4e783ff6a03ebbfc11a9769922644662e20f1712e5d1921328de5d7e5fd3dd8a",
+      "current_inventory_sha256": "4e783ff6a03ebbfc11a9769922644662e20f1712e5d1921328de5d7e5fd3dd8a"
+    },
+    "windows_handler_caller_comparison": {
+      "baseline_count": 1,
+      "current_count": 1,
+      "removed": [],
+      "added": [],
+      "changed": [],
+      "baseline_inventory_sha256": "20d30d72e2645cefad7e0cbea05a851e3c673b3438c12e5b48d7c4ea37ff1d04",
+      "current_inventory_sha256": "20d30d72e2645cefad7e0cbea05a851e3c673b3438c12e5b48d7c4ea37ff1d04"
+    },
+    "console_method_count": 1,
+    "console_calls_in_order": [
+      "System.Boolean System.Console::get_KeyAvailable()",
+      "System.String System.Console::ReadLine()",
+      "System.Void System.Collections.Concurrent.ConcurrentQueue`1<System.String>::Enqueue(!0)"
+    ],
+    "console_keyavailable_readline_enqueue_order_present": true,
+    "declared_host_surface": "managed_pseudo_console",
+    "shutdown_commands": [
+      {
+        "transport": "stdin",
+        "command": "Save"
+      },
+      {
+        "transport": "stdin",
+        "command": "Shutdown"
+      }
+    ],
+    "readiness_literals": [
+      "Failed to connect to Steam servers because {0}, no longer retrying",
+      "Failed to connect to Steam servers because {0}, still retrying",
+      "Lost connection to Steam servers because {0}",
+      "Steam servers ready!",
+      "Waiting for Steam servers..."
+    ],
+    "readiness_method_comparison": {
+      "baseline_count": 4,
+      "current_count": 4,
+      "removed": [],
+      "added": [],
+      "changed": [],
+      "baseline_inventory_sha256": "784a887215d1dc5388357ef3e323b996a22dda767afbb3157e958e70d563f52d",
+      "current_inventory_sha256": "784a887215d1dc5388357ef3e323b996a22dda767afbb3157e958e70d563f52d"
+    },
+    "level_loading": {
+      "localization_path": "Localization/English/Menu/MenuLoading.dat",
+      "localization_sha256": "fe3149766974acdb187effe2cda94b1fc4add9512b62837229ff919d4013c634",
+      "baseline_localization_sha256": "fe3149766974acdb187effe2cda94b1fc4add9512b62837229ff919d4013c634",
+      "localization_entry": "Level_Load Loading level: {0}%",
+      "localization_unchanged": true,
+      "dynamic_call_chain": "not_assessed"
+    }
+  },
+  "reviewed_module_files": {
+    "schema.json": "a80ad59a0208ff188732e3689c327d106542b354ccdecb6840006bd95b26e1be",
+    "module.toml": "fd5886d92913f072bc25d0161833c507ae9d1e3310a30c290e813c2d044710a6",
+    "config-sources.toml": "b933895d5645b375355406dff1e73b2b29f2949d3d5c7e854e14527929e81511"
+  },
+  "scope_limits": [
+    "The target assemblies were parsed as metadata and IL, not loaded or executed.",
+    "Equal method IL does not independently test effective defaults, serialization, console delivery, readiness or saving.",
+    "This result does not renew native lifecycle, populated players, client gameplay, network connectivity or GUI acceptance.",
+    "The level-load localization entry is unchanged; its complete dynamic logging chain was not verified. Two earlier optional PowerShell probes were stopped for excessive memory/time and produced no accepted result. Localization evidence uses separate direct file copies."
+  ]
+}
