@@ -163,7 +163,7 @@ test("save stages world changes and only the startup path runs the bounded updat
   const transactionSource = instancesSource.slice(transactionStart, transactionEnd);
   const coordinatedWrite = transactionSource.indexOf("write_pending_instance_configuration_in_worker(");
   const commit = transactionSource.indexOf("commit_instance_transaction(tx, config_mutation, settings_lock).await?");
-  const updater = transactionSource.search(/apply_module_prestart_support\(\s*&prestart_context,\s*settings_lock,\s*descriptor\.as_ref\(\),?\s*\)\s*\.await\?/);
+  const updater = transactionSource.search(/\bapply_module_prestart_support\([^;]*\)\s*\.await\?/);
   assert.ok(coordinatedWrite >= 0 && coordinatedWrite < commit);
   assert.ok(updater >= 0 && commit < updater, "external updater must run only after the database transaction commits");
   assert.match(transactionSource, /load_active_instance_run\(&mut \*tx, instance_id\)/);

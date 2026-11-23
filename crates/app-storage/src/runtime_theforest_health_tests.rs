@@ -66,6 +66,7 @@ impl Drop for Fixture {
 fn native_query_health_requires_the_successful_current_run_without_its_bridge() {
     use crate::startup_sessions::{StartupSessionStatus, begin, finish};
     let fixture = Fixture::new();
+    fixture.write(&format!("{STARTING}\n"));
     let (receipt, writer) = begin(&fixture.root, "forest", "native", 1).unwrap();
     drop(writer);
     let health =
