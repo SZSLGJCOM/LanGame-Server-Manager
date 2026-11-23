@@ -963,16 +963,16 @@ Legal text / 法律文本: 62c7a1e35f56406896d7aa7ca52d0cc0d272ac022b5d2796e7d69
 Legal text / 法律文本: 9a3aeb3f63659c4c6302d315e1d98784d1e8559858a47ff9562e091bb922d28d — checksum-verified crate file constant_time_eq-0.6.1/LICENSE-MIT0
 Legal text / 法律文本: a2010f343487d3f7618affe54f789f5487602331c0a8d03f49e9a7c547cf0499 — checksum-verified crate file constant_time_eq-0.6.1/LICENSE-CC0
 --------------------------------------------------------------------------------
-Package / 软件包: cookie@0.18.2
+Package / 软件包: cookie@0.18.3
 Declared license / 声明许可证: MIT OR Apache-2.0
 Selected reviewed terms / 选用审计条款: packaged upstream texts
-Archive SHA-256: 1a373e3602691c3cdea496d2f0ee5935151e6168fe87739483c463db1b2f2f87
-Source archive / 源码归档: https://static.crates.io/crates/cookie/cookie-0.18.2.crate
+Archive SHA-256: d55f2d6c30eeec7d5c6f98bd4395d4abb1895629eab97ee6522d340623615f8a
+Source archive / 源码归档: https://static.crates.io/crates/cookie/cookie-0.18.3.crate
 Repository / 仓库: https://github.com/SergioBenitez/cookie-rs
-VCS commit / 版本提交: 1ec8fded5654679482a91c784e7ff2874b0fdeff
+VCS commit / 版本提交: 1ab14faf1243d853a0294a3d3c11837705fbcd13
 Authors metadata / 作者元数据: Sergio Benitez <sb@sergio.bz>; Alex Crichton <alex@alexcrichton.com>
-Legal text / 法律文本: 2773e20df8f4c52a026b5b578c7f2457341f5aa3fb6612fd87e1d2e1bd8f48ad — checksum-verified crate file cookie-0.18.2/LICENSE-APACHE
-Legal text / 法律文本: f28420c1906af38be726cd7842798f0194b27c41d6051c0d1e9ee348b8a4a0ea — checksum-verified crate file cookie-0.18.2/LICENSE-MIT
+Legal text / 法律文本: 2773e20df8f4c52a026b5b578c7f2457341f5aa3fb6612fd87e1d2e1bd8f48ad — checksum-verified crate file cookie-0.18.3/LICENSE-APACHE
+Legal text / 法律文本: f28420c1906af38be726cd7842798f0194b27c41d6051c0d1e9ee348b8a4a0ea — checksum-verified crate file cookie-0.18.3/LICENSE-MIT
 --------------------------------------------------------------------------------
 Package / 软件包: core-foundation-sys@0.8.7
 Declared license / 声明许可证: MIT OR Apache-2.0
@@ -1911,16 +1911,16 @@ Authors metadata / 作者元数据: Steven Fackler <sfackler@gmail.com>
 Legal text / 法律文本: 333ea3aaa3cadb819f4acd9f9153f9feee060a995ca8710f32bc5bd9a4b91734 — checksum-verified crate file foreign-types-0.5.0/LICENSE-MIT
 Legal text / 法律文本: c6596eb7be8581c18be736c846fb9173b69eccf6ef94c5135893ec56bd92ba08 — checksum-verified crate file foreign-types-0.5.0/LICENSE-APACHE
 --------------------------------------------------------------------------------
-Package / 软件包: form_urlencoded@1.2.2
+Package / 软件包: form_urlencoded@1.2.3
 Declared license / 声明许可证: MIT OR Apache-2.0
 Selected reviewed terms / 选用审计条款: packaged upstream texts
-Archive SHA-256: cb4cb245038516f5f85277875cdaa4f7d2c9a0fa0468de06ed190163b1581fcf
-Source archive / 源码归档: https://static.crates.io/crates/form_urlencoded/form_urlencoded-1.2.2.crate
+Archive SHA-256: afa489199eaffb1211795df1c6236ce1ad0d41a6fa45250add73e3b02420f06e
+Source archive / 源码归档: https://static.crates.io/crates/form_urlencoded/form_urlencoded-1.2.3.crate
 Repository / 仓库: https://github.com/servo/rust-url
-VCS commit / 版本提交: 91377f48bf35011d042aa5abef9e7f2a0a625aaa
+VCS commit / 版本提交: ad1c66cbff6e318393d872641e30589ff9687b9c
 Authors metadata / 作者元数据: The rust-url developers
-Legal text / 法律文本: 20c7855c364d57ea4c97889a5e8d98470a9952dade37bd9248b9a54431670e5e — checksum-verified crate file form_urlencoded-1.2.2/LICENSE-MIT
-Legal text / 法律文本: a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2 — checksum-verified crate file form_urlencoded-1.2.2/LICENSE-APACHE
+Legal text / 法律文本: 20c7855c364d57ea4c97889a5e8d98470a9952dade37bd9248b9a54431670e5e — checksum-verified crate file form_urlencoded-1.2.3/LICENSE-MIT
+Legal text / 法律文本: a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2 — checksum-verified crate file form_urlencoded-1.2.3/LICENSE-APACHE
 --------------------------------------------------------------------------------
 Package / 软件包: fs_extra@1.3.0
 Declared license / 声明许可证: MIT
@@ -6238,16 +6238,16 @@ VCS commit / 版本提交: 89c8b8415f692d3803d183fc5fbf9ec08a6adcf4
 Authors metadata / 作者元数据: Brian Smith <brian@briansmith.org>
 Legal text / 法律文本: 7abd9b6960dcf7d4d0a48606a5b71bfe37d472db68d70637f3a58a56785f1621 — checksum-verified crate file untrusted-0.9.0/LICENSE.txt
 --------------------------------------------------------------------------------
-Package / 软件包: url@2.5.8
+Package / 软件包: url@2.5.9
 Declared license / 声明许可证: MIT OR Apache-2.0
 Selected reviewed terms / 选用审计条款: packaged upstream texts
-Archive SHA-256: ff67a8a4397373c3ef660812acab3268222035010ab8680ec4215f38ba3d0eed
-Source archive / 源码归档: https://static.crates.io/crates/url/url-2.5.8.crate
+Archive SHA-256: f00cd2407bb42c0ef17be88d4cf020f5cceffd121665bac9b8b9493a369b3b1a
+Source archive / 源码归档: https://static.crates.io/crates/url/url-2.5.9.crate
 Repository / 仓库: https://github.com/servo/rust-url
-VCS commit / 版本提交: d6ea13c5f8e7e6e627f6390161b3e185bda5e5ce
+VCS commit / 版本提交: ad1c66cbff6e318393d872641e30589ff9687b9c
 Authors metadata / 作者元数据: The rust-url developers
-Legal text / 法律文本: a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2 — checksum-verified crate file url-2.5.8/LICENSE-APACHE
-Legal text / 法律文本: b38f11f6096706e6de553dabe2a7ed142d59b6fa8c97e290c67496154745cdd5 — checksum-verified crate file url-2.5.8/LICENSE-MIT
+Legal text / 法律文本: a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2 — checksum-verified crate file url-2.5.9/LICENSE-APACHE
+Legal text / 法律文本: b38f11f6096706e6de553dabe2a7ed142d59b6fa8c97e290c67496154745cdd5 — checksum-verified crate file url-2.5.9/LICENSE-MIT
 --------------------------------------------------------------------------------
 Package / 软件包: urlpattern@0.6.0
 Declared license / 声明许可证: MIT
@@ -7246,15 +7246,15 @@ VCS commit / 版本提交: c56bbb5a7b47409759113903764c456f13b418e5
 Authors metadata / 作者元数据: The ICU4X Project Developers
 Legal text / 法律文本: f367c1b8e1aa262435251e442901da4607b4650e0e63a026f5044473ecfb90f2 — checksum-verified crate file zerovec-0.11.8/LICENSE
 --------------------------------------------------------------------------------
-Package / 软件包: zip@9.7.3
+Package / 软件包: zip@9.8.2
 Declared license / 声明许可证: MIT
 Selected reviewed terms / 选用审计条款: packaged upstream texts
-Archive SHA-256: 63e50f7b2212e4635244be3c363b53273d159f2523eb7db3096c1d2861c1b603
-Source archive / 源码归档: https://static.crates.io/crates/zip/zip-9.7.3.crate
+Archive SHA-256: 2d8dbe089cf6b0448b78f5fc50139ab5aaa40d08ac07cdc1baf2c13add35fcce
+Source archive / 源码归档: https://static.crates.io/crates/zip/zip-9.8.2.crate
 Repository / 仓库: https://github.com/zip-rs/zip2
-VCS commit / 版本提交: 7d0d324886eb51cd0c22be21c13e63e77ed37fb4
+VCS commit / 版本提交: 37a9a8156893c7bce8ac3bf5c3c7cf264f7242ba
 Authors metadata / 作者元数据: Mathijs van de Nes <git@mathijs.vd-nes.nl>; Marli Frost <marli@frost.red>; Ryan Levick <ryan.levick@gmail.com>; Chris Hennick <hennickc@amazon.com>
-Legal text / 法律文本: 58545fed1565e42d687aecec6897d35c6d37ccb71479a137c0deb2203e125c79 — checksum-verified crate file zip-9.7.3/LICENSE
+Legal text / 法律文本: 58545fed1565e42d687aecec6897d35c6d37ccb71479a137c0deb2203e125c79 — checksum-verified crate file zip-9.8.2/LICENSE
 --------------------------------------------------------------------------------
 Package / 软件包: zlib-rs@0.6.8
 Declared license / 声明许可证: Zlib
@@ -10594,7 +10594,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 
 Text SHA-256 / 文本 SHA-256: 20c7855c364d57ea4c97889a5e8d98470a9952dade37bd9248b9a54431670e5e
-Source / 来源: checksum-verified crate file form_urlencoded-1.2.2/LICENSE-MIT
+Source / 来源: checksum-verified crate file form_urlencoded-1.2.3/LICENSE-MIT
 --------------------------------------------------------------------------------
 Copyright (c) 2013-2016 The rust-url developers
 
@@ -11934,7 +11934,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 
 Text SHA-256 / 文本 SHA-256: 2773e20df8f4c52a026b5b578c7f2457341f5aa3fb6612fd87e1d2e1bd8f48ad
-Source / 来源: checksum-verified crate file cookie-0.18.2/LICENSE-APACHE
+Source / 来源: checksum-verified crate file cookie-0.18.3/LICENSE-APACHE
 --------------------------------------------------------------------------------
                               Apache License
                         Version 2.0, January 2004
@@ -16264,7 +16264,7 @@ SOFTWARE.
 
 Text SHA-256 / 文本 SHA-256: 58545fed1565e42d687aecec6897d35c6d37ccb71479a137c0deb2203e125c79
 Source / 来源: checksum-verified crate file tracing-core-0.1.36/src/spin/LICENSE
-Source / 来源: checksum-verified crate file zip-9.7.3/LICENSE
+Source / 来源: checksum-verified crate file zip-9.8.2/LICENSE
 --------------------------------------------------------------------------------
 The MIT License (MIT)
 
@@ -25163,7 +25163,7 @@ Source / 来源: checksum-verified crate file filetime-0.2.29/LICENSE-APACHE
 Source / 来源: checksum-verified crate file find-msvc-tools-0.1.14/LICENSE-APACHE
 Source / 来源: checksum-verified crate file flate2-1.1.10/LICENSE-APACHE
 Source / 来源: checksum-verified crate file fnv-1.0.7/LICENSE-APACHE
-Source / 来源: checksum-verified crate file form_urlencoded-1.2.2/LICENSE-APACHE
+Source / 来源: checksum-verified crate file form_urlencoded-1.2.3/LICENSE-APACHE
 Source / 来源: checksum-verified crate file futures-lite-2.6.1/LICENSE-APACHE
 Source / 来源: checksum-verified crate file glob-0.3.4/LICENSE-APACHE
 Source / 来源: checksum-verified crate file hashbrown-0.12.3/LICENSE-APACHE
@@ -25257,7 +25257,7 @@ Source / 来源: checksum-verified crate file unicode-normalization-0.1.25/LICEN
 Source / 来源: checksum-verified crate file unicode-normalization-alignments-0.1.12/LICENSE-APACHE
 Source / 来源: checksum-verified crate file unicode-properties-0.1.4/LICENSE-APACHE
 Source / 来源: checksum-verified crate file unicode-segmentation-1.13.3/LICENSE-APACHE
-Source / 来源: checksum-verified crate file url-2.5.8/LICENSE-APACHE
+Source / 来源: checksum-verified crate file url-2.5.9/LICENSE-APACHE
 Source / 来源: checksum-verified crate file uuid-1.29.2/LICENSE-APACHE
 Source / 来源: checksum-verified crate file version_check-0.9.5/LICENSE-APACHE
 Source / 来源: checksum-verified crate file wasi-0.11.1+wasi-snapshot-preview1/LICENSE-APACHE
@@ -27146,7 +27146,7 @@ THIS SOFTWARE.
 Text SHA-256 / 文本 SHA-256: b38f11f6096706e6de553dabe2a7ed142d59b6fa8c97e290c67496154745cdd5
 Source / 来源: checksum-verified crate file idna-1.1.0/LICENSE-MIT
 Source / 来源: checksum-verified crate file percent-encoding-2.3.2/LICENSE-MIT
-Source / 来源: checksum-verified crate file url-2.5.8/LICENSE-MIT
+Source / 来源: checksum-verified crate file url-2.5.9/LICENSE-MIT
 --------------------------------------------------------------------------------
 Copyright (c) 2013-2025 The rust-url developers
 
@@ -33160,7 +33160,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 
 Text SHA-256 / 文本 SHA-256: f28420c1906af38be726cd7842798f0194b27c41d6051c0d1e9ee348b8a4a0ea
-Source / 来源: checksum-verified crate file cookie-0.18.2/LICENSE-MIT
+Source / 来源: checksum-verified crate file cookie-0.18.3/LICENSE-MIT
 --------------------------------------------------------------------------------
 Copyright (c) 2017 Sergio Benitez
 Copyright (c) 2014 Alex Crichton
