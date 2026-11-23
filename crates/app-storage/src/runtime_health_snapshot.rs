@@ -24,7 +24,7 @@ pub(super) async fn read(
     let health_host = record.summary.bind_ip.clone();
     let module_paths = paths.clone();
     let config_file_path = record.config_dir.join("instance.json");
-    let forest_instance = if module_id == "theforest" && status == InstanceStatus::Running {
+    let forest_instance = if module_id == "theforest" && matches!(status, InstanceStatus::Running) {
         Some((
             crate::instance_reconciliation::checked_instance_root(paths, &record.config_dir)?,
             record.summary.id.clone(),
