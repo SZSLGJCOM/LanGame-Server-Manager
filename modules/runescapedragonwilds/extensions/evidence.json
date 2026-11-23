@@ -299,6 +299,45 @@
       "exact_manual_checkpoint_native_reload": "passed",
       "real_clients": 0,
       "existing_user_data_modified": false
+    },
+    {
+      "observed_at": "2026-11-22",
+      "release": "1.0.2.2",
+      "scope": "isolated_production_loader_two_boots_synthetic_eos_ban_unban_three_fresh_processes_and_managed_four_cycle_checkpoint_lifecycle",
+      "steam_app_id": 4019830,
+      "steam_build_id": 26670300,
+      "windows_depot_id": 4019831,
+      "windows_depot_manifest": "8863145553754696730",
+      "shipping_sha256": "5bb9c59d35ac2669b632f3368d64b116173e5fb68f969ca8b6eda2b84f788cf9",
+      "static_evidence": "../native-evidence/2026-11-22-public-build-26670300-static.json",
+      "native_evidence": "../native-evidence/2026-11-22-public-build-26670300-native.json",
+      "source_identity_sha256": "ffb4c110039ed4946ba41412b0b0e2adc68e0b04d07379b04fa6c7c0cda29891",
+      "test_binary_sha256": "bae246bdea15b4d08123f5788c6f73443378342592aced0ee8a20bc11132ec4d",
+      "native_loader_boots": 2,
+      "complete_empty_snapshots_per_boot": 2,
+      "stopped_process_rejected": true,
+      "bridge": {
+        "bytes": 206336,
+        "sha256": "1f8bc0f3b13c503c9016269e6e9e34f0ba3c79098ed4ebaac5420711791e069f",
+        "wholePayloadUniquelyEmbeddedInVerifiedArtifact": true,
+        "static_profile_test_builds_passed": [
+          26670300,
+          26574459,
+          26419371
+        ],
+        "eight_reviewed_unwind_functions_normalized_equal_to_26574459": true
+      },
+      "synthetic_ban_unban_fresh_process_readback": "passed",
+      "managed_lifecycle_normal_stops": 4,
+      "exact_manual_checkpoint_native_reload": "passed",
+      "real_clients": 0,
+      "existing_user_data_modified": false,
+      "not_verified": [
+        "real_player_multiplayer_session",
+        "real_player_kick_disconnect",
+        "banned_real_player_connection_rejection",
+        "cross_version_save_migration"
+      ]
     }
   ],
   "not_verified": [

@@ -1,0 +1,75 @@
+{
+  "schema_version": 1,
+  "module_id": "arksurvivalascended",
+  "observed_on": "2026-11-22",
+  "evidence_classification": "official_package_identity_and_matching_symbol_http_head_availability",
+  "status": "passed",
+  "package": {
+    "steam_app_id": 2430930,
+    "steam_build_id": "26749470",
+    "state_flags": 4,
+    "update_result": 0,
+    "acquisition": "Official anonymous SteamCMD public app_update 2430930 validate into an isolated disposable package copy; exit 0, StateFlags 4; existing user libraries untouched.",
+    "acquisition_exit_code": 0,
+    "appmanifest_sha256": "a7d04dea33dd0377c337ae8dffa4e13a9a317dc934f70d2f225c8a31d3e7cdbb",
+    "installed_depots": [
+      {
+        "depot_id": "1004",
+        "manifest_id": "7604377918839582995",
+        "declared_size_bytes": 67863136
+      },
+      {
+        "depot_id": "2430931",
+        "manifest_id": "6268348989345964786",
+        "declared_size_bytes": 12244009375
+      }
+    ],
+    "executable_relative_path": "ShooterGame/Binaries/Win64/ArkAscendedServer.exe",
+    "executable_bytes": 215595624,
+    "executable_sha256": "6434fe81cc0c950e0ee9a84c3f98c0fb010388339e097e33790200ef9432c6fb"
+  },
+  "comparison": {
+    "previous_tested_build": "26672069",
+    "previous_executable_sha256": "91558e0a9f3aabe711c16e0999ec06c9481d7f2b5bc7afecf39aa8c60453670e",
+    "executable_changed": true,
+    "executable_path_unchanged": true,
+    "symbol_selection": "Current executable SHA-256; no substitution of a prior executable cache."
+  },
+  "publisher_update": {
+    "client_public_build": "26821536",
+    "latest_asaapi_release": "2.11",
+    "asaapi_release_url": "https://github.com/ArkServerApi/AsaApi/releases/tag/2.11",
+    "integration_assessment": "No ASA production code, launch argument, or AsaApi pin change is required by this check. Fresh matching symbols are live on all three upstream symbol providers; production preparation and runtime behavior require separate native acceptance."
+  },
+  "matching_symbols": {
+    "method": "HEAD",
+    "body_bytes_read": 0,
+    "provider_source": "apps/desktop/src-tauri/src/ark_tools_symbols.rs",
+    "provider_source_sha256": "1956019dfc2a4e5653807d796411c563b6667ce181ec34f23d280e1be7cec54d",
+    "probes": [
+      {
+        "url": "https://cdn.pelayori.com/cache/6434fe81cc0c950e0ee9a84c3f98c0fb010388339e097e33790200ef9432c6fb.zip",
+        "status": 200,
+        "content_length": 23143527,
+        "etag": "\"287d01fec65e806370d04adee92436e0-3\""
+      },
+      {
+        "url": "https://cdn.shadowhunter.co.za/cache/6434fe81cc0c950e0ee9a84c3f98c0fb010388339e097e33790200ef9432c6fb.zip",
+        "status": 200,
+        "content_length": 23143527,
+        "etag": "\"287d01fec65e806370d04adee92436e0-3\""
+      },
+      {
+        "url": "https://cdn.shadowhunter-systems.co.za/cache/6434fe81cc0c950e0ee9a84c3f98c0fb010388339e097e33790200ef9432c6fb.zip",
+        "status": 200,
+        "content_length": 23143527,
+        "etag": "\"287d01fec65e806370d04adee92436e0-3\""
+      }
+    ],
+    "interpretation": "Availability only; ZIP contents, executable binding and ABI compatibility require production preparation and native execution."
+  },
+  "scope_limits": [
+    "This record establishes package identity, static executable hash and symbol CDN HTTP HEAD availability only; no native server startup, AsaApi injection or configuration-default verification is claimed.",
+    "GitCode symbol mirror manifest was not published or modified in this local check; runtime downloads fall back to the three verified upstream HTTPS symbol providers."
+  ]
+}

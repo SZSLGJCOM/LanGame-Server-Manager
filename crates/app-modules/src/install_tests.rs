@@ -14,15 +14,15 @@ fn rimworld_release_integrity_reaches_the_install_contract() {
     assert_eq!(
         install.download_url_windows.as_deref(),
         Some(
-            "https://github.com/RimWorld-Together/Rimworld-Together/releases/download/26.11.2.1/Server-win-x64.zip"
+            "https://github.com/RimWorld-Together/Rimworld-Together/releases/download/26.11.21.1/Server-win-x64.zip"
         )
     );
     let integrity = install.download_integrity_windows.as_ref().unwrap();
     assert_eq!(
         integrity.sha256,
-        "87bbf4e0fa3f37cf87a7f579bbd486040314d024311fb20086c638ea0a4accb7"
+        "e3d03f348c4000f43c9838c0aa0d1b9033a66ca8b33c3787b6102547014066e5"
     );
-    assert_eq!(integrity.size, 31763053);
+    assert_eq!(integrity.size, 31774144);
 }
 
 #[test]

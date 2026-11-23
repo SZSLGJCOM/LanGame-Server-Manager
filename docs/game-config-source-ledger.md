@@ -5,7 +5,7 @@
 | module | status | schema fields | ledger items | exclusions | sources |
 | --- | --- | ---: | ---: | ---: | ---: |
 | `abioticfactor` | best_effort_verified | 67 | 67 | 12 | 20 |
-| `arksurvivalascended` | best_effort_verified | 283 | 295 | 315 | 52 |
+| `arksurvivalascended` | best_effort_verified | 283 | 295 | 315 | 54 |
 | `arksurvivalevolved` | exhaustive_verified | 375 | 414 | 137 | 36 |
 | `astroneer` | best_effort_verified | 20 | 20 | 6 | 21 |
 | `barotrauma` | best_effort_verified | 125 | 125 | 4 | 39 |
@@ -20,12 +20,12 @@
 | `palworld` | best_effort_verified | 121 | 121 | 9 | 23 |
 | `projectzomboid` | best_effort_verified | 145 | 145 | 79 | 39 |
 | `returntomoria` | best_effort_verified | 27 | 27 | 4 | 13 |
-| `rimworld` | best_effort_verified | 120 | 120 | 6 | 22 |
+| `rimworld` | best_effort_verified | 120 | 120 | 6 | 24 |
 | `romestead` | best_effort_verified | 9 | 9 | 2 | 19 |
-| `runescapedragonwilds` | best_effort_verified | 7 | 7 | 9 | 27 |
-| `rust` | best_effort_verified | 75 | 76 | 17 | 51 |
-| `satisfactory` | best_effort_verified | 20 | 24 | 16 | 33 |
-| `scum` | best_effort_verified | 11 | 481 | 10 | 38 |
+| `runescapedragonwilds` | best_effort_verified | 7 | 7 | 9 | 28 |
+| `rust` | best_effort_verified | 75 | 76 | 17 | 52 |
+| `satisfactory` | best_effort_verified | 20 | 24 | 16 | 34 |
+| `scum` | best_effort_verified | 11 | 481 | 10 | 40 |
 | `sevendaystodie` | best_effort_verified | 70 | 70 | 6 | 29 |
 | `sonsoftheforest` | exhaustive_verified | 44 | 44 | 4 | 19 |
 | `soulmask` | best_effort_verified | 292 | 292 | 6 | 19 |

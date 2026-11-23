@@ -233,7 +233,7 @@ pub(super) fn validate_release_before_start(
         return Err(failure(
             root,
             format!(
-                "{feature} requires the verified Together 26.11.2.1 server package. Restore the RimWorld module and update the instance program, or turn off this option for the installed version."
+                "{feature} requires the verified Together 26.11.21.1 server package. Restore the RimWorld module and update the instance program, or turn off this option for the installed version."
             ),
         ));
     }

@@ -89,6 +89,7 @@ impl Fixture {
             NativeLayout::Build25803875 => "PRAGMA user_version=73",
             NativeLayout::Build26320224 => "PRAGMA user_version=75",
             NativeLayout::Build26593814 => "PRAGMA user_version=77",
+            NativeLayout::Build26790009 => "PRAGMA user_version=79",
         })
         .execute(&mut native)
         .await
@@ -143,6 +144,7 @@ async fn sqlite_write_changes_only_three_slots_and_preserves_unknown_world_and_r
         NativeLayout::Build25803875,
         NativeLayout::Build26320224,
         NativeLayout::Build26593814,
+        NativeLayout::Build26790009,
     ] {
         let fixture = Fixture::with_layout(layout).await;
         verify_stopped_write_and_backup(&fixture).await;
@@ -482,6 +484,12 @@ async fn database_version_must_match_its_verified_image_before_read_or_backup() 
         (NativeLayout::Build26593814, "PRAGMA user_version=75"),
         (NativeLayout::Build26593814, "PRAGMA user_version=76"),
         (NativeLayout::Build26593814, "PRAGMA user_version=78"),
+        (NativeLayout::Build26593814, "PRAGMA user_version=79"),
+        (NativeLayout::Build26790009, "PRAGMA user_version=73"),
+        (NativeLayout::Build26790009, "PRAGMA user_version=75"),
+        (NativeLayout::Build26790009, "PRAGMA user_version=77"),
+        (NativeLayout::Build26790009, "PRAGMA user_version=78"),
+        (NativeLayout::Build26790009, "PRAGMA user_version=80"),
     ] {
         let fixture = Fixture::with_layout(layout).await;
         let input = fixture.input().await;

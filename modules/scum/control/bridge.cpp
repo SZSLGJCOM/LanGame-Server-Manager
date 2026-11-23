@@ -27,6 +27,9 @@ constexpr GameProfile PROFILES[]{
     {"b75567d63f2a9948c739b7cbaab2208b926da6e08c7394a7f83b835cd2a50ddf",
      "48895c2420574881ecb0000000488b05c49898054833c4488984249000000080",
      0x1bcce30, 0x75c5e90, 0x5f893d0, 0x1555cb0, 0x7a8, 0x7aa, 0x7ab},
+    {"458f03d40a2a87b013c1354e3643d5f59d28deb48a966978e9f0c1c49765ab97",
+     "48895c2420574881ecb0000000488b0564f099054833c4488984249000000080",
+     0x1bcd8f0, 0x75dc160, 0x5f9bee0, 0x15562b0, 0x7a8, 0x7aa, 0x7ab},
 };
 const GameProfile* selected_profile{};
 bool select_game_profile(std::string_view identity) {

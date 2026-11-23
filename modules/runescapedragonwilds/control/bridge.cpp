@@ -24,7 +24,7 @@ struct NativeProfile {
     NativeCode factory, ban, unban, known_players, save_bans;
     uintptr_t matchmaker_class, settings_class, matchmaker_vtable, state_vtable;
 };
-constexpr std::array<NativeProfile, 5> NATIVE_PROFILES{{
+constexpr std::array<NativeProfile, 6> NATIVE_PROFILES{{
     { // Steam build 25811348.
         "89ed65335a46db067a361d35ae4e6be80857a4c1f2453510600d632879dfbeed",
         {0x59a24c0, "48895c240848896c2410488974241848897c242041564883"},
@@ -69,6 +69,15 @@ constexpr std::array<NativeProfile, 5> NATIVE_PROFILES{{
         {0x5976d10, "405741544155415641574883ec30488bb9d00000004532f6"},
         {0x5d72d00, "405553574155488d6c24d84881ec28010000488b05a78da7"},
         0xbb584d0, 0xbb44098, 0x9e16910, 0xa106c10,
+    },
+    { // Steam build 26670300 (1.0.2.2); independently reviewed wrappers and object layouts.
+        "5bb9c59d35ac2669b632f3368d64b116173e5fb68f969ca8b6eda2b84f788cf9",
+        {0x59aa480, "48895c240848896c2410488974241848897c242041564883"},
+        {0x5d71b10, "4055534154488d6c24e04881ec20010000488b05d8ffa605"},
+        {0x5d709e0, "48895c241848896c2420565741564881ec90000000488b05"},
+        {0x5974b10, "405741544155415641574883ec30488bb9d00000004532f6"},
+        {0x5d71200, "405553574155488d6c24d84881ec28010000488b05e708a7"},
+        0xbb4e550, 0xbb3a118, 0x9e103a0, 0xa1005c0,
     },
 }};
 const NativeProfile* native_profile(std::string_view shipping_hash) {

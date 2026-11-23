@@ -345,3 +345,120 @@ async fn corekeeper_native_readiness_follows_only_the_current_run_log() {
             .starts_with("timescale = 0\n")
     );
 }
+
+#[tokio::test]
+async fn scum_active_run_keeps_native_log_when_stdout_mtime_is_newer() {
+    use std::fs;
+    use std::path::PathBuf;
+
+    struct Fixture(PathBuf);
+    impl Drop for Fixture {
+        fn drop(&mut self) {
+            let _ = fs::remove_dir_all(&self.0);
+        }
+    }
+    let fixture = Fixture(std::env::temp_dir().join(format!(
+        "langame-scum-log-{}-{}",
+        std::process::id(),
+        std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_nanos()
+    )));
+    let logs = fixture.0.join("logs");
+    let console = logs.join("managed-console/run-2-main.log");
+    let native = fixture.0.join("runtime/SCUM/Saved/Logs/SCUM.log");
+    fs::create_dir_all(console.parent().unwrap()).unwrap();
+    fs::create_dir_all(native.parent().unwrap()).unwrap();
+    fs::write(
+        fixture
+            .0
+            .join("runtime")
+            .join(crate::private_runtime::PRIVATE_RUNTIME_MARKER),
+        b"managed\n",
+    )
+    .unwrap();
+    fs::write(
+        &native,
+        "[2026.09.30-01.02.03:050][ 23]LogSCUM: Global Stats: 200.3ms (5.0FPS)\n",
+    )
+    .unwrap();
+    fs::write(
+        &console,
+        "LogQuadTree: Warning: [Unknown Source] Adding element\n",
+    )
+    .unwrap();
+    let base = std::time::UNIX_EPOCH + std::time::Duration::from_secs(1_000);
+    fs::File::options()
+        .write(true)
+        .open(&native)
+        .unwrap()
+        .set_times(fs::FileTimes::new().set_modified(base))
+        .unwrap();
+    fs::File::options()
+        .write(true)
+        .open(&console)
+        .unwrap()
+        .set_times(fs::FileTimes::new().set_modified(base + std::time::Duration::from_secs(1)))
+        .unwrap();
+    let mut run = current_run();
+    run.log_path = Some(console.to_string_lossy().into_owned());
+    run.processes[0].log_path = run.log_path.clone();
+    let record = crate::StoredInstanceRecord {
+        summary: app_core::InstanceSummary {
+            id: "scum-log-fixture".into(),
+            name: "SCUM".into(),
+            module_id: "scum".into(),
+            status: InstanceStatus::Running,
+            active_process_count: 1,
+            bind_ip: "127.0.0.1".into(),
+            port_count: 0,
+            autostart: false,
+        },
+        config_dir: fixture.0.join("config"),
+        saves_dir: fixture.0.join("data"),
+        runtime_mode: "independent".into(),
+        program_install_root: Some(fixture.0.join("runtime")),
+        auto_backup_on_stop: false,
+        backup_retention_count: 1,
+    };
+    let selected = super::super::resolve_instance_log_source_path(&record, Some(&run), &[])
+        .await
+        .unwrap();
+    assert_eq!(
+        selected.as_deref().map(std::path::Path::new),
+        Some(native.as_path()),
+        "active SCUM run must not flip to stdout when stdout flushes milliseconds after SCUM.log"
+    );
+    let snapshot = super::super::read_log_snapshot(selected, 160);
+    assert_eq!(
+        super::super::analyze_runtime_health_with_startup_evidence(
+            "scum",
+            &InstanceStatus::Running,
+            &snapshot,
+            Some(&run),
+            &[],
+        )
+        .status,
+        "ready"
+    );
+    // An older SCUM.log from a prior process still cannot establish readiness.
+    fs::write(
+        &native,
+        "[2026.09.30-01.02.02:999][ 22]LogSCUM: Global Stats: 200.2ms (5.0FPS)\n",
+    )
+    .unwrap();
+    let stale_snapshot =
+        super::super::read_log_snapshot(Some(native.to_string_lossy().into_owned()), 160);
+    assert_eq!(
+        super::super::analyze_runtime_health_with_startup_evidence(
+            "scum",
+            &InstanceStatus::Running,
+            &stale_snapshot,
+            Some(&run),
+            &[],
+        )
+        .status,
+        "starting"
+    );
+}

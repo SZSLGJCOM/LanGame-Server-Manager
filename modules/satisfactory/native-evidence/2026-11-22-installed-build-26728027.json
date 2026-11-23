@@ -1,0 +1,39 @@
+{
+  "reviewed_on": "2026-11-22",
+  "steam_app_id": 1690800,
+  "installed_build_id": "26728027",
+  "manifest_state_flags": 4,
+  "manifest_update_result": 0,
+  "appmanifest_sha256": "004a73dbb919a10ca632884f86fd12da7c306732e7768b78210c63a4fb8955e1",
+  "depots": {
+    "1004": {
+      "manifest": "7604377918839582995",
+      "size": 67863136
+    },
+    "1690801": {
+      "manifest": "8802626875582026880",
+      "size": 15528669858
+    }
+  },
+  "source": "Official anonymous SteamCMD app_update 1690800 validate into a clean isolated directory; read-only package inspection without native server execution",
+  "bootstrap_executable": {
+    "path": "FactoryServer.exe",
+    "size": 217112,
+    "sha256": "b70f99331870f2b2b2743dfbe1e77df935a5fb5ceafb8a456e4ada3c9fa85466"
+  },
+  "executable": {
+    "path": "Engine/Binaries/Win64/FactoryServer-Win64-Shipping-Cmd.exe",
+    "size": 229888,
+    "sha256": "2049396121c06185010a9edadc5677700dc988552baf5d864a84d3a5bd5547b6",
+    "product_version": "++FactoryGame+rel-main-1.2.6-CL-520140",
+    "game_version": "1.2.5.1",
+    "unreal_engine_version": "5.6.1",
+    "module_launch_entry_exists": true
+  },
+  "managed_configuration_review": {
+    "template": "modules/satisfactory/templates/Engine.ini.hbs",
+    "audio_overrides_present": false,
+    "complete_native_option_inventory_compared": false
+  },
+  "scope": "Confirms official Steam build 26728027 (1.2.5.1 / CL 520140 / UE 5.6.1) package identity and presence of the module direct console entry FactoryServer-Win64-Shipping-Cmd.exe. Does not claim HTTPS API world creation, SaveGame, GetServerOptions, two-instance isolation, or SML/FRM compatibility on this build; earlier build 26281360 runtime evidence retains its original build and date."
+}

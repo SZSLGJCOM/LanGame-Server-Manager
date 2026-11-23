@@ -5,10 +5,13 @@ provides `forcesave <username>`; this is not a first-party RimWorld dedicated
 server API. The public `save_world` action remains `rimworld_save`/`save` as a
 closed manager operation.
 
-The pinned [26.11.2.1 release](https://github.com/RimWorld-Together/Rimworld-Together/releases/tag/26.11.2.1)
+The pinned [26.11.21.1 release](https://github.com/RimWorld-Together/Rimworld-Together/releases/tag/26.11.21.1)
 requires **RimWorld 1.7 unstable**, the matching Together client mod (Workshop
 3005289691) and Harmony (2009463077). Players on 1.6 need the
 [26.10.15.1 release](https://github.com/RimWorld-Together/Rimworld-Together/releases/tag/26.10.15.1).
+Upstream notes recommend backing up existing servers before upgrading to
+26.11.21.1 because player saves and user backups now use player hashes instead
+of raw usernames.
 
 The market button uses `Configs/Actions/Market.json`. `IsEnabled` controls
 access from the game UI. `UseGlobalServer` selects the public cross-server
@@ -17,7 +20,8 @@ service on outbound TCP 7790 when enabled. Local prices apply only to the
 instance's market. New instances use the upstream public-market default.
 Existing local markets continue locally unless the operator enables cross-server trading.
 On 26.11.2.1 a non-admin seller could hold two local listings with
-`MaxEntriesPerPlayer` set to one. The seller withdrew the second listing.
+`MaxEntriesPerPlayer` set to one; tagged 26.11.21.1 `PM_Market.cs` retains the
+same `OwnerHash == Username` comparison.
 
 The player save rollback setting maps to `Configs/Actions/Rollback.json` →
 `IsEnabled`. The matching client checks this flag when the player clicks the

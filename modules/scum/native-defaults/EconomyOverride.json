@@ -70,9 +70,13 @@
       "Z_3_Mechanic": [],
       "Z_3_Trader": [],
       "A_0_Hunter": [],
+      "A_0_Master_Hunter": [],
       "B_4_Hunter": [],
+      "B_4_Master_Hunter": [],
       "C_2_Hunter": [],
-      "Z_3_Hunter": []
+      "C_2_Master_Hunter": [],
+      "Z_3_Hunter": [],
+      "Z_3_Master_Hunter": []
     }
   }
 }

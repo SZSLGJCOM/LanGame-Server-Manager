@@ -1,0 +1,104 @@
+{
+  "schema_version": 1,
+  "module_id": "rust",
+  "evidence_classification": "official_package_identity_and_read_only_managed_il_review",
+  "reviewed_on": "2026-11-22",
+  "package": {
+    "steam_app_id": 258550,
+    "steam_build_id": "26778019",
+    "manifest_path": "steamapps/appmanifest_258550.acf",
+    "manifest_sha256": "7668778e3ce33209f04f208005efe9a1a7246d4c2db9ab02ceaf4452a09bb627",
+    "state_flags": 4,
+    "update_result": 0,
+    "depots": {
+      "258551": {
+        "manifest": "5736124092317406783",
+        "size": 762949638
+      },
+      "258554": {
+        "manifest": "814960451527197808",
+        "size": 4942611638
+      }
+    },
+    "executable_sha256": "d9c1b1fc1d3df157c355e2c32d7e41d150f189dbecc5748f9f621a3aae89bfac",
+    "executable_bytes": 680272
+  },
+  "assemblies": [
+    {
+      "path": "RustDedicated_Data/Managed/Assembly-CSharp.dll",
+      "bytes": 10372432,
+      "sha256": "bb76429c1a12a8168d276fe885ca3c4bad7a591e10d9dc7a8f6049f358ece9ee"
+    },
+    {
+      "path": "RustDedicated_Data/Managed/Facepunch.Rcon.dll",
+      "bytes": 30544,
+      "sha256": "c1c48e7298ee5d27ec8029eeb9283abc079a23032716c2d169c0800775ab5285"
+    },
+    {
+      "path": "RustDedicated_Data/Managed/Facepunch.Network.dll",
+      "bytes": 123216,
+      "sha256": "f24b858b48197a634c8c797d9d4f11f323d777fd6ca7283b5e9be30ffa9c7ab7"
+    },
+    {
+      "path": "RustDedicated_Data/Managed/Fleck.dll",
+      "bytes": 74576,
+      "sha256": "d3d4eaba1e10b6bfb57522469a8b0f3b1af72f54115c3fe399dc5adc5743dbc7"
+    }
+  ],
+  "inspection": {
+    "method": "Package-bundled Mono.Cecil reads metadata and IL; target game assemblies are not loaded or executed",
+    "parser_path": "RustDedicated_Data/Managed/Mono.Cecil.dll",
+    "parser_sha256": "615e8ff6a3b52ac02bb4e86c03749225e0851a08f22b5bb0d944351cfad391e1",
+    "attempt_limit_setter_call_count": {
+      "Fleck.dll": 0,
+      "Facepunch.Rcon.dll": 0,
+      "Assembly-CSharp.dll": 0
+    }
+  },
+  "il_findings": {
+    "navmesh_flag": {
+      "method": "Bootstrap::Init_Tier0",
+      "offset": "IL_0106",
+      "flag": "-useOldNavmesh",
+      "target_field": "ConVar.AI::useUnityNavmesh",
+      "default": false,
+      "useNewNavmesh_removed": true
+    },
+    "performance_convars": {
+      "net.position_lod": {
+        "type": "Int32",
+        "native_default": 2,
+        "previous_build_26498655_default": 0
+      },
+      "net.position_lod_players": {
+        "type": "Int32",
+        "native_default": 2,
+        "previous_build_26498655_default": 0
+      },
+      "server.batchpackets": {
+        "type": "Boolean",
+        "delegates_to": "Network.Server::BatchPackets",
+        "native_default": true
+      },
+      "server.useplayerupdatejobs": {
+        "type": "Int32",
+        "native_default": 4
+      }
+    },
+    "webrcon_admission": {
+      "method": "Fleck.ConnectionLimiter::.ctor",
+      "max_attempts_per_window": 5,
+      "attempt_window_seconds": 5,
+      "try_add_clock": "System.DateTime::get_UtcNow",
+      "window_expiry_comparison": "strictly greater than five seconds"
+    },
+    "rcon_modes": {
+      "method": "Facepunch.RCon::Initialize",
+      "offset": "IL_0174",
+      "web_branch_retained": true,
+      "legacy_source_rcon_branch_retained": true
+    }
+  },
+  "integration_assessment": "No schema, template, or RCON admission code change is required. Because network_position_lod and network_position_lod_players use x-lsgm-preserve-native-when-unset without injecting defaults, unset instances automatically follow the build 26778019 native default of 2.",
+  "scope": "Static package and IL review only; no Rust dedicated server process, WebRCON live session, Source RCON run, or client join was executed for build 26778019."
+}

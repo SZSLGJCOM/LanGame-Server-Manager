@@ -4,7 +4,7 @@
 
 ## 绑定版本与调用范围
 
-原生桥为 Steam app `3792580` 的以下五个构建提供固定配置，按 `SCUM/Binaries/Win64/SCUMServer.exe` 完整 SHA-256 选择：
+原生桥为 Steam app `3792580` 的以下六个构建提供固定配置，按 `SCUM/Binaries/Win64/SCUMServer.exe` 完整 SHA-256 选择：
 
 | Build | SHA-256 |
 | --- | --- |
@@ -13,6 +13,7 @@
 | 26320224 | `a862d658271f26d082de5df7bba01e8af9c3d051cb9634e908bb94d8a9efbc7a` |
 | 26593814 | `805396516e64d17f1713f24ce97a7d525a6d761db46ce069f40cf63114add6d9` |
 | 26621903 | `b75567d63f2a9948c739b7cbaab2208b926da6e08c7394a7f83b835cd2a50ddf` |
+| 26790009 | `458f03d40a2a87b013c1354e3643d5f59d28deb48a966978e9f0c1c49765ab97` |
 
 加载器为官方 UE4SS `3.0.1-1125-g527a483b`，核心 SHA-256 为 `91d5444f41d19d0bb502f0fbdc15d76421e20359e898caa39e41e134c8f87958`，配置见 `extensions/UE4SS-settings.ini`。其他构建需要重新核对 ABI、对象布局及真实调用，不能只更新哈希。
 
@@ -59,6 +60,8 @@ MSVC `/W4 /WX /MT` 构建生产 DLL，并运行对象归属、authority、生命
 2026-11-14 的 build 26621903 将 `AutoSave`、类 singleton、vtable 和 GetWorld 分别移到 `0x1bcce30`、`0x75c5e90`、`0x5f893d0` 和 `0x1555cb0`，三个状态字段保持 `+0x7a8/+0x7aa/+0x7ab`。本次保留了真实旧版 EXE；九个完整 unwind 函数在明确归一化重定位引用后唯一匹配，调用边和区域元数据构造也独立复核。隔离 Windows 测试机普通用户会话中的只读观察通过十一项对象与就绪检查，区域注册表和 schema 77 公共数据库读写通过；437 项生成配置没有新增或遗漏，434 项未显式配置的默认值只保留既有两项管理器文案差异。详见[当前原生契约](../reference-fixtures/2026-11-14-native_contract_build_26621903.json)。
 
 同日[正式管理流程](../reference-fixtures/2026-11-14-managed_lifecycle_build_26621903.json)完成初次启动、重启、备份恢复及归档恢复四轮。四次保存调用仍报告 `Requested`，四次停止均为原生 exit 0、无 crash flag；59 个文件的备份恢复、归档提交中断恢复、程序库卸载保留 81 个保存文件及最终清理通过。只读观察使用有意的 owned-Job 回收，正常停止由这份独立流程证明；没有扩大为每次保存的持久落盘或客户端战斗保证。
+
+2026-11-22 的 build `26790009`（Hotfix `1.3.6.2.179673` / `++scum+release-1.3.6-CL-179673`）将 `AutoSave`、类 singleton、vtable 和 `GetWorld` 分别移到 `0x1bcd8f0`、`0x75dc160`、`0x5f9bee0` 和 `0x15562b0`，三个状态字段保持 `+0x7a8/+0x7aa/+0x7ab`。以保留的 build `26621903` 实机 EXE 为基线，九个完整 unwind 函数（归一化外部重定位引用后）全部 1/1 唯一匹配，`GetWorld` 22 字节叶函数逐字节一致，五条保存阶段调用边全部对齐；MSVC `/W4 /WX /MT` 构建与全部六个 profile 的 C++ 组件边界检查均退出 0。新世界生成的 `SCUM.db` 升级至 `PRAGMA user_version = 79`（自定义区域表结构与索引未变），已单独绑定 schema 79 并通过真实副本公共读写与变更前备份读回；437 项 `ServerSettings.ini` 键与未配置默认值无漂移，`EconomyOverride.json` 新增四个 `Master_Hunter` 商人桶并同步至默认模板。隔离 Windows 测试机普通交互会话（Interactive + Limited）中的只读 UE4SS 反射与进程内存检查随后通过全部 11 项对象/就绪核验及 `UCustomZoneRegistry` 实时回读（耗时 `127.5s`，数据库 `user_version=79`，owned Job 完整回收、EXE 字节未变），详见[2026-11-22 原生契约](../reference-fixtures/2026-11-22-native_contract_build_26790009.json)。同日[正式管理流程](../reference-fixtures/2026-11-22-managed_lifecycle_build_26790009.json)（耗时 `630.66s`，退出码 `0`）完成初次启动、重启、备份恢复及归档中断恢复四轮，四次 `AutoSave(true)` 均返回 `ready/invoked/call_returned=true`、`write_confirmed=false`（回执保持 `Requested`），四次停止均为原生 exit 0、无 crash flag，59 个世界文件备份恢复、程序库卸载保留 81 个保存文件与最终隔离清理全部通过（本轮测试同时修复了活动运行期间 `SCUM.log` 与 stdout 的毫秒级 mtime 竞态，并补充回归单测）。没有扩大为每次保存的因果落盘或客户端战斗保证。
 
 固定版本曾在全新私有空服世界中执行一次真实 `AutoSave(true)`：原生返回 `returned`，生产协议的 `ready/invoked/call_returned=true`、`write_confirmed=false`，服务器继续运行。正常重启后同世界从数据库加载实体，数据库 `quick_check=ok`。此证据表明原生入口可以调用且世界可以重新加载，不证明每个子系统的因果落盘或真实多人行为；每次版本适配仍需重新验证。
 

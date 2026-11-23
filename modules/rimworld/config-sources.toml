@@ -1,6 +1,20 @@
 status = "best_effort_verified"
-last_verified = "2026-11-04"
-notes = "RimWorld Together 26.11.2.1 targets RimWorld 1.7 unstable. The pinned Windows release, client package, native market configuration and previous local ledger format were reviewed on 2026-11-04. The official server was started with both market selections. A two-player protocol test completed a local sale and collected the payment once. The earlier field inventory retains its original dates and scope."
+last_verified = "2026-11-22"
+notes = "RimWorld Together 26.11.21.1 targets RimWorld 1.7 unstable (1.6 client assemblies remain 26.10.15.1). On 2026-11-22, the pinned Windows release, client package, upstream source diff (26.11.2.1..26.11.21.1) and two isolated loopback runs confirmed all 129 generated Configs JSON keys match the existing model, UseGlobalServer and Rollback.IsEnabled survive restart and appear in native server backups, and getversion/list/banlist/modlist/backup/quit exit cleanly with code 0. Player saves and user backups now use Player.Hash filenames, so server backups are recommended before upgrading. Live multi-player protocol trade tests remain historical 26.11.2.1 evidence; the earlier field inventory retains its original dates and scope."
+
+[[sources]]
+id = "release_26_11_21_1"
+kind = "release"
+path = "https://github.com/RimWorld-Together/Rimworld-Together/releases/tag/26.11.21.1"
+authority = "upstream_release_and_verified_archives"
+description = "Published 2026-11-21T17:25:21Z as a full release. The Windows x64 server ZIP is 31774144 bytes with SHA256 e3d03f348c4000f43c9838c0aa0d1b9033a66ca8b33c3787b6102547014066e5. Its only executable is RTServer.exe, 75272529 bytes, SHA256 5f8bde95bbe87b4c4c3fae34558f119fe7d34c439f8caffe74e6751f35e1c4d7. The matching client asset 3005289691.zip is 4362962 bytes with SHA256 3a9e48bb7ee856bc93d08fb8d6b4441d76a9e0e4f3dabc6f69c19f3ed997f04e; Current/Assemblies/RTShared.dll reports 26.11.21.1 for RimWorld 1.7 while 1.6/Assemblies/RTShared.dll remains 26.10.15.1. Upstream diff 26.11.2.1..26.11.21.1 leaves Configs schemas unchanged, switches player saves and user backups to Player.Hash filenames, and retains the OwnerHash == Username check in PM_Market.cs."
+
+[[sources]]
+id = "runtime_probe_26_11_21_1"
+kind = "runtime_probe"
+path = "reference-fixtures/2026-11-22-release_26_11_21_1_runtime.json"
+authority = "isolated_official_windows_server_loopback_probe"
+description = "2026-11-22 Asia/Shanghai: isolated loopback server started cleanly twice on RTServer.exe 26.11.21.1, generated all 23 native Configs JSON files (129 leaf keys, zero new or removed keys), reported version 26.11.21.1, preserved modified Market.UseGlobalServer=false and Rollback.IsEnabled=false across restart and in Server_*.zip backups, and exited 0 on quit. No connected game clients were tested."
 
 [[sources]]
 id = "release_26_11_2_1"

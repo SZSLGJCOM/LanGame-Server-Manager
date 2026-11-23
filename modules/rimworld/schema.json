@@ -970,7 +970,7 @@
     "action_market_max_entries_per_player": {
       "type": "integer",
       "title": "Market Listings per Player",
-      "description": "Local server listing limit. Together 26.11.2.1 compares the owner hash with a username, so ordinary usernames can exceed a positive limit.",
+      "description": "Local server listing limit. Together 26.11.21.1 compares the owner hash with a username, so ordinary usernames can exceed a positive limit.",
       "x-lsgm-default-source": "existing_native_configuration",
       "x-lsgm-section": "world",
       "x-lsgm-order": 1660,
@@ -1267,7 +1267,7 @@
     "action_rollback_is_enabled": {
       "type": "boolean",
       "title": "Allow Player Save Rollback",
-      "description": "Lets players use Together's rollback button to reload their last local save. Requires the matching 26.11.2.1 client and server. Unset preserves the native setting.",
+      "description": "Lets players use Together's rollback button to reload their last local save. Requires the matching 26.11.21.1 client and server. Unset preserves the native setting.",
       "x-lsgm-default-source": "existing_native_configuration",
       "x-lsgm-section": "world",
       "x-lsgm-order": 1895,

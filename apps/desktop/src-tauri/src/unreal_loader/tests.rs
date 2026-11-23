@@ -77,8 +77,15 @@ fn save_image_admission_preserves_game_and_provider_pairing() {
     let november_12_scum = november_12_scum_evidence["package"]["executable_sha256"]
         .as_str()
         .unwrap();
-    let scum_evidence: serde_json::Value = serde_json::from_str(include_str!(
+    let november_14_scum_evidence: serde_json::Value = serde_json::from_str(include_str!(
         "../../../../../modules/scum/reference-fixtures/2026-11-14-native_contract_build_26621903.json"
+    ))
+    .unwrap();
+    let november_14_scum = november_14_scum_evidence["package"]["executable_sha256"]
+        .as_str()
+        .unwrap();
+    let scum_evidence: serde_json::Value = serde_json::from_str(include_str!(
+        "../../../../../modules/scum/reference-fixtures/2026-11-22-native_contract_build_26790009.json"
     ))
     .unwrap();
     let latest_scum = scum_evidence["package"]["executable_sha256"]
@@ -101,6 +108,7 @@ fn save_image_admission_preserves_game_and_provider_pairing() {
         current_scum,
         prior_scum,
         november_12_scum,
+        november_14_scum,
         latest_scum,
     ] {
         assert_eq!(verify_game_image("scum", image).unwrap(), None);

@@ -6,8 +6,8 @@ vehicles. Stop the instance before editing. Region creation, geometry and
 player damage remain owned by the game.
 
 The editor binds each inspected executable to its verified database schema:
-build 25803875 to schema 73, build 26320224 to schema 75, and builds 26593814 and
-26621903 to schema 77. Crossed pairs and
+build 25803875 to schema 73, build 26320224 to schema 75, builds 26593814 and
+26621903 to schema 77, and build 26790009 to schema 79. Crossed pairs and
 unknown versions are rejected. Let the game perform its database migration
 before stopping it to edit zones. Paths come from the stored instance.
 Writes retain the instance mutation and storage leases, acquire
@@ -71,3 +71,17 @@ accepts `LANGAME_SMOKE_SOURCE_ROOT` for its verified source snapshot, so module
 discovery does not depend on another machine's compiled-in checkout path.
 The [current contract](../reference-fixtures/2026-11-14-native_contract_build_26621903.json)
 records the evidence and its separate managed lifecycle result.
+
+On 2026-11-22 build 26790009 (`1.3.6.2.179673`) bumped `SCUM.db` to `PRAGMA user_version = 79`
+while keeping identical custom-zone table DDL, indexes, zero triggers, two configurations,
+four regions, and ArmedNPC(5) 5-slot damage rows (`341` / `682`). Live read-only UE4SS reflection
+and process-memory observation on an isolated Windows validation host confirmed all eleven owner
+and readiness checks, unchanged enum values, and fixed-array metadata matching the build 26790009
+static registration (`array_dim = 16`, `offset = 88`, outer size `16`, inner pair size `3`,
+`ArmedNPC(5)` -> `Vehicle(11)` slots `2/3/4`). Its exact executable hash selects
+`NativeLayout::Build26790009` (schema 79); all nine SQLite regressions (spanning schemas
+73/75/77/79 and crossed-pair rejections 77/79/78/80) and `native_schema_roundtrip_on_owned_copy`
+on a consistent Backup API snapshot of the build 26790009 schema-79 world passed with unchanged
+source files. See [`2026-11-22-native_contract_build_26790009.json`](../reference-fixtures/2026-11-22-native_contract_build_26790009.json)
+and the separate 4-cycle managed lifecycle record
+[`2026-11-22-managed_lifecycle_build_26790009.json`](../reference-fixtures/2026-11-22-managed_lifecycle_build_26790009.json).

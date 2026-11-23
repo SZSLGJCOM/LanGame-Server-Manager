@@ -1,0 +1,910 @@
+{
+  "schema_version": 1,
+  "observed_on": "2026-11-22",
+  "steam_app_id": 3792580,
+  "build_id": "26790009",
+  "game_version": "1.3.6.2.179673",
+  "build_banner": "++scum+release-1.3.6-CL-179673",
+  "evidence_classification": "static_contract_live_ue4ss_reflection_memory_readback_and_schema_79_roundtrip",
+  "package": {
+    "source": "Official SteamCMD anonymous app_update 3792580 validate into a clean isolated directory; exit 0, StateFlags 4; existing user libraries untouched",
+    "state_flags": 4,
+    "update_result": 0,
+    "depot_id": 3792581,
+    "depot_manifest": "3056179654831477831",
+    "depot_size_bytes": 15601259843,
+    "appmanifest_sha256": "70ce713ba4c661f6e7114fad940db3ed1fad3e8836e3d61c0c36eea422096e1f",
+    "executable_relative_path": "SCUM/Binaries/Win64/SCUMServer.exe",
+    "executable_sha256": "458f03d40a2a87b013c1354e3643d5f59d28deb48a966978e9f0c1c49765ab97",
+    "executable_bytes": 130753536,
+    "pdb_available": false
+  },
+  "static_save_contract": {
+    "abi": "void UEntitySystem::AutoSave(this, bool force); caller passes true once on game thread",
+    "profile": {
+      "entity_class": "0x75dc160",
+      "entity_vtable": "0x5f9bee0",
+      "save": "0x1bcd8f0",
+      "get_world": "0x15562b0",
+      "save_prologue": "48895c2420574881ecb0000000488b0564f099054833c4488984249000000080",
+      "entity_loading": "0x7a8",
+      "entity_saving": "0x7aa",
+      "entity_shutdown": "0x7ab"
+    },
+    "baseline_build": "26621903",
+    "baseline_executable_sha256": "b75567d63f2a9948c739b7cbaab2208b926da6e08c7394a7f83b835cd2a50ddf",
+    "method": "Complete x64 unwind-bounded instruction comparison against retained build 26621903 SCUMServer.exe. External RIP-relative and call references normalized; internal branch displacements, member offsets, constants and instruction boundaries retained. All nine functions uniquely matched 1/1.",
+    "all_functions_uniquely_matched": true,
+    "functions": {
+      "AutoSave": {
+        "rva": "0x1bcd8f0",
+        "bytes": 515,
+        "chunks": [
+          [
+            "0x1bcd8f0",
+            "0x1bcd9a4"
+          ],
+          [
+            "0x1bcd9a4",
+            "0x1bcd9ac"
+          ],
+          [
+            "0x1bcd9ac",
+            "0x1bcda8b"
+          ],
+          [
+            "0x1bcda8b",
+            "0x1bcdad2"
+          ],
+          [
+            "0x1bcdad2",
+            "0x1bcdaf3"
+          ]
+        ],
+        "canonical_sha256": "f2ab0e58a0b2bdcfb2c99433df2d5dde74c419f3ce85565c8df93d1f646fd322"
+      },
+      "SaveGlobal": {
+        "rva": "0x1be0c50",
+        "bytes": 328,
+        "chunks": [
+          [
+            "0x1be0c50",
+            "0x1be0d98"
+          ]
+        ],
+        "canonical_sha256": "f3ea5251309f3682dc006bde646e82d49348227e39e01e4de9eba1e7143df7bd"
+      },
+      "SaveCoordinates": {
+        "rva": "0x1bce790",
+        "bytes": 1191,
+        "chunks": [
+          [
+            "0x1bce790",
+            "0x1bce7d1"
+          ],
+          [
+            "0x1bce7d1",
+            "0x1bce7f5"
+          ],
+          [
+            "0x1bce7f5",
+            "0x1bcea60"
+          ],
+          [
+            "0x1bcea60",
+            "0x1bcec10"
+          ],
+          [
+            "0x1bcec10",
+            "0x1bcec37"
+          ]
+        ],
+        "canonical_sha256": "1639df85dc10a3424d0d4e7f51b0bc15e77e3988b7092c35159f936a9fde6e99"
+      },
+      "SaveEntities": {
+        "rva": "0x1bcdb00",
+        "bytes": 2523,
+        "chunks": [
+          [
+            "0x1bcdb00",
+            "0x1bcdb54"
+          ],
+          [
+            "0x1bcdb54",
+            "0x1bcdee1"
+          ],
+          [
+            "0x1bcdee1",
+            "0x1bce4db"
+          ]
+        ],
+        "canonical_sha256": "4cfcb53827436e04074b8e29188b55057f5cff138b95977d81a73b6448c47e60"
+      },
+      "EntityClassRegistration": {
+        "rva": "0x2852ab0",
+        "bytes": 178,
+        "chunks": [
+          [
+            "0x2852ab0",
+            "0x2852b62"
+          ]
+        ],
+        "canonical_sha256": "33f3becce6f30aa5a906694931e79f1b02000c6b442b7b9d9f499ff9a180454b"
+      },
+      "EntityConstructor": {
+        "rva": "0x28547b0",
+        "bytes": 1664,
+        "chunks": [
+          [
+            "0x28547b0",
+            "0x2854e30"
+          ]
+        ],
+        "canonical_sha256": "cc88b182092cc47c7fc5211dc12f8732e495e32cdd03486d67eb77afb2717b1a"
+      },
+      "CreateEntity": {
+        "rva": "0x1bd48f0",
+        "bytes": 1791,
+        "chunks": [
+          [
+            "0x1bd48f0",
+            "0x1bd49ff"
+          ],
+          [
+            "0x1bd49ff",
+            "0x1bd4aa8"
+          ],
+          [
+            "0x1bd4aa8",
+            "0x1bd4f92"
+          ],
+          [
+            "0x1bd4f92",
+            "0x1bd4fce"
+          ],
+          [
+            "0x1bd4fce",
+            "0x1bd4fef"
+          ]
+        ],
+        "canonical_sha256": "248fb412516a3ccb33d330802a43a201111ac7ffccb223695c958cabf9a58d4b"
+      },
+      "Shutdown": {
+        "rva": "0x1be35a0",
+        "bytes": 1876,
+        "chunks": [
+          [
+            "0x1be35a0",
+            "0x1be35cd"
+          ],
+          [
+            "0x1be35cd",
+            "0x1be35d1"
+          ],
+          [
+            "0x1be35d1",
+            "0x1be35d5"
+          ],
+          [
+            "0x1be35d5",
+            "0x1be38af"
+          ],
+          [
+            "0x1be38af",
+            "0x1be3a2e"
+          ],
+          [
+            "0x1be3a2e",
+            "0x1be3ce8"
+          ],
+          [
+            "0x1be3ce8",
+            "0x1be3cf4"
+          ]
+        ],
+        "canonical_sha256": "646819a3973f0f3223f865ca49253e0129d6cdb464ff1bbb6a22f2bdcbb97f77"
+      },
+      "EntityTick": {
+        "rva": "0x1c07820",
+        "bytes": 646,
+        "chunks": [
+          [
+            "0x1c07820",
+            "0x1c0784d"
+          ],
+          [
+            "0x1c0784d",
+            "0x1c07868"
+          ],
+          [
+            "0x1c07868",
+            "0x1c0795c"
+          ],
+          [
+            "0x1c0795c",
+            "0x1c07a2b"
+          ],
+          [
+            "0x1c07a2b",
+            "0x1c07a86"
+          ],
+          [
+            "0x1c07a86",
+            "0x1c07aa6"
+          ]
+        ],
+        "canonical_sha256": "020a55f1c7444e03be46a8397f4a00c2de5986dac9d117360bfbb1809b8d6e91"
+      }
+    },
+    "stage_call_targets": [
+      {
+        "function": "AutoSave",
+        "offset": 301,
+        "expected": "0x1be0c50",
+        "actual": "0x1be0c50",
+        "matches": true
+      },
+      {
+        "function": "AutoSave",
+        "offset": 340,
+        "expected": "0x1bce790",
+        "actual": "0x1bce790",
+        "matches": true
+      },
+      {
+        "function": "AutoSave",
+        "offset": 354,
+        "expected": "0x1bcdb00",
+        "actual": "0x1bcdb00",
+        "matches": true
+      },
+      {
+        "function": "Shutdown",
+        "offset": 273,
+        "expected": "0x1bcd8f0",
+        "actual": "0x1bcd8f0",
+        "matches": true
+      },
+      {
+        "function": "EntityTick",
+        "offset": 619,
+        "expected": "0x1bcd8f0",
+        "actual": "0x1bcd8f0",
+        "matches": true
+      }
+    ],
+    "get_world": {
+      "rva": "0x15562b0",
+      "bytes": 22,
+      "raw": "488b49204885c9740a488b0148ffa06001000033c0c3",
+      "canonical_sha256": "cb355c39c284fb6dc01156959189b5d07810ea86136ca1cecee39e82eccc5e51",
+      "canonical_equal": true
+    },
+    "pointer_evidence": {
+      "entity_class": {
+        "function": "EntityClassRegistration",
+        "instruction_offsets": [
+          10,
+          50,
+          163
+        ]
+      },
+      "entity_vtable": {
+        "function": "EntityConstructor",
+        "instruction_offsets": [
+          27
+        ]
+      }
+    }
+  },
+  "custom_zone_static_layout": {
+    "registration": {
+      "rva": "0x5f4a168",
+      "array_dim": 16,
+      "offset": 88,
+      "raw_48": "a8a3f44501000000000000000000000001000000000010001900000045000000100000005800000040ce824201000000"
+    },
+    "structures": {
+      "outer_struct": {
+        "rva": "0x72eb570",
+        "name": "CustomZoneDamageEventDamageChannelList",
+        "size": 16,
+        "alignment": 8
+      },
+      "inner_struct": {
+        "rva": "0x72eb5c0",
+        "name": "CustomZoneDamageEventDamageChannelHandlingMethodPair",
+        "size": 3,
+        "alignment": 1
+      }
+    }
+  },
+  "native_world_and_config_observation": {
+    "host_class": "isolated Windows validation run (non-elevated RunAsInvoker, loopback 127.0.0.1)",
+    "database_user_version": 79,
+    "database_integrity": [
+      [
+        "ok"
+      ]
+    ],
+    "snapshot_method": "Consistent SQLite Backup API snapshot via read-only connection before owned process termination",
+    "snapshot_db_sha256": "b7282925f5ac1fd6cd653244f8be623dce68ae325412e7e27b6dea279ebfedfd",
+    "snapshot_db_bytes": 1597440,
+    "zone_triggers": [],
+    "zone_schema": [
+      [
+        "index",
+        "index_on_custom_zone_configuration_for_map_id",
+        "custom_zone_configuration",
+        "CREATE INDEX index_on_custom_zone_configuration_for_map_id ON custom_zone_configuration(map_id)"
+      ],
+      [
+        "index",
+        "index_on_custom_zone_region_for_map_id",
+        "custom_zone_region",
+        "CREATE INDEX index_on_custom_zone_region_for_map_id ON custom_zone_region(map_id)"
+      ],
+      [
+        "index",
+        "sqlite_autoindex_custom_zone_configuration_1",
+        "custom_zone_configuration",
+        null
+      ],
+      [
+        "index",
+        "sqlite_autoindex_custom_zone_region_1",
+        "custom_zone_region",
+        null
+      ],
+      [
+        "table",
+        "custom_zone_configuration",
+        "custom_zone_configuration",
+        "CREATE TABLE custom_zone_configuration(\n\t\t\tid\t\t\t\t\t\tINTEGER NOT NULL,\n\t\t\tmap_id\t\t\t\t\tINTEGER NOT NULL,\n\t\t\tname\t\t\t\t\tCHAR(100),\n\t\t\tcolor_red\t\t\t\tREAL,\n\t\t\tcolor_green\t\t\t\tREAL,\n\t\t\tcolor_blue\t\t\t\tREAL,\n\t\t\thandling_methods\t\tBIGINT, settings INTEGER, user_id TEXT DEFAULT '', num_handling_methods INTEGER NOT NULL DEFAULT 0,\n\t\t\tPRIMARY KEY(id, map_id),\n\t\t\tFOREIGN KEY(map_id) REFERENCES map(id) ON DELETE CASCADE\n\t\t)"
+      ],
+      [
+        "table",
+        "custom_zone_configuration_damage_handling_methods",
+        "custom_zone_configuration_damage_handling_methods",
+        "CREATE TABLE custom_zone_configuration_damage_handling_methods\n\t\t(\n\t\t\tid\t\t\t\t\t\t\t\tINTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,\n\t\t\tcustom_zone_configuration_id\tINTEGER NOT NULL,\n\t\t\tmap_id\t\t\t\t\t\t\tINTEGER NOT NULL,\n\t\t\tdamage_actor_type\t\t\t\tINTEGER,\n\t\t\tdamage_handling_methods\t\t\tINTEGER, num_damage_handling_methods INTEGER NOT NULL DEFAULT 0,\n\n\t\t\tFOREIGN KEY(custom_zone_configuration_id, map_id) REFERENCES custom_zone_configuration(id, map_id) ON DELETE CASCADE\n\t\t)"
+      ],
+      [
+        "table",
+        "custom_zone_region",
+        "custom_zone_region",
+        "CREATE TABLE custom_zone_region(\n\t\t\tid\t\t\t\t\t\tINTEGER NOT NULL,\n\t\t\tmap_id\t\t\t\t\tINTEGER NOT NULL,\n\t\t\tname\t\t\t\t\tCHAR(100),\n\t\t\tlocation_x\t\t\t\tREAL,\n\t\t\tlocation_y\t\t\t\tREAL,\n\t\t\tsize_x\t\t\t\t\tREAL,\n\t\t\tsize_y\t\t\t\t\tREAL,\n\t\t\tconfiguration_index\t\tTINYINT, default_region_name CHAR(50), default_region_state TINYINT, user_id TEXT DEFAULT '',\n\t\t\tPRIMARY KEY(id, map_id),\n\t\t\tFOREIGN KEY(map_id) REFERENCES map(id) ON DELETE CASCADE\n\t\t)"
+      ]
+    ],
+    "zone_rows": {
+      "custom_zone_configuration": [
+        [
+          1000,
+          1,
+          "Global configuration",
+          0.31854701042175293,
+          0.7835379838943481,
+          0.08021999895572662,
+          6917529028015773013,
+          3,
+          "INVALID",
+          15
+        ],
+        [
+          1,
+          1,
+          "Outposts",
+          0.31854701042175293,
+          0.7835379838943481,
+          0.08021999895572662,
+          6917529028071631530,
+          3,
+          "INVALID",
+          15
+        ]
+      ],
+      "custom_zone_region": [
+        [
+          1,
+          1,
+          "Outpost A0",
+          -610818.5,
+          -556433.0,
+          50000.0,
+          0.0,
+          0,
+          "Outpost A0",
+          1,
+          "INVALID"
+        ],
+        [
+          2,
+          1,
+          "Outpost B4",
+          570708.0,
+          -226174.0,
+          30000.0,
+          0.0,
+          0,
+          "Outposr B4",
+          1,
+          "INVALID"
+        ],
+        [
+          3,
+          1,
+          "Outpost C2",
+          -147082.0,
+          278432.0,
+          50000.0,
+          0.0,
+          0,
+          "Outpost C2",
+          1,
+          "INVALID"
+        ],
+        [
+          4,
+          1,
+          "Outpost Z3",
+          12820.0,
+          -678344.0,
+          50000.0,
+          0.0,
+          0,
+          "Outpost Z3",
+          1,
+          "INVALID"
+        ]
+      ],
+      "custom_zone_configuration_damage_handling_methods": [
+        [
+          1,
+          1000,
+          1,
+          0,
+          5592405,
+          12
+        ],
+        [
+          2,
+          1000,
+          1,
+          1,
+          357913941,
+          15
+        ],
+        [
+          3,
+          1000,
+          1,
+          2,
+          5,
+          2
+        ],
+        [
+          4,
+          1000,
+          1,
+          3,
+          1,
+          1
+        ],
+        [
+          5,
+          1000,
+          1,
+          4,
+          1,
+          1
+        ],
+        [
+          6,
+          1000,
+          1,
+          5,
+          341,
+          5
+        ],
+        [
+          7,
+          1000,
+          1,
+          6,
+          85,
+          4
+        ],
+        [
+          8,
+          1000,
+          1,
+          7,
+          1,
+          1
+        ],
+        [
+          9,
+          1000,
+          1,
+          8,
+          5,
+          2
+        ],
+        [
+          10,
+          1000,
+          1,
+          9,
+          0,
+          0
+        ],
+        [
+          11,
+          1000,
+          1,
+          10,
+          21,
+          3
+        ],
+        [
+          12,
+          1000,
+          1,
+          11,
+          1,
+          1
+        ],
+        [
+          13,
+          1000,
+          1,
+          12,
+          0,
+          0
+        ],
+        [
+          14,
+          1000,
+          1,
+          13,
+          0,
+          0
+        ],
+        [
+          15,
+          1000,
+          1,
+          14,
+          0,
+          0
+        ],
+        [
+          16,
+          1000,
+          1,
+          15,
+          5,
+          2
+        ],
+        [
+          17,
+          1,
+          1,
+          0,
+          11184808,
+          12
+        ],
+        [
+          18,
+          1,
+          1,
+          1,
+          715827882,
+          15
+        ],
+        [
+          19,
+          1,
+          1,
+          2,
+          10,
+          2
+        ],
+        [
+          20,
+          1,
+          1,
+          3,
+          2,
+          1
+        ],
+        [
+          21,
+          1,
+          1,
+          4,
+          2,
+          1
+        ],
+        [
+          22,
+          1,
+          1,
+          5,
+          682,
+          5
+        ],
+        [
+          23,
+          1,
+          1,
+          6,
+          170,
+          4
+        ],
+        [
+          24,
+          1,
+          1,
+          7,
+          2,
+          1
+        ],
+        [
+          25,
+          1,
+          1,
+          8,
+          10,
+          2
+        ],
+        [
+          26,
+          1,
+          1,
+          9,
+          0,
+          0
+        ],
+        [
+          27,
+          1,
+          1,
+          10,
+          42,
+          3
+        ],
+        [
+          28,
+          1,
+          1,
+          11,
+          2,
+          1
+        ],
+        [
+          29,
+          1,
+          1,
+          12,
+          0,
+          0
+        ],
+        [
+          30,
+          1,
+          1,
+          13,
+          0,
+          0
+        ],
+        [
+          31,
+          1,
+          1,
+          14,
+          0,
+          0
+        ],
+        [
+          32,
+          1,
+          1,
+          15,
+          10,
+          2
+        ]
+      ]
+    },
+    "generated_server_settings_ini": {
+      "sha256": "e049e6ebba5b38765898c19f6f1252bbb29c918f35019c4eba4c9eab7bdc9b9c",
+      "key_count": 437,
+      "added_keys": [],
+      "removed_keys": [],
+      "unconfigured_default_diffs_excluding_manager_wording": [],
+      "focused_values": {
+        "scum.ServerSettingsVersion": "7",
+        "scum.MaxPing": "400.000000",
+        "scum.AnimalGlobalDensityMultiplier": "0.500000",
+        "scum.MaxNonVirtualAnimalsInWorld": "500"
+      }
+    },
+    "generated_economy_override_json": {
+      "added_trader_buckets": [
+        "A_0_Master_Hunter",
+        "B_4_Master_Hunter",
+        "C_2_Master_Hunter",
+        "Z_3_Master_Hunter"
+      ],
+      "trader_bucket_count": 36
+    },
+    "generated_raid_times_json_matches_native_default": true
+  },
+  "component_and_storage_validation": {
+    "scum_save_bridge": {
+      "build_script": "modules/scum/control/Build.ps1 -RunComponents",
+      "profiles_tested": 6,
+      "dll_bytes": 239104,
+      "dll_sha256": "7e02a72feb9bb49c4cf3a8c208efae6c0f8963fac20fc31f5b5d5653dd7fc7a7",
+      "exit_code": 0
+    },
+    "storage_unit_tests": {
+      "command": "cargo test -p app-storage scum",
+      "passed": 18,
+      "failed": 0,
+      "ignored": 1,
+      "supported_synthetic_layouts": [
+        73,
+        75,
+        77,
+        79
+      ]
+    },
+    "native_schema_79_roundtrip": {
+      "test": "scum_custom_zones::tests::native_schema_roundtrip_on_owned_copy",
+      "schema": 79,
+      "configurations": 2,
+      "backup_before_change": true,
+      "source_read_only": true,
+      "passed": 1,
+      "failed": 0,
+      "exit_code": 0
+    },
+    "unreal_loader_preparation": {
+      "test": "unreal_loader::tests::scum_probe_tests::prepare_owned_scum_contract_loader",
+      "outcome": "Installed",
+      "executable_sha256": "458f03d40a2a87b013c1354e3643d5f59d28deb48a966978e9f0c1c49765ab97",
+      "server_started": false,
+      "save_invoked": false,
+      "passed": 1,
+      "failed": 0,
+      "exit_code": 0
+    }
+  },
+  "limits": [
+    "Static equivalence does not establish equivalence of arbitrary external callees.",
+    "The read-only UE4SS reflection probe intentionally reclaimed its disposable server via owned Windows Job after Backup API capture; normal exit 0 and AutoSave(true) invocation are separately proved in 2026-11-22-managed_lifecycle_build_26790009.json.",
+    "The void save ABI acknowledges invocation, not asynchronous SQL or durable disk completion.",
+    "No client combat, populated-player persistence, or cross-version world migration was exercised."
+  ],
+  "live_ue4ss_contract_observation": {
+    "host_class": "isolated Windows validation host (Interactive + Limited token)",
+    "ready": true,
+    "duration_seconds": 127.495,
+    "requested_game_bind": "127.0.0.1",
+    "loader_present": true,
+    "native_save_called": false,
+    "owned_tree_reclaimed": true,
+    "executable_unchanged": true,
+    "database_user_version": 79,
+    "database_integrity": [
+      [
+        "ok"
+      ]
+    ],
+    "generated_config_scum_key_count": 437,
+    "snapshot_database_sha256": "3b79dbdfc97eafca2c7954474c95d4d8c6556290941157a1c778478ec95d6eae",
+    "snapshot_method": "SQLite Backup API from a read-only connection; no source SQL mutation or save invocation",
+    "shutdown_scope": "Intentional owned-Job reclamation after read-only observation; not normal-stop acceptance",
+    "preparation": {
+      "source_identity_sha256": "08cbbe344cc0eb8e6e5f3cc2aba6df62ef4592d850b0c028900cda6f5e33b38d",
+      "source_files_verified": 4764,
+      "test_binary_sha256": "0b7ebbed766166791a566b387a3c2e9c2b35da49f4a66ad2091d5c048bf3b7de",
+      "prepare_exit_code": 0,
+      "prepare_log_sha256": "9d989b079765c488d1d62cf8db19f52776e847ea3bf3c6b203f73f4b9467d58e",
+      "probe_lua_sha256": "2ea7ed2eb8fab2e2b96f3f5417dfe89a2b8f511120e014cca048267ffb0b4aaf"
+    },
+    "owner_observation": {
+      "mode": "read_only_process_memory",
+      "native_save_invoked": false,
+      "checks": {
+        "entity_class_singleton_matches_reflection": true,
+        "entity_vtable_matches_static": true,
+        "entity_outer_matches_instance": true,
+        "world_instance_matches": true,
+        "world_game_mode_matches": true,
+        "world_game_state_matches": true,
+        "objects_alive": true,
+        "get_world_vtable_matches": true,
+        "get_world_bytes_match": true,
+        "save_prologue_matches": true,
+        "native_ready": true
+      },
+      "readiness_raw": {
+        "entity_0x30": 1,
+        "entity_loading_0x7a8": 0,
+        "entity_saving_0x7aa": 0,
+        "entity_shutdown_0x7ab": 0,
+        "game_mode_role_0xf0": 3,
+        "game_mode_actor_state_0x5c": 137,
+        "game_state_actor_state_0x5c": 137
+      },
+      "object_flags": {
+        "entity": 0,
+        "instance": 64,
+        "world": 2621451,
+        "game_mode": 72,
+        "game_state": 72
+      },
+      "custom_zone_registry": {
+        "source_actor": 5,
+        "receiver_actor": 11,
+        "source_actor_slots": 5,
+        "pairs_channel_receiver_handling": [
+          [
+            5,
+            1,
+            1
+          ],
+          [
+            4,
+            1,
+            1
+          ],
+          [
+            6,
+            11,
+            1
+          ],
+          [
+            5,
+            11,
+            1
+          ],
+          [
+            4,
+            11,
+            1
+          ]
+        ],
+        "editable_slots_zero_based": [
+          2,
+          3,
+          4
+        ],
+        "raw_pairs_hex": "050101040101060b01050b01040b01",
+        "fixed_array_metadata": {
+          "array_dim": 16,
+          "element_size": 16,
+          "offset_internal": 88,
+          "struct_size": 16
+        },
+        "pair_stride": 3,
+        "enum_values": {
+          "EDamageActorType::ArmedNPC": 5,
+          "EDamageActorType::Vehicle": 11,
+          "EDamageActorType::Count": 16,
+          "EDamageChannel::MeleeDamage": 6,
+          "EDamageChannel::MeleeWeaponDamage": 5,
+          "EDamageChannel::ProjectileDamage": 4,
+          "ECustomZoneEventHandlingMethod::Ignore": 0,
+          "ECustomZoneEventHandlingMethod::Allow": 1,
+          "ECustomZoneEventHandlingMethod::Block": 2
+        },
+        "live_metadata_matches_new_image_registration": true,
+        "registry_owned_by_current_game_state": true,
+        "memory_read_only": true
+      }
+    }
+  },
+  "managed_lifecycle_fixture": "2026-11-22-managed_lifecycle_build_26790009.json"
+}

@@ -1,0 +1,238 @@
+{
+  "schema_version": 1,
+  "module_id": "runescapedragonwilds",
+  "verified_on": "2026-11-22",
+  "evidence_classification": "managed_native_checkpoint_restart_loader_and_synthetic_moderation",
+  "package": {
+    "steam_app_id": 4019830,
+    "steam_build_id": "26670300",
+    "windows_depot_id": 4019831,
+    "depot_manifest_id": "8863145553754696730",
+    "file_version": "++dominion+hotfix-CL-261625",
+    "acquisition": "Official anonymous SteamCMD app_update 4019830 validate on an isolated Windows validation host into a new isolated task package; exit 0, StateFlags 4; existing user libraries untouched.",
+    "steamcmd_exit_code": 0,
+    "state_flags": 4,
+    "appmanifest_sha256": "bffaff00844ffc880bb060db1b21f282d72b6b96cd9d1ea726211c6ceeb0ca4a",
+    "shipping_relative_path": "RSDragonwilds/Binaries/Win64/RSDragonwildsServer-Win64-Shipping.exe",
+    "shipping_size_bytes": 205246112,
+    "shipping_sha256": "5bb9c59d35ac2669b632f3368d64b116173e5fb68f969ca8b6eda2b84f788cf9",
+    "remote_and_local_hashes_match": true,
+    "pdb_available": false
+  },
+  "static_contract_fixture": "2026-11-22-public-build-26670300-static.json",
+  "managed_lifecycle": {
+    "state": "completed",
+    "nonElevated": true,
+    "game": "runescapedragonwilds",
+    "module": "runescapedragonwilds",
+    "build": "26670300",
+    "selector": "commands::tests::manual_runtime_tests::native_lifecycle_tests::native_package_lifecycle",
+    "startedUtc": "2026-11-22T09:22:30Z",
+    "completedUtc": "2026-11-22T09:27:02Z",
+    "durationSeconds": 271.69,
+    "exitCode": 0,
+    "exactlyOneTestPassed": true,
+    "settings": {
+      "program_update": {
+        "policy": "pinned"
+      }
+    },
+    "flags": {
+      "LANGAME_NATIVE_MANUAL_SAVE": "true",
+      "LANGAME_NATIVE_MANUAL_SAVE_RESTART": "true",
+      "LANGAME_NATIVE_EXACT_SAVE_READBACK": "true"
+    },
+    "sourceIdentitySha256": "ffb4c110039ed4946ba41412b0b0e2adc68e0b04d07379b04fa6c7c0cda29891",
+    "sourceManifestSha256": "b3378f62a3df583b3b23e1a678b6b06f4055774cd067b0ba1c9a98236eccc8a6",
+    "independentlyVerifiedSourceFiles": 4764,
+    "testBinarySha256": "bae246bdea15b4d08123f5788c6f73443378342592aced0ee8a20bc11132ec4d",
+    "logSha256": "a518b5de57ada0ed2a05a0fa71f7b27ee142957b10a5c6a424145ea9d57462d0",
+    "cleanupFailures": [],
+    "acceptanceMode": "default",
+    "host_class": "isolated Windows validation host"
+  },
+  "managed_output": [
+    "NATIVE_SAVE_OBSERVATION module=runescapedragonwilds receipt=requested fresh_native_save=true save_family_changed=true periodic_autosave_excluded=true production_completion=not_claimed",
+    "NATIVE_SAVE_CHECKPOINT module=runescapedragonwilds phase=captured run_id=1 files=2 captured_before_stop=true scope=isolated_world",
+    "NATIVE_STOP_RESULT module=runescapedragonwilds cycle=initial run_id=1 process=main exit_code=Some(0) crash_flag=false status=stopped",
+    "NATIVE_SAVE_CHECKPOINT module=runescapedragonwilds phase=restored after_normal_stop=true shutdown_snapshot_excluded=true sha256_verified=true",
+    "NATIVE_SAVE_READBACK module=runescapedragonwilds phase=verified initial_run=1 restart_run=2 exact_manual_checkpoint=true native_load=passed second_save_sent=false scope=isolated_world",
+    "NATIVE_STOP_RESULT module=runescapedragonwilds cycle=restart run_id=2 process=main exit_code=Some(0) crash_flag=false status=stopped",
+    "NATIVE_RESTORED_WORLD module=runescapedragonwilds cycle=after_restore phase=captured prior_run_id=2 files=2 stopped=true",
+    "NATIVE_RESTORED_WORLD module=runescapedragonwilds cycle=after_restore phase=loaded prior_run_id=2 run_id=3 restored_bytes=unchanged native_saved_identity=matched fresh_logs=true second_save_sent=false",
+    "NATIVE_STOP_RESULT module=runescapedragonwilds cycle=after_restore run_id=3 process=main exit_code=Some(0) crash_flag=false status=stopped",
+    "NATIVE_RESTORED_WORLD module=runescapedragonwilds cycle=after_archive_restore phase=captured prior_run_id=3 files=2 stopped=true",
+    "NATIVE_RESTORED_WORLD module=runescapedragonwilds cycle=after_archive_restore phase=loaded prior_run_id=3 run_id=4 restored_bytes=unchanged native_saved_identity=matched fresh_logs=true second_save_sent=false",
+    "NATIVE_STOP_RESULT module=runescapedragonwilds cycle=after_archive_restore run_id=4 process=main exit_code=Some(0) crash_flag=false status=stopped"
+  ],
+  "backup_restore_files": 2,
+  "library_uninstall_preserved_save_files": 2,
+  "library_uninstall_preserved_native_config_files": 1,
+  "loader_probe": {
+    "exitCode": 0,
+    "logSha256": "ce7c88b5536f50eeccb97a4b164c70906b7e2b732bc5931df3a93659fac828b7"
+  },
+  "control_preparation": {
+    "exitCode": 0,
+    "logSha256": "41d7a04028be15542cdd16ce361781ca751e816f0aecd3ba9758191b40e85e76"
+  },
+  "bridge": {
+    "sha256": "1f8bc0f3b13c503c9016269e6e9e34f0ba3c79098ed4ebaac5420711791e069f",
+    "bytes": 206336,
+    "wholePayloadUniquelyEmbeddedInVerifiedArtifact": true
+  },
+  "synthetic_moderation": {
+    "identity_type": "redpointeos",
+    "real_clients": 0,
+    "fresh_shipping_processes": 3,
+    "ban_dispatches": 1,
+    "unban_dispatches": 1,
+    "phases": [
+      {
+        "phase": "ban",
+        "facts": {
+          "schema": "1",
+          "phase": "ban",
+          "nonce": "5b2ea36e3f65d95a8c46696ee66705fb",
+          "account": "00000000000000000000000000000042",
+          "identity_type": "redpointeos",
+          "identity_valid": "true",
+          "known_count": "1",
+          "client_count": "0",
+          "before": "false",
+          "after": "true",
+          "mutation_attempted": "true"
+        },
+        "host": {
+          "state": "completed",
+          "forcedCleanup": false,
+          "processes": [
+            {
+              "pid": 2324,
+              "image": "RSDragonwildsServer.exe",
+              "creationTime": 134398132826822581,
+              "exitCode": 0
+            },
+            {
+              "pid": 16484,
+              "image": "RSDragonwilds/Binaries/Win64/RSDragonwildsServer-Win64-Shipping.exe",
+              "creationTime": 134398132827039800,
+              "exitCode": 0
+            },
+            {
+              "pid": 9824,
+              "image": "RSDragonwilds/Plugins/Developer/Sentry/Binaries/Win64/crashpad_handler.exe",
+              "creationTime": 134398132859744746,
+              "exitCode": 0
+            }
+          ],
+          "ownedJobEmpty": true,
+          "normalQuit": true
+        },
+        "observedSha256": "6b31638876937ac8df07a0e27391f55db5363147434eb28d61ecb7765103b3d0",
+        "stoppedIniSha256": "9826f830a18df72ab9542e2f8e9ad3ff768b99c41f476d2da4777ba7d3ec80a0",
+        "nativeLogSha256": "ba1265c50226ac7356937ae81700fc7d89b21fa9d61a22c47c03bdc2378054c7",
+        "nativeExitMarker": true
+      },
+      {
+        "phase": "unban",
+        "facts": {
+          "schema": "1",
+          "phase": "unban",
+          "nonce": "91841b4340cdfe6d4c697d318e53007b",
+          "account": "00000000000000000000000000000042",
+          "identity_type": "redpointeos",
+          "identity_valid": "true",
+          "known_count": "1",
+          "client_count": "0",
+          "before": "true",
+          "after": "false",
+          "mutation_attempted": "true"
+        },
+        "host": {
+          "state": "completed",
+          "forcedCleanup": false,
+          "processes": [
+            {
+              "pid": 19044,
+              "image": "RSDragonwildsServer.exe",
+              "creationTime": 134398132944300175,
+              "exitCode": 0
+            },
+            {
+              "pid": 8304,
+              "image": "RSDragonwilds/Binaries/Win64/RSDragonwildsServer-Win64-Shipping.exe",
+              "creationTime": 134398132944527546,
+              "exitCode": 0
+            },
+            {
+              "pid": 22484,
+              "image": "RSDragonwilds/Plugins/Developer/Sentry/Binaries/Win64/crashpad_handler.exe",
+              "creationTime": 134398132976734830,
+              "exitCode": 0
+            }
+          ],
+          "ownedJobEmpty": true,
+          "normalQuit": true
+        },
+        "observedSha256": "6b26948d0d97c98ac275c6e0035bca6ea44b5c548671d066a11a00ee50f1d6f9",
+        "stoppedIniSha256": "d003fac82a430c452db22162b57dc559ae286e261ccb9a2eb11140a977a47bb4",
+        "nativeLogSha256": "1f4dff887bc31998978dc506e9d652d5410c9719a022df3320d054a64c5ca13d",
+        "nativeExitMarker": true
+      },
+      {
+        "phase": "verify_unbanned",
+        "facts": {
+          "schema": "1",
+          "phase": "verify_unbanned",
+          "nonce": "f6dc8655f91c7b0d7cb6aaa01ae713a2",
+          "account": "00000000000000000000000000000042",
+          "identity_type": "redpointeos",
+          "identity_valid": "true",
+          "known_count": "1",
+          "client_count": "0",
+          "before": "false",
+          "after": "false",
+          "mutation_attempted": "false"
+        },
+        "host": {
+          "state": "completed",
+          "forcedCleanup": false,
+          "processes": [
+            {
+              "pid": 18888,
+              "image": "RSDragonwildsServer.exe",
+              "creationTime": 134398133056375241,
+              "exitCode": 0
+            },
+            {
+              "pid": 3344,
+              "image": "RSDragonwilds/Binaries/Win64/RSDragonwildsServer-Win64-Shipping.exe",
+              "creationTime": 134398133056601500,
+              "exitCode": 0
+            },
+            {
+              "pid": 24652,
+              "image": "RSDragonwilds/Plugins/Developer/Sentry/Binaries/Win64/crashpad_handler.exe",
+              "creationTime": 134398133088931472,
+              "exitCode": 0
+            }
+          ],
+          "ownedJobEmpty": true,
+          "normalQuit": true
+        },
+        "observedSha256": "26c3b0623d8a72f3474d2f47f92f8bcfc7a322bbb0d94504204b1c5f43dc7853",
+        "stoppedIniSha256": "d003fac82a430c452db22162b57dc559ae286e261ccb9a2eb11140a977a47bb4",
+        "nativeLogSha256": "d14d9366b0c4f271f95fb2a8aef47fcb88b5e8fe6730eb0871544eae493549e0",
+        "nativeExitMarker": true
+      }
+    ]
+  },
+  "probe_result_sha256": "44c4b6b638ce780aec3e466e57f0680a86db32fa54f1c96b94da178f3b820ef0",
+  "limits": [
+    "The public save receipt remains Requested. Independent native logs, changed save files and exact pre-stop checkpoint reload are disposable-world evidence; no hardware fsync is claimed.",
+    "Synthetic native identity moderation tests the installed bridge ABI and persistence, not real-player login, kick, rejected reconnect or UI authorization.",
+    "All native runs used fresh private task worlds on an isolated Windows validation host. No existing player world, cross-version migration or combat was assessed.",
+    "Official package acquisition was separate; the managed lifecycle reused the checked package with pinned updates."
+  ]
+}

@@ -13,6 +13,7 @@ pub(super) enum NativeLayout {
     Build25803875,
     Build26320224,
     Build26593814,
+    Build26790009,
 }
 
 impl NativeLayout {
@@ -21,6 +22,7 @@ impl NativeLayout {
             Self::Build25803875 => 73,
             Self::Build26320224 => 75,
             Self::Build26593814 => 77,
+            Self::Build26790009 => 79,
         }
     }
 
@@ -36,6 +38,10 @@ impl NativeLayout {
             | "b75567d63f2a9948c739b7cbaab2208b926da6e08c7394a7f83b835cd2a50ddf" => {
                 // Build 26621903 retains the observed schema-77 registry layout.
                 Some(Self::Build26593814)
+            }
+            "458f03d40a2a87b013c1354e3643d5f59d28deb48a966978e9f0c1c49765ab97" => {
+                // Build 26790009 (1.3.6.2.179673) generates schema 79 with unchanged custom-zone tables.
+                Some(Self::Build26790009)
             }
             _ => None,
         }

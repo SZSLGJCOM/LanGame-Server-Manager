@@ -2122,6 +2122,17 @@ async fn resolve_instance_log_source_path(
         .and_then(|run| run.log_path.clone())
         .or_else(|| recent_runs.iter().find_map(|run| run.log_path.clone()));
     let module_log_path = resolve_module_runtime_log_path(record)?;
+    if record.summary.module_id.eq_ignore_ascii_case("scum")
+        && active_run.is_some()
+        && let Some(ref module_log) = module_log_path
+        && log_path_has_content(Path::new(module_log))
+    {
+        // SCUM writes `LogSCUM: Global Stats:` only to SCUM.log, while stdout
+        // (`process_log_path`) can flush unrelated lines milliseconds later.
+        // Keeping SCUM.log selected during an active run avoids mtime flips;
+        // current_run_lines still filters SCUM.log by OS process creation_time.
+        return Ok(module_log_path);
+    }
     Ok(prefer_runtime_log_path(
         &record.summary.module_id,
         process_log_path,

@@ -40,7 +40,8 @@ impl Profile {
                 "070fcad918ba04eb9797db29674cadbd6691427b936fe354bca23b008c8c9971"
                 | "a862d658271f26d082de5df7bba01e8af9c3d051cb9634e908bb94d8a9efbc7a"
                 | "805396516e64d17f1713f24ce97a7d525a6d761db46ce069f40cf63114add6d9"
-                | "b75567d63f2a9948c739b7cbaab2208b926da6e08c7394a7f83b835cd2a50ddf",
+                | "b75567d63f2a9948c739b7cbaab2208b926da6e08c7394a7f83b835cd2a50ddf"
+                | "458f03d40a2a87b013c1354e3643d5f59d28deb48a966978e9f0c1c49765ab97",
             ) => Ok(None),
             _ => Err("This game build is outside the verified native save contract; no files were changed.".into()),
         }

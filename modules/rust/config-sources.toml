@@ -3,6 +3,13 @@ last_verified = "2026-11-07"
 notes = "The November review identifies isolated app 258550 build 26498655 and verifies the current navigation flag plus four optional performance controls. After correcting WebRCON connection admission, the production lifecycle passed four start/save/quit cycles with same-run native value readback, backup restore and interrupted archive recovery; detailed scope and exit-code evidence are recorded below. The formal manual-save receipt remains Requested. The lifecycle does not test a fresh download, client join or performance. Earlier July public build 24090743/cached build 23476634 and September local build 25129933 observations remain historical evidence. LanGame-owned server/<instance-id>/cfg materialization remains the config boundary."
 
 [[sources]]
+id = "native_static_review_build_26778019_20261122"
+kind = "documentation"
+path = "reference-fixtures/2026-11-22-native-build-26778019-static.json"
+authority = "fresh_isolated_rust_dedicated_server_build_26778019_read_only_il"
+description = "2026-11-22: anonymous SteamCMD app_update 258550 validate installed public build 26778019 (exit 0, StateFlags 4; Assembly-CSharp.dll SHA256 bb76429c1a12a8168d276fe885ca3c4bad7a591e10d9dc7a8f6049f358ece9ee). Read-only Mono.Cecil IL inspection confirms Bootstrap.Init_Tier0 IL_0106 still parses only -useOldNavmesh into ConVar.AI.useUnityNavmesh (default false; -useNewNavmesh absent); server.useplayerupdatejobs remains default 4 and Network.Server.BatchPackets remains default true; ConVar.Net.position_lod and ConVar.Net.position_lod_players static initializers changed from 0 to 2 (no manager schema change needed because both optional controls preserve native defaults when unset). Fleck.ConnectionLimiter retains 5 attempts per 5-second UtcNow window with zero SetAttemptLimits overrides across Fleck, Facepunch.Rcon and Assembly-CSharp, and Facepunch.RCon.Initialize retains both WebSocket and deprecated Source RCON branches. Static package/IL review only; no build 26778019 server run or RCON session was executed."
+
+[[sources]]
 id = "native_webrcon_admission_build_26498655"
 kind = "documentation"
 path = "reference-fixtures/2026-11-07-webrcon-connection-admission.json"

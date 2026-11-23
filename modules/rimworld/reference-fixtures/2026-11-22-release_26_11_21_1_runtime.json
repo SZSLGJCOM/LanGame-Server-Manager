@@ -1,0 +1,34 @@
+{
+  "schema_version": 1,
+  "module_id": "rimworld",
+  "verified_on": "2026-11-22",
+  "release": "26.11.21.1",
+  "published_at_utc": "2026-11-21T17:25:21Z",
+  "archive_bytes": 31774144,
+  "archive_sha256": "e3d03f348c4000f43c9838c0aa0d1b9033a66ca8b33c3787b6102547014066e5",
+  "server_executable_bytes": 75272529,
+  "server_executable_sha256": "5f8bde95bbe87b4c4c3fae34558f119fe7d34c439f8caffe74e6751f35e1c4d7",
+  "client_archive_bytes": 4362962,
+  "client_archive_sha256": "3a9e48bb7ee856bc93d08fb8d6b4441d76a9e0e4f3dabc6f69c19f3ed997f04e",
+  "environment": "Isolated Windows loopback probe with official 26.11.21.1 RTServer.exe bound to 127.0.0.1.",
+  "startup": {
+    "reported_version": "26.11.21.1",
+    "generated_config_files": 23,
+    "generated_leaf_keys": 129,
+    "config_key_drift": 0,
+    "first_native_use_global_server": true,
+    "first_native_rollback_enabled": true,
+    "modified_market_use_global_server_preserved_after_restart": false,
+    "modified_rollback_enabled_preserved_after_restart": false,
+    "console_commands": ["getversion", "list", "banlist", "modlist", "backup", "quit"],
+    "backup_contains_selected_market_and_rollback_config": true,
+    "quit_exit_codes": [0, 0]
+  },
+  "upstream_source_review": {
+    "compare_range": "26.11.2.1...26.11.21.1",
+    "configs_schema_changed": false,
+    "player_save_and_backup_filename_key": "Player.Hash",
+    "pm_market_max_entries_owner_hash_vs_username_bug_retained": true
+  },
+  "scope": "Isolated package integrity, static source review and two-cycle loopback server console/config/backup runs without connected clients."
+}
