@@ -96,9 +96,9 @@ Rust 常规测试覆盖解析、网络边界、事务回滚、重开读回、引
 公开同步验收可用 `LANGAME_KNOWLEDGE_LIVE_GAME` 指定单个游戏或以逗号分隔的游戏 ID；省略时检查全目录。
 真实站点失败会写入验收报告；mock、离线检查和测试通过不能当作 32 份官方完整手册全部可用的证明。
 
-Windows x64 构建需要稳定版 MSVC Build Tools 的 x64 零售 CRT。构建脚本固定 ONNX Runtime 官方 ZIP 的
+Windows x64 构建需要稳定版 MSVC Build Tools 的 x64 零售 CRT。构建脚本校验微软官方 ONNX Runtime NuGet 包的
 大小和 SHA-256，并将原生库、CRT 与许可清单内嵌进可执行文件，不依赖开发机的 Python 环境或用户的 DLL 搜索路径。
-离线构建可用 `LANGAME_ORT_ARCHIVE` 指向预先下载的同一官方 ZIP（绝对路径），校验不变；该变量不影响已发布程序。
+离线构建可用 `LANGAME_ORT_ARCHIVE` 指向官方 Microsoft.ML.OnnxRuntime 1.31.0 NuGet 包或先前保存的同版本 Windows ZIP（绝对路径），两种格式都校验大小和 SHA-256；该变量不影响已发布程序。
 
 ## English
 

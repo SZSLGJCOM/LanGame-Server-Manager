@@ -14,13 +14,13 @@ import time
 if __package__:
     from .verify_runtime_reliability import QUICK_STORAGE_FILTERS, tauri_frontend_config, validate_frontend_dist
     from .verify_scope import (DESKTOP, ROOT, PARALLEL_PACKAGES, browser_repository_files,
-                               changed_paths, frontend_selection, frontend_tests, full_scopes,
-                               parse_browser_files, parse_rust_packages, publication_full, rust_selection, rust_workspace)
+                               changed_paths, frontend_selection, frontend_tests, parse_browser_files,
+                               parse_rust_packages, rust_selection, rust_workspace, verification_scope)
 else:
     from verify_runtime_reliability import QUICK_STORAGE_FILTERS, tauri_frontend_config, validate_frontend_dist
     from verify_scope import (DESKTOP, ROOT, PARALLEL_PACKAGES, browser_repository_files,
-                              changed_paths, frontend_selection, frontend_tests, full_scopes,
-                              parse_browser_files, parse_rust_packages, publication_full, rust_selection, rust_workspace)
+                              changed_paths, frontend_selection, frontend_tests, parse_browser_files,
+                              parse_rust_packages, rust_selection, rust_workspace, verification_scope)
 
 
 def rust_test_matrix(packages: list[str]) -> dict:
@@ -256,33 +256,23 @@ def main(argv: list[str] | None = None) -> int:
     except ValueError as error:
         parser.error(str(error))
     if args.component == "scope":
-        full = args.tier == "full" or args.event == "schedule"
-        manual = args.event == "workflow_dispatch"
-        full = full or not manual and (not args.base or set(args.base) == {"0"})
-        frontend_full = rust_full = native_full = full
-        paths = []
-        if not full and not manual:
-            paths = changed_paths(args.base)
-            full = paths is None
-            paths = paths or []
-            frontend_full, rust_full, native_full = (True, True, True) if full else full_scopes(paths)
-        policy_full = full or publication_full(paths)
-        full = frontend_full or rust_full or native_full or policy_full
-        frontend_files = browser_repository_files() if frontend_full else frontend_selection(paths)
-        rust_packages = (sorted(rust_workspace()) if rust_full and not paths else rust_selection(paths))
-        frontend_changed = bool(frontend_files)
-        print(f"[verify] frontend_full={frontend_full}; rust_full={rust_full}; native_full={native_full}; "
-              f"frontend_changed={frontend_changed}; {len(frontend_files)} browser files; {len(paths)} changed paths; "
-              f"complete Rust packages={','.join(rust_packages) or 'quick baseline'}")
+        if args.tier == "full" or args.event == "schedule":
+            paths = None
+        elif args.event == "workflow_dispatch":
+            paths = []
+        else:
+            paths = changed_paths(args.base) if args.base and args.base.strip("0") else None
+        scope = verification_scope(paths)
+        print(f"[verify] {len(scope.frontend_files)} browser files; native={scope.native_full}; "
+              f"publication history={scope.policy_full}; complete Rust packages={','.join(scope.rust_packages) or 'quick baseline'}")
         if args.github_output:
+            outputs = {"frontend_full": scope.frontend_full, "frontend_changed": bool(scope.frontend_files),
+                       "frontend_files": scope.frontend_files, "rust_packages": scope.rust_packages,
+                       "rust_matrix": rust_test_matrix(scope.rust_packages), "native_full": scope.native_full,
+                       "policy_full": scope.policy_full}
             with args.github_output.open("a", encoding="utf-8") as destination:
-                for name, value in (("full", full), ("frontend_full", frontend_full), ("rust_full", rust_full),
-                                    ("native_full", native_full), ("frontend_changed", frontend_changed)):
-                    destination.write(f"{name}={str(value).lower()}\n")
-                destination.write(f"frontend_files={json.dumps(frontend_files, separators=(',', ':'))}\n")
-                destination.write(f"rust_packages={json.dumps(rust_packages, separators=(',', ':'))}\n")
-                destination.write(f"policy_full={str(policy_full).lower()}\n")
-                destination.write(f"rust_matrix={json.dumps(rust_test_matrix(rust_packages), separators=(',', ':'))}\n")
+                for name, value in outputs.items():
+                    destination.write(f"{name}={json.dumps(value, separators=(',', ':'))}\n")
         return 0
     if args.component == "frontend-browser" and args.base and args.tier != "full":
         paths = changed_paths(args.base)

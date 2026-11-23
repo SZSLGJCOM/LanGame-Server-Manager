@@ -8,14 +8,33 @@ use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
-const ARCHIVE_URL: &str = "https://github.com/microsoft/onnxruntime/releases/download/v1.31.0/onnxruntime-win-x64-1.31.0.zip";
-const ARCHIVE_BYTES: u64 = 82_887_349;
-const ARCHIVE_SHA256: &str = "3958d8a44984160692c1b4ffd0de3cb48f8c39f9d34bb31e433db06e30b82195";
-const PREFIX: &str = "onnxruntime-win-x64-1.31.0/";
+const ARCHIVE_URL: &str = "https://api.nuget.org/v3-flatcontainer/microsoft.ml.onnxruntime/1.31.0/microsoft.ml.onnxruntime.1.31.0.nupkg";
+const PACKAGE_NAME: &str = "microsoft.ml.onnxruntime.1.31.0.nupkg";
+
+struct ArchiveLayout {
+    bytes: u64,
+    sha256: &'static str,
+    libraries: &'static str,
+    notices: &'static str,
+}
+
+const NUGET: ArchiveLayout = ArchiveLayout {
+    bytes: 159_626_085,
+    sha256: "7e35fdb4f5adb62f01e60798e2e5ed05108f5fbbe1cca03fbcc37903cf7c5e3b",
+    libraries: "runtimes/win-x64/native/",
+    notices: "",
+};
+// Offline builders may still supply the previously published Windows archive.
+const WINDOWS_ZIP: ArchiveLayout = ArchiveLayout {
+    bytes: 82_887_349,
+    sha256: "3958d8a44984160692c1b4ffd0de3cb48f8c39f9d34bb31e433db06e30b82195",
+    libraries: "onnxruntime-win-x64-1.31.0/lib/",
+    notices: "onnxruntime-win-x64-1.31.0/",
+};
 const ORT_FILES: &[(&str, &str, u64)] = &[
-    ("lib/onnxruntime.dll", "onnxruntime.dll", 17_253_176),
+    ("onnxruntime.dll", "onnxruntime.dll", 17_253_176),
     (
-        "lib/onnxruntime_providers_shared.dll",
+        "onnxruntime_providers_shared.dll",
         "onnxruntime_providers_shared.dll",
         21_816,
     ),
@@ -87,11 +106,16 @@ pub fn prepare() -> Result<()> {
     }
     let directory = out.join("embedding-runtime");
     fs::create_dir_all(&directory)?;
-    let archive = verified_archive(&directory)?;
+    let (archive, layout) = verified_archive(&directory)?;
     let mut archive = zip::ZipArchive::new(Cursor::new(archive))?;
     let mut entries = Vec::new();
     for (input, name, expected) in ORT_FILES {
-        let mut entry = archive.by_name(&format!("{PREFIX}{input}"))?;
+        let prefix = if name.ends_with(".dll") {
+            layout.libraries
+        } else {
+            layout.notices
+        };
+        let mut entry = archive.by_name(&format!("{prefix}{input}"))?;
         if entry.size() != *expected || entry.is_dir() {
             return Err(format!("Unexpected official archive entry: {input}").into());
         }
@@ -201,50 +225,35 @@ fn bounded_read(path: &Path, max: u64) -> Result<Vec<u8>> {
     Ok(bytes)
 }
 
-fn verified_archive(out: &Path) -> Result<Vec<u8>> {
+fn verified_archive(out: &Path) -> Result<(Vec<u8>, &'static ArchiveLayout)> {
     if let Some(path) = std::env::var_os("LANGAME_ORT_ARCHIVE") {
         let path = PathBuf::from(path);
         if !path.is_absolute() {
             return Err("LANGAME_ORT_ARCHIVE must be absolute".into());
         }
         println!("cargo:rerun-if-changed={}", path.display());
-        return check_archive(bounded_read(&path, ARCHIVE_BYTES)?);
+        return check_archive(bounded_read(&path, NUGET.bytes)?);
     }
-    let path = out.join("onnxruntime-win-x64-1.31.0.zip");
+    let path = out.join(PACKAGE_NAME);
     if path.exists() {
-        return check_archive(bounded_read(&path, ARCHIVE_BYTES)?);
+        return check_archive(bounded_read(&path, NUGET.bytes)?);
     }
     let client = reqwest::blocking::Client::builder()
         .https_only(true)
         .connect_timeout(Duration::from_secs(20))
         .timeout(Duration::from_secs(180))
-        .redirect(reqwest::redirect::Policy::custom(|attempt| {
-            let allowed = attempt.url().scheme() == "https"
-                && matches!(
-                    attempt.url().host_str(),
-                    Some(
-                        "github.com"
-                            | "release-assets.githubusercontent.com"
-                            | "objects.githubusercontent.com"
-                    )
-                );
-            if !allowed || attempt.previous().len() >= 5 {
-                attempt.error("Runtime download redirect is not an approved official host")
-            } else {
-                attempt.follow()
-            }
-        }))
+        .redirect(reqwest::redirect::Policy::none())
         .build()?;
     let response = client.get(ARCHIVE_URL).send()?.error_for_status()?;
     if response
         .content_length()
-        .is_some_and(|size| size != ARCHIVE_BYTES)
+        .is_some_and(|size| size != NUGET.bytes)
     {
         return Err("Runtime archive has an unexpected content length".into());
     }
     let mut bytes = Vec::new();
-    response.take(ARCHIVE_BYTES + 1).read_to_end(&mut bytes)?;
-    let bytes = check_archive(bytes)?;
+    response.take(NUGET.bytes + 1).read_to_end(&mut bytes)?;
+    let (bytes, layout) = check_archive(bytes)?;
     // OUT_DIR is Cargo-owned. Only verified bytes are published in this cache.
     let staging = out.join(format!("archive-{}.partial", std::process::id()));
     let mut file = File::create_new(&staging)?;
@@ -263,14 +272,18 @@ fn verified_archive(out: &Path) -> Result<Vec<u8>> {
         .into());
     }
     result?;
-    Ok(bytes)
+    Ok((bytes, layout))
 }
 
-fn check_archive(bytes: Vec<u8>) -> Result<Vec<u8>> {
-    if bytes.len() as u64 != ARCHIVE_BYTES || digest(&bytes) != ARCHIVE_SHA256 {
-        return Err("Official ONNX Runtime archive size/SHA256 verification failed".into());
+fn check_archive(bytes: Vec<u8>) -> Result<(Vec<u8>, &'static ArchiveLayout)> {
+    let layout = [&NUGET, &WINDOWS_ZIP]
+        .into_iter()
+        .find(|layout| layout.bytes == bytes.len() as u64)
+        .ok_or("Official ONNX Runtime archive has an unexpected size")?;
+    if digest(&bytes) != layout.sha256 {
+        return Err("Official ONNX Runtime archive SHA256 verification failed".into());
     }
-    Ok(bytes)
+    Ok((bytes, layout))
 }
 
 fn inspect_redist() -> Result<Redist> {

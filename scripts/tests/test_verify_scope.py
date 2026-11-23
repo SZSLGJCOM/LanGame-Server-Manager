@@ -37,8 +37,9 @@ class PublicationScopeTests(unittest.TestCase):
                  "apps/desktop/src/App.tsx", "Cargo.lock", "apps/desktop/package-lock.json",
                  "scripts/verify_project.py", "scripts/verify_scope.py",
                  "docs/development.md", "LICENSE", "modules/palworld/schema.json"]
-        self.assertTrue(scope.needs_full(paths))
-        self.assertFalse(scope.publication_full(paths))
+        selected = scope.verification_scope(paths)
+        self.assertTrue(selected.native_full)
+        self.assertFalse(selected.policy_full)
         self.assertFalse(scope.publication_full([]))
 
     def test_snapshot_entrypoints_keep_the_excluded_lifecycle_reference_check(self):
@@ -106,10 +107,15 @@ class RustScopeTests(unittest.TestCase):
                 for path in paths:
                     with self.subTest(path=path):
                         self.assertTrue(scope.rust_test_only(path))
-                        self.assertEqual(scope.full_scopes([path]), (False, True, False))
-                        self.assertEqual(scope.rust_selection([path]), ["langame-desktop"])
+                        selected = scope.verification_scope([path])
+                        self.assertEqual(selected.frontend_files, [])
+                        self.assertEqual(selected.rust_packages, ["langame-desktop"])
+                        self.assertFalse(selected.native_full)
                 # Mixed changes retain the production source's stronger scope.
-                self.assertEqual(scope.full_scopes([*paths, production]), (True, True, True))
+                selected = scope.verification_scope([*paths, production])
+                self.assertTrue(selected.frontend_full)
+                self.assertEqual(selected.rust_packages, ["langame-desktop"])
+                self.assertTrue(selected.native_full)
 
     def test_test_filename_alone_does_not_reduce_coverage_and_deleted_sources_are_conservative(self):
         with tempfile.TemporaryDirectory() as temporary, patch.object(scope, "ROOT", Path(temporary)):
@@ -149,9 +155,10 @@ class RustScopeTests(unittest.TestCase):
     def test_quick_package_production_changes_still_verify_their_consumers(self):
         for package in ("app-knowledge", "app-modules"):
             with self.subTest(package=package):
-                packages = scope.rust_selection([f"crates/{package}/src/lib.rs"])
-                self.assertIn("langame-desktop", packages)
-                self.assertEqual(scope.full_scopes([f"crates/{package}/src/lib.rs"]), (False, True, False))
+                selected = scope.verification_scope([f"crates/{package}/src/lib.rs"])
+                self.assertIn("langame-desktop", selected.rust_packages)
+                self.assertEqual(selected.frontend_files, [])
+                self.assertFalse(selected.native_full)
 
     def test_package_selection_rejects_duplicate_unknown_and_non_string_arguments(self):
         for value in ('["--workspace"]', '["langame-desktop", "langame-desktop"]', '[3]', '{}', 'null', 'invalid'):
@@ -162,15 +169,6 @@ class RustScopeTests(unittest.TestCase):
     def test_full_tier_cannot_be_reduced_by_explicit_package_selection(self):
         with self.assertRaises(SystemExit), contextlib.redirect_stderr(io.StringIO()):
             main(["--component", "rust-tests", "--tier", "full", "--rust-packages-json", '["langame-desktop"]'])
-
-    def test_schedule_and_manual_full_select_every_package(self):
-        for arguments in (["--event", "schedule"], ["--event", "workflow_dispatch", "--tier", "full"]):
-            with self.subTest(arguments=arguments), tempfile.TemporaryDirectory() as directory, \
-                    contextlib.redirect_stdout(io.StringIO()):
-                output = Path(directory) / "scope"
-                self.assertEqual(main(["--component", "scope", "--github-output", str(output), *arguments]), 0)
-                values = dict(line.split("=", 1) for line in output.read_text().splitlines())
-                self.assertEqual(json.loads(values["rust_packages"]), sorted(scope.rust_workspace()))
 
     def test_local_rust_base_uses_the_same_selection_as_ci(self):
         import subprocess

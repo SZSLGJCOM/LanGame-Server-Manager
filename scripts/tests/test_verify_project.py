@@ -10,10 +10,17 @@ from unittest.mock import patch
 
 from scripts.verify_project import Runner, main, rust_test_matrix, validate_frontend_output
 from scripts.verify_scope import (DESKTOP, ROOT, QUICK_BROWSER_FILES, browser_repository_files,
-                                  frontend_selection, frontend_tests, full_scopes, needs_full, parse_browser_files)
+                                  frontend_selection, frontend_tests, parse_browser_files, rust_workspace, verification_scope)
 
 
 class VerificationSelectionTests(unittest.TestCase):
+    def ci_scope(self, *arguments):
+        with tempfile.TemporaryDirectory() as directory, contextlib.redirect_stdout(io.StringIO()):
+            output = Path(directory) / "scope"
+            self.assertEqual(main(["--component", "scope", "--github-output", str(output), *arguments]), 0)
+            return {name: json.loads(value) for name, value in
+                    (line.split("=", 1) for line in output.read_text().splitlines())}
+
     def test_daily_browser_selection_contains_critical_flows_and_related_features(self):
         selected = set(frontend_selection(["apps/desktop/src/views/system/SystemCoreDial.tsx"]))
         self.assertTrue(set(QUICK_BROWSER_FILES) <= selected)
@@ -21,7 +28,6 @@ class VerificationSelectionTests(unittest.TestCase):
         self.assertIn("apps/desktop/tests/instance-retirement-browser.test.cjs", selected)
         self.assertIn("apps/desktop/tests/app-update-browser.test.cjs", selected)
         self.assertNotIn("apps/desktop/tests/asa-mod-controls-browser.test.cjs", selected)
-        self.assertEqual(full_scopes(["apps/desktop/src/views/system/SystemCoreDial.tsx"]), (False, False, False))
 
     def test_browser_selection_preserves_cross_feature_configuration_consumers(self):
         selected = frontend_selection(["apps/desktop/src/views/settings/modules/dontstarve-shards.ts"])
@@ -71,69 +77,44 @@ class VerificationSelectionTests(unittest.TestCase):
         self.assertEqual(frontend_selection(["README.md", "apps/desktop/tests/runtime-browser-process.test.cjs",
                                              "apps/desktop/tests/knowledge-settings.test.cjs"]), [])
 
-    def test_risky_boundaries_run_full_before_release(self):
-        for path in ("crates/app-storage/src/backups.rs", "crates/app-runtime/src/lib.rs",
-                     "crates/app-steamcmd/src/lib.rs", "apps/desktop/src-tauri/src/commands.rs",
-                     "modules/palworld/schema.json", "migrations/0001.sql", "Cargo.lock",
-                     "apps/desktop/package-lock.json", "scripts/verify_project.py",
-                     "apps/desktop/tests/helpers/runtime-browser-process.cjs"):
-            with self.subTest(path=path):
-                self.assertTrue(needs_full([path]))
-        self.assertFalse(needs_full(["README.md", "docs/development.md"]))
-
-    def test_frontend_changes_do_not_force_rust_or_native_regression(self):
-        for path in ("apps/desktop/src/styles/shell.css", "apps/desktop/src/desktop-exit-lifecycle.ts",
-                     "apps/desktop/src/runtime-log-stream.ts", "apps/desktop/src/storage-management-requests.ts",
-                     "apps/desktop/src/hooks/useInstanceArchives.ts", "apps/desktop/tsconfig.json"):
-            with self.subTest(path=path):
-                self.assertEqual(full_scopes([path]), (True, False, False))
-        for path in ("apps/desktop/src/views/servers/BackupTable.tsx",
-                     "apps/desktop/tests/runtime-reliability-browser.test.cjs",
-                     "apps/desktop/tests/knowledge-settings-browser.test.cjs"):
-            with self.subTest(path=path):
-                self.assertEqual(full_scopes([path]), (False, False, False))
-                self.assertTrue(frontend_selection([path]))
-
-    def test_unit_and_scanner_changes_do_not_select_unrelated_slow_suites(self):
-        for path in ("apps/desktop/tests/runtime-browser-process.test.cjs",
-                     "apps/desktop/tests/settings-page-routing.test.cjs",
-                     "scripts/tests/test_verify_game_knowledge.py", ".github/ISSUE_TEMPLATE/bug_report.yml"):
-            with self.subTest(path=path):
-                self.assertEqual(full_scopes([path]), (False, False, False))
-        for path in ("apps/desktop/tests/helpers/runtime-browser-process.cjs",
-                     "apps/desktop/tests/fixtures/dontstarve-world-lua.json"):
-            with self.subTest(path=path):
-                self.assertEqual(full_scopes([path]), (True, False, False))
-
-    def test_rust_internal_changes_only_select_the_relevant_boundary(self):
-        for crate in ("app-knowledge", "app-modules"):
-            with self.subTest(crate=crate):
-                self.assertEqual(full_scopes([f"crates/{crate}/src/lib.rs"]), (False, True, False))
-        for crate in ("app-network", "app-steamcmd", "app-new-component"):
-            with self.subTest(crate=crate):
-                self.assertEqual(full_scopes([f"crates/{crate}/src/lib.rs"]), (False, True, False))
-        for crate in ("app-storage", "app-runtime", "app-platform-win"):
-            with self.subTest(crate=crate):
-                self.assertEqual(full_scopes([f"crates/{crate}/src/lib.rs"]), (False, True, True))
-        for path in ("scripts/verify_project.py", "Cargo.lock", "apps/desktop/package-lock.json",
-                     ".github/actions/setup-frontend/action.yml", "crates/app-core/src/lib.rs",
-                     "apps/desktop/src-tauri/src/commands.rs", "crates/app-knowledge/Cargo.toml",
-                     "crates/app-modules/Cargo.toml", "crates/app-new-component/Cargo.toml",
-                     "crates/app-knowledge/build.rs", "crates/app-knowledge/runtime_build.rs"):
-            with self.subTest(path=path):
-                self.assertEqual(full_scopes([path]), (True, True, True))
-        self.assertEqual(full_scopes(["apps/desktop/src/api-transport.ts"]), (True, True, False))
-        self.assertEqual(full_scopes(["modules/palworld/schema.json"]), (True, True, False))
-        self.assertEqual(full_scopes(["apps/desktop/tests/helpers/desktop-reliability.tsx"]), (True, False, True))
-
-    def test_installer_script_family_selects_native_checks(self):
-        for name in ("guard", "language", "resources"):
-            path = f"scripts/tests/test_desktop_installer_{name}.ps1"
-            with self.subTest(path=path):
-                self.assertEqual(full_scopes([path]), (False, False, True))
-        self.assertEqual(full_scopes(["scripts/prepare_desktop_installer_tools.ps1"]), (False, False, True))
-        fixture = "scripts/tests/fixtures/retired-package-resources/enshrouded.json"
-        self.assertEqual(full_scopes([fixture]), (False, False, True))
+    def test_changes_select_only_the_checks_that_consume_them(self):
+        cases = {
+            ("none", False, False): (
+                "README.md", "docs/development.md", "apps/desktop/tests/runtime-browser-process.test.cjs",
+                "apps/desktop/tests/settings-page-routing.test.cjs", "scripts/tests/test_verify_game_knowledge.py",
+                ".github/ISSUE_TEMPLATE/bug_report.yml"),
+            ("partial", False, False): (
+                "apps/desktop/src/views/system/SystemCoreDial.tsx", "apps/desktop/src/views/servers/BackupTable.tsx",
+                "apps/desktop/tests/runtime-reliability-browser.test.cjs", "apps/desktop/tests/knowledge-settings-browser.test.cjs"),
+            ("all", False, False): (
+                "apps/desktop/src/styles/shell.css", "apps/desktop/src/desktop-exit-lifecycle.ts",
+                "apps/desktop/src/runtime-log-stream.ts", "apps/desktop/src/storage-management-requests.ts",
+                "apps/desktop/src/hooks/useInstanceArchives.ts", "apps/desktop/tsconfig.json",
+                "apps/desktop/tests/helpers/runtime-browser-process.cjs", "apps/desktop/tests/fixtures/dontstarve-world-lua.json"),
+            ("none", True, False): tuple(f"crates/{crate}/src/lib.rs" for crate in
+                                         ("app-knowledge", "app-modules", "app-network", "app-steamcmd", "app-new-component")),
+            ("none", True, True): ("crates/app-storage/src/backups.rs", "crates/app-storage/src/lib.rs",
+                                   "crates/app-runtime/src/lib.rs", "crates/app-platform-win/src/lib.rs"),
+            ("all", True, True): (
+                "scripts/verify_project.py", "Cargo.lock", "apps/desktop/package-lock.json", ".github/actions/setup-frontend/action.yml",
+                "crates/app-core/src/lib.rs", "apps/desktop/src-tauri/src/commands.rs", "crates/app-knowledge/Cargo.toml",
+                "crates/app-modules/Cargo.toml", "crates/app-new-component/Cargo.toml", "crates/app-knowledge/build.rs",
+                "crates/app-knowledge/runtime_build.rs"),
+            ("all", True, False): ("apps/desktop/src/api-transport.ts", "modules/palworld/schema.json", "migrations/0001.sql"),
+            ("all", False, True): ("apps/desktop/tests/helpers/desktop-reliability.tsx",),
+            ("none", False, True): (
+                "scripts/tests/test_desktop_installer_guard.ps1", "scripts/tests/test_desktop_installer_language.ps1",
+                "scripts/tests/test_desktop_installer_resources.ps1", "scripts/prepare_desktop_installer_tools.ps1",
+                "scripts/tests/fixtures/retired-package-resources/enshrouded.json"),
+        }
+        for (browsers, rust, native), paths in cases.items():
+            for path in paths:
+                with self.subTest(path=path):
+                    selected = verification_scope([path])
+                    self.assertEqual(selected.frontend_full, browsers == "all")
+                    self.assertEqual(bool(selected.frontend_files), browsers != "none")
+                    self.assertEqual(bool(selected.rust_packages), rust)
+                    self.assertEqual(selected.native_full, native)
 
     def test_browser_partition_is_complete_disjoint_and_preserves_runner_unit_tests(self):
         quick, browser = set(frontend_tests(False)), set(frontend_tests(True))
@@ -151,26 +132,24 @@ class VerificationSelectionTests(unittest.TestCase):
         self.assertEqual(shards[0] | shards[1], browser)
         self.assertFalse(shards[0] & shards[1])
 
-    def test_missing_or_unresolvable_base_selects_full(self):
-        with tempfile.TemporaryDirectory() as directory, contextlib.redirect_stdout(io.StringIO()):
-            output = Path(directory) / "output"
-            self.assertEqual(main(["--component", "scope", "--github-output", str(output)]), 0)
-            self.assertIn("full=true\n", output.read_text())
-            with patch("scripts.verify_project.subprocess.run", return_value=subprocess.CompletedProcess([], 128, "", "unknown")):
-                self.assertEqual(main(["--component", "scope", "--base", "unknown", "--github-output", str(output)]), 0)
-            self.assertEqual(output.read_text().splitlines().count("full=true"), 2)
+    def test_full_schedule_and_missing_baselines_select_every_job(self):
+        for args in ([], ["--base", "0" * 40], ["--base", "unknown"], ["--tier", "full"],
+                     ["--event", "schedule"], ["--event", "workflow_dispatch", "--tier", "full"]):
+            with self.subTest(args=args), patch("scripts.verify_project.changed_paths", return_value=None):
+                values = self.ci_scope(*args)
+                self.assertTrue(values["frontend_full"])
+                self.assertTrue(values["frontend_changed"])
+                self.assertTrue(values["native_full"])
+                self.assertTrue(values["policy_full"])
+                self.assertEqual(values["frontend_files"], browser_repository_files())
+                self.assertEqual(values["rust_packages"], sorted(rust_workspace()))
 
     def test_manual_quick_is_explicit_without_a_diff_base(self):
-        with tempfile.TemporaryDirectory() as directory, contextlib.redirect_stdout(io.StringIO()):
-            output = Path(directory) / "output"
-            self.assertEqual(main(["--component", "scope", "--event", "workflow_dispatch", "--tier", "quick",
-                                   "--github-output", str(output)]), 0)
-            self.assertEqual(output.read_text().splitlines()[:7],
-                             ["full=false", "frontend_full=false", "rust_full=false", "native_full=false",
-                              "frontend_changed=false", "frontend_files=[]", "rust_packages=[]"])
-            values = dict(line.split("=", 1) for line in output.read_text().splitlines())
-            self.assertEqual(values["policy_full"], "false")
-            self.assertEqual(json.loads(values["rust_matrix"]), rust_test_matrix([]))
+        values = self.ci_scope("--event", "workflow_dispatch", "--tier", "quick")
+        self.assertFalse(any(values[name] for name in ("frontend_full", "frontend_changed", "native_full", "policy_full")))
+        self.assertEqual(values["frontend_files"], [])
+        self.assertEqual(values["rust_packages"], [])
+        self.assertEqual(values["rust_matrix"], rust_test_matrix([]))
 
     def test_rust_matrix_preserves_baseline_and_isolates_all_selected_packages(self):
         quick = rust_test_matrix([])["include"]
@@ -183,15 +162,11 @@ class VerificationSelectionTests(unittest.TestCase):
         self.assertEqual([row["group"] for row in full if row["cache_writer"]], ["desktop"])
 
     def test_full_behavior_scope_does_not_force_publication_history(self):
-        changed = "apps/desktop/src-tauri/src/commands.rs"
-        with tempfile.TemporaryDirectory() as directory, contextlib.redirect_stdout(io.StringIO()), \
-                patch("scripts.verify_project.changed_paths", return_value=[changed]):
-            output = Path(directory) / "scope"
-            self.assertEqual(main(["--component", "scope", "--base", "base", "--github-output", str(output)]), 0)
-            values = dict(line.split("=", 1) for line in output.read_text().splitlines())
-            self.assertEqual(values["rust_full"], "true")
-            self.assertEqual(values["native_full"], "true")
-            self.assertEqual(values["policy_full"], "false")
+        with patch("scripts.verify_project.changed_paths", return_value=["apps/desktop/src-tauri/src/commands.rs"]):
+            values = self.ci_scope("--base", "base")
+        self.assertEqual(values["rust_packages"], ["langame-desktop"])
+        self.assertTrue(values["native_full"])
+        self.assertFalse(values["policy_full"])
 
     def test_rust_group_forwards_selection_and_shard_to_shared_runner(self):
         with tempfile.TemporaryDirectory() as directory, patch.object(Runner, "python") as python:
@@ -204,40 +179,24 @@ class VerificationSelectionTests(unittest.TestCase):
             self.assertEqual(arguments[arguments.index("--shard-count") + 1], "4")
             self.assertEqual(json.loads(arguments[arguments.index("--rust-packages-json") + 1]), ["langame-desktop"])
 
-    def test_explicit_full_and_schedule_select_every_slow_layer(self):
-        for arguments in (["--tier", "full"], ["--event", "schedule"]):
-            with self.subTest(arguments=arguments), tempfile.TemporaryDirectory() as directory, \
-                    contextlib.redirect_stdout(io.StringIO()):
-                output = Path(directory) / "output"
-                self.assertEqual(main(["--component", "scope", "--base", "unused",
-                                       "--github-output", str(output), *arguments]), 0)
-                lines = output.read_text().splitlines()
-                self.assertEqual(lines[:5], ["full=true", "frontend_full=true", "rust_full=true",
-                                            "native_full=true", "frontend_changed=true"])
-                self.assertEqual(json.loads(lines[5].removeprefix("frontend_files=")), browser_repository_files())
-
     def test_changed_paths_keep_unicode_and_embedded_newlines(self):
-        with tempfile.TemporaryDirectory() as directory, contextlib.redirect_stdout(io.StringIO()):
-            output = Path(directory) / "output"
-            changed = "apps/desktop/src/测试\nview.tsx\0README.md\0"
-            with patch("scripts.verify_project.subprocess.run", return_value=subprocess.CompletedProcess([], 0, changed, "")) as run:
-                self.assertEqual(main(["--component", "scope", "--base", "base", "--github-output", str(output)]), 0)
-            self.assertIn("-z", run.call_args.args[0])
-            lines = output.read_text().splitlines()
-            self.assertEqual(lines[:5], ["full=true", "frontend_full=true", "rust_full=false",
-                                        "native_full=false", "frontend_changed=true"])
-            self.assertEqual(json.loads(lines[5].removeprefix("frontend_files=")), browser_repository_files())
+        changed = "apps/desktop/src/测试\nview.tsx\0README.md\0"
+        with patch("scripts.verify_project.subprocess.run", return_value=subprocess.CompletedProcess([], 0, changed, "")) as run:
+            values = self.ci_scope("--base", "base")
+        self.assertIn("-z", run.call_args.args[0])
+        self.assertTrue(values["frontend_full"])
+        self.assertTrue(values["frontend_changed"])
+        self.assertEqual(values["frontend_files"], browser_repository_files())
+        self.assertFalse(values["native_full"])
+        self.assertEqual(values["rust_packages"], [])
 
     def test_scope_emits_a_data_only_selection_for_local_ui_changes(self):
         changed = "apps/desktop/src/views/system/SystemCoreDial.tsx"
-        with tempfile.TemporaryDirectory() as directory, contextlib.redirect_stdout(io.StringIO()), \
-                patch("scripts.verify_project.subprocess.run", return_value=subprocess.CompletedProcess([], 0, changed + "\0", "")):
-            output = Path(directory) / "scope"
-            self.assertEqual(main(["--component", "scope", "--base", "base", "--github-output", str(output)]), 0)
-            values = dict(line.split("=", 1) for line in output.read_text().splitlines())
-            self.assertEqual(values["frontend_full"], "false")
-            self.assertEqual(values["frontend_changed"], "true")
-            self.assertEqual(json.loads(values["frontend_files"]), frontend_selection([changed]))
+        with patch("scripts.verify_project.changed_paths", return_value=[changed]):
+            values = self.ci_scope("--base", "base")
+        self.assertFalse(values["frontend_full"])
+        self.assertTrue(values["frontend_changed"])
+        self.assertEqual(values["frontend_files"], frontend_selection([changed]))
 
     def test_browser_json_rejects_invalid_empty_duplicate_and_non_suite_paths(self):
         valid = QUICK_BROWSER_FILES[0]

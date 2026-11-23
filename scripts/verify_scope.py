@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 import json
 from pathlib import Path
 import re
@@ -99,17 +100,26 @@ def publication_full(paths: list[str]) -> bool:
                for path in paths)
 
 
-def full_scopes(paths: list[str]) -> tuple[bool, bool, bool]:
-    shared = shared_risk(paths)
-    rust = bool(rust_selection(paths))
-    frontend = frontend_selection(paths) == browser_repository_files()
-    native = shared or any((path in NATIVE_RISK_FILES or path.startswith(NATIVE_RISK_PREFIXES))
-                           and not rust_test_only(path) for path in paths)
-    return frontend, rust, native
+@dataclass(frozen=True)
+class VerificationScope:
+    frontend_files: list[str]
+    frontend_full: bool
+    rust_packages: list[str]
+    native_full: bool
+    policy_full: bool
 
 
-def needs_full(paths: list[str]) -> bool:
-    return any(full_scopes(paths))
+def verification_scope(paths: list[str] | None) -> VerificationScope:
+    """Select jobs and their actual inputs. A missing diff requires the full tier."""
+    suite = browser_repository_files()
+    if paths is None:
+        return VerificationScope(frontend_files=suite, frontend_full=True, rust_packages=sorted(rust_workspace()),
+                                 native_full=True, policy_full=True)
+    files = frontend_selection(paths, suite=suite)
+    native = shared_risk(paths) or any((path in NATIVE_RISK_FILES or path.startswith(NATIVE_RISK_PREFIXES))
+                                      and not rust_test_only(path) for path in paths)
+    return VerificationScope(frontend_files=files, frontend_full=files == suite, rust_packages=rust_selection(paths),
+                             native_full=native, policy_full=publication_full(paths))
 
 
 def frontend_tests(browser: bool) -> list[str]:
@@ -137,8 +147,9 @@ def private_fixture_owners(path: str, suite: list[str]) -> list[str]:
     return [test for test in suite if html.name in (ROOT / test).read_text(encoding="utf-8")]
 
 
-def frontend_selection(paths: list[str]) -> list[str]:
-    suite = browser_repository_files()
+def frontend_selection(paths: list[str], *, suite: list[str] | None = None) -> list[str]:
+    if suite is None:
+        suite = browser_repository_files()
     if shared_risk(paths):
         return suite
     selected: set[str] = set()

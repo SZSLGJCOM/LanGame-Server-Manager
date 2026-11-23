@@ -21,7 +21,7 @@ LanGame Server Manager is a Windows desktop app for installing, configuring, and
 - One-click server installation with managed SteamCMD and required runtimes
 - Native per-game settings with isolated instances
 - Mod installation, updates, and management
-- Built-in LanGameCMD hosts your servers, with no annoying CMD pop-ups
+- LanGameCMD runs servers in the background without opening a separate console window
 - Resource and instance status monitoring
 - Player management, plus GM tools for supported games
 - Save import, backup, and recovery

@@ -43,11 +43,11 @@ AUDITED_SOURCES = {
 # Custom license-file declarations require review of the exact packaged text;
 # they must never be reduced to an SPDX license that omits an extra restriction.
 LICENSE_FILE_RULES = {
-    "unrar-rs@0.16.1": {
+    "unrar-rs@0.16.6": {
         "license_file": "LICENSE",
         "sha256": "97dfd1950dfb0901afbf6e51cae496e12281e97f670fdb2a2aab3252d2561086",
         "repository": "https://github.com/scryer-media/rarpar",
-        "vcs_sha1": "5680fce6cbf972bf28206b8cf3a40fcddd9e399f",
+        "vcs_sha1": "3a754fada8b4855ff076f8da349e64b1034d7fc6",
         "selected_license": "Apache-2.0 with the additional UnRAR restriction (custom license)",
     },
 }
@@ -256,6 +256,7 @@ for crate_name in (
     "objc2-io-surface",
     "objc2-osa-kit",
     "objc2-quartz-core",
+    "objc2-system-configuration",
     "objc2-ui-kit",
     "objc2-user-notifications",
     "objc2-web-kit",
@@ -331,7 +332,7 @@ add_rule(
     selected_license="Apache-2.0",
     repository="https://github.com/tauri-apps/tauri",
     vcs_sha1="30da1fd6e17de6107ecc850c95dfb16b5729f2dd",
-    sources=[sibling("tauri-build@2.7.4", "LICENSE-APACHE-2.0")],
+    sources=[sibling("tauri-build@2.7.6", "LICENSE-APACHE-2.0")],
 )
 for package_id, vcs_sha1 in (
     ("webview2-com@0.39.1", "edc2caf886175ccaebe86078c9cfe1ae2a187328"),

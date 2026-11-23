@@ -42,8 +42,8 @@ thiserror.workspace = true
 tokio.workspace = true
 toml.workspace = true
 uuid.workspace = true
-unrar-rs = { version = "=0.16.1", default-features = false, features = ["crypto-rust"] }
-zip = { version = "9.5.1", default-features = false, features = ["deflate"] }
+unrar-rs = { version = "=0.16.6", default-features = false, features = ["crypto-rust"] }
+zip = { version = "9.7.3", default-features = false, features = ["deflate"] }
 
 [features]
 default = []

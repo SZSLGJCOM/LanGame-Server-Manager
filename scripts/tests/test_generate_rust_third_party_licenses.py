@@ -141,13 +141,13 @@ class RustLicenseGeneratorTests(unittest.TestCase):
             / "apps/desktop/src-tauri/src/test_fixtures/mod_archives/LICENSE-unrar-rs"
         ).read_bytes()
         payload = crate_archive(
-            "unrar-rs", "0.16.1", license_text=license_text,
+            "unrar-rs", "0.16.6", license_text=license_text,
             declared_license=None, license_file="LICENSE",
             repository="https://github.com/scryer-media/rarpar",
-            vcs_sha1="5680fce6cbf972bf28206b8cf3a40fcddd9e399f",
+            vcs_sha1="3a754fada8b4855ff076f8da349e64b1034d7fc6",
         )
         package = {
-            "name": "unrar-rs", "version": "0.16.1",
+            "name": "unrar-rs", "version": "0.16.6",
             "checksum": hashlib.sha256(payload).hexdigest(),
             "source": generator.CRATES_IO_SOURCE,
         }
@@ -168,7 +168,7 @@ class RustLicenseGeneratorTests(unittest.TestCase):
         options = {
             "license_text": license_text, "declared_license": None,
             "license_file": "LICENSE", "repository": "https://github.com/scryer-media/rarpar",
-            "vcs_sha1": "5680fce6cbf972bf28206b8cf3a40fcddd9e399f",
+            "vcs_sha1": "3a754fada8b4855ff076f8da349e64b1034d7fc6",
         }
         for changed in (
             {"license_text": None},
@@ -179,9 +179,9 @@ class RustLicenseGeneratorTests(unittest.TestCase):
             {"vcs_sha1": "b" * 40},
         ):
             with self.subTest(changed=tuple(changed)):
-                payload = crate_archive("unrar-rs", "0.16.1", **(options | changed))
+                payload = crate_archive("unrar-rs", "0.16.6", **(options | changed))
                 package = {
-                    "name": "unrar-rs", "version": "0.16.1",
+                    "name": "unrar-rs", "version": "0.16.6",
                     "checksum": hashlib.sha256(payload).hexdigest(),
                     "source": generator.CRATES_IO_SOURCE,
                 }

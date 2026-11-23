@@ -157,6 +157,10 @@ FunctionEnd
   !insertmacro LGSM_REMOVE_RETIRED_RESOURCE "${prefix}" "modules\vrising\control\tests\native_unwind_tests.cpp" "4a46b5fdaf53ce880cfe4a6a58044f390abaff4fb806bffa932298505c13a510" "201fb1234b67545fb65a10ee03eaceca7d4a72b41861efa1a864ed78fedf0cf5"
   !insertmacro LGSM_REMOVE_RETIRED_RESOURCE "${prefix}" "modules\enshrouded\config-fixtures\2026-09-30-native_ban_contract_build_23178631.json" "a7e2731217a7522f6d28bf0355cdfa098253d1d90e2c6d4c1594e407de239719" "ccff88d90223848426dc7ac8ecb0c9969d497b1ee886c07e9b28303a52810b60"
   !insertmacro LGSM_REMOVE_RETIRED_RESOURCE "${prefix}" "modules\terraria\config-fixtures\2026-09-28-official_dedicated_zip_1458.json" "55860a78dc8e8640923556b8469ab9d375b8c82fc36e815a9dd9908160d75ec5" "fd5de98799c4655ee34dc4c232f58a804fcdab066be290b6e7cda1ba56c8b873"
+  ; SQLx now supplies its SQLite driver through crates.io.
+  !insertmacro LGSM_REMOVE_RETIRED_RESOURCE "${prefix}" "third-party\sqlx-sqlite\LICENSE-APACHE" "154397a08d0cb342110281129971868cd562542d0780b0d10722788cd11a1399" "154397a08d0cb342110281129971868cd562542d0780b0d10722788cd11a1399"
+  !insertmacro LGSM_REMOVE_RETIRED_RESOURCE "${prefix}" "third-party\sqlx-sqlite\LICENSE-MIT" "72af89a828df52a9dcc42512ed64663b3b8d7961dd7a5586d44478eede82bc7a" "72af89a828df52a9dcc42512ed64663b3b8d7961dd7a5586d44478eede82bc7a"
+  !insertmacro LGSM_REMOVE_RETIRED_RESOURCE "${prefix}" "third-party\sqlx-sqlite\SOURCE.md" "7dacc20f8023a728490a32747e04d5635a7d171ae09fe2245d3707dac2f8a816" "7dacc20f8023a728490a32747e04d5635a7d171ae09fe2245d3707dac2f8a816"
   ClearErrors
 !macroend
 !endif
