@@ -36,6 +36,8 @@ pub struct StartupSessionReceipt {
     pub finished_at_unix_ms: Option<u128>,
     pub source_path: String,
     pub run_ids: Vec<i64>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub warning_codes: Vec<app_core::RuntimeStartWarningCode>,
     pub error: Option<String>,
     pub reader_error: Option<String>,
     #[serde(default)]
@@ -193,6 +195,7 @@ pub fn begin(
         finished_at_unix_ms: None,
         source_path: path.to_string_lossy().into_owned(),
         run_ids: Vec::new(),
+        warning_codes: Vec::new(),
         error: None,
         reader_error: None,
         native_sources: Vec::new(),
@@ -214,6 +217,7 @@ pub fn finish(
     attempt_id: &str,
     status: StartupSessionStatus,
     run_ids: Vec<i64>,
+    warning_codes: Vec<app_core::RuntimeStartWarningCode>,
     error: Option<String>,
 ) -> io::Result<StartupSessionReceipt> {
     let root = fs::canonicalize(root)?;
@@ -228,6 +232,7 @@ pub fn finish(
     stored.receipt.status = status;
     stored.receipt.finished_at_unix_ms = Some(now_ms());
     stored.receipt.run_ids = run_ids;
+    stored.receipt.warning_codes = warning_codes;
     stored.receipt.error = error;
     save(root, &stored)?;
     Ok(stored.receipt)

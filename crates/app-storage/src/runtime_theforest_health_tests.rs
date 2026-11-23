@@ -63,6 +63,30 @@ impl Drop for Fixture {
 }
 
 #[test]
+fn native_query_health_requires_the_successful_current_run_without_its_bridge() {
+    use crate::startup_sessions::{StartupSessionStatus, begin, finish};
+    let fixture = Fixture::new();
+    let (receipt, writer) = begin(&fixture.root, "forest", "native", 1).unwrap();
+    drop(writer);
+    let health =
+        |id| theforest_health::native_start_health(&fixture.root, "forest", id, fixture.health());
+    assert_eq!(health(3).status, "starting");
+    finish(
+        &fixture.root,
+        &receipt.attempt_id,
+        StartupSessionStatus::Succeeded,
+        vec![3],
+        vec![app_core::RuntimeStartWarningCode::GracefulStopUnavailable],
+        None,
+    )
+    .unwrap();
+    assert_eq!(health(4).status, "starting");
+    let observed = health(3);
+    assert_eq!(observed.status, "warning");
+    assert_eq!(observed.reason.code, "theforest_native_start");
+}
+
+#[test]
 fn runtime_health_theforest_bootstrap_running_does_not_prove_world_operable() {
     let fixture = Fixture::new();
     fixture.write("Starting dedicated server\nDedicated Server Running\n");

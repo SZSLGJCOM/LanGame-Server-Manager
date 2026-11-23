@@ -5,13 +5,13 @@ provides `forcesave <username>`; this is not a first-party RimWorld dedicated
 server API. The public `save_world` action remains `rimworld_save`/`save` as a
 closed manager operation.
 
-The pinned [26.11.21.1 release](https://github.com/RimWorld-Together/Rimworld-Together/releases/tag/26.11.21.1)
+The pinned [26.11.21.1 (1) release](https://github.com/RimWorld-Together/Rimworld-Together/releases/tag/26.11.21.1_%281%29)
 requires **RimWorld 1.7 unstable**, the matching Together client mod (Workshop
 3005289691) and Harmony (2009463077). Players on 1.6 need the
 [26.10.15.1 release](https://github.com/RimWorld-Together/Rimworld-Together/releases/tag/26.10.15.1).
 Upstream notes recommend backing up existing servers before upgrading to
 26.11.21.1 because player saves and user backups now use player hashes instead
-of raw usernames.
+of raw usernames. The hotfix also changes how guild membership is looked up.
 
 The market button uses `Configs/Actions/Market.json`. `IsEnabled` controls
 access from the game UI. `UseGlobalServer` selects the public cross-server
@@ -19,6 +19,8 @@ market or the instance's own market. Players connect directly to the public
 service on outbound TCP 7790 when enabled. Local prices apply only to the
 instance's market. New instances use the upstream public-market default.
 Existing local markets continue locally unless the operator enables cross-server trading.
+Servers older than 26.11.2.1 use their local market. An installed server can
+keep running with its matching client when the catalog offers a newer release.
 On 26.11.2.1 a non-admin seller could hold two local listings with
 `MaxEntriesPerPlayer` set to one; tagged 26.11.21.1 `PM_Market.cs` retains the
 same `OwnerHash == Username` comparison.

@@ -24,6 +24,14 @@ pub(super) async fn read(
     let health_host = record.summary.bind_ip.clone();
     let module_paths = paths.clone();
     let config_file_path = record.config_dir.join("instance.json");
+    let forest_instance = if module_id == "theforest" && status == InstanceStatus::Running {
+        Some((
+            crate::instance_reconciliation::checked_instance_root(paths, &record.config_dir)?,
+            record.summary.id.clone(),
+        ))
+    } else {
+        None
+    };
     let status_health_root = if module_id == "returntomoria" {
         Some(effective_instance_install_root(record)?)
     } else {
@@ -131,6 +139,12 @@ pub(super) async fn read(
             )
         } else {
             health
+        };
+        let health = match (forest_instance, health_run.as_ref()) {
+            (Some((root, id)), Some(run)) if health.status == "starting" => {
+                theforest_health::native_start_health(&root, &id, run.run_id, health)
+            }
+            _ => health,
         };
         Ok(RuntimeLogHealth {
             health_scan,

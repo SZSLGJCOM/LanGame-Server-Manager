@@ -1164,6 +1164,7 @@ pub(super) async fn start_instance_process_after_reconcile_reserved(
                 &instance,
                 module.runtime.startup_readiness.as_ref(),
                 &launch_plans,
+                native_extension_prepared,
                 runtime_start_reservation,
             )
             .await?,

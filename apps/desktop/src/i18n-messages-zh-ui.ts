@@ -266,6 +266,7 @@ export const ZH_CN_UI_MESSAGES: MessageCatalog = {
   "runtime.health.dstLuaConfigFailed": "饥荒联机版正在运行，但分片 Lua 配置文件加载失败。请保存实例配置以重新生成集群文件。",
   "runtime.health.fatalLogPattern": "最近的日志中检测到致命运行错误。",
   "runtime.health.readySignal": "已确认服务器完成启动。",
+  "runtime.health.theforestNativeStart": "服务器启动时已响应 Steam 查询。当前未加载控制扩展，无法确认世界是否加载完成。",
   "runtime.health.latestRunFailed": "最近一次运行以错误状态结束。",
   "runtime.health.startingWaitingLogs": "进程正在运行，等待启动日志输出。",
   "runtime.health.startingTasks": "进程正在运行，仍在执行启动任务。",

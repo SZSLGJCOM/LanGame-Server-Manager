@@ -368,6 +368,16 @@ async fn finish_owned_startup_session(
         .as_ref()
         .err()
         .map(|error| app_core::abiotic_output::redact_modio_token_text(error));
+    let warning_codes = result
+        .as_ref()
+        .map(|started| {
+            started
+                .warnings
+                .iter()
+                .map(|warning| warning.code)
+                .collect()
+        })
+        .unwrap_or_default();
     let outcome = match status {
         app_storage::startup_sessions::StartupSessionStatus::Succeeded => "Startup succeeded",
         app_storage::startup_sessions::StartupSessionStatus::Cancelled => "Startup cancelled",
@@ -382,6 +392,7 @@ async fn finish_owned_startup_session(
             &receipt.attempt_id,
             status,
             run_ids,
+            warning_codes,
             error,
         )
         .map_err(|error| format!("Could not persist startup result: {error}"));

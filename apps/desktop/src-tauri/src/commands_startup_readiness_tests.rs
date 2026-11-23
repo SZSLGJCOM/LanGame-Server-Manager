@@ -73,6 +73,26 @@ fn reserve(state: &DesktopState) -> RuntimeStartReservationLease {
 }
 
 #[test]
+fn theforest_uses_its_owned_query_only_when_the_control_is_unavailable() {
+    use app_core::startup_readiness::StartupLogSource;
+    let declared = StartupReadinessProbe::RuntimeLog {
+        source: StartupLogSource::Managed,
+        fallback: None,
+    };
+    for (module, available) in [("theforest", true), ("enshrouded", false)] {
+        assert!(matches!(
+            startup_probe(module, declared.clone(), available),
+            StartupReadinessProbe::RuntimeLog { .. }
+        ));
+    }
+    assert!(matches!(
+        startup_probe("theforest", declared, false),
+        StartupReadinessProbe::A2s { port_name, port_argument: None, ready_log: None }
+            if port_name == "query"
+    ));
+}
+
+#[test]
 fn native_startup_transcript_keeps_repeated_rows_and_complete_byte_boundary() {
     let fixture = Fixture::new();
     fixture.append("main", "previous startup\n");

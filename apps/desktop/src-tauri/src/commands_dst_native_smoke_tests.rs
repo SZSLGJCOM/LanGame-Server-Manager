@@ -168,12 +168,17 @@ async fn smoke_dst_native_world_generation_save_and_reload()
         // inventory verification; do not manufacture a clean-package marker.
         settings.steamcmd_root = PathBuf::from(root).to_string_lossy().into_owned();
     }
-    let install_root = std::env::var_os("LANGAME_DST_SMOKE_PACKAGE")
+    let package_source = std::env::var_os("LANGAME_DST_SMOKE_PACKAGE")
         .map(PathBuf::from)
         .unwrap_or_else(|| Path::new(&settings.games_root).join("dontstarve"));
-    let version = fs::read_to_string(install_root.join("version.txt"))?;
-    let executable = install_root.join("bin64/dontstarve_dedicated_server_nullrenderer_x64.exe");
-    assert!(executable.is_file() && install_root.join("data/databundles/scripts.zip").is_file());
+    let version = fs::read_to_string(package_source.join("version.txt"))?;
+    let executable = package_source.join("bin64/dontstarve_dedicated_server_nullrenderer_x64.exe");
+    assert!(
+        executable.is_file()
+            && package_source
+                .join("data/databundles/scripts.zip")
+                .is_file()
+    );
     let descriptor = app_modules::discover_modules(&settings.modules_root)?
         .into_iter()
         .find(|item| item.summary.id == "dontstarve")
@@ -184,7 +189,7 @@ async fn smoke_dst_native_world_generation_save_and_reload()
         descriptor.summary.steam_app_id,
         descriptor.install.as_ref(),
         descriptor.process.as_ref(),
-        Some(&install_root.to_string_lossy()),
+        Some(&package_source.to_string_lossy()),
     );
     assert_eq!(inspected.install_state, InstallState::Installed);
     // Steam's build ID is distinct from DST's game compatibility version.
@@ -192,6 +197,25 @@ async fn smoke_dst_native_world_generation_save_and_reload()
         .current_version
         .ok_or("Missing official Steam build ID")?;
     println!("NATIVE_PACKAGE_BUILD={build_id}");
+    // The first instance may claim the library in place. Give it a private
+    // library so native configuration and Workshop writes stay in this run.
+    if run_root
+        .canonicalize()?
+        .starts_with(package_source.canonicalize()?)
+    {
+        return Err("The DST smoke output must be outside the input package".into());
+    }
+    let games_root = run_root.join("g");
+    let install_root = games_root.join("dontstarve");
+    settings.games_root = games_root.to_string_lossy().into_owned();
+    if let Some(preflight) = copy_preflight.as_ref() {
+        preflight.require_capacity(std::slice::from_ref(&package_source))?;
+    }
+    fs::create_dir_all(&install_root)?;
+    copy_directory_contents_skipping_root_files(&package_source, &install_root, &[])?;
+    if let Some(manifest) = resource_manifest.as_mut() {
+        manifest.record_copy(CopyProfile::ServerAssets, &package_source, &install_root)?;
+    }
     let (storage, desktop) = super::native_storage_fixture::prepare(settings)?;
     let app = tauri::test::mock_builder()
         .manage(desktop)
@@ -242,11 +266,14 @@ async fn smoke_dst_native_world_generation_save_and_reload()
     };
     let initial =
         command_result(read_instance_details_from_storage(state.clone(), id.clone()).await)?;
-    if let Some(manifest) = resource_manifest.as_mut() {
-        let runtime = PathBuf::from(
-            crate::commands::commands_runtime_lifecycle::private_runtime_install_root(&initial)?,
-        );
-        manifest.record_copy(CopyProfile::ServerAssets, &install_root, &runtime)?;
+    let runtime = PathBuf::from(
+        crate::commands::commands_runtime_lifecycle::private_runtime_install_root(&initial)?,
+    );
+    let runtime = dunce::simplified(&runtime);
+    if let Some(manifest) = resource_manifest.as_mut()
+        && runtime.canonicalize()? != install_root.canonicalize()?
+    {
+        manifest.record_copy(CopyProfile::ServerAssets, &package_source, runtime)?;
     }
     let mut values: serde_json::Map<String, Value> = serde_json::from_str(&initial.settings_json)?;
     for (key, value) in [
@@ -356,11 +383,6 @@ async fn smoke_dst_native_world_generation_save_and_reload()
             // Seed the normal SteamCMD cache as well as shard UGC. Startup still
             // performs native Workshop validation and records its own receipt;
             // the official manifest lets it reuse the already downloaded bytes.
-            let runtime = PathBuf::from(
-                crate::commands::commands_runtime_lifecycle::private_runtime_install_root(
-                    &initial,
-                )?,
-            );
             let runtime_cache = runtime.join("steamapps/workshop");
             let workshop_sources = mod_ids
                 .iter()

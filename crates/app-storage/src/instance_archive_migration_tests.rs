@@ -62,6 +62,7 @@ async fn external_archive_migration_preserves_metadata_and_accepts_next_startup(
             &startup.attempt_id,
             StartupSessionStatus::Succeeded,
             vec![29],
+            vec![],
             None,
         )
         .unwrap();

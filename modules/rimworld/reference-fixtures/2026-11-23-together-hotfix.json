@@ -1,0 +1,17 @@
+{
+  "module_id": "rimworld",
+  "verified_on": "2026-11-23",
+  "release": "26.11.21.1_(1)",
+  "download_url": "https://github.com/RimWorld-Together/Rimworld-Together/releases/download/26.11.21.1_(1)/Server-win-x64.zip",
+  "archive_bytes": 31774417,
+  "archive_sha256": "c2abf1b404748fe4b3e54d26fdf6d84f2cd132a79e50de5b40e1ca128d8bc294",
+  "server_executable_sha256": "039f4b1788c6f09ca2d086018af32c94c918d96056b7457103178776d58b322b",
+  "client_archive_sha256": "ada6184b638921bc6323a450e09c9488420fe28d3d5fd2a578954a054eb8dcb4",
+  "client_versions": {"1.6": "26.10.15.1", "1.7": "26.11.21.1"},
+  "scope": "Windows loopback, zero connected players. Each process reached the native listener, reported its version, listed players, created a readable server backup and exited on quit. Both November runs used the same instance directory.",
+  "samples": [
+    {"reported_version": "26.10.15.1 (0)", "configured_flags": true, "backup_has_cross_server_market_flag": false, "exit_code": 0},
+    {"reported_version": "26.11.21.1 (0)", "configured_flags": true, "backup_use_global_server": true, "backup_rollback_enabled": true, "exit_code": 0},
+    {"reported_version": "26.11.21.1 (1)", "configured_flags": false, "backup_use_global_server": false, "backup_rollback_enabled": false, "exit_code": 0}
+  ]
+}

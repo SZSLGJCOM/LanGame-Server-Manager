@@ -30,6 +30,7 @@ fn independent_startup_receipt_survives_failure_cancel_and_reopen_without_a_run(
         &first.attempt_id,
         StartupSessionStatus::Failed,
         vec![],
+        vec![],
         Some("original cause".into()),
     )
     .unwrap();
@@ -54,6 +55,7 @@ fn independent_startup_receipt_survives_failure_cancel_and_reopen_without_a_run(
         &second.attempt_id,
         StartupSessionStatus::Cancelled,
         vec![],
+        vec![],
         Some("cancelled by user".into()),
     )
     .unwrap();
@@ -63,6 +65,7 @@ fn independent_startup_receipt_survives_failure_cancel_and_reopen_without_a_run(
             &first.attempt_id,
             StartupSessionStatus::Succeeded,
             vec![9],
+            vec![],
             None
         )
         .is_err()
@@ -246,11 +249,16 @@ fn native_checkpoint_is_persisted_with_the_successful_run_ids() {
         "attempt",
         StartupSessionStatus::Succeeded,
         vec![7, 8],
+        vec![app_core::RuntimeStartWarningCode::GracefulStopUnavailable],
         None,
     )
     .unwrap();
     assert_eq!(saved.run_ids, [7, 8]);
     let reopened = read_latest(&fixture.0, "instance").unwrap().unwrap();
+    assert_eq!(
+        reopened.warning_codes,
+        [app_core::RuntimeStartWarningCode::GracefulStopUnavailable]
+    );
     assert_eq!(reopened.native_sources.len(), 1);
     assert_eq!(
         reopened.native_sources[0]

@@ -1,4 +1,31 @@
 use app_core::RuntimeHealth;
+use std::path::Path;
+
+pub(super) fn native_start_health(
+    root: &Path,
+    instance_id: &str,
+    run_id: i64,
+    observed: RuntimeHealth,
+) -> RuntimeHealth {
+    use crate::startup_sessions::{StartupSessionStatus, read_latest};
+    // An older, missing or unreadable receipt leaves the native log assessment
+    // intact. Only a successful startup for this run establishes the fallback.
+    if let Ok(Some(receipt)) = read_latest(root, instance_id)
+        && receipt.status == StartupSessionStatus::Succeeded
+        && receipt.run_ids.contains(&run_id)
+        && receipt
+            .warning_codes
+            .contains(&app_core::RuntimeStartWarningCode::GracefulStopUnavailable)
+    {
+        return RuntimeHealth {
+            status: "warning".into(),
+            summary: "The server answered the Steam query at startup. World readiness is unavailable without the control extension.".into(),
+            reason: super::runtime_health_reason("theforest_native_start", &[]),
+            matched_line: None,
+        };
+    }
+    observed
+}
 
 #[derive(Clone, Copy)]
 pub(super) enum Event {

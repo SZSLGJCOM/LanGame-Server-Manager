@@ -247,6 +247,7 @@ mod tests {
                     "old",
                     StartupSessionStatus::Succeeded,
                     vec![42],
+                    vec![],
                     None,
                 )
                 .unwrap();
@@ -285,6 +286,7 @@ mod tests {
             finished_at_unix_ms: Some(2),
             source_path: "startup.log".into(),
             run_ids: vec![],
+            warning_codes: vec![],
             error: Some("original startup failure".into()),
             reader_error: Some("original observer failure".into()),
             native_sources: vec![],

@@ -20,7 +20,7 @@
 | `palworld` | best_effort_verified | 121 | 121 | 9 | 23 |
 | `projectzomboid` | best_effort_verified | 145 | 145 | 79 | 39 |
 | `returntomoria` | best_effort_verified | 27 | 27 | 4 | 13 |
-| `rimworld` | best_effort_verified | 120 | 120 | 6 | 24 |
+| `rimworld` | best_effort_verified | 120 | 120 | 6 | 25 |
 | `romestead` | best_effort_verified | 9 | 9 | 2 | 19 |
 | `runescapedragonwilds` | best_effort_verified | 7 | 7 | 9 | 28 |
 | `rust` | best_effort_verified | 75 | 76 | 17 | 52 |

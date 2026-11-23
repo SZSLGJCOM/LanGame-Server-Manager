@@ -79,40 +79,15 @@ fn an_unknown_image_cannot_withdraw_listings_even_with_a_package_receipt() {
         .into_iter()
         .find(|module| module.summary.id == "rimworld")
         .unwrap();
-    let mut old = current.clone();
-    old.install
-        .as_mut()
-        .unwrap()
-        .download_integrity_windows
-        .as_mut()
-        .unwrap()
-        .sha256 = "0".repeat(64);
-    for (name, descriptor, supported) in [("old", &old, false), ("current", &current, true)] {
-        let root = fixture.root.join(name);
-        fs::create_dir(&root).unwrap();
-        fs::write(root.join("RTServer.exe"), name).unwrap();
-        crate::record_library_program_baseline(&root, descriptor, true, None).unwrap();
-        let check = |feature| {
-            crate::templates::rimworld::validate_release_before_start(
-                &root,
-                Some(&current),
-                feature,
-            )
-        };
-        assert_eq!(check(Some("The cross-server market")).is_ok(), supported);
-        assert_eq!(check(Some("Player save rollback")).is_ok(), supported);
-
-        fs::create_dir(root.join("Assets")).unwrap();
-        fs::write(
-            root.join("Assets/Market.json"),
-            br#"{"Entries":[{"Owner":"seller"}]}"#,
-        )
-        .unwrap();
-        assert!(check(None).is_err());
-        assert!(check(Some("The cross-server market")).is_err());
-        fs::write(root.join("Assets/Market.json"), br#"{"Entries":[]}"#).unwrap();
-        assert!(check(None).is_ok());
-    }
+    let root = &fixture.install;
+    fs::write(root.join("RTServer.exe"), "unknown image").unwrap();
+    crate::record_library_program_baseline(root, &current, true, None).unwrap();
+    fs::create_dir(root.join("Assets")).unwrap();
+    let ledger = root.join("Assets/Market.json");
+    let listings = br#"{"Entries":[{"Owner":"seller"}]}"#;
+    fs::write(&ledger, listings).unwrap();
+    assert!(crate::templates::rimworld::validate_old_market_before_start(root).is_err());
+    assert_eq!(fs::read(&ledger).unwrap(), listings);
 }
 
 #[test]
@@ -160,18 +135,8 @@ fn official_rimworld_images_preserve_old_market_ledgers_on_start() {
         fs::create_dir_all(ledger.parent().unwrap()).unwrap();
         fs::copy(packages.join(tag).join("RTServer.exe"), &file).unwrap();
         fs::write(&ledger, active).unwrap();
-        let check = |feature| {
-            crate::templates::rimworld::validate_release_before_start(
-                &root,
-                Some(&current),
-                feature,
-            )
-        };
-        assert!(check(None).is_ok(), "{tag} without receipts");
-        assert!(
-            crate::templates::rimworld::validate_release_before_start(&root, None, None).is_ok()
-        );
-        assert!(check(Some("Player save rollback")).is_err());
+        let check = || crate::templates::rimworld::validate_old_market_before_start(&root);
+        assert!(check().is_ok(), "{tag} without receipts");
         let mut old = current.clone();
         old.install
             .as_mut()
@@ -181,10 +146,10 @@ fn official_rimworld_images_preserve_old_market_ledgers_on_start() {
             .unwrap()
             .sha256 = package["archive_sha256"].as_str().unwrap().to_owned();
         crate::record_library_program_baseline(&root, &old, true, None).unwrap();
-        assert!(check(None).is_ok(), "{tag} with matching receipts");
+        assert!(check().is_ok(), "{tag} with matching receipts");
         remove_recorded_archive_hash(&root);
         assert!(
-            check(None).is_ok(),
+            check().is_ok(),
             "{tag} with an early receipt lacking the archive SHA"
         );
         for damaged in [
@@ -193,7 +158,7 @@ fn official_rimworld_images_preserve_old_market_ledgers_on_start() {
             b"truncated",
         ] {
             fs::write(&ledger, damaged).unwrap();
-            assert!(check(None).is_err());
+            assert!(check().is_err());
             assert_eq!(fs::read(&ledger).unwrap(), damaged);
         }
         fs::write(&ledger, active).unwrap();
@@ -202,20 +167,17 @@ fn official_rimworld_images_preserve_old_market_ledgers_on_start() {
             let mut changed = fs::OpenOptions::new().write(true).open(&file).unwrap();
             changed.write_all(b"!").unwrap();
         }
-        assert!(
-            check(None).is_err(),
-            "modified image with the original length"
-        );
+        assert!(check().is_err(), "modified image with the original length");
         let other = if tag == "26.8.31.1" {
             "26.10.15.1"
         } else {
             "26.8.31.1"
         };
         fs::copy(packages.join(other).join("RTServer.exe"), &file).unwrap();
-        assert!(check(None).is_err(), "mismatched old image and inventory");
+        assert!(check().is_err(), "mismatched old image and inventory");
         fs::copy(&replacements, &file).unwrap();
         assert!(
-            check(None).is_err(),
+            check().is_err(),
             "new image manually installed over old receipt"
         );
         assert_eq!(fs::read(&ledger).unwrap(), active);
@@ -226,8 +188,7 @@ fn official_rimworld_images_preserve_old_market_ledgers_on_start() {
     fs::create_dir_all(root.join("Assets")).unwrap();
     let ledger = root.join("Assets/Market.json");
     fs::write(&ledger, active).unwrap();
-    let check =
-        || crate::templates::rimworld::validate_release_before_start(root, Some(&current), None);
+    let check = || crate::templates::rimworld::validate_old_market_before_start(root);
     assert!(check().is_err(), "new image without receipts");
     crate::record_library_program_baseline(root, &current, true, None).unwrap();
     assert!(check().is_err(), "new image with current receipt");
@@ -242,9 +203,15 @@ fn official_rimworld_images_preserve_old_market_ledgers_on_start() {
 }
 
 #[tokio::test]
-async fn missing_descriptor_keeps_market_and_feature_checks_on_the_prestart_path() {
+async fn native_options_allow_pinned_servers_to_start_and_preserve_old_listings() {
     let fixture = RimWorldFixture::new();
-    let settings = Map::new();
+    let settings = Map::from_iter([
+        (
+            "action_market_use_global_server".to_owned(),
+            Value::Bool(true),
+        ),
+        ("action_rollback_is_enabled".to_owned(), Value::Bool(true)),
+    ]);
     let context = fixture.context(&settings);
     let lock = crate::instance_settings_lock::acquire_instance_settings_mutation_lock(
         &fixture.paths,
@@ -256,27 +223,13 @@ async fn missing_descriptor_keeps_market_and_feature_checks_on_the_prestart_path
     let active = br#"{"Entries":[{"Owner":"seller"}]}"#;
     fs::write(&ledger, active).unwrap();
     assert!(
-        crate::templates::apply_module_prestart_support(&context, &lock, None)
+        crate::templates::apply_module_prestart_support(&context, &lock)
             .await
             .is_err()
     );
     assert_eq!(fs::read(&ledger).unwrap(), active);
     fs::write(&ledger, br#"{"Entries":[]}"#).unwrap();
-    crate::templates::apply_module_prestart_support(&context, &lock, None)
+    crate::templates::apply_module_prestart_support(&context, &lock)
         .await
         .unwrap();
-    for key in [
-        "action_market_use_global_server",
-        "action_rollback_is_enabled",
-    ] {
-        let requested = Map::from_iter([(key.to_owned(), Value::Bool(true))]);
-        let error = crate::templates::apply_module_prestart_support(
-            &fixture.context(&requested),
-            &lock,
-            None,
-        )
-        .await
-        .unwrap_err();
-        assert!(error.to_string().contains("requires the verified Together"));
-    }
 }

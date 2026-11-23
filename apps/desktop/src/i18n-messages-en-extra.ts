@@ -771,6 +771,7 @@ export const EN_US_EXTRA_MESSAGES = {
   "runtime.health.dstLuaConfigFailed": "DST is running, but shard Lua config files failed to load. Save the instance once to rewrite the cluster files.",
   "runtime.health.fatalLogPattern": "A fatal runtime error pattern was detected in the recent log.",
   "runtime.health.readySignal": "Server startup is confirmed complete.",
+  "runtime.health.theforestNativeStart": "The server answered the Steam query at startup. World readiness is unavailable without the control extension.",
   "runtime.health.latestRunFailed": "The latest run ended in an error state.",
   "runtime.health.startingWaitingLogs": "The process is running and waiting for startup log output.",
   "runtime.health.startingTasks": "The process is running and still working through startup tasks.",

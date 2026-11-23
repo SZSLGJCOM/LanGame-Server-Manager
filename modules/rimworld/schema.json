@@ -983,7 +983,7 @@
     "action_market_use_global_server": {
       "type": "boolean",
       "title": "Use Cross-Server Market",
-      "description": "Connect players to Together's public marketplace. Turn off for trading within this server. Unset preserves the native choice. New servers use the public market and upgraded local markets stay local.",
+      "description": "On Together 26.11.2.1 and later, turn on to trade on the public marketplace or turn off to trade on this server. Leave unset to keep the current setting. Older servers use their local market.",
       "x-lsgm-default-source": "existing_native_configuration",
       "x-lsgm-section": "world",
       "x-lsgm-order": 1625,
@@ -1267,7 +1267,7 @@
     "action_rollback_is_enabled": {
       "type": "boolean",
       "title": "Allow Player Save Rollback",
-      "description": "Lets players use Together's rollback button to reload their last local save. Requires the matching 26.11.21.1 client and server. Unset preserves the native setting.",
+      "description": "Lets players reload their last local save on Together versions that provide the rollback button. Use the client mod that matches the server. Leave unset to keep the native setting.",
       "x-lsgm-default-source": "existing_native_configuration",
       "x-lsgm-section": "world",
       "x-lsgm-order": 1895,

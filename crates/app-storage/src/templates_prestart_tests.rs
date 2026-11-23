@@ -47,13 +47,12 @@ async fn barotrauma_runtime_is_prepared_only_for_stopped_prestart() {
                 ..context
             },
             &lock,
-            None,
         )
         .await
         .is_err()
     );
     assert!(!config.join("DedicatedServer.exe").exists());
-    apply_module_prestart_support(&context, &lock, None)
+    apply_module_prestart_support(&context, &lock)
         .await
         .unwrap();
     assert_eq!(

@@ -214,28 +214,9 @@ fn can_withdraw_old_market(root: &Path) -> Result<bool, StorageError> {
     }))
 }
 
-pub(super) fn validate_release_before_start(
-    root: &Path,
-    descriptor: Option<&app_modules::ModuleDescriptor>,
-    requested_feature: Option<&str>,
-) -> Result<(), StorageError> {
+pub(super) fn validate_old_market_before_start(root: &Path) -> Result<(), StorageError> {
     if old_market_has_listings(root)? && !can_withdraw_old_market(root)? {
         return Err(active_market_error(root));
-    }
-    let Some(feature) = requested_feature else {
-        return Ok(());
-    };
-    let current = match descriptor {
-        Some(descriptor) => crate::archive_program_is_current(root, descriptor, None)?,
-        None => false,
-    };
-    if !current {
-        return Err(failure(
-            root,
-            format!(
-                "{feature} requires the verified Together 26.11.21.1 server package. Restore the RimWorld module and update the instance program, or turn off this option for the installed version."
-            ),
-        ));
     }
     Ok(())
 }

@@ -18,7 +18,10 @@ source tree or in an approved build output directory.
 independent instance program directory. It verifies the supported game
 assembly fingerprint before enabling the extension. Unknown builds deactivate
 only an unchanged owned bridge and allow native game startup with manual save
-unavailable. Directory reparse points, conflicting user DLLs and failed cleanup
+unavailable. In this mode startup checks the Steam query response from the
+instance's own process. The game can run while world-load confirmation and
+graceful shutdown through the bridge are unavailable. Directory reparse
+points, conflicting user DLLs and failed cleanup
 still block startup. Its small ownership record allows only verified previous
 LanGame payloads to be replaced or retired, and is retained for recovery.
 

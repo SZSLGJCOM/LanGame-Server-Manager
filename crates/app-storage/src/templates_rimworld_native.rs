@@ -553,8 +553,8 @@ pub(crate) fn plan_overrides(
             "RimWorld UseGlobalServer must be a boolean. Select the local or cross-server market to replace the invalid value.",
         ));
     }
-    // Versions 26.11.2.1+ (including 26.11.21.1) default an absent field to the public market. An old
-    // instance has the earlier action file or the always-created local ledger.
+    // Older instances keep their local market. Fresh installations follow the
+    // public-market default introduced in Together 26.11.2.1.
     if market
         .as_ref()
         .is_none_or(|(doc, _)| doc.get("UseGlobalServer").is_none())

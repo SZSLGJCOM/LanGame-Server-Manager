@@ -79,6 +79,7 @@ impl StartupSession {
         instance: &InstanceDetails,
         spec: Option<&ModuleStartupReadinessSpec>,
         plans: &[ProcessLaunchPlan],
+        native_control_available: bool,
         reservation: &RuntimeStartReservationLease,
     ) -> Result<Self, String> {
         let spec = spec.cloned().ok_or_else(|| {
@@ -93,14 +94,19 @@ impl StartupSession {
             );
         }
         let timeout = Duration::from_millis(spec.timeout_ms);
+        let probe = startup_probe(
+            &instance.summary.module_id,
+            spec.probe,
+            native_control_available,
+        );
         let instance = instance.clone();
         let plans = plans.to_vec();
         let worker = spawn_blocking_storage_context_task(reservation, move || {
-            let dst = matches!(spec.probe, StartupReadinessProbe::DstWorld);
+            let dst = matches!(probe, StartupReadinessProbe::DstWorld);
             let mut probes = Vec::new();
             let mut paths = BTreeSet::new();
             for plan in &plans {
-                let evidence = match &spec.probe {
+                let evidence = match &probe {
                     StartupReadinessProbe::RuntimeLog { source, fallback } => {
                         let (path, managed) = startup_sources::log_path(source, &instance, plan)?;
                         if !paths.insert(
@@ -275,6 +281,23 @@ impl StartupSession {
         )
         .await
     }
+}
+
+fn startup_probe(
+    module_id: &str,
+    declared: StartupReadinessProbe,
+    native_control_available: bool,
+) -> StartupReadinessProbe {
+    if module_id == "theforest" && !native_control_available {
+        // The world-ready log comes from the optional control DLL. The vanilla
+        // server can independently confirm its Steam query endpoint.
+        return StartupReadinessProbe::A2s {
+            port_name: "query".into(),
+            port_argument: None,
+            ready_log: None,
+        };
+    }
+    declared
 }
 
 async fn wait_for_targets(

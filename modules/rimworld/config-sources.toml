@@ -1,6 +1,14 @@
 status = "best_effort_verified"
-last_verified = "2026-11-22"
-notes = "RimWorld Together 26.11.21.1 targets RimWorld 1.7 unstable (1.6 client assemblies remain 26.10.15.1). On 2026-11-22, the pinned Windows release, client package, upstream source diff (26.11.2.1..26.11.21.1) and two isolated loopback runs confirmed all 129 generated Configs JSON keys match the existing model, UseGlobalServer and Rollback.IsEnabled survive restart and appear in native server backups, and getversion/list/banlist/modlist/backup/quit exit cleanly with code 0. Player saves and user backups now use Player.Hash filenames, so server backups are recommended before upgrading. Live multi-player protocol trade tests remain historical 26.11.2.1 evidence; the earlier field inventory retains its original dates and scope."
+last_verified = "2026-11-23"
+notes = "Together 26.11.21.1 (1) targets RimWorld 1.7 unstable. The matching client package selects 26.10.15.1 assemblies for RimWorld 1.6. The hotfix updates guild membership lookups and log verbosity. The Windows releases were checked with local server configuration, backup and shutdown. Online trading was last exercised on 26.11.2.1."
+
+[[sources]]
+id = "release_26_11_21_1_hotfix_1"
+kind = "runtime_probe"
+path = "reference-fixtures/2026-11-23-together-hotfix.json"
+url = "https://github.com/RimWorld-Together/Rimworld-Together/releases/tag/26.11.21.1_%281%29"
+authority = "upstream_windows_release_and_isolated_loopback_servers"
+description = "The official hotfix matches the published SHA256. The original and revised 26.11.21.1 servers started in the same isolated instance and backed up the selected market and rollback flags. The 26.10.15.1 server also started with both options enabled and omitted the unsupported cross-server market flag from its native backup."
 
 [[sources]]
 id = "release_26_11_21_1"
