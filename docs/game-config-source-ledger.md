@@ -28,7 +28,7 @@
 | `scum` | best_effort_verified | 11 | 481 | 10 | 41 |
 | `sevendaystodie` | best_effort_verified | 70 | 70 | 6 | 29 |
 | `sonsoftheforest` | exhaustive_verified | 44 | 44 | 4 | 19 |
-| `soulmask` | best_effort_verified | 292 | 292 | 6 | 19 |
+| `soulmask` | best_effort_verified | 292 | 293 | 6 | 20 |
 | `squad` | best_effort_verified | 62 | 62 | 5 | 37 |
 | `terraria` | best_effort_verified | 40 | 40 | 10 | 18 |
 | `theforest` | exhaustive_verified | 22 | 22 | 6 | 17 |

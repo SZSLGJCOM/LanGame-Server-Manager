@@ -1,6 +1,20 @@
 status = "best_effort_verified"
-last_verified = "2026-11-15"
-notes = "2026-11-15 fresh public build 26610298 passed the isolated native full lifecycle: four readiness/Requested-save/normal exit-zero cycles, declared-data backup and archive recovery, uninstall retention and final owned cleanup. All 137 GameplaySettings templates and the 282 keys in each profile match build 26480169. Requested receipts do not establish causal durable persistence or exact manual-save readback; network program maintenance, live clients and existing-world migration were not tested. Historical configuration evidence: SteamCMD anonymous app_update 3017310 validate completed against the validated package on 2026-07-13. The public manifest reports buildid 24123420 and SizeOnDisk 5692879739. LanGame crosswalks Soulmask launch arguments, the RCON runtime command surface, and all 276 keys in the installed GameXishu gameplay templates. The current package adds NewYingHuoTimeLenMul, JianDuiRuQinKaiGuan, and ReleaseControlStatusCDRatio and changes the four tenacity-damage defaults to 0.5 plus ZuRenDirectCunQu to 1. The GameXishu materializer writes one managed GameXishu.json profile under WS/Saved/GameplaySettings before launch. A 2026-09-28 static comparison of installed build 25117179 found six additional gameplay coefficients, bringing each profile to 282 keys; their defaults and ranges come from the matching native metadata. This comparison does not establish the latest public Steam build or a native launch result."
+last_verified = "2026-11-26"
+notes = "Public build 26940434 enables quick arrival when movement is blocked by default in all three GameXishu profiles. Each profile contains 282 gameplay settings. When LanGame regenerates WS/Saved/GameplaySettings/GameXishu.json, a stored 0 keeps the setting off in all three profiles. Windows Sandbox blocked the packaged PhysX DLLs before save or shutdown could be tested on this build. The four-cycle record of save requests, normal exits, backup restoration and archive recovery is for build 26610298."
+
+[[sources]]
+id = "game_xishu_build_26940434"
+kind = "config_file"
+path = "WS/Config/GameplaySettings/GameXishu_Template.json"
+url = "https://steamcommunity.com/games/2646460/announcements/detail/684145804398560163"
+authority = "official_windows_dedicated_server_package"
+description = "Steam app 3017310, Windows depot 3017311, public manifest 7743586386181380200. Profiles 0, 1 and 2 set KuaiSuDaoDaOnZuDangKaiGuan to 1. GameXishuConfig_Template.json also specifies 1 as the default for all six difficulties, with permitted values 0 and 1. Across the 137 GameplaySettings files, reverting this setting's defaults alone reproduces all 40 changed files' build 26610298 hashes. The current SHA-256 is 0ac439c2a50841436b4ac07eb6e7f69112e52f6afc848ca83e27e8ae06bf47af for GameXishu_Template.json and 6a41932aecedb91dc8f059af7ebb591a35b48445e8f7887be828c358016924cc for GameXishuConfig_Template.json."
+
+[[items]]
+source = "game_xishu_build_26940434"
+key = "KuaiSuDaoDaOnZuDangKaiGuan"
+schema_key = "xishu_kuai_su_dao_da_on_zu_dang_kai_guan"
+surface = "config_file"
 
 [[sources]]
 id = "native_lifecycle_public_build_26610298"
@@ -72,7 +86,7 @@ kind = "config_file"
 path = "WS/Config/GameplaySettings/GameXishuConfig_Template.json -> WS/Saved/GameplaySettings/GameXishu.json"
 url = "local:<validated-install-root>/WS/Config/GameplaySettings/GameXishuConfig_Template.json"
 authority = "installed_server_package"
-description = "Soulmask gameplay coefficient metadata and defaults from public build 24123420. GameXishuConfig_Template.json and GameXishu_Template.json each expose the same 276-key profile surface; LanGame renders the live GameXishu.json consumed from WS/Saved/GameplaySettings."
+description = "SteamCMD validated app 3017310 on 2026-07-13. Its manifest reports buildid 24123420 and SizeOnDisk 5692879739. GameXishuConfig_Template.json and GameXishu_Template.json cover all 276 keys in each profile. This build added NewYingHuoTimeLenMul, JianDuiRuQinKaiGuan and ReleaseControlStatusCDRatio, set the four tenacity-damage defaults to 0.5 and set ZuRenDirectCunQu to 1."
 
 [[sources]]
 id = "game_xishu_build_25117179"

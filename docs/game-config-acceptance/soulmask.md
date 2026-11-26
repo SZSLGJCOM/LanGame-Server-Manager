@@ -1047,3 +1047,63 @@
   }
 }
 ```
+
+## `2026-11-26-game_xishu_build_26940434.json`
+
+- Evidence: `best_effort_verified` at `2026-11-26` (build `Soulmask Windows dedicated server build 26940434, public depot 3017311 manifest 7743586386181380200`)
+- Sources: `game_xishu_build_26940434`
+- Coverage: editable `1`, specialized `0`, derived `0`, generated `0`, excluded `0`
+
+### Settings
+
+```json
+{
+  "admin_password": "acceptance-admin",
+  "rcon_password": "acceptance-rcon",
+  "server_name": "ConfigAuditSoulmask"
+}
+```
+
+### Expected outputs
+
+```json
+{
+  "files": [
+    {
+      "format": "json",
+      "keys": {
+        "0.KuaiSuDaoDaOnZuDangKaiGuan": 1,
+        "1.KuaiSuDaoDaOnZuDangKaiGuan": 1,
+        "2.KuaiSuDaoDaOnZuDangKaiGuan": 1
+      },
+      "path": "WS/Saved/GameplaySettings/GameXishu.json",
+      "root": "install"
+    }
+  ],
+  "launch": {
+    "arguments": [
+      "Level01_Main",
+      "-server",
+      "-log",
+      "-UTF8Output",
+      "-forcepassthrough",
+      "-MULTIHOME=0.0.0.0",
+      "-Port=8777",
+      "-QueryPort=27015",
+      "-EchoPort=18888",
+      "-rconpsw=acceptance-rcon",
+      "-rconaddr=0.0.0.0",
+      "-rconport=19000",
+      "-SteamServerName=ConfigAuditSoulmask",
+      "-MaxPlayers=20",
+      "-PSW=",
+      "-adminpsw=acceptance-admin",
+      "-saving=300",
+      "-backup=900",
+      "-online=Steam",
+      "-serverpm=2"
+    ],
+    "executable_suffix": "WS/Binaries/Win64/WSServer-Win64-Shipping.exe"
+  }
+}
+```

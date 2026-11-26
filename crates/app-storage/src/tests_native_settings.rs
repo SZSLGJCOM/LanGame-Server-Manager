@@ -105,6 +105,41 @@ mod enshrouded_native_receipt;
 mod program_update_policy;
 
 #[tokio::test]
+async fn soulmask_quick_arrival_defaults_to_enabled_and_preserves_explicit_zero() {
+    const SETTING: &str = "xishu_kuai_su_dao_da_on_zu_dang_kai_guan";
+    let fixture = NativeSettingsFixture::new("soulmask").await;
+    let native_path = instance_private_runtime_root(&fixture.created)
+        .join("WS/Saved/GameplaySettings/GameXishu.json");
+    let assert_profiles = |expected: i64| {
+        let profiles: Value = serde_json::from_slice(&fs::read(&native_path).unwrap()).unwrap();
+        for profile in ["0", "1", "2"] {
+            assert_eq!(
+                profiles[profile]["KuaiSuDaoDaOnZuDangKaiGuan"], expected,
+                "Soulmask profile {profile}"
+            );
+        }
+    };
+    let created = fixture.details().await;
+    let mut settings: Value = serde_json::from_str(&created.settings_json).unwrap();
+    assert_eq!(settings[SETTING], 1);
+    assert_profiles(1);
+
+    settings[SETTING] = json!(0);
+    update_instance(&fixture.paths, fixture.input(&created, settings))
+        .await
+        .unwrap();
+    let persisted: Value = serde_json::from_str(&fixture.details().await.settings_json).unwrap();
+    assert_eq!(persisted[SETTING], 0);
+    assert_profiles(0);
+
+    fs::remove_file(&native_path).unwrap();
+    materialize_instance_configuration_for_start(&fixture.paths, &fixture.created.summary.id)
+        .await
+        .unwrap();
+    assert_profiles(0);
+}
+
+#[tokio::test]
 async fn native_settings_moria_preserves_game_names_on_details_unrelated_save_and_start() {
     let fixture = NativeSettingsFixture::new("returntomoria").await;
     let original = fixture.details().await;
