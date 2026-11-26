@@ -1,0 +1,116 @@
+{
+  "schema_version": 1,
+  "module_id": "satisfactory",
+  "verified_on": "2026-11-26",
+  "verification_timezone": "Asia/Shanghai",
+  "evidence_classification": "isolated_managed_native_https_world_save_and_preinstalled_mod_two_cycles",
+  "steam_app_id": 1690800,
+  "steam_public_build_id": "26728027",
+  "game_version": "1.2.5.1",
+  "changelist": 520140,
+  "base_package_evidence": "2026-11-22-installed-build-26728027.json",
+  "mod_inputs": [
+    {
+      "name": "SML",
+      "version": "3.12.1",
+      "bytes": 18702517,
+      "sha256": "a1b0e0c6799b9c3e25010dd6ccce7e219e8c341b02dd536da370874f77edd57f",
+      "url": "https://github.com/satisfactorymodding/SatisfactoryModLoader/releases/download/v3.12.1/SML-WindowsServer.zip"
+    },
+    {
+      "name": "FicsitRemoteMonitoring",
+      "version": "1.5.6",
+      "bytes": 34947543,
+      "sha256": "5230e0fb469b315843f4e8646f2841ef277363b216046c2c5114ac19aad5e4ee",
+      "url": "https://github.com/porisius/FicsitRemoteMonitoring/releases/download/1.5.6-539/FicsitRemoteMonitoring-WindowsServer.zip"
+    }
+  ],
+  "native_server": {
+    "loaded_sml": "3.12.1+867",
+    "loaded_frm": "1.5.6",
+    "new_world_http_status": 202,
+    "getPlayer": {
+      "http_status": 200,
+      "content_type": "application/json",
+      "bytes": 2,
+      "raw_hex": "5b5d",
+      "online_players": 0,
+      "owner_before_and_after": true
+    },
+    "shutdown_http_status": 204,
+    "process_exit_code": 0,
+    "forced_termination": false,
+    "elapsed_seconds": 32.5,
+    "console_sha256": "ccdb839e43b8c39401738010f5417590dde52c5788acd9d0342f09257a7e102c"
+  },
+  "scope": "Private Windows server with the two reviewed, preinstalled mods. No connected game client or production mod installation was exercised.",
+  "isolated_native_manual_reload": {
+    "calls": [
+      [
+        "LoadGame",
+        202
+      ],
+      [
+        "SaveGame",
+        204
+      ],
+      [
+        "LoadGame",
+        202
+      ],
+      [
+        "Shutdown",
+        204
+      ]
+    ],
+    "before_manual_reload": {
+      "owned_web_port": 28765,
+      "disk_autostart_integer": 1,
+      "native_api_autostart": "True",
+      "response_status": 200,
+      "response_bytes": 2
+    },
+    "after_manual_reload": {
+      "owned_web_port": 28765,
+      "disk_autostart_integer": 1,
+      "native_api_autostart": "True",
+      "response_status": 200,
+      "response_bytes": 2
+    },
+    "manual_save_selected_and_world_loaded": true,
+    "server_exit_code": 0,
+    "forced_termination": false,
+    "elapsed_seconds": 55.09,
+    "console_sha256": "23cc8e4d24679a97bcc92f5b9e5d6cbe7f124645bf40243c6b023d352cf5fcd3"
+  },
+  "first_managed_attempt": {
+    "outcome": "failed",
+    "log_sha256": "1c8ffa204821769b0a421a2fbfb331c27553a6c2f5f39b5ba90e8a6dc79cb54e",
+    "initial_world_player_read_and_confirmed_save": true,
+    "initial_normal_stop": true,
+    "restart_world_loaded": true,
+    "restart_frm_observation": "timed out",
+    "restart_save_completed": false,
+    "owned_restart_process_closed": true,
+    "credential_absence_after_cleanup": true
+  },
+  "managed": {
+    "test": "commands::tests::manual_runtime_tests::native_lifecycle_tests::native_manual_save",
+    "initial_and_restart_frm_checks": 2,
+    "source_sha256": "d339de976fc0db831ebcf6c26b465751af122878088a4a4c79b63f166e12f7ce",
+    "executable_sha256": "a5a5834c23af930086596f6365547d46a6d9768d0a064f041cb48a6c1a68e47a",
+    "log_sha256": "a16dbd120128f7187837e5583d2e3acbf661bcc96af45641d270f7bb70075d87",
+    "test_passed": true,
+    "cycles": [
+      "initial",
+      "restart"
+    ],
+    "confirmed_save_receipts": 2,
+    "normal_stops": 2,
+    "owned_world_loaded_in_both_cycles": true,
+    "credential_absence_after_cleanup": true,
+    "anonymous_and_invalid_token_reads_rejected_in_both_cycles": true,
+    "disposable_fixture_cleanup": "passed",
+    "scope": "The restart selected the existing private manual save and the native API identified the loaded world. No player-observed gameplay content comparison."
+  }
+}

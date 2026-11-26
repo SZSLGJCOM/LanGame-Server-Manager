@@ -11,12 +11,12 @@ supports_collections = true
 
 [install]
 shared_game_dir = "terraria"
-download_url_windows = "https://terraria.org/api/download/pc-dedicated-server/terraria-server-1458.zip"
-verification_path = "1458/Windows/TerrariaServer.exe"
+download_url_windows = "https://terraria.org/api/download/pc-dedicated-server/terraria-server-1461.zip"
+verification_path = "1461/Windows/TerrariaServer.exe"
 
 [install.download_integrity_windows]
-sha256 = "f513a4ac9789d34af766291ae217c9cd7d9472e13782a0e2b17512f70d7a8334"
-size = 46415317
+sha256 = "0fb586dfbf2bcee448612c90768648d89532eed6ab345aadbbb0829f9d447476"
+size = 57392309
 
 [process]
 executable = "{{terraria.server_executable}}"
@@ -32,6 +32,15 @@ host_notes = "The vanilla Windows server requires Microsoft XNA Framework 4.0. L
 name = "game"
 protocol = "tcp"
 port = 7777
+
+[[default_ports]]
+name = "gns"
+protocol = "udp"
+port = 7777
+
+[[runtime.port_groups]]
+id = "game_network"
+members = ["game", "gns"]
 
 [runtime.bind_address]
 mode = "strict"
@@ -149,7 +158,7 @@ verification = "Start TerrariaServer.exe on Windows, run playing through stdin, 
 
 [[runtime.port_roles]]
 role = "player"
-port_names = ["game"]
+port_names = ["game", "gns"]
 
 [runtime.startup_readiness]
 timeout_ms = 600000

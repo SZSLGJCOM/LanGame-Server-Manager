@@ -191,7 +191,7 @@ fn supported_game(root: &Path) -> Result<bool, String> {
 }
 
 fn supported_profile(main: &str, utils: &str, platform: &str) -> bool {
-    // Keep each reviewed build's complete tuple: 26266951 also changed Splatform.
+    // Each profile binds the three assemblies from the same reviewed build.
     let known = [
         (
             "ef8c8d3a1f45694ef7a701e8e2a25bf8a3874c951a2639c81dfe614ce3aa5fa3",
@@ -207,6 +207,11 @@ fn supported_profile(main: &str, utils: &str, platform: &str) -> bool {
             "648f3f8ed7b44c3d3cd612acd782743d9e03af7e60b7fe72d5827523e95505fd",
             "9658619e34e456b88639f6cc6e7d0fd186432f63bf1033e3e04e98e8fac2be9e",
             "1924e4c348616fbd754a8f688d3dc65cde5a741cfef57e80474fcdd0121013b5",
+        ),
+        (
+            "4299a2e2c22cbdbe52c1985e20319cb6f7c602945edcc703ac48e4c153ba2373",
+            "3dfb0fc0feb9ef4a65f8604ad835475f7a1ff78132a10de5c46c171b12b55af1",
+            "19b9abca2dfc4641a06c61913d0ac3df9e560e3adac5fb676a68573b0a40bbad",
         ),
     ];
     known

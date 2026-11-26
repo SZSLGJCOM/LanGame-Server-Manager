@@ -3,10 +3,21 @@
 use super::*;
 use std::time::{Duration, Instant};
 
-// Official 1.4.5.8: Main.DoUpdate_AutoSave waits 600000 ms; midnight writes
-// dayTime=false/time=16200. WorldFile serializes both fields. Pin the executable
-// because these timing/format facts are not a contract for arbitrary mods/builds.
-const VANILLA_SHA256: &str = "d87e3faf08637f6be8882c63e7f11fb7e792b0230006309618473ece0f863e1e";
+// Both official servers wait 600000 ms before the first periodic world save.
+// midnight sets dayTime=false/time=16200. The v329 addition in SaveWorldFlags
+// follows the clock. Each executable is paired with the file format it writes.
+const VANILLA_BUILDS: [(&str, &str, i32); 2] = [
+    (
+        "1458",
+        "d87e3faf08637f6be8882c63e7f11fb7e792b0230006309618473ece0f863e1e",
+        326,
+    ),
+    (
+        "1461",
+        "e6d7db36e8ababc465490743e03f46f3c76d2fcdb757239e60a2b139a92f03a1",
+        329,
+    ),
+];
 const AUTOSAVE_MS: u128 = 600_000;
 const SAVE_SECONDS: u64 = 30;
 const QUERY_SECONDS: u64 = 10;
@@ -19,6 +30,7 @@ struct Target {
     saves: PathBuf,
     world: PathBuf,
     log: PathBuf,
+    world_version: i32,
     pid: u32,
     identity: ProcessIdentity,
 }
@@ -144,14 +156,17 @@ impl Target {
         if bytes.len() as u64 > MAX_WORLD_BYTES {
             return Err("Terraria primary world exceeds the acceptance read bound".into());
         }
-        world(&bytes).map(Some)
+        world(&bytes, self.world_version).map(Some)
     }
 }
 
-fn world(bytes: &[u8]) -> Result<World, String> {
+fn world(bytes: &[u8], expected_version: i32) -> Result<World, String> {
     // FileMetadata.Write emits relogic + file type 2 + uint32 revision after
-    // the 1.4.5.8 world format version. Require a payload, not only this header.
-    if bytes.len() < 168 || bytes[..4] != 326_i32.to_le_bytes() || &bytes[4..12] != b"relogic\x02" {
+    // the format version. Require a payload as well as the matching header.
+    if bytes.len() < 168
+        || bytes[..4] != expected_version.to_le_bytes()
+        || &bytes[4..12] != b"relogic\x02"
+    {
         return Err("Terraria primary world has an unsupported or incomplete header".into());
     }
     let minute = world_clock(bytes)?;
@@ -211,7 +226,7 @@ fn world_clock(bytes: &[u8]) -> Result<u16, String> {
     }
     let flags = cursor.checked_add(52).ok_or_else(invalid)?;
     // Mode, nine special-world flags, dates/moon, tree/cave/background/spawn
-    // integers, surface and rock doubles precede time (122 bytes in v326).
+    // integers, surface and rock doubles precede time (122 bytes in v326 and v329).
     let mode = u32::from_le_bytes(
         bytes
             .get(flags..flags + 4)
@@ -289,11 +304,20 @@ async fn target<R: tauri::Runtime>(
             .ok_or("Terraria has no process identity")?;
         let image =
             dunce::canonicalize(&identity.image_path).map_err(|_| "Terraria image unavailable")?;
-        if image != program.join("1458/Windows/TerrariaServer.exe")
-            || digest(&image)?.1 != VANILLA_SHA256
-        {
+        let (_, expected_hash, world_version) = VANILLA_BUILDS
+            .into_iter()
+            .find(|(version, _, _)| {
+                image
+                    == program
+                        .join(version)
+                        .join("Windows")
+                        .join("TerrariaServer.exe")
+            })
+            .ok_or("Terraria checkpoint requires a verified vanilla executable path")?;
+        if digest(&image)?.1 != expected_hash {
             return Err(
-                "Terraria clock checkpoint requires the verified vanilla 1.4.5.8 executable".into(),
+                "Terraria clock checkpoint requires the matching official vanilla executable"
+                    .into(),
             );
         }
         // Launch rendering passes config/serverconfig.txt to -config; the
@@ -327,6 +351,7 @@ async fn target<R: tauri::Runtime>(
             saves,
             world,
             log,
+            world_version,
             pid: primary.pid.ok_or("Terraria primary PID is missing")?,
             identity,
         };
@@ -719,22 +744,26 @@ mod tests {
         bytes[30..34].copy_from_slice(&512_u32.to_le_bytes());
         bytes[70..74].copy_from_slice(b"\x01n\x01s");
         bytes[248..256].copy_from_slice(&16_200_f64.to_le_bytes());
-        let before = world(&bytes).unwrap();
+        assert!(world(&bytes, 329).is_err());
+        let before = world(&bytes, 326).unwrap();
+        bytes[..4].copy_from_slice(&329_i32.to_le_bytes());
+        assert!(world(&bytes, 326).is_err());
+        assert_eq!(world(&bytes, 329).unwrap().minute, 0);
         assert_eq!(before.minute, 0);
         bytes[12..16].copy_from_slice(&5_u32.to_le_bytes());
         bytes[248..256].copy_from_slice(&16_920_f64.to_le_bytes());
-        let after = world(&bytes).unwrap();
+        let after = world(&bytes, 329).unwrap();
         assert_eq!(after.minute, 12);
         assert_eq!(after.revision, before.revision + 1);
         assert_ne!(after.digest, before.digest);
         bytes[248..256].copy_from_slice(&13_500_f64.to_le_bytes());
         bytes[256] = 1;
-        assert_eq!(world(&bytes).unwrap().minute, 495);
+        assert_eq!(world(&bytes, 329).unwrap().minute, 495);
         bytes[248..256].copy_from_slice(&f64::NAN.to_le_bytes());
-        assert!(world(&bytes).is_err());
+        assert!(world(&bytes, 329).is_err());
         bytes[11] = 1;
-        assert!(world(&bytes).is_err());
-        assert!(world(&bytes[..16]).is_err());
+        assert!(world(&bytes, 329).is_err());
+        assert!(world(&bytes[..16], 329).is_err());
     }
 
     #[test]

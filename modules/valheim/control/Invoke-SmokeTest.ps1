@@ -2,7 +2,8 @@ param(
     [Parameter(Mandatory = $true)][ValidateSet('Prepare', 'Query', 'VerifyReload')][string]$Mode,
     [Parameter(Mandatory = $true)][string]$FixtureRoot,
     [string]$SessionManifest,
-    [int]$ExpectedPid
+    [int]$ExpectedPid,
+    [ValidateSet('25730807', '26870897')][string]$BuildId = '25730807'
 )
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
@@ -47,16 +48,21 @@ if ($fixture -notmatch '(?i)[\\/]work[\\/]' -or -not [IO.Directory]::Exists($fix
 }
 Assert-PlainPath $fixture
 $managed = Join-Path $fixture 'valheim_server_Data/Managed'
-$expected = @{
-    'assembly_valheim.dll' = '0dfc7e81436f822121148efed859ba1e661d58b9484bd45e3b6f33b6dd86bfad'
-    'assembly_utils.dll' = '63e114e7cfdcc38e4f4391c18b91f774290274d2b9200e6d85d757cbe3673e18'
-    'Splatform.dll' = '8953c24a2f2af7ae257cc64fb36dde9d102c871c29b4cdd97d0c3c001de5bd5a'
+$expected = if ($BuildId -eq '26870897') {
+    $evidence = Get-Content -Raw -LiteralPath (Join-Path $PSScriptRoot '../reference-fixtures/2026-11-25-native_build_26870897.json') | ConvertFrom-Json
+    $evidence.package.assembly_sha256
+} else {
+    [pscustomobject]@{
+        'assembly_valheim.dll' = '0dfc7e81436f822121148efed859ba1e661d58b9484bd45e3b6f33b6dd86bfad'
+        'assembly_utils.dll' = '63e114e7cfdcc38e4f4391c18b91f774290274d2b9200e6d85d757cbe3673e18'
+        'Splatform.dll' = '8953c24a2f2af7ae257cc64fb36dde9d102c871c29b4cdd97d0c3c001de5bd5a'
+    }
 }
-foreach ($name in $expected.Keys) {
+foreach ($name in @('assembly_valheim.dll', 'assembly_utils.dll', 'Splatform.dll')) {
     $path = Join-Path $managed $name
     Assert-PlainPath $path
-    if ((Get-FileHash -LiteralPath $path -Algorithm SHA256).Hash.ToLowerInvariant() -ne $expected[$name]) {
-        throw 'Smoke fixture is not the audited local build 25730807.'
+    if ((Get-FileHash -LiteralPath $path -Algorithm SHA256).Hash.ToLowerInvariant() -ne $expected.$name) {
+        throw "Smoke fixture does not match Valheim build $BuildId."
     }
 }
 if ($Mode -eq 'Prepare') {

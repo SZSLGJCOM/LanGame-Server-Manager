@@ -57,9 +57,10 @@ ABI; it does not replace an isolated server/client integration test.
 
 ## Native contract
 
-Native reflection is limited to explicitly checked members and three
+Native reflection is limited to explicitly checked members and four
 complete three-assembly SHA-256 profiles:
 
+- Build 26870897 (1.0.30): `4299a2e2c22cbdbe52c1985e20319cb6f7c602945edcc703ac48e4c153ba2373`
 - Build 26266951 (1.0.21): `648f3f8ed7b44c3d3cd612acd782743d9e03af7e60b7fe72d5827523e95505fd`
 - Build 25909431: `ef8c8d3a1f45694ef7a701e8e2a25bf8a3874c951a2639c81dfe614ce3aa5fa3`
 - Local integration fixture build 25730807: `0dfc7e81436f822121148efed859ba1e661d58b9484bd45e3b6f33b6dd86bfad`
@@ -75,7 +76,7 @@ Both require `Splatform.dll`
 `8953c24a2f2af7ae257cc64fb36dde9d102c871c29b4cdd97d0c3c001de5bd5a`.
 Mixed or unknown tuples are rejected.
 
-All three profiles were inspected statically. The fixed contract uses public
+All four profiles were inspected statically. The fixed contract uses public
 `ZNet.instance`, `IsServer()`, `GetPeers()`, `ZNetPeer.IsReady()`, peer uid/name/socket,
 `ISocket.IsConnected()/GetHostName()`, `ZNet.IsAdmin(string)`, private
 `InternalKick(ZNetPeer)` and `SendAdminList()`, and the three private `SyncedList`
@@ -118,6 +119,15 @@ The fixed BepInExPack 5.4.2351 remained unchanged and all twenty immutable loade
 files were verified. This new zero-player world does not establish live client,
 crossplay, public A2S or existing-player world compatibility. The retained evidence
 is [the native build fixture](../reference-fixtures/2026-10-30-native_build_26266951.json).
+
+Build 26870897 uses network version 42 and world format 42. Its save worker
+checks for automatic backups after the regular world save commits. Two isolated
+Windows sessions exercised the production plugin under BepInExPack 5.4.2351.
+The first verified the empty roster, native admin and permitted-list changes,
+and manual save generation 1. A fresh process loaded the five files captured
+before shutdown and advanced that save to generation 2. Both Ctrl+C exits
+returned zero. The exact DLL tuple and static comparison are recorded in the
+[1.0.30 native build fixture](../reference-fixtures/2026-11-25-native_build_26870897.json).
 
 For direct Steam sockets, the native bare host is passed to
 `Splatform.PlatformUserID("Steam", host)`. PlayFab sockets already return a full
@@ -277,14 +287,14 @@ migration, multiplayer, crossplay or power-loss durability.
 
 ## Isolated smoke test
 
-`Invoke-SmokeTest.ps1` never starts a game, installs a loader, or writes access
-list contents. `-Mode Prepare -FixtureRoot <private-work/vh>` verifies the old
-25730807 tuple and creates a fresh isolated IPC root, session file, save directory
-and manifest. It outputs only the manifest path. The caller installs the reviewed
+`Invoke-SmokeTest.ps1 -Mode Prepare -FixtureRoot <private-work/vh> -BuildId 26870897`
+verifies the 1.0.30 assemblies and creates a fresh isolated IPC root, session
+file, save directory and manifest. Omitting `-BuildId` selects the original
+25730807 fixture. The command outputs the manifest path. The caller installs the reviewed
 loader and plugin separately, then starts that fixture executable with the
 manifest's `control_root` as `LGSM_VALHEIM_CONTROL_ROOT` and `savedir` as `-savedir`.
 
-After startup, use `-Mode Query` or `-Mode VerifyReload` with the same `-FixtureRoot`,
+After startup, use `-Mode Query` or `-Mode VerifyReload` with the same `-BuildId` and `-FixtureRoot`,
 `-SessionManifest` and actual `-ExpectedPid`. The helper verifies the process path
 and run start time, sends the closed request, and checks nonce/PID/op within ten
 seconds. VerifyReload also compares the admin and permitted arrays exactly with the

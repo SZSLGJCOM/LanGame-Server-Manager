@@ -209,6 +209,52 @@ async fn dst_default_player_ports_exhaust_the_lan_discovery_range_without_spilli
 }
 
 #[tokio::test]
+async fn terraria_persists_new_transport_pairs_and_retains_legacy_tcp_registrations() {
+    let root = unique_test_root();
+    let mut paths = test_paths(&root);
+    paths.modules_root = repo_root().join("modules");
+    let descriptor = app_modules::discover_modules(&paths.modules_root)
+        .unwrap()
+        .into_iter()
+        .find(|module| module.summary.id == "terraria")
+        .unwrap();
+    fs::create_dir_all(paths.database_path.parent().unwrap()).unwrap();
+    prepare_shared_install(&paths, &descriptor);
+    initialize_database(&paths).await.unwrap();
+    sync_modules(&paths, std::slice::from_ref(&descriptor))
+        .await
+        .unwrap();
+    let instance = create_instance(
+        &paths,
+        &descriptor,
+        CreateInstanceInput {
+            name: "Terraria ports".into(),
+            module_id: "terraria".into(),
+        },
+    )
+    .await
+    .unwrap();
+    let id = &instance.summary.id;
+    let tcp = instance.ports.iter().find(|port| port.name == "game").unwrap();
+    let udp = instance.ports.iter().find(|port| port.name == "gns").unwrap();
+    assert_eq!((&tcp.protocol[..], tcp.port), ("tcp", 7777));
+    assert_eq!((&udp.protocol[..], udp.port), ("udp", 7777));
+    let requested = [PortBinding {
+        port: 28777,
+        ..tcp.clone()
+    }];
+    assert!(matches!(
+        update_instance_ports(&paths, id, &requested).await,
+        Err(StorageError::InvalidPortGroupRequest { .. })
+    ));
+    replace_instance_ports_for_test(&paths, id, std::slice::from_ref(tcp)).await;
+    let updated = update_instance_ports(&paths, id, &requested).await.unwrap();
+    assert_eq!(updated.len(), 1);
+    assert_eq!((&updated[0].protocol[..], updated[0].port), ("tcp", 28777));
+    cleanup_root(&root);
+}
+
+#[tokio::test]
 async fn return_to_moria_shared_transport_port_is_coupled_on_create_and_update() {
     let root = unique_test_root();
     let mut paths = test_paths(&root);

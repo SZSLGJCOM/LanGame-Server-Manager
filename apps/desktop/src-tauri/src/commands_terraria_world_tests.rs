@@ -127,6 +127,12 @@ fn custom_runtime_uses_its_own_terraria_base() {
     let manifest = custom.join("tModLoader.deps.json");
     fs::write(&manifest, br#"{"libraries":{"tModLoader/1.4.5.8":{}}}"#).unwrap();
     assert!(conflict(&game.details).unwrap().is_none());
+    let vanilla = world_header(329);
+    game.write("岛.wld", &vanilla);
+    let newer = conflict(&game.details).unwrap().unwrap();
+    assert_eq!((newer.world_version, newer.max_world_version), (329, 326));
+    assert!(ensure_compatible_for_start(&game.details).is_err());
+    assert_eq!(fs::read(game.root.join("saves/岛.wld")).unwrap(), vanilla);
     fs::write(&manifest, br#"{"libraries":{"tModLoader/1.4.4.9":{}}}"#).unwrap();
     assert!(conflict(&game.details).unwrap().is_some());
     fs::write(&manifest, b"truncated").unwrap();

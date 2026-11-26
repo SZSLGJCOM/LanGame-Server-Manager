@@ -20,6 +20,11 @@ fn native_profiles_require_complete_reviewed_assembly_tuples() {
             "9658619e34e456b88639f6cc6e7d0fd186432f63bf1033e3e04e98e8fac2be9e",
             "1924e4c348616fbd754a8f688d3dc65cde5a741cfef57e80474fcdd0121013b5",
         ],
+        [
+            "4299a2e2c22cbdbe52c1985e20319cb6f7c602945edcc703ac48e4c153ba2373",
+            "3dfb0fc0feb9ef4a65f8604ad835475f7a1ff78132a10de5c46c171b12b55af1",
+            "19b9abca2dfc4641a06c61913d0ac3df9e560e3adac5fb676a68573b0a40bbad",
+        ],
     ];
     let accepted = |profile: [&str; 3]| supported_profile(profile[0], profile[1], profile[2]);
     for profile in profiles {

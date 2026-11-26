@@ -3,6 +3,20 @@ last_verified = "2026-11-07"
 notes = "The November review identifies isolated app 258550 build 26498655 and verifies the current navigation flag plus four optional performance controls. After correcting WebRCON connection admission, the production lifecycle passed four start/save/quit cycles with same-run native value readback, backup restore and interrupted archive recovery; detailed scope and exit-code evidence are recorded below. The formal manual-save receipt remains Requested. The lifecycle does not test a fresh download, client join or performance. Earlier July public build 24090743/cached build 23476634 and September local build 25129933 observations remain historical evidence. LanGame-owned server/<instance-id>/cfg materialization remains the config boundary."
 
 [[sources]]
+id = "native_webrcon_build_26921919_20261126"
+kind = "documentation"
+path = "reference-fixtures/2026-11-26-native-build-26921919.json"
+authority = "official_windows_depot_and_native_webrcon_verification"
+description = "Steam public build 26921919 retains all 2,473 console variables and commands registered in 26889231, including the five recently added settings and the 16 management command bindings. The Fleck WebSocket implementation changed. The production WebRCON transport read status and an empty player list from the identified server, then saved the same private map and shut down a second server process through the module's ordered server.save and quit commands."
+
+[[sources]]
+id = "native_static_review_build_26889231_20261125"
+kind = "documentation"
+path = "reference-fixtures/2026-11-25-native-build-26889231-static.json"
+authority = "official_windows_depot_and_static_managed_assembly_comparison"
+description = "2026-11-25: public build 26889231 adds five optional console variables, including server.max_privilege_auths with a native default of 200. All five can be set through server.cfg extra lines. Sixteen managed command bindings, the WebRCON implementation, the navigation flag and the four reviewed performance defaults match build 26778019 in the assemblies examined."
+
+[[sources]]
 id = "native_static_review_build_26778019_20261122"
 kind = "documentation"
 path = "reference-fixtures/2026-11-22-native-build-26778019-static.json"

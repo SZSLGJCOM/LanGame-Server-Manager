@@ -1,0 +1,161 @@
+{
+  "schema_version": 1,
+  "module_id": "rust",
+  "verified_on": "2026-11-26",
+  "prior_fixture": "2026-11-25-native-build-26889231-static.json",
+  "package": {
+    "steam_app_id": 258550,
+    "steam_build_id": "26921919",
+    "branch": "public",
+    "public_updated_utc": "2026-11-25T16:17:34Z",
+    "windows_depot": 258551,
+    "windows_depot_manifest": "5913684313164888727",
+    "appmanifest_sha256": "6f314f7c65605d82df0eba27edd2e88843a746efc244640312f8ad2dc81ae2ee",
+    "file_hash_source": "Five files separately downloaded from the public Windows depot, verified against manifest size and SHA-1, and matched by SHA-256 in the full SteamCMD-validated package.",
+    "files": {
+      "RustDedicated.exe": {
+        "bytes": 680272,
+        "sha256": "00cb7f08009e594c3569c699944a9a19789cf7059983abe69d9c6d1852b4a45f"
+      },
+      "RustDedicated_Data/Managed/Assembly-CSharp.dll": {
+        "bytes": 10389832,
+        "sha256": "59a6731a162038dcf1cadc6a4c9ee03ff6779abee31700414d2982cbb21e391f"
+      },
+      "RustDedicated_Data/Managed/Facepunch.Network.dll": {
+        "bytes": 123728,
+        "sha256": "2e8979594439019f43f168738917676d171c41f2b30037d5ebfe2f8a2864f359"
+      },
+      "RustDedicated_Data/Managed/Facepunch.Rcon.dll": {
+        "bytes": 30544,
+        "sha256": "419a83e38318ff85e44473679a2785822407cdac13789706c0919bc7b843517d"
+      },
+      "RustDedicated_Data/Managed/Fleck.dll": {
+        "bytes": 74064,
+        "sha256": "c64d5ebb613952781cb332f441c87588c92bde8a08eab9e670330532e5aff8b5"
+      }
+    }
+  },
+  "static_review": {
+    "comparison_method": "Mono.Cecil comparison of generated console registration bindings and initialized fields. Normalized method fingerprints include signatures, attributes, instruction sequences and operands, locals and exception handlers. Assembly-CSharp and Facepunch.Network counts cover selected management types. Facepunch.Rcon and Fleck counts cover their entire assemblies.",
+    "registry_keys_in_each_build": 2473,
+    "added_registry_keys": [],
+    "removed_registry_keys": [],
+    "unchanged_native_defaults_for_five_recent_variables": {
+      "server.max_privilege_auths": 200,
+      "cassette.maxdecodedaudiomb": 256,
+      "convartimedprefabspawner.prefab_spawn_scale_min": 1,
+      "convartimedprefabspawner.prefab_spawn_scale_max": 1,
+      "physicstumblingentity.player_hit_padding": 0.1
+    },
+    "unchanged_managed_command_bindings": [
+      "global.banid",
+      "global.banlistex",
+      "global.kick",
+      "global.moderatorid",
+      "global.ownerid",
+      "global.playerlist",
+      "global.players",
+      "global.quit",
+      "global.removemoderator",
+      "global.removeowner",
+      "global.say",
+      "global.status",
+      "global.unban",
+      "global.users",
+      "server.save",
+      "server.writecfg"
+    ],
+    "startup_navigation_switch": "-useOldNavmesh",
+    "unchanged_optional_performance_defaults": {
+      "net.position_lod": 2,
+      "net.position_lod_players": 2,
+      "server.batchpackets": true,
+      "server.useplayerupdatejobs": 4
+    },
+    "method_counts": {
+      "Assembly-CSharp": {
+        "old": 841,
+        "new": 841,
+        "identical": 841
+      },
+      "Facepunch.Network": {
+        "old": 46,
+        "new": 46,
+        "identical": 46
+      },
+      "Facepunch.Rcon": {
+        "old": 56,
+        "new": 56,
+        "identical": 56
+      },
+      "Fleck": {
+        "old": 377,
+        "new": 378,
+        "identical": 360
+      }
+    },
+    "rcon_contract": "The WebRCON listener, connection limiter, WebSocket server, version-13 protocol handler, and the application request/response bindings retain their reviewed method fingerprints. Fleck request parsing and connection handling changed internally.",
+    "manager_configuration": "Existing server.cfg extra lines accept the five variables. The startup switch and unset performance settings preserve the current native behavior."
+  },
+  "evidence_classification": "official_windows_package_static_review_and_native_webrcon",
+  "native_webrcon": {
+    "fixture": "The full SteamCMD-validated public server ran in a private copy. Both sessions used the same isolated identity, loopback endpoint and generated map. The private transport client compiled the production websocket_rcon_exec and frame implementation directly from the desktop source, with the production deadline and admission modules.",
+    "production_websocket_function_block_sha256": "14b0ccc48d19047a84f2bda3230661c4d7c15e4dabc65bfdc466bd45a190c2b3",
+    "query_session": {
+      "started_utc": "2026-11-26T01:22:54.875312+00:00",
+      "completed_utc": "2026-11-26T01:25:07.021927+00:00",
+      "owned_loopback_listener_before_and_after": true,
+      "client_exit_code": 0,
+      "status": {
+        "reply_bytes": 230,
+        "lines": 6,
+        "fixture_hostname_matched": true,
+        "online_players": 0
+      },
+      "playerlist": {
+        "reply_bytes": 2,
+        "online_players": 0,
+        "response": "[]"
+      },
+      "cleanup": "The local Ctrl+C helper exited 1. After 65 seconds the disposable launcher terminated its private server and exited 1. This session covers the two successful read-only commands.",
+      "sanitized_server_log_sha256": "d2417ef4ce198123470a68308789b0a716f83bb42ece088bf961124a7bba3577"
+    },
+    "module_shutdown_session": {
+      "started_utc": "2026-11-26T01:42:01.025977+00:00",
+      "completed_utc": "2026-11-26T01:42:45.172351+00:00",
+      "same_map_sha256": "d6b35300667eddd9bae292b70193ebf4f2236e81e465cddc6db50a69f36ed85c",
+      "confirmed_replies": [
+        {
+          "command": "server.save",
+          "reply_bytes": 42,
+          "reply_correlated": true,
+          "submitted_ms": 0
+        },
+        {
+          "command": "quit",
+          "reply_bytes": 42,
+          "reply_correlated": true,
+          "submitted_ms": 3497
+        }
+      ],
+      "saved_world": {
+        "size": 62533,
+        "sha256": "1defe3c3eaf2a3cda635cc42f2668ee25b60bac2b82b0751215525ad638cd411"
+      },
+      "prior_world_save_count": 0,
+      "native_save_record_in_new_log": true,
+      "native_shutdown_record_in_new_log": true,
+      "listener_closed": true,
+      "native_process_exited_without_fallback": true,
+      "native_process_exit_code_signed": -1,
+      "native_process_exit_code_hex": "0xFFFFFFFF",
+      "harness_exit_code": 0,
+      "sanitized_server_log_sha256": "eaab4be9aa659fd4dcfb0303baaf76d6a7d23a1f98a23803f0e4274337ccbb3f"
+    }
+  },
+  "assessment": "The existing startup and configuration contracts remain compatible. Ordinary WebRCON status, player list, save and shutdown work on this build with the existing management transport.",
+  "outside_scope": [
+    "connected players and moderation actions",
+    "production desktop lifecycle and GUI on this build"
+  ]
+}

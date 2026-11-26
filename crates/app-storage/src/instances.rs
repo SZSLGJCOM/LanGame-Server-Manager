@@ -2075,6 +2075,12 @@ async fn persist_instance_ports(
 
     let mut member_groups = HashMap::new();
     for (group_index, group) in port_groups.iter().enumerate() {
+        let legacy_tcp = |ports: &[PortBinding]| {
+            app_core::terraria::is_legacy_tcp_registration(module_id, group, ports)
+        };
+        if legacy_tcp(&normalized_ports) && current_ports.is_some_and(legacy_tcp) {
+            continue;
+        }
         if let Some(offsets) = group.member_offsets.as_ref() {
             if let Some(offset_member) = offsets
                 .keys()

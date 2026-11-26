@@ -19,6 +19,8 @@ mod staging;
 
 type Result<T = ()> = std::result::Result<T, Box<dyn std::error::Error>>;
 const WEB_PORT: u16 = 18080;
+const SML_VERSION: &str = "3.12.1";
+const FRM_VERSION: &str = "1.5.6";
 
 pub(super) struct Fixture {
     mods: Vec<staging::VerifiedMod>,
@@ -148,7 +150,7 @@ impl Fixture {
         let raw = native_empty_array().await?;
         owned_web(runtime, running)?;
         println!(
-            "NATIVE_SATISFACTORY_FRM cycle={cycle} sml=3.12.0 frm=1.5.5 loaded_versions=current_run_log getPlayer=production_collector_ready response_bytes={raw} response_empty_array=true complete=true stale=false online_players=0 source=http_api listener=owned_native_process fixture_only=true client_join=not_tested"
+            "NATIVE_SATISFACTORY_FRM cycle={cycle} sml={SML_VERSION} frm={FRM_VERSION} loaded_versions=current_run_log getPlayer=production_collector_ready response_bytes={raw} response_empty_array=true complete=true stale=false online_players=0 source=http_api listener=owned_native_process fixture_only=true client_join=not_tested"
         );
         Ok(())
     }
@@ -271,22 +273,21 @@ struct LoadEvidence {
 }
 impl LoadEvidence {
     fn observe(&mut self, line: &str) {
-        // SML v3.12.0 SatisfactoryModLoader.cpp and ModLoadingLibrary.cpp;
-        // FRM tag 1.5.5-529 FicsitRemoteMonitoring.cpp, InitAPIRegistry().
+        // SML initialization and FRM endpoint registration emit separate log records.
         if let Some((_, message)) = line.split_once("LogSatisfactoryModLoader: Display:") {
             let message = message.trim();
             self.preinit |= message
                 .strip_prefix("Satisfactory Mod Loader v.")
                 .and_then(|value| value.split_whitespace().next())
-                .is_some_and(|value| version(value, "3.12.0"))
+                .is_some_and(|value| version(value, SML_VERSION))
                 && message.ends_with("pre-initializing...");
             self.initialized |= message == "Initialization finished!";
             self.sml |= message
                 .strip_prefix("SML:")
-                .is_some_and(|value| version(value.trim(), "3.12.0"));
+                .is_some_and(|value| version(value.trim(), SML_VERSION));
             self.frm |= message
                 .strip_prefix("FicsitRemoteMonitoring:")
-                .is_some_and(|value| version(value.trim(), "1.5.5"));
+                .is_some_and(|value| version(value.trim(), FRM_VERSION));
         }
         self.player_endpoint |= line
             .split_once("LogHttpServer:")

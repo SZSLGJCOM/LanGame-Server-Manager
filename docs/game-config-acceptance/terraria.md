@@ -96,3 +96,45 @@
   }
 }
 ```
+
+## `2026-11-25-native_console_1461.json`
+
+- Evidence: `best_effort_verified` at `2026-11-25` (build `Official Terraria Windows 1.4.6.1 with world format 329 and GameNetworkingSockets.`)
+- Sources: `official_dedicated_zip_1461`, `native_console_1461`
+- Coverage: editable `0`, specialized `0`, derived `0`, generated `0`, excluded `1`
+
+### Settings
+
+```json
+{
+  "server_runtime": "vanilla",
+  "world_name": "ConfigAudit1461"
+}
+```
+
+### Expected outputs
+
+```json
+{
+  "files": [
+    {
+      "format": "text",
+      "fragments": [
+        "worldname=ConfigAudit1461",
+        "upnp=0"
+      ],
+      "path": "serverconfig.txt",
+      "root": "config"
+    }
+  ],
+  "launch": {
+    "arguments": [
+      "-config",
+      "{{paths.config_dir}}\\serverconfig.txt",
+      "-ip",
+      "0.0.0.0"
+    ],
+    "executable_suffix": "1461/Windows/TerrariaServer.exe"
+  }
+}
+```

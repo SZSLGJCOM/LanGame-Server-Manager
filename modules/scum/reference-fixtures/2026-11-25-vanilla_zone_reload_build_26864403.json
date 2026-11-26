@@ -1,0 +1,249 @@
+{
+  "verified_on": "2026-11-25",
+  "verified_through": "2026-11-26",
+  "platform": "Windows x64",
+  "package": {
+    "steam_app_id": 3792580,
+    "public_build_id": "26864403",
+    "windows_depot_id": 3792581,
+    "windows_depot_manifest": "6575804413403069538",
+    "steamcmd_validate_exit_code": 0,
+    "steam_appmanifest_sha256": "270979cd54ab0824afd9ff8572c6e22e1c53c0ca2b68738b38708f5ebb54ad64",
+    "game_version": "1.3.6.3.180352",
+    "build_label": "++scum+release-1.3.6-CL-180352",
+    "server_executable_bytes": 130765824,
+    "server_executable_sha256": "6ce24c054b3321f09de6bfe8e032dac6b10a40e5d1f2e38d37eb3af547a82ca7",
+    "official_hotfix": "https://store.steampowered.com/news/app/513710/view/694278269818634935"
+  },
+  "world": {
+    "origin": "New disposable vanilla world in a physically independent SteamCMD-validated program copy.",
+    "ready_evidence": "Each run reached LogSCUM Global Stats and the SCUM process owned the loopback game UDP socket.",
+    "initial_ready_seconds": 86.02,
+    "initial_native_log_sha256": "dd42adbefbe93534f9fcc34db040ebdae01bdb8fab2d6e26f39edf346f140b4f",
+    "snapshot_method": "SQLite Backup API from a read-only source connection after all processes in the owned Job had exited.",
+    "snapshot_db_bytes": 4509696,
+    "snapshot_db_sha256": "b9ca9b8d6e7dd6954fc5e34b057870b010e2d2ff5b92c046035c3b5e8a073f53",
+    "database_user_version": 79,
+    "integrity_check": "ok",
+    "native_tables": 172,
+    "baseline_fixture": "2026-11-22-native_contract_build_26790009.json",
+    "zone_schema": {
+      "comparison_target": "native_world_and_config_observation.zone_schema and zone_rows in the baseline fixture",
+      "table_and_index_definitions_equal": true,
+      "tables": 3,
+      "indexes_including_autoindexes": 4,
+      "triggers": 0,
+      "definitions_sha256": "ab82d00215f212a609336cbfa8eae70c3374ed8b41c76dfacbdeabb31b9f389b",
+      "definitions_encoding": "UTF-8 compact JSON of SQLite (type,name,tbl_name,sql) records sorted by (type,name).",
+      "all_default_rows_equal": true,
+      "configuration_rows": 2,
+      "region_rows": 4,
+      "damage_rows": 32
+    }
+  },
+  "stopped_world_edit": {
+    "method": "With all game processes stopped, one guarded SQLite UPDATE ran under BEGIN IMMEDIATE. Every row of all 172 tables was compared with the snapshot after commit.",
+    "configuration": "Outposts",
+    "map_id": 1,
+    "configuration_id": 1,
+    "damage_actor_type": 5,
+    "slots": 5,
+    "editable_slots_zero_based": [
+      2,
+      3,
+      4
+    ],
+    "editable_mask": "0x3f0",
+    "before": 682,
+    "after": 586,
+    "new_slot_values": [
+      0,
+      1,
+      2
+    ],
+    "changed_cells": 1,
+    "unchanged_other_tables": 171,
+    "other_damage_rows_and_bits_preserved": true,
+    "quick_check": "ok"
+  },
+  "public_stopped_database_api": {
+    "verified_on": "2026-11-25",
+    "test": "scum_custom_zones::tests::native_schema_roundtrip_on_owned_copy",
+    "test_binary_sha256": "280a8042a03c0783f00076d8f6e7838b37e5d8731b47d04c4527c26daae188e3",
+    "source_identity_sha256": "a74a3af76f9b3b311fface095f783cbb472a35ee0018443f83647e80da9bd3be",
+    "source": "Read-only SQLite Backup API snapshot of a stopped vanilla build 26864403 world with its verified executable.",
+    "source_db_sha256": "b9ca9b8d6e7dd6954fc5e34b057870b010e2d2ff5b92c046035c3b5e8a073f53",
+    "configurations": 2,
+    "database_user_version": 79,
+    "public_read_write_api": "passed",
+    "native_image_gate": "passed",
+    "pre_change_backup_readback": "passed",
+    "selected_rules_and_other_configurations_readback": "passed",
+    "source_db_wal_unchanged": true,
+    "game_server_started": false,
+    "client_combat_assessed": false,
+    "test_log_sha256": "7c6f3c130876a1128e4f99a233f4d5a19d083fe09122837c31b8494f1caaacd2",
+    "existing_scum_sqlite_unit_regressions_passed": 9,
+    "unit_log_sha256": "0f84218bc2bce0243523d6836c0544973bb13b0d97d1ff8fba27170fc3c133b6"
+  },
+  "vanilla_reload": {
+    "ready_seconds": 76.96,
+    "native_log_sha256": "0467f2861a613e66c7c83661a47a6e0ca5c51f3d15678c94001ef60ea7495d14",
+    "outposts_after_native_reload": {
+      "original_id": 22,
+      "new_id": 54,
+      "value": 586,
+      "slots": 5
+    },
+    "global_after_native_reload": {
+      "original_id": 6,
+      "new_id": 38,
+      "value": 341,
+      "slots": 5
+    },
+    "damage_rows_preserved_by_map_configuration_actor": 32,
+    "configuration_rows_preserved": 2,
+    "regions_preserved_by_name_and_geometry": 4,
+    "region_ids_reassigned_by_native_game": 2,
+    "integrity_check": "ok",
+    "standalone_shutdown": "These two 2026-11-25 diagnostic launches included -unattended, -NoCrashDialog and -ExecCmds. Both exited 0xC000013A after Ctrl+C, and their owned Jobs reclaimed residual helpers. The normal_shutdown records use the standard launch."
+  },
+  "normal_shutdown": {
+    "guide": "The Gamepires-linked Server Setup Guide documents Ctrl+C in the dedicated server console.",
+    "historical_manager": {
+      "compiled_on": "2026-11-23",
+      "test_binary_sha256": "682c95dc62a8d096852d1ac6eb4914489efcfa3895cf13e91ee7fcd381a4c82c",
+      "source_identity_sha256": "51630fe1ea39a2c243329b36fb9e3b82d40658c0c875e69f55788b5f5669b9b1",
+      "package_build": "26864403",
+      "command_wait_ms": 12000,
+      "final_grace_ms": 15000,
+      "managed_stop": "timed out with process ownership retained",
+      "game_log": {
+        "console_exit_requests": 1,
+        "entity_auto_save_ms": 2357,
+        "last_observed_db_close_success_ms": 5964,
+        "game_engine_shutdown_ms": 24338,
+        "object_subsystem_closed_ms": 26900,
+        "engine_exiting_ms": null,
+        "last_observed_game_event_ms": 27205,
+        "native_log_sha256": "bfb812d47ce2920c7749e1ae8d561e1b478568d624d79040ed622930f7432db3"
+      },
+      "cleanup_exit_hex": "0xC000013A",
+      "test_exit_code": 101,
+      "test_log_sha256": "9bcb59498d5398ba0e53a9017f6a16b2fa7a33d557e2285de52657592e490b6b"
+    },
+    "vanilla_console": {
+      "verified_on": "2026-11-26",
+      "launch": "SCUMServer.exe used loopback game/query ports and -log. One Ctrl+C was sent to its owned Windows console after game readiness.",
+      "unmodified_world": {
+        "ready_seconds": 76.38,
+        "tree_exit_seconds": 13.94,
+        "native_exit_code": 0,
+        "forced_cleanup": false,
+        "active_job_processes_after_stop": 0,
+        "world_integrity_before": "ok",
+        "world_integrity_after": "ok",
+        "game_log": {
+          "console_exit_requests": 1,
+          "entity_auto_save_ms": 467,
+          "last_observed_db_close_success_ms": 615,
+          "game_engine_shutdown_ms": 10782,
+          "object_subsystem_closed_ms": 12454,
+          "engine_exiting_ms": 12847,
+          "last_observed_game_event_ms": 12860,
+          "native_log_sha256": "a3739656e0b960fba2bf1f5f792c173ff24dad32fb256730439c812ee784cd02"
+        }
+      },
+      "restart_after_stopped_world_edit": {
+        "ready_seconds": 67.09,
+        "tree_exit_seconds": 16.63,
+        "native_exit_code": 0,
+        "forced_cleanup": false,
+        "active_job_processes_after_stop": 0,
+        "world_integrity_before": "ok",
+        "world_integrity_after": "ok",
+        "game_log": {
+          "console_exit_requests": 1,
+          "entity_auto_save_ms": 567,
+          "last_observed_db_close_success_ms": 584,
+          "game_engine_shutdown_ms": 13320,
+          "object_subsystem_closed_ms": 15536,
+          "engine_exiting_ms": 16088,
+          "last_observed_game_event_ms": 16114,
+          "native_log_sha256": "1a2cf887ad54f6fb94afc1ba799b0d9e1f8d5ffbdeafa9e9a315dad981ce0c1b"
+        },
+        "pre_edit_database_backup_sha256": "84e942ea633d3ede91a07e6696228533f17655e8724a92292395f5c53055a345",
+        "outposts_value_before_edit": 682,
+        "outposts_value_after_restart_and_stop": 586,
+        "global_value_after_restart_and_stop": 341
+      }
+    },
+    "managed_candidate": {
+      "verified_on": "2026-11-26",
+      "selector": "commands::tests::manual_runtime_tests::native_lifecycle_tests::native_start_stop",
+      "test_binary_sha256": "a5a5834c23af930086596f6365547d46a6d9768d0a064f041cb48a6c1a68e47a",
+      "source_identity_sha256": "d339de976fc0db831ebcf6c26b465751af122878088a4a4c79b63f166e12f7ce",
+      "test_log_sha256": "7cf4f39a690c7525e06959fd561239d5d58860c1f34f3dd0988929ad10bda4f0",
+      "resource": "Candidate resource snapshot with the current SCUM module and private UDP defaults 28420 / 28422.",
+      "reviewed_module_sha256": "8b5e61ca7db5ca08ddc3286e5f2fd75dc23769e2d90141fd814549f09fd6c8f9",
+      "private_module_sha256": "e6154a193c7f8b92805cb77a632ebe1ee66c59e83ef66416f9b78f21c924ea39",
+      "command_wait_ms": 12000,
+      "final_grace_ms": 60000,
+      "steam_depots": {
+        "1004": "7604377918839582995",
+        "228989": "5753583882400741046",
+        "228990": "1829726630299308803",
+        "3792581": "6575804413403069538"
+      },
+      "shared_owner_build": "24098430",
+      "shared_payload_files_sha1_and_size_verified": 163,
+      "prestart": "Pinned, independent physical copy of the complete official program. Four native dependencies loaded before launch. The Microsoft-signed cached x64 VC runtime matched the installed 14.52.37029.0. Cache files and timestamps stayed unchanged. No VC installer events or new installation logs appeared during the candidate run.",
+      "operator_visible_startup": "The live instance console reported that manual saving was unavailable and the game would start normally.",
+      "managed_startup_log_sha256": "e64405f86a595140536a57ec13c2ceaec88e20502faeb97a95e8bc50e0f23181",
+      "readiness_probe": "passed",
+      "test_exit_code": 0,
+      "native_exit_code": 0,
+      "crash_flag": false,
+      "status": "stopped",
+      "active_run_cleared": true,
+      "no_forced_cleanup": true,
+      "source_package_unchanged": true,
+      "game_log": {
+        "console_exit_requests": 1,
+        "entity_auto_save_ms": 987,
+        "last_observed_db_close_success_ms": 5494,
+        "game_engine_shutdown_ms": 21868,
+        "object_subsystem_closed_ms": 24601,
+        "engine_exiting_ms": 25088,
+        "last_observed_game_event_ms": 25098,
+        "native_log_sha256": "a85a8fbe314c0801cb82852dbd290980350ce74e41ac509f3ec74d3b1b12935a"
+      }
+    }
+  },
+  "generated_config": {
+    "server_settings_keys_matching_build_26790009": 437,
+    "values_matching_previous_unconfigured_settings": 434,
+    "instance_specific_differences": [
+      "scum.ServerName",
+      "scum.ServerPassword",
+      "scum.MaxPlayers"
+    ],
+    "economy_override_matches_previous_and_repository_json": true,
+    "economy_override_sha256": "9f512aeabd9d6b092d42f4fc2e31288b6dfafaffc23fdb06093dabf111870677",
+    "raid_times_matches_previous_and_repository_json": true,
+    "raid_times_sha256": "99f62ccfca6271271b4a4dd25c2381c8cb243cf66c807e62d343a13662491dda"
+  },
+  "immediate_entity_save": {
+    "host_guide": "https://docs.google.com/document/d/1y3zrrNbyEIw_TB2SsQ6clKBZVxIzpV4h-1z8EpUgPAQ/edit",
+    "host_guide_publisher": "https://steamcommunity.com/app/513710/discussions/5/592939340207898389/",
+    "host_guide_text_sha256": "3d007a8c638f85a2587f5f745690e576460f93069f39f60cf930a13cec7444c5",
+    "host_guide_scope": "The developer-linked guide documents Ctrl+C as a stop. It supplies no running-server immediate world-save command or RCON request.",
+    "official_mod_support_status": "In its 2026-09-30 update preview Gamepires scheduled official mod support beyond 2026.",
+    "official_mod_support_source": "https://steamcommunity.com/games/513710/announcements/detail/674006995886409022",
+    "vanilla_console_probe": "The requested command listing produced no registered world-save command in the observed vanilla output.",
+    "pe_comparison_to_build_26790009": "Whole .text, .rdata, .data and .pdata sections each differed in contents and layout.",
+    "verified_public_global_save_entry": false,
+    "manual_save_profile_enabled": false
+  },
+  "scope": "The vanilla server reserialized all 32 semantic damage records after the stopped-world edit. The ordinary vanilla restart also preserved the marked Outposts rule through a natural exit. Slot names come from the previously registered layout. These tests used disposable worlds with no connected players. Client combat and running-server manual-save durability were outside the observation."
+}

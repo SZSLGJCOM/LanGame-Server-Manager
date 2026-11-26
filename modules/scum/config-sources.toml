@@ -3,6 +3,14 @@ last_verified = "2026-11-12"
 notes = "The archived generated v7 baseline plus four official August 2026 additions defines 436 specialized controls and one generated version key. The 2026-11-12 build 26593814 world generated the same 437 keys and unchanged focused animal defaults; its unconfigured MaxPing=400 updates the old 200 default while explicit saved values retain precedence. The image requires new per-image save-state offsets and a strict schema-77 custom-zone pairing. Independent static, generated-world, registry and managed-lifecycle evidence have separate scopes below. Earlier build 26320224 save/checkpoint/reload and four managed cycles remain historical evidence, not automatic validation of the new image. Save completion remains requested; no blanket gameplay-default approval, populated-player behavior or every subsystem's durable completion is asserted. Three generated JSON contracts are structured. Player identity rosters remain in Player Access. Earlier elevation failures remain historical; RunAsInvoker preserves the caller's existing permissions."
 
 [[sources]]
+id = "vanilla_zone_reload_build_26864403_20261125"
+kind = "runtime_probe"
+path = "reference-fixtures/2026-11-25-vanilla_zone_reload_build_26864403.json"
+url = "https://store.steampowered.com/news/app/513710/view/694278269818634935"
+authority = "official_steam_windows_package_and_isolated_vanilla_world"
+description = "Build 26864403 (1.3.6.3.180352) retained schema 79, all 38 default zone rows and 437 generated INI keys. All 434 values outside the three instance overrides matched, as did the economy and raid defaults. A stopped-world edit changed one cell across 172 tables. The public editor passed its write and backup readback. Vanilla restarts retained the edited Outposts rule. Two single Ctrl+C vanilla stops and the current managed stop completed with exit code 0. The managed console reported running-server manual save unavailable on this build."
+
+[[sources]]
 id = "managed_native_lifecycle_build_26790009_20261122"
 kind = "runtime_probe"
 path = "reference-fixtures/2026-11-22-managed_lifecycle_build_26790009.json"

@@ -1,0 +1,231 @@
+{
+  "schema_version": 1,
+  "module_id": "terraria",
+  "reviewed_on": "2026-11-26",
+  "source": {
+    "publisher": "Re-Logic",
+    "source_index": "https://terraria.org/api/get/dedicated-servers-names",
+    "official_archive": "https://terraria.org/api/download/pc-dedicated-server/terraria-server-1461.zip",
+    "version": "1.4.6.1",
+    "archive_bytes": 57392309,
+    "archive_sha256": "0fb586dfbf2bcee448612c90768648d89532eed6ab345aadbbb0829f9d447476",
+    "windows_entry": "1461/Windows/TerrariaServer.exe",
+    "windows_entry_bytes": 26106880,
+    "windows_entry_sha256": "e6d7db36e8ababc465490743e03f46f3c76d2fcdb757239e60a2b139a92f03a1",
+    "sample_config_bytes": 4691,
+    "sample_config_sha256": "5675b49849b278d12da1909005b4a915ed921833d0e8eef4a51eabc75aae0ec4",
+    "additional_windows_payloads": [
+      "GNS_Wrapper.dll",
+      "steamnetworkingsockets.dll"
+    ],
+    "index_reconfirmed_utc": "2026-11-26T01:51:48Z"
+  },
+  "static_comparison": {
+    "prior_world_version": 326,
+    "world_version": 329,
+    "source_of_world_version": "Terraria.Main.curRelease and WorldFile.SaveFileFormatHeader in the official executables.",
+    "selected_world_clock_layout": "SaveWorldHeader and SaveWorldFlags through time/day are unchanged. SaveWorldFlags appends noSpidersSeed after the clock; DoUpdate_AutoSave retains a 600000 ms server autosave threshold.",
+    "network": "Main.LoadDedConfig disables Netplay.UseGNS for gns=0. UseGNS defaults to true. The UDP listener invokes GNS_API.Listen with only Netplay.ListenPort.",
+    "router_port_mapping": "Both 1.4.5.8 and 1.4.6.1 parse upnp=0 as Netplay.UseUPNP=false. The dedicated-server default is true. On 1.4.6.1 Netplay.InitializeServer returns before calling OpenPort when this flag is false. The GNS listener starts independently."
+  },
+  "isolated_windows_console": {
+    "environment": "Windows, XNA 4.0, two fresh foreground ConPTY processes, disposable password-protected world, UPnP off, explicit IPv4 loopback bind.",
+    "default_network": {
+      "tcp": "loopback",
+      "udp": "IPv6 wildcard",
+      "same_reserved_port": true,
+      "players_result": "No players connected."
+    },
+    "disabled_gns_network": {
+      "config": "gns=0",
+      "tcp": "loopback",
+      "udp_endpoints_on_game_port": 0,
+      "players_result": "No players connected."
+    },
+    "manual_save": {
+      "fresh_world_revision": 1,
+      "expected_world_format": 329,
+      "commands": [
+        "midnight",
+        "time",
+        "save"
+      ],
+      "initial_clock_reply": "Time: 12:00 AM",
+      "native_world_revision": 2,
+      "world_bytes": 2919006,
+      "saved_clock_game_ticks": 16200,
+      "saved_day_time": false,
+      "native_world_sha256": "3d2f54604d3bcc34ffc256285188ff7d0b761859ee43812edaccd25d49e3d921",
+      "first_normal_exit_code": 0,
+      "shutdown_revision": 3,
+      "restored_pre_shutdown_revision": 2,
+      "restart_query_without_clock_change": "Time: 12:00 AM",
+      "second_normal_exit_code": 0
+    },
+    "upnp_off_and_gns_on": {
+      "image_sha256": "e6d7db36e8ababc465490743e03f46f3c76d2fcdb757239e60a2b139a92f03a1",
+      "world_input_sha256": "3d2f54604d3bcc34ffc256285188ff7d0b761859ee43812edaccd25d49e3d921",
+      "game_port": 28775,
+      "bind_address": "0.0.0.0",
+      "explicit_configuration": "upnp=0",
+      "gns": "native default",
+      "disabled_upnp_command_line_flag": false,
+      "owned_endpoints": [
+        [
+          "tcp",
+          "0.0.0.0"
+        ],
+        [
+          "udp",
+          "0.0.0.0"
+        ],
+        [
+          "udp",
+          "::"
+        ]
+      ],
+      "observed_at": "2026-11-26T01:49:19.622719+00:00",
+      "exit_code": 0,
+      "stopped_at": "2026-11-26T01:49:38.684367+00:00",
+      "ready": "Server started",
+      "time_query": "Time: 12:00 AM",
+      "shutdown": "Saving before exit..."
+    }
+  },
+  "legacy_world_compatibility": {
+    "setup": "The official 1.4.5.8 executable generated a new isolated world with a disposable password, gns=0, UPnP disabled and a specific IPv4 loopback bind. It set midnight before normal exit. Two fresh processes then independently loaded copies of the exact prior save.",
+    "old_executable_sha256": "d87e3faf08637f6be8882c63e7f11fb7e792b0230006309618473ece0f863e1e",
+    "preserved_before_reload": {
+      "sha256": "f1ea087856b4bc4f1ee8d1403e5c25db0e3117ba059944313e1aa334578f9906",
+      "world_version": 326,
+      "revision": 2,
+      "size": 2931134
+    },
+    "old_server_after_normal_exit": {
+      "sha256": "51599a0a7ca81c64de7452a21f436d471596acd1d39d3844f07cda24dc3582d6",
+      "world_version": 326,
+      "revision": 3,
+      "size": 2931134
+    },
+    "new_server_after_normal_exit": {
+      "sha256": "dc2acb833435473831f2261eb275c410ff4b6f9c098f9b79ea366ef211fe10ec",
+      "world_version": 329,
+      "revision": 3,
+      "size": 2931135
+    },
+    "both_reloads": {
+      "time_without_mutation": "Time: 12:00 AM",
+      "players": "No players connected.",
+      "tcp": "IPv4 loopback",
+      "udp_endpoints": 0,
+      "exit_codes": [
+        0,
+        0
+      ]
+    }
+  },
+  "scope": "Tests had no connected clients. Cross-platform discovery, remote connections, successful router port forwarding, populated rosters and client gameplay were outside these runs.",
+  "managed_windows_acceptance": {
+    "selector": "commands::tests::manual_runtime_tests::native_lifecycle_tests::native_manual_save",
+    "start_utc": "2026-11-26T02:10:41.625868+00:00",
+    "completion_utc": "2026-11-26T02:12:58.065723+00:00",
+    "exit_code": 0,
+    "exactly_one_passed": true,
+    "binary_sha256": "ca5f505c9f49094816a2c277ba1659a3c27927dfb9209c15837c46cd982919ed",
+    "source_identity_sha256": "851ca95edd6e33f9501e654009b048fd14f90d92e87181f1d96e9d18fef9b04a",
+    "source_inputs_checked_against_worktree": 2282,
+    "local_log_sha256": "8d190036212ab04d60435a7d4e6c9b4458410cb832cb6f6f8a570eb90023964c",
+    "owned_sockets_by_generation": [
+      [
+        [
+          "tcp",
+          "0.0.0.0"
+        ],
+        [
+          "udp",
+          "0.0.0.0"
+        ],
+        [
+          "udp",
+          "::"
+        ]
+      ],
+      [
+        [
+          "tcp",
+          "0.0.0.0"
+        ],
+        [
+          "udp",
+          "0.0.0.0"
+        ],
+        [
+          "udp",
+          "::"
+        ]
+      ]
+    ],
+    "rendered_network_settings_by_generation": [
+      [
+        "upnp=0"
+      ],
+      [
+        "upnp=0"
+      ]
+    ],
+    "windows_runtime_preflight": {
+      "checked_utc": "2026-11-26T02:10:41.625829+00:00",
+      "versions": {
+        "1.4.6.1": {
+          "image_sha256": "e6d7db36e8ababc465490743e03f46f3c76d2fcdb757239e60a2b139a92f03a1",
+          "native_pe_imports": [
+            "mscoree.dll"
+          ],
+          "delay_imports": false,
+          "local_import_targets": [],
+          "dotnet_runtimeconfig": false
+        },
+        "1.4.5.8": {
+          "image_sha256": "d87e3faf08637f6be8882c63e7f11fb7e792b0230006309618473ece0f863e1e",
+          "native_pe_imports": [
+            "mscoree.dll"
+          ],
+          "delay_imports": false,
+          "local_import_targets": [],
+          "dotnet_runtimeconfig": false
+        }
+      },
+      "x86_framework_xna_loads": true,
+      "rolling_runtime_package_needed": false
+    },
+    "scope": "Storage provisioning of an isolated local copy of the checksum-verified Re-Logic Windows payload, production automatic startup, native readiness, one save request, capture before shutdown, restoration, fresh startup and normal shutdown.",
+    "fixture": "The module differed only in its two numeric default ports. Both were relocated to the same free test port. The official URL and integrity were unchanged. The password-protected fixture ran without clients or managed periodic saves.",
+    "acquisition": "existing_local_package",
+    "save_receipt": {
+      "attempted_once": true,
+      "completion": "requested"
+    },
+    "world": {
+      "version": 329,
+      "previous_revision": 1,
+      "saved_revision": 2,
+      "minute": 0,
+      "writer_closed": true,
+      "automatic_save_excluded": true,
+      "bytes": 2896195,
+      "sha256": "14afc2fa577ba4ab9fd002333e9b221e3387d5521a8e76e1b47c14d61fbcf17a"
+    },
+    "restart": {
+      "fresh_time_query": true,
+      "clock_reset_sent": false,
+      "second_save_sent": false,
+      "loaded_minute": 0,
+      "stored_revision": 2
+    },
+    "generation_exit_codes": [
+      0,
+      0
+    ],
+    "cleanup": "Both managed runs stopped with no active run. The test confirmed removal of its disposable fixture."
+  }
+}

@@ -848,7 +848,15 @@ pub fn probe_module_install_state_with_override(
         })
         .unwrap_or_else(|| PathBuf::from(&settings.games_root).join(module_id));
 
-    let verification_path = install.and_then(|spec| install_verification_path(&install_root, spec));
+    let verification_path = install
+        .and_then(|spec| install_verification_path(&install_root, spec))
+        .map(|path| {
+            if module_id == "terraria" {
+                app_core::terraria::installed_vanilla_executable(&install_root, path)
+            } else {
+                path
+            }
+        });
     let executable_path = match (install, process) {
         (Some(_), Some(process_spec)) => resolve_probe_process_executable(
             &install_root,

@@ -217,6 +217,20 @@ fn terraria_uses_its_verification_path_when_the_launch_executable_is_dynamic() {
 }
 
 #[test]
+fn terraria_pinned_1458_verifies_its_own_entry_and_requires_proof_for_an_added_1461() {
+    let fixture = Fixture::new("terraria");
+    let previous = "1458/Windows/TerrariaServer.exe";
+    fixture.write(previous, ORIGINAL);
+    fixture.record();
+    assert_eq!(fixture.launch_matches(), Some(true));
+    fixture.patch_first_byte(previous);
+    assert_eq!(fixture.launch_matches(), Some(false));
+    fixture.write(previous, ORIGINAL);
+    fixture.write("1461/Windows/TerrariaServer.exe", ORIGINAL);
+    assert_eq!(fixture.launch_matches(), Some(false));
+}
+
+#[test]
 fn cancelled_launch_verification_never_returns_readiness_or_adopts_a_baseline() {
     for has_baseline in [false, true] {
         let fixture = Fixture::new("rust");

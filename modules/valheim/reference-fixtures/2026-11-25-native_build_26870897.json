@@ -1,0 +1,84 @@
+{
+  "schema": 1,
+  "verified_on": "2026-11-25",
+  "scope": "Windows Steam public package, BepInEx account control and native save/reload in a disposable private world with zero connected players.",
+  "package": {
+    "steam_app_id": 896660,
+    "build_id": "26870897",
+    "game_version": "1.0.30",
+    "network_version": 42,
+    "world_format": 42,
+    "public_updated_utc": "2026-11-25T09:49:39Z",
+    "release_notes": "https://store.steampowered.com/news/app/892970/view/694278837121319113",
+    "validation": "An isolated anonymous SteamCMD app_update 896660 validate completed with the Success marker and exit 0 after refreshing app information. The first attempt reported Missing configuration and exited 8.",
+    "state_flags": 4,
+    "target_build_id": "26870897",
+    "update_result": 0,
+    "installed_bytes": 2112767945,
+    "depots": {"1004": "7604377918839582995", "896662": "7088052197829382981"},
+    "executable_sha256": "6df887d7f9ed6bf5472f1834149eeb5ac7ea7fa14895331f6a97d5f46db61836",
+    "assembly_sha256": {
+      "assembly_valheim.dll": "4299a2e2c22cbdbe52c1985e20319cb6f7c602945edcc703ac48e4c153ba2373",
+      "assembly_utils.dll": "3dfb0fc0feb9ef4a65f8604ad835475f7a1ff78132a10de5c46c171b12b55af1",
+      "Splatform.dll": "19b9abca2dfc4641a06c61913d0ac3df9e560e3adac5fb676a68573b0a40bbad"
+    }
+  },
+  "static_review": {
+    "prior_build": "26266951",
+    "prior_depot_manifest": "171106503873955013",
+    "coverage": "Mono.Cecil comparison of field and property signatures plus method signatures, attributes, IL instructions, locals and exception handlers in 16 types. Both packages have 772 methods across those types.",
+    "unchanged_types": ["FileHelpers/FileLocation", "FileHelpers/FileSource", "Game", "ISocket", "SaveSystem", "Splatform.PlatformUserID", "SyncedList", "World", "ZDOMan", "ZNetPeer", "ZPlayFabSocket", "ZSteamSocket"],
+    "changes": [
+      "ZNet.OpenServer, SendPeerInfo and RPC_PeerInfo now advertise or check network version 42.",
+      "ZNet.SaveWorldThread moves ConsiderAutoBackup after the normal save commit. The native disk check, asynchronous save entry point, worker ownership and all 64 SaveSystem methods retain the reviewed contracts.",
+      "DungeonDB.GenerateHashList and several ZoneSystem location routines changed. The SkipSaving readiness methods and world format 42 remain unchanged."
+    ]
+  },
+  "standalone_control": {
+    "loader": "BepInExPack_Valheim 5.4.2351",
+    "loader_archive_sha256": "bce631497976a93977ceb08e166712e6c31d15244956f89f17df092a9b62e29f",
+    "verified_loader_files": 20,
+    "tests_with_packaged_compiler_references": 31,
+    "tests_with_real_loader_and_unity_references": 31,
+    "runs": 2,
+    "control_payload": "The compiler-reference build of the production plugin ran inside the real dedicated server in both sessions.",
+    "native_queries": "Both sessions returned a correlated empty peer list. The first session reloaded a synthetic platform ID in the native admin and permitted lists, then reloaded both after removal. Each response matched the requested list contents.",
+    "first_manual_save": {"previous": 0, "committed": 1, "evidence": "native_commit"},
+    "pre_stop_snapshot": "Five world files were copied and SHA-256 checked before Ctrl+C. The generation 1 FWL2 file contains a 55-byte metadata payload with world format 42. A fresh server process opened the copy, reported save number 1 and preserved the snapshot through readiness.",
+    "second_manual_save": {"previous": 1, "committed": 2, "evidence": "native_commit"},
+    "normal_ctrl_c_exits": [0, 0],
+    "forced_terminations": 0
+  },
+  "managed_control": {
+    "verified_on": "2026-11-26",
+    "selector": "commands::tests::manual_runtime_tests::native_lifecycle_tests::native_package_lifecycle",
+    "source_identity_sha256": "d339de976fc0db831ebcf6c26b465751af122878088a4a4c79b63f166e12f7ce",
+    "test_binary_sha256": "a5a5834c23af930086596f6365547d46a6d9768d0a064f041cb48a6c1a68e47a",
+    "managed_steam_appmanifest_sha256": "1a6c73b28edf53aabe7af9bb7b77a924ddeea0a9d683e19676d5cd9781248710",
+    "official_acquisition": "The desktop candidate acquired and verified both SteamCMD and the official server in its dedicated disposable library. The resulting build ID, StateFlags and all three assembly hashes matched the recorded package.",
+    "started_utc": "2026-11-26T01:44:16.057490+00:00",
+    "completed_utc": "2026-11-26T01:56:36.892582+00:00",
+    "normal_managed_cycles": [
+      "Initial start, native readiness, one confirmed generation-bound manual save and exit 0. The pre-stop snapshot contained five files.",
+      "The normal restart loaded the exact SHA-256-checked manual checkpoint before any second save and exited 0.",
+      "The backup restore preserved all five files, matched the saved world in fresh native logs, confirmed another generation-bound manual save and exited 0."
+    ],
+    "manual_receipt_bytes": [
+      52,
+      52
+    ],
+    "fourth_archive_restore": "The server loaded world format 42 and emitted Opened Steam server after archive restoration. Windows endpoint inspection exceeded its execution deadline before the harness could certify readiness. The owned process exited 0 during cleanup.",
+    "harness_exit_code": 101,
+    "full_harness_passed": false,
+    "redacted_test_output_sha256": "d95febf2430a92740b36a3e8514e2f9563da582a6de7c09b656caa92df8e778d",
+    "first_local_package_attempt": "The separate first attempt stopped before launching a game process. Its externally supplied SteamCMD lacked a verification recorded by that desktop process. The subsequent official-acquisition run exercised managed startup."
+  },
+  "profile_regression": {
+    "inputs": "Cartesian product of the distinct game, utility and platform hashes from the three prior profiles and the official 1.0.30 package, plus an empty and an unknown hash per assembly.",
+    "cases_per_gate": 180,
+    "accepted_per_gate": 4,
+    "rejected_per_gate": 176,
+    "gates": ["Rust supported_profile compiled directly from the host source", "production plugin SupportedProfile", "production plugin SupportedWorldSaveProfile"]
+  },
+  "outside_scope": ["connected client identity and moderation", "crossplay", "public A2S", "migration of a populated pre-existing world"]
+}

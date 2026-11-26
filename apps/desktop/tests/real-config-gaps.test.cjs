@@ -706,20 +706,21 @@ test("Windrose community pak mods stage into the server tilde mods directory", (
   assert.doesNotMatch(moduleToml, /\[mods\.enablement\]/);
 });
 
-test("Terraria official 1.4.5.8 package download and serverconfig path-owned keys are recorded", () => {
+test("Terraria official 1.4.6.1 package download and serverconfig path-owned keys are recorded", () => {
   const moduleToml = read(path.join(terrariaRoot, "module.toml"));
   const ledger = read(path.join(terrariaRoot, "config-sources.toml"));
   const template = read(path.join(terrariaRoot, "templates", "serverconfig.txt.hbs"));
   const exclusions = parseTomlArrayTables(ledger, "exclusions");
 
-  assert.match(moduleToml, /download_url_windows = "https:\/\/terraria\.org\/api\/download\/pc-dedicated-server\/terraria-server-1458\.zip"/);
-  assert.match(moduleToml, /size = 46415317/);
-  assert.match(moduleToml, /sha256 = "f513a4ac9789d34af766291ae217c9cd7d9472e13782a0e2b17512f70d7a8334"/);
+  assert.match(moduleToml, /download_url_windows = "https:\/\/terraria\.org\/api\/download\/pc-dedicated-server\/terraria-server-1461\.zip"/);
+  assert.match(moduleToml, /size = 57392309/);
+  assert.match(moduleToml, /sha256 = "0fb586dfbf2bcee448612c90768648d89532eed6ab345aadbbb0829f9d447476"/);
   assert.match(moduleToml, /executable = "\{\{terraria\.server_executable\}\}"/);
   assert.match(moduleToml, /args_template = \[\s*\n\s+"\{\{terraria\.launch_args\}\}"/);
   assert.match(moduleToml, /working_directory_template = "\{\{terraria\.working_directory\}\}"/);
 
-  assert.match(ledger, /last_verified = "2026-10-16"/);
+  assert.match(ledger, /last_verified = "2026-11-25"/);
+  assert.match(ledger, /official_dedicated_zip_1461/);
   assert.match(ledger, /official_dedicated_zip_1458/);
   assert.match(ledger, /official_dedicated_zip_1456/);
   assert.match(ledger, /terraria-server-1456\.zip/);
@@ -1063,7 +1064,13 @@ test("Don't Starve Together keeps the current native inventory separate from dat
   assert.equal(currentPackage.module_id, "dontstarve");
   assert.equal(currentPackage.evidence_classification, "official_package_static_config_comparison");
   assert.ok(verifiedDate, "package verification has an explicit date");
-  assert.ok(verifiedDate >= currentPackage.verified_on, "the ledger includes the current inventory review");
+  const lifecycle = parseTomlArrayTables(ledger, "sources").find((source) =>
+    source.kind === "runtime_probe" && source.id.startsWith("native_lifecycle_")
+    && source.path.startsWith(`reference-fixtures/${verifiedDate}-`));
+  assert.ok(lifecycle, "the module verification date has a native lifecycle record");
+  assert.equal(JSON.parse(read(path.join(dontStarveRoot, lifecycle.path))).verified_on, verifiedDate);
+  assert.match(currentPackage.verified_on, /^\d{4}-\d{2}-\d{2}$/);
+  assert.ok(currentSource.description.startsWith(currentPackage.verified_on), "the inventory review has its own verified date");
   assert.equal(currentPackage.game_version, inventory.gameVersion);
   assert.equal(currentPackage.scripts_sha256, inventory.scriptsSha256);
   assert.equal(sourceRecord(ledger, "installed_package_world_options").kind, "config_file");

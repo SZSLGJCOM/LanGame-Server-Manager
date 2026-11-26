@@ -61,7 +61,7 @@ reason = "SCUM admin Steam IDs are rendered into the native AdminUsers INI. The 
 verification = "Create an instance, confirm ServerSettingsAdminUsers.ini contains the expected Steam IDs, start the server, and verify admin privileges in-game. Runtime actions are unavailable because no verified live admin or RCON surface is declared."
 
 [runtime.shutdown]
-grace_period_ms = 15000
+grace_period_ms = 60000
 
 [[runtime.shutdown.commands]]
 transport = "console_ctrl_c"

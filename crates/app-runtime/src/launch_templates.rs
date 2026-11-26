@@ -601,12 +601,9 @@ fn render_terraria_working_directory(context: &TemplateContext<'_>) -> String {
             .to_string_lossy()
             .into_owned();
     }
-    context
-        .install_root
-        .join("1458")
-        .join("Windows")
-        .to_string_lossy()
-        .into_owned()
+    // Vanilla uses the selected executable's parent. tModLoader above needs
+    // its installation root even when its entrypoint is in LaunchUtils.
+    String::new()
 }
 
 fn render_terraria_launch_args(context: &TemplateContext<'_>) -> Vec<String> {

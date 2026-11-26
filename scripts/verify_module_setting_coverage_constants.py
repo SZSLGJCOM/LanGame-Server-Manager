@@ -390,6 +390,7 @@ DERIVED_TOKEN_SETTING_COVERAGE: dict[tuple[str, str], set[str]] = {
     ("terraria", "announcementboxrange_line"): {"announcementboxrange"},
     ("terraria", "banlist_lines"): {"banlist_entries"},
     ("terraria", "disableannouncementbox_line"): {"disableannouncementbox"},
+    ("terraria", "gns_line"): set(),  # Derived from bind address and allocated transports.
     ("terraria", "lobby_line"): {"lobby", "steam"},
     ("terraria", "password_line"): {"password"},
     ("terraria", "secure_line"): {"secure"},
@@ -487,6 +488,7 @@ DERIVED_TOKEN_RUST_FUNCTION_COVERAGE = {
 DERIVED_TOKEN_PORT_COVERAGE: dict[tuple[str, str], set[str]] = {
     ("astroneer", "console_port"): {"console"},
     ("palworld", "option_settings"): {"game", "rcon", "rest_api"},
+    ("terraria", "gns_line"): {"game", "gns"},
 }
 
 MATERIALIZATION_RUST_FUNCTION_COVERAGE = {

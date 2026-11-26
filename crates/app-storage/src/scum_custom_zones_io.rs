@@ -39,8 +39,9 @@ impl NativeLayout {
                 // Build 26621903 retains the observed schema-77 registry layout.
                 Some(Self::Build26593814)
             }
-            "458f03d40a2a87b013c1354e3643d5f59d28deb48a966978e9f0c1c49765ab97" => {
-                // Build 26790009 (1.3.6.2.179673) generates schema 79 with unchanged custom-zone tables.
+            "458f03d40a2a87b013c1354e3643d5f59d28deb48a966978e9f0c1c49765ab97"
+            | "6ce24c054b3321f09de6bfe8e032dac6b10a40e5d1f2e38d37eb3af547a82ca7" => {
+                // Both official images generate schema 79 with the same zone tables and defaults.
                 Some(Self::Build26790009)
             }
             _ => None,

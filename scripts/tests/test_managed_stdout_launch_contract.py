@@ -127,6 +127,15 @@ class ManagedStdoutLaunchContractTests(unittest.TestCase):
                 process = module_manifest(module_id)["process"]
                 self.assertNotIn("-newconsole", [arg.lower() for arg in process["args_template"]])
 
+    def test_scum_waits_for_native_teardown_after_one_documented_ctrl_c(self) -> None:
+        shutdown = module_manifest("scum")["runtime"]["shutdown"]
+        commands = shutdown["commands"]
+        self.assertEqual([(c["transport"], c["command"]) for c in commands],
+                         [("console_ctrl_c", "CTRL_C")])
+        self.assertNotIn("fallback_transport", commands[0])
+        # Build 26864403 still logged native teardown 27.205 s after Ctrl+C.
+        self.assertGreater(commands[0]["wait_after_ms"] + shutdown["grace_period_ms"], 27_205)
+
     def test_verified_unreal_quit_profiles_keep_console_and_managed_standard_output(self) -> None:
         for module_id in ("windrose", "runescapedragonwilds"):
             with self.subTest(module=module_id):

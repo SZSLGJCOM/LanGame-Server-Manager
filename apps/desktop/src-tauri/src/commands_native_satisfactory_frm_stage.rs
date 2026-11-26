@@ -8,7 +8,7 @@ use std::fs::{self, File};
 use std::io::{Read, Seek, SeekFrom};
 use std::path::{Component, Path, PathBuf};
 
-use super::Result;
+use super::{FRM_VERSION, Result, SML_VERSION};
 
 struct Package {
     name: &'static str,
@@ -18,22 +18,22 @@ struct Package {
     game_feature: bool,
 }
 
-// SML: https://api.ficsit.app/v1/version/74YqQBq2KJKN77/WindowsServer/download
-// FRM: https://github.com/porisius/FicsitRemoteMonitoring/releases/tag/1.5.5-529
-// FRM WindowsServer asset size and SHA-256 checked against the official release 2026-11-05.
+// Official WindowsServer release assets checked on 2026-11-25.
+// https://github.com/satisfactorymodding/SatisfactoryModLoader/releases/tag/v3.12.1
+// https://github.com/porisius/FicsitRemoteMonitoring/releases/tag/1.5.6-539
 const PACKAGES: [Package; 2] = [
     Package {
         name: "SML",
-        version: "3.12.0",
-        archive_bytes: 19_045_046,
-        sha256: "7479e2702da4b81eb5880a98d264d7bbe1fa2831e247e2cbcfb2b8add87512f1",
+        version: SML_VERSION,
+        archive_bytes: 18_702_517,
+        sha256: "a1b0e0c6799b9c3e25010dd6ccce7e219e8c341b02dd536da370874f77edd57f",
         game_feature: false,
     },
     Package {
         name: "FicsitRemoteMonitoring",
-        version: "1.5.5",
-        archive_bytes: 35_046_047,
-        sha256: "15e124c36ee29e627437dd7ca387cc802c39d76c3012458879314ad6eb908734",
+        version: FRM_VERSION,
+        archive_bytes: 34_947_543,
+        sha256: "5230e0fb469b315843f4e8646f2841ef277363b216046c2c5114ac19aad5e4ee",
         game_feature: true,
     },
 ];
@@ -174,7 +174,7 @@ pub(super) fn stage(mods: &[VerifiedMod], runtime: &Path) -> Result<()> {
         }
     }
     println!(
-        "NATIVE_SATISFACTORY_FRM phase=staged fixture_only=true sml=3.12.0 frm=1.5.5 target=owned_runtime source_members=verified_windows_server production_installer=not_claimed"
+        "NATIVE_SATISFACTORY_FRM phase=staged fixture_only=true sml={SML_VERSION} frm={FRM_VERSION} target=owned_runtime source_members=verified_windows_server production_installer=not_claimed"
     );
     Ok(())
 }

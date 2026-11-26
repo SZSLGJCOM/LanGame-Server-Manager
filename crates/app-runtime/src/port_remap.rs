@@ -65,7 +65,7 @@ fn remap_with_probe(
             ));
         }
     }
-    let units = allocation_units(&normalized, &indexes, port_groups)?;
+    let units = allocation_units(module_id, &normalized, &indexes, port_groups)?;
     let mut remapped = normalized.clone();
     let mut reserved = HashSet::new();
     for unit in units {
@@ -127,6 +127,7 @@ fn remap_with_probe(
 }
 
 fn allocation_units(
+    module_id: &str,
     ports: &[PortBinding],
     indexes: &HashMap<&str, usize>,
     groups: &[ModulePortGroupSpec],
@@ -134,6 +135,9 @@ fn allocation_units(
     let mut owners = HashSet::new();
     let mut units = Vec::new();
     for group in groups {
+        if app_core::terraria::is_legacy_tcp_registration(module_id, group, ports) {
+            continue;
+        }
         let invalid = |reason: &str| format!("Invalid port group '{}': {reason}.", group.id);
         if group.members.is_empty() {
             return Err(invalid("no member bindings"));

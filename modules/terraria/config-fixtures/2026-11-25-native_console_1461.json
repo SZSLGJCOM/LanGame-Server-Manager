@@ -1,0 +1,55 @@
+{
+  "fixture_version": 1,
+  "module_id": "terraria",
+  "evidence": {
+    "status": "best_effort_verified",
+    "verified_at": "2026-11-25",
+    "build": "Official Terraria Windows 1.4.6.1 with world format 329 and GameNetworkingSockets.",
+    "source_ids": [
+      "official_dedicated_zip_1461",
+      "native_console_1461"
+    ]
+  },
+  "coverage": {
+    "editable": 0,
+    "specialized": 0,
+    "derived": 0,
+    "generated": 0,
+    "excluded": 1
+  },
+  "classifications": {
+    "editable": [],
+    "specialized": [],
+    "derived": [],
+    "generated": [],
+    "excluded": [
+      "native_console_1461.gns"
+    ]
+  },
+  "settings": {
+    "server_runtime": "vanilla",
+    "world_name": "ConfigAudit1461"
+  },
+  "expected": {
+    "files": [
+      {
+        "root": "config",
+        "path": "serverconfig.txt",
+        "format": "text",
+        "fragments": [
+          "worldname=ConfigAudit1461",
+          "upnp=0"
+        ]
+      }
+    ],
+    "launch": {
+      "executable_suffix": "1461/Windows/TerrariaServer.exe",
+      "arguments": [
+        "-config",
+        "{{paths.config_dir}}\\serverconfig.txt",
+        "-ip",
+        "0.0.0.0"
+      ]
+    }
+  }
+}

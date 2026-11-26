@@ -754,9 +754,34 @@ fn terraria_banlist_lines_filter_comments_duplicates_and_template_tokens() {
     );
 
     assert_eq!(
-        lookup_terraria_template_token(&settings, "banlist_lines"),
+        lookup_terraria_template_token(&settings, "0.0.0.0", &[], "banlist_lines"),
         Some(String::from("Griefer\n192.168.1.25\nVery Bad Player"))
     );
+}
+
+#[test]
+fn terraria_gns_requires_a_wildcard_and_a_matching_udp_reservation() {
+    let settings = Map::new();
+    let mut ports = [
+        PortBinding {
+            name: "game".into(),
+            protocol: "tcp".into(),
+            port: 28771,
+        },
+        PortBinding {
+            name: "gns".into(),
+            protocol: "udp".into(),
+            port: 28771,
+        },
+    ];
+    let gns = |ip: &str, ports: &[PortBinding]| {
+        lookup_terraria_template_token(&settings, ip, ports, "gns_line").unwrap()
+    };
+    assert_eq!(gns("0.0.0.0", &ports), "");
+    assert_eq!(gns("127.0.0.1", &ports), "gns=0");
+    assert_eq!(gns("0.0.0.0", &ports[..1]), "gns=0");
+    ports[1].port += 1;
+    assert_eq!(gns("0.0.0.0", &ports), "gns=0");
 }
 
 #[test]

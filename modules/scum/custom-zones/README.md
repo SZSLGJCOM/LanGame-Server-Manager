@@ -7,7 +7,7 @@ player damage remain owned by the game.
 
 The editor binds each inspected executable to its verified database schema:
 build 25803875 to schema 73, build 26320224 to schema 75, builds 26593814 and
-26621903 to schema 77, and build 26790009 to schema 79. Crossed pairs and
+26621903 to schema 77, and builds 26790009 and 26864403 to schema 79. Crossed pairs and
 unknown versions are rejected. Let the game perform its database migration
 before stopping it to edit zones. Paths come from the stored instance.
 Writes retain the instance mutation and storage leases, acquire
@@ -85,3 +85,15 @@ on a consistent Backup API snapshot of the build 26790009 schema-79 world passed
 source files. See [`2026-11-22-native_contract_build_26790009.json`](../reference-fixtures/2026-11-22-native_contract_build_26790009.json)
 and the separate 4-cycle managed lifecycle record
 [`2026-11-22-managed_lifecycle_build_26790009.json`](../reference-fixtures/2026-11-22-managed_lifecycle_build_26790009.json).
+
+Build 26864403 (`1.3.6.3.180352`) generated the same three editor tables, four
+indexes and 38 default zone rows as build 26790009. In a stopped disposable
+world, the three Outposts settings were set to 0, 1 and 2. Comparing all 172
+database tables found one changed cell. On restart the vanilla server regenerated
+the 32 damage records and retained all three settings under the original zone.
+The public editor also passed its stopped-world read, write and pre-change
+backup checks on a separate copy of this database. A second vanilla restart
+read back the edited Outposts value 586 and preserved the Global value 341.
+Both values survived a normal shutdown, and SQLite's integrity check passed.
+Client combat effects were outside these tests.
+[Database and shutdown evidence](../reference-fixtures/2026-11-25-vanilla_zone_reload_build_26864403.json).

@@ -5,13 +5,13 @@
 | module | status | schema fields | ledger items | exclusions | sources |
 | --- | --- | ---: | ---: | ---: | ---: |
 | `abioticfactor` | best_effort_verified | 67 | 67 | 12 | 20 |
-| `arksurvivalascended` | best_effort_verified | 283 | 295 | 315 | 54 |
+| `arksurvivalascended` | best_effort_verified | 283 | 295 | 315 | 55 |
 | `arksurvivalevolved` | exhaustive_verified | 375 | 414 | 137 | 36 |
 | `astroneer` | best_effort_verified | 20 | 20 | 6 | 21 |
 | `barotrauma` | best_effort_verified | 125 | 125 | 4 | 39 |
 | `conanexiles` | best_effort_verified | 305 | 305 | 47 | 35 |
 | `corekeeper` | verified_with_direct_connection | 15 | 24 | 19 | 27 |
-| `dontstarve` | best_effort_verified | 335 | 335 | 32 | 34 |
+| `dontstarve` | best_effort_verified | 335 | 335 | 32 | 35 |
 | `enshrouded` | best_effort_verified | 75 | 75 | 9 | 29 |
 | `humanitz` | best_effort_verified | 98 | 98 | 27 | 34 |
 | `minecraft` | exhaustive_verified | 73 | 73 | 5 | 22 |
@@ -23,16 +23,16 @@
 | `rimworld` | best_effort_verified | 120 | 120 | 6 | 25 |
 | `romestead` | best_effort_verified | 9 | 9 | 2 | 19 |
 | `runescapedragonwilds` | best_effort_verified | 7 | 7 | 9 | 28 |
-| `rust` | best_effort_verified | 75 | 76 | 17 | 52 |
-| `satisfactory` | best_effort_verified | 20 | 24 | 16 | 34 |
-| `scum` | best_effort_verified | 11 | 481 | 10 | 40 |
+| `rust` | best_effort_verified | 75 | 76 | 17 | 54 |
+| `satisfactory` | best_effort_verified | 20 | 24 | 16 | 35 |
+| `scum` | best_effort_verified | 11 | 481 | 10 | 41 |
 | `sevendaystodie` | best_effort_verified | 70 | 70 | 6 | 29 |
 | `sonsoftheforest` | exhaustive_verified | 44 | 44 | 4 | 19 |
 | `soulmask` | best_effort_verified | 292 | 292 | 6 | 19 |
 | `squad` | best_effort_verified | 62 | 62 | 5 | 37 |
-| `terraria` | best_effort_verified | 40 | 40 | 9 | 16 |
+| `terraria` | best_effort_verified | 40 | 40 | 10 | 18 |
 | `theforest` | exhaustive_verified | 22 | 22 | 6 | 17 |
 | `unturned` | best_effort_verified | 301 | 301 | 13 | 64 |
-| `valheim` | best_effort_verified | 18 | 18 | 7 | 48 |
+| `valheim` | best_effort_verified | 18 | 18 | 7 | 49 |
 | `vrising` | best_effort_verified | 194 | 197 | 8 | 29 |
 | `windrose` | best_effort_verified | 23 | 23 | 13 | 11 |

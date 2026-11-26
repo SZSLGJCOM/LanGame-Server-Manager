@@ -1,0 +1,60 @@
+{
+  "schema_version": 1,
+  "module_id": "rust",
+  "evidence_classification": "official_package_identity_and_read_only_managed_il_review",
+  "reviewed_on": "2026-11-25",
+  "steam_app_id": 258550,
+  "steam_build_id": "26889231",
+  "windows_depot_manifest": "556295283874685639",
+  "prior_fixture": "2026-11-22-native-build-26778019-static.json",
+  "package_sha256": {
+    "RustDedicated.exe": "5a75611ebf844dd9a3a472cece5c684e3bb896eae0bd4a335c3605feb91ab5c7",
+    "RustDedicated_Data/Managed/Assembly-CSharp.dll": "868e472e5efed035b0972bbd1e79d87c8dd42fedd81efc2f9c88f78fc2864de9",
+    "RustDedicated_Data/Managed/Facepunch.Rcon.dll": "d2a05f424fb26cb7a455052524ecbe5923fc4970038f5d8ac23f1c67f5fed419",
+    "RustDedicated_Data/Managed/Facepunch.Network.dll": "db01fe308903fa4e8664a29a566ffeea0743f36cc162aafb0e91260305c90fe3",
+    "RustDedicated_Data/Managed/Fleck.dll": "a5e753ff95bc6116c39bc39d1b765381bcad9d2fbcaab4e1fe381046a4d398fc"
+  },
+  "console_registry": {
+    "previous_keys": 2468,
+    "current_keys": 2473,
+    "removed_keys": [],
+    "added_variables_and_native_defaults": {
+      "server.max_privilege_auths": 200,
+      "cassette.maxdecodedaudiomb": 256,
+      "convartimedprefabspawner.prefab_spawn_scale_min": 1,
+      "convartimedprefabspawner.prefab_spawn_scale_max": 1,
+      "physicstumblingentity.player_hit_padding": 0.1
+    },
+    "unchanged_managed_command_bindings": [
+      "global.banid",
+      "global.banlistex",
+      "global.kick",
+      "global.moderatorid",
+      "global.ownerid",
+      "global.playerlist",
+      "global.players",
+      "global.quit",
+      "global.removemoderator",
+      "global.removeowner",
+      "global.say",
+      "global.status",
+      "global.unban",
+      "global.users",
+      "server.save",
+      "server.writecfg"
+    ]
+  },
+  "unchanged_normalized_method_counts": {
+    "Facepunch.Rcon": 56,
+    "Fleck": 377
+  },
+  "navigation_switch": "-useOldNavmesh",
+  "native_performance_defaults": {
+    "net.position_lod": 2,
+    "net.position_lod_players": 2,
+    "server.batchpackets": true,
+    "server.useplayerupdatejobs": 4
+  },
+  "integration_assessment": "The existing server.cfg extra-lines setting accepts the five new variables. The reviewed command bindings, startup navigation switch and four optional performance settings retain their existing contracts.",
+  "scope": "Static comparison of Windows assemblies using Mono.Cecil. The native network tick now processes pending kicks. Live WebRCON, connected players, saves and shutdown were outside this inspection."
+}

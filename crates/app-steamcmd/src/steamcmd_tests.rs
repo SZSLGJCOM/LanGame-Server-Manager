@@ -601,7 +601,7 @@ fn probe_terraria_cold_install_resolves_template_process_from_verification_paylo
         download_url_windows: Some(String::from("https://example.invalid/terraria.zip")),
         download_integrity_windows: None,
         source: None,
-        verification_path: Some(String::from("1458/Windows/TerrariaServer.exe")),
+        verification_path: Some(String::from("1461/Windows/TerrariaServer.exe")),
         minecraft: None,
     };
     let process = ProcessSpec {
@@ -620,6 +620,14 @@ fn probe_terraria_cold_install_resolves_template_process_from_verification_paylo
     assert!(matches!(probe.install_state, InstallState::Installed));
     assert!(probe.executable_exists);
     assert_eq!(PathBuf::from(&probe.executable_path), windows_executable);
+
+    let current = install_root.join("1461/Windows/TerrariaServer.exe");
+    std::fs::create_dir_all(current.parent().unwrap()).unwrap();
+    std::fs::write(&current, b"new Windows package").unwrap();
+    let updated =
+        probe_module_install_state(&settings, "terraria", None, Some(&install), Some(&process));
+    assert_eq!(updated.install_state, InstallState::Installed);
+    assert_eq!(PathBuf::from(updated.executable_path), current);
 
     let _ = std::fs::remove_dir_all(temp_root);
 }

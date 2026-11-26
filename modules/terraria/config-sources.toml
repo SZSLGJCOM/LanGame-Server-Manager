@@ -1,6 +1,21 @@
 status = "best_effort_verified"
-last_verified = "2026-10-16"
-notes = "The module uses official Terraria 1.4.5.8. Its Windows server was verified on one isolated host with XNA 4.0 and Windows ConPTY for console commands, world saving and normal shutdown. The configuration sample remains byte-identical to 1.4.5.6. A separate November probe covers the optional tModLoader Windows console using the official stable package. Client joins and installed Workshop mods were outside both tests. Terraria Wiki documentation, official packages and tModLoader utilities are crosswalked for the Windows serverconfig.txt, launch arguments, console commands, banlist and modpack surfaces. Launch and path values owned by instance state are not duplicated as schema fields."
+last_verified = "2026-11-25"
+notes = "The official 1.4.6.1 Windows package writes world format 329. The packaged serverconfig.txt matches the 1.4.5.8 sample, while the server adds gns=0 to disable its default UDP listener. Native Windows ConPTY runs cover TCP/GNS endpoint ownership, console commands, a manual midnight save restored into a fresh process, and normal shutdown. The earlier 1.4.5.8 vanilla and stable tModLoader probes retain their original scope. Client and console-device joins were not exercised."
+
+[[sources]]
+id = "official_dedicated_zip_1461"
+kind = "install_probe"
+path = "1461/Windows/TerrariaServer.exe"
+url = "https://terraria.org/api/download/pc-dedicated-server/terraria-server-1461.zip"
+authority = "Re-Logic"
+description = "The official dedicated-server index returned terraria-server-1461.zip. The archive is 57392309 bytes with SHA256 0fb586dfbf2bcee448612c90768648d89532eed6ab345aadbbb0829f9d447476. TerrariaServer.exe reports version 1.4.6.1 and Main.curRelease 329. The native Windows directory also contains GNS_Wrapper.dll and steamnetworkingsockets.dll. serverconfig.txt is byte-identical to the previous sample."
+
+[[sources]]
+id = "native_console_1461"
+kind = "runtime_probe"
+path = "reference-fixtures/2026-11-25-vanilla-1461.json"
+authority = "isolated_official_windows_server_and_owned_endpoints"
+description = "In a new package and world on a single Windows host, the default GNS socket bound the IPv6 wildcard on the game port even with an explicit IPv4 loopback -ip. With gns=0, only the requested TCP listener remained on that port. The console reported zero players; saving after midnight produced v329 revision 2, and the restored pre-stop checkpoint reloaded at midnight in a fresh process. Neither run used a client."
 
 [[sources]]
 id = "tmodloader_foreground_console_20261104"
@@ -350,6 +365,11 @@ source = "serverconfig"
 key = "journeypermission_rain_setfrozen"
 schema_key = "journeypermission_rain_setfrozen"
 surface = "config_file"
+
+[[exclusions]]
+source = "native_console_1461"
+key = "gns"
+reason = "LanGame derives this setting from the instance bind address and its same-number TCP/UDP reservations. A specific bind or a TCP-only instance writes gns=0 because the native UDP listener accepts only a port and binds the wildcard interface."
 
 [[exclusions]]
 source = "serverconfig"

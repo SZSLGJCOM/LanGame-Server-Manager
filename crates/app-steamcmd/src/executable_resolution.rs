@@ -8,6 +8,11 @@ pub(super) fn resolve_probe_process_executable(
     process: &ProcessSpec,
     verification_path: Option<&Path>,
 ) -> PathBuf {
+    if process.executable == "{{terraria.server_executable}}"
+        && let Some(path) = verification_path
+    {
+        return path.to_owned();
+    }
     if process.executable.contains("{{")
         && process.executable.contains("}}")
         && let Some(verification_path) = verification_path

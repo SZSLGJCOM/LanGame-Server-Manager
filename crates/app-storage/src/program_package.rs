@@ -248,10 +248,22 @@ pub fn program_launch_files_match_baseline(
     if manifest.module_id != descriptor.summary.id {
         return Err(invalid(root, "program inventory belongs to another module"));
     }
-    let required: BTreeSet<_> = descriptor
+    let verification = descriptor
         .install
         .as_ref()
         .and_then(|install| install.verification_path.as_deref())
+        .map(|path| path.replace('\\', "/"));
+    let verification = verification.map(|path| {
+        if descriptor.summary.id == "terraria" && !manifest.files.contains_key(&path) {
+            let selected = app_core::terraria::installed_vanilla_executable(root, root.join(&path));
+            if let Ok(relative) = selected.strip_prefix(root) {
+                return relative.to_string_lossy().replace('\\', "/");
+            }
+        }
+        path
+    });
+    let required: BTreeSet<_> = verification
+        .as_deref()
         .into_iter()
         .chain(
             descriptor

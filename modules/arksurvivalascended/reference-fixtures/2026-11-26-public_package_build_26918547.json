@@ -1,0 +1,246 @@
+{
+  "schema_version": 1,
+  "module_id": "arksurvivalascended",
+  "observed_on": "2026-11-26",
+  "evidence_classification": "official_package_default_configuration_vanilla_rcon_and_managed_extension_persistence",
+  "package": {
+    "steam_app_id": 2430930,
+    "steam_build_id": "26918547",
+    "public_updated_shanghai": "2026-11-26T04:59:22+08:00",
+    "depot_id": 2430931,
+    "windows_depot_manifest": "909047212639962653",
+    "executable": {
+      "path": "ShooterGame/Binaries/Win64/ArkAscendedServer.exe",
+      "bytes": 215605864,
+      "sha256": "8be2cafcb499d28492b58db35c1d2384c902f04f8cee3bad372717037d2483ce"
+    },
+    "acquisition": "Anonymous SteamCMD app_update 2430930 validate",
+    "state_flags": 4,
+    "update_result": 0,
+    "acquisition_exit_code": 0,
+    "appmanifest_sha256": "ffc49c915b6f1454ba39f45511a5e45567d1eae05d38eeddec5871b429df537c"
+  },
+  "baseline": {
+    "steam_build_id": "26749470",
+    "windows_depot_manifest": "6268348989345964786",
+    "executable": {
+      "path": "ShooterGame/Binaries/Win64/ArkAscendedServer.exe",
+      "bytes": 215595624,
+      "sha256": "6434fe81cc0c950e0ee9a84c3f98c0fb010388339e097e33790200ef9432c6fb"
+    }
+  },
+  "windows_depot_comparison": {
+    "old_files": 152,
+    "new_files": 152,
+    "added": 0,
+    "removed": 0,
+    "changed": 39
+  },
+  "packaged_inventory": {
+    "Manifest_UFSFiles_Win64.txt": {
+      "old_entries": 209999,
+      "new_entries": 209999,
+      "added": 0,
+      "removed": 0,
+      "changed_cook_timestamps": 51,
+      "game_config_timestamp_changes": [
+        "ShooterGame/Config/DefaultGame.ini",
+        "ShooterGame/Config/DefaultEngine.ini"
+      ]
+    },
+    "Manifest_NonUFSFiles_Win64.txt": {
+      "old_entries": 120,
+      "new_entries": 120,
+      "added": 0,
+      "removed": 0,
+      "changed_cook_timestamps": 12,
+      "game_config_timestamp_changes": []
+    }
+  },
+  "public_default_inis": {
+    "method": "Verified the hash in each official depot inventory against the relevant binaries. Verified the SHA-1 for the unencrypted primary Pak directory, secondary file directory and each selected file's stored bytes. Independently compared corresponding byte sequences directly. All ten shipped project INIs have identical stored contents across the two builds.",
+    "stored_bytes_identical": {
+      "DefaultDeviceProfiles.ini": true,
+      "DefaultEngine.ini": true,
+      "DefaultGame.ini": true,
+      "DefaultGameUserSettings.ini": true,
+      "DefaultGameplayTags.ini": true,
+      "DefaultInput.ini": true,
+      "DefaultScalability.ini": true,
+      "Windows/WindowsEngine.ini": true,
+      "Windows/WindowsScalability.ini": true,
+      "XboxSeriesS/Engine.ini": true
+    },
+    "operator_ini_entry_sha256": {
+      "DefaultGame.ini": "70937597ded551b080ca031fce8b6455f8d17bab4c2cdf27cbd013c3b99a825f",
+      "DefaultEngine.ini": "c55c7bab129aff5b54fcd63e8860d5408c199f9253c9dbac9cf809d7d6337dea",
+      "DefaultGameUserSettings.ini": "00b257d122e11c50b19e19f683cff272e236e800a12a10de44b2fef50f4c5cde"
+    }
+  },
+  "publisher_event": {
+    "published_utc": "2026-11-21T00:33:17Z",
+    "url": "https://steamcommunity.com/games/2399830/announcements/detail/1849827110434159",
+    "event": "Turkey Trial (November 25 to December 1)",
+    "optional_server_launch": "-mods=927083"
+  },
+  "official_server_fleet": {
+    "source": "https://cdn2.arkdedicated.com/servers/asa/officialserverlist.json",
+    "queried_utc": "2026-11-26T01:18:56.992137+00:00",
+    "count": 3120,
+    "build_tuples": [
+      {
+        "major": 98,
+        "minor": 23,
+        "count": 3111
+      },
+      {
+        "major": 952,
+        "minor": 1,
+        "count": 6
+      },
+      {
+        "major": 98,
+        "minor": 102,
+        "count": 1
+      },
+      {
+        "major": 945,
+        "minor": 1,
+        "count": 1
+      },
+      {
+        "major": 98,
+        "minor": 9,
+        "count": 1
+      }
+    ],
+    "session_name_versions": {
+      "98.23": 3111,
+      "98.102": 1,
+      "945.1": 1,
+      "952.1": 6,
+      "98.9": 1
+    },
+    "privacy": "Only aggregate fields were retained."
+  },
+  "matching_upstream_extension_archive": {
+    "probe": "HEAD",
+    "body_bytes_read": 0,
+    "checked_shanghai": "2026-11-26T09:18:43.516164+08:00",
+    "results": [
+      {
+        "host": "cdn.pelayori.com",
+        "status": 200,
+        "content_length": "23136751",
+        "etag": "\"b99a50dabff9244d7e52df0f59f62140-3\""
+      },
+      {
+        "host": "cdn.shadowhunter.co.za",
+        "status": 200,
+        "content_length": "23136751",
+        "etag": "\"b99a50dabff9244d7e52df0f59f62140-3\""
+      },
+      {
+        "host": "cdn.shadowhunter-systems.co.za",
+        "status": 200,
+        "content_length": "23136751",
+        "etag": "\"b99a50dabff9244d7e52df0f59f62140-3\""
+      }
+    ],
+    "scope": "HEAD responses establish provider availability. The optional_managed_extension run separately exercised the installed extension."
+  },
+  "assessment": "The existing executable path, default configuration writers and optional -mods setting cover the public package. The native executable has a new digest.",
+  "vanilla_native": {
+    "map": "TheIsland_WP",
+    "version": "98.23",
+    "advertised": true,
+    "admin_transport": "authenticated loopback Source RCON",
+    "list_players": "No Players Connected",
+    "saveworld_reply": "World Saved",
+    "doexit_reply": "Exiting...",
+    "exit_code": 0,
+    "elapsed_seconds": 184.28,
+    "ready_seconds": 134.57,
+    "native_log_sha256": "52cca2800aba25e246009e53fced49b1a4de949220a4234b96352df8aa2d1a22",
+    "external_clients": 0,
+    "mod_count": 0,
+    "forced_termination": false,
+    "passed": true,
+    "world_before_save": [
+      {
+        "bytes": 40960,
+        "sha256": "91171acde9c682e146ce9994cb5e44730841539b891ba51791c4c35e4c0476d7"
+      }
+    ],
+    "world_after_save": [
+      {
+        "bytes": 64520192,
+        "sha256": "d3b74ed6d94b73a21be66b7ba673186a447b82d716348b0f614517b533169529"
+      }
+    ]
+  },
+  "optional_managed_extension": {
+    "result": "passed",
+    "framework": "AsaApi 2.11",
+    "plugin": "LanGame ARK Tools",
+    "test": "commands::tests::manual_runtime_tests::native_lifecycle_tests::native_game_tools",
+    "test_exit_code": 0,
+    "test_seconds": 833.43,
+    "source_snapshot_sha256": "d339de976fc0db831ebcf6c26b465751af122878088a4a4c79b63f166e12f7ce",
+    "test_executable_sha256": "a5a5834c23af930086596f6365547d46a6d9768d0a064f041cb48a6c1a68e47a",
+    "log_sha256": "a553033cfcb6b96a7c2ec23dadabd3ed85232f9802fe937fb46f1ec9f565fe52",
+    "verified_package_files": 160,
+    "empty_world_at_start": true,
+    "preparation": "Manager prepared the existing framework and plugin against the current executable.",
+    "protocol_handshake": true,
+    "native_world_snapshot": true,
+    "admin_commands_with_native_replies": [
+      "ark_set_time",
+      "ark_destroy_wild_dinos"
+    ],
+    "primary_world": {
+      "bytes": 20529152,
+      "sha256": "635ecec66bd835ecd6fab2e343237ccb4c736138c59c7868ae91261ceebf5a8c",
+      "save_receipt": "requested"
+    },
+    "entities_read_back_after_restart": [
+      {
+        "class": "Dodo_Character_BP_C",
+        "level": 37,
+        "native_entity_id": [
+          83342231,
+          233886865
+        ],
+        "wild": true
+      },
+      {
+        "class": "Rex_Character_BP_C",
+        "level": 150,
+        "native_entity_id": [
+          383076450,
+          382214646
+        ],
+        "wild": true
+      },
+      {
+        "class": "Chameleon_Character_BP_C",
+        "level": 73,
+        "native_entity_id": [
+          245991764,
+          28627576
+        ],
+        "wild": true
+      }
+    ],
+    "spawn_replayed": false,
+    "two_clean_exit_codes": [
+      0,
+      0
+    ],
+    "owned_process_and_fixture_cleanup": "passed",
+    "system_runtime_install_events_during_this_run": 0
+  },
+  "scope_limits": [
+    "Both runs used an isolated Windows server with no connected game clients. Populated-world migration, external clients, online taming and cross-map transfers were outside the checks."
+  ]
+}

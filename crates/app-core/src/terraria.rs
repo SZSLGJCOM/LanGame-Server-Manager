@@ -8,6 +8,36 @@ pub const TML_RELEASE: &str = "v2026.09.3.1";
 /// https://docs.tmodloader.net/docs/stable/class_main.html
 pub const TML_MAX_WORLD_VERSION: i32 = 279;
 
+/// Pre-1.4.6 instances own only the TCP game port. Their rendered config
+/// disables GNS so a settings save or startup must preserve that registration.
+pub fn is_legacy_tcp_registration(
+    module_id: &str,
+    group: &crate::ModulePortGroupSpec,
+    ports: &[crate::PortBinding],
+) -> bool {
+    module_id == "terraria"
+        && group.id == "game_network"
+        && matches!(ports, [game] if game.name == "game" && game.protocol.eq_ignore_ascii_case("tcp"))
+}
+
+/// Prefer the catalog package. Already provisioned instances can still own an
+/// earlier official Windows layout while their update policy keeps it pinned.
+pub fn installed_vanilla_executable(install_root: &Path, catalog_path: PathBuf) -> PathBuf {
+    if catalog_path.is_file() {
+        return catalog_path;
+    }
+    ["1458", "1456"]
+        .iter()
+        .map(|version| {
+            install_root
+                .join(version)
+                .join("Windows")
+                .join("TerrariaServer.exe")
+        })
+        .find(|entry| entry.is_file())
+        .unwrap_or(catalog_path)
+}
+
 /// This is the exact, case-sensitive list published to Mods/enabled.json.
 /// Workshop IDs record downloads; they do not decide which program starts.
 pub fn enabled_mod_names(settings: &Map<String, Value>) -> impl Iterator<Item = &str> {

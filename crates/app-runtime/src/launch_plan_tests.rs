@@ -1248,6 +1248,8 @@ fn build_launch_plan_prefers_platform_specific_executable_directory() {
     #[cfg(windows)]
     {
         let mut module = module;
+        let current_relative = "1461/Windows/TerrariaServer.exe";
+        module.install.as_mut().unwrap().verification_path = Some(current_relative.into());
         let process = module.process.as_mut().expect("Terraria process");
         process.executable = String::from("{{terraria.server_executable}}");
         process.args_template = vec![String::from("{{terraria.launch_args}}")];
@@ -1269,6 +1271,16 @@ fn build_launch_plan_prefers_platform_specific_executable_directory() {
             windows_executable
                 .parent()
                 .expect("Windows executable parent")
+        );
+        let current = install_root.join(current_relative);
+        std::fs::create_dir_all(current.parent().unwrap()).unwrap();
+        std::fs::write(&current, b"new Windows package").unwrap();
+        let updated_plan = build_launch_plan_with_override(&settings, &module, &instance, None)
+            .expect("updated package alongside the prior Windows package");
+        assert_eq!(Path::new(&updated_plan.executable_path), current);
+        assert_eq!(
+            Path::new(&updated_plan.working_directory),
+            current.parent().unwrap()
         );
     }
 

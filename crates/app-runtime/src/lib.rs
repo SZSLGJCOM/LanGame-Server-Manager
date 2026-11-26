@@ -669,7 +669,15 @@ pub fn build_launch_plan_with_override(
     };
 
     let configured_executable = resolve_template(&process.executable, &context);
-    let executable_path = resolve_process_executable(&install_root, &configured_executable);
+    let executable_path = if process.executable == "{{terraria.server_executable}}"
+        && configured_executable == "TerrariaServer.exe"
+        && let Some(relative) = install.verification_path.as_deref()
+    {
+        let catalog_path = install_root.join(launch_templates::normalized_relative_path(relative));
+        app_core::terraria::installed_vanilla_executable(&install_root, catalog_path)
+    } else {
+        resolve_process_executable(&install_root, &configured_executable)
+    };
     #[cfg(windows)]
     let executable_path = compatible_java_executable_path(executable_path);
     #[cfg(windows)]

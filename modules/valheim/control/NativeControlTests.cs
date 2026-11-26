@@ -127,7 +127,9 @@ namespace Lgsm.Valheim.Control
                     new[] { ValheimNativeControl.LocalProofGameSha256, ValheimNativeControl.LocalProofUtilitiesSha256,
                         ValheimNativeControl.PlatformSha256 },
                     new[] { ValheimNativeControl.Build26266951GameSha256, ValheimNativeControl.Build26266951UtilitiesSha256,
-                        ValheimNativeControl.Build26266951PlatformSha256 }
+                        ValheimNativeControl.Build26266951PlatformSha256 },
+                    new[] { ValheimNativeControl.Build26870897GameSha256, ValheimNativeControl.Build26870897UtilitiesSha256,
+                        ValheimNativeControl.Build26870897PlatformSha256 }
                 };
                 foreach (string[] profile in profiles)
                 {

@@ -87,6 +87,37 @@ fn previously_split_bindings_are_reconciled_to_the_declared_primary() {
 }
 
 #[test]
+fn terraria_remaps_only_registered_transports() {
+    let transport = ModulePortGroupSpec {
+        id: "game_network".into(),
+        members: vec!["game".into(), "gns".into()],
+        member_offsets: None,
+    };
+    let groups = std::slice::from_ref(&transport);
+    let tcp = binding("game", "tcp", 7777);
+    let both = [tcp.clone(), binding("gns", "udp", 7777)];
+    let udp_busy = |port: &PortBinding| !(port.port == 7777 && port.protocol == "udp");
+    let remapped = remap_with_probe("terraria", &both, groups, udp_busy)
+        .unwrap()
+        .unwrap();
+    assert_ports(
+        &remapped,
+        &[binding("game", "tcp", 7778), binding("gns", "udp", 7778)],
+    );
+    let legacy = std::slice::from_ref(&tcp);
+    assert!(
+        remap_with_probe("terraria", legacy, groups, udp_busy)
+            .unwrap()
+            .is_none()
+    );
+    let remapped = remap_with_probe("terraria", legacy, groups, |port| port.port != 7777)
+        .unwrap()
+        .unwrap();
+    assert_ports(&remapped, &[binding("game", "tcp", 7778)]);
+    assert!(remap_with_probe("other", legacy, groups, udp_busy).is_err());
+}
+
+#[test]
 fn equal_number_mixed_protocol_group_moves_together_when_one_protocol_is_busy() {
     let ports = [
         binding("game", "udp", 7777),

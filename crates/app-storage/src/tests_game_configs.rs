@@ -598,6 +598,7 @@ async fn terraria_instance_renders_server_config_file() {
         )));
     assert!(server_config_text.contains("autocreate=2"));
     assert!(server_config_text.contains("worldname=Terraria Meadow"));
+    assert!(server_config_text.lines().any(|line| line == "upnp=0"));
     assert!(server_config_text.contains("difficulty=0"));
     assert!(server_config_text.contains("maxplayers=8"));
     assert!(server_config_text.contains("port=7777"));
@@ -701,7 +702,7 @@ async fn terraria_instance_renders_optional_server_flags() {
     assert!(server_config_text.contains("steam=1"));
     assert!(server_config_text.contains("lobby=friends"));
     assert!(server_config_text.contains("language=zh-Hans"));
-    assert!(server_config_text.contains("upnp=1"));
+    assert!(server_config_text.lines().any(|line| line == "upnp=1"));
     assert!(server_config_text.contains("npcstream=90"));
     assert!(server_config_text.contains("disableannouncementbox=1"));
     assert!(server_config_text.contains("announcementboxrange=-1"));

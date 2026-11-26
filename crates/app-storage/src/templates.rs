@@ -544,7 +544,12 @@ fn resolve_template_token(token: &str, context: &TemplateRenderContext<'_>) -> O
             } else if let Some(path) = token.strip_prefix("projectzomboid.") {
                 lookup_projectzomboid_template_token(context.settings, path)
             } else if let Some(path) = token.strip_prefix("terraria.") {
-                lookup_terraria_template_token(context.settings, path)
+                lookup_terraria_template_token(
+                    context.settings,
+                    context.bind_ip,
+                    context.ports,
+                    path,
+                )
             } else if let Some(path) = token.strip_prefix("sevendaystodie.") {
                 lookup_sevendaystodie_template_token(context.settings, path)
             } else if let Some(path) = token.strip_prefix("squad.") {
@@ -1048,8 +1053,30 @@ fn lookup_projectzomboid_template_token(
     }
 }
 
-fn lookup_terraria_template_token(settings: &Map<String, Value>, path: &str) -> Option<String> {
+fn lookup_terraria_template_token(
+    settings: &Map<String, Value>,
+    bind_ip: &str,
+    ports: &[PortBinding],
+    path: &str,
+) -> Option<String> {
     match path {
+        "gns_line" => {
+            // Re-Logic's GNS listener accepts only a port and binds all interfaces.
+            // Older instances can also have only the original TCP reservation.
+            let game = ports
+                .iter()
+                .find(|port| port.name == "game" && port.protocol == "tcp");
+            let gns = ports
+                .iter()
+                .find(|port| port.name == "gns" && port.protocol == "udp");
+            let use_native_default = bind_ip == "0.0.0.0"
+                && game.zip(gns).is_some_and(|(tcp, udp)| tcp.port == udp.port);
+            Some(if use_native_default {
+                String::new()
+            } else {
+                "gns=0".to_owned()
+            })
+        }
         "banlist_lines" => Some(render_terraria_banlist_lines(settings)),
         "seed_line" => Some(render_terraria_seed_line(settings)),
         "special_seed_line" => Some(render_terraria_special_seed_line(settings)),
@@ -1057,7 +1084,10 @@ fn lookup_terraria_template_token(settings: &Map<String, Value>, path: &str) -> 
             settings, "password", "password",
         )),
         "secure_line" => Some(render_terraria_enabled_line(settings, "secure", "secure")),
-        "upnp_line" => Some(render_terraria_enabled_line(settings, "upnp", "upnp")),
+        "upnp_line" => Some(format!(
+            "upnp={}",
+            u8::from(lookup_boolean_setting(settings, "upnp"))
+        )),
         "steam_line" => Some(render_terraria_enabled_line(settings, "steam", "steam")),
         "lobby_line" => Some(render_terraria_lobby_line(settings)),
         "disableannouncementbox_line" => Some(render_terraria_enabled_line(

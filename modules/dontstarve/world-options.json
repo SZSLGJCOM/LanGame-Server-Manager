@@ -1,6 +1,6 @@
 {
-  "gameVersion":"761239",
-  "scriptsSha256":"4d905828318646db65b064f3774583f82d7e868d2ad276d8ab592a6249fd5cc7",
+  "gameVersion":"763928",
+  "scriptsSha256":"073ef5ff8486ac7edb0e55fc5d86482dafd2ef3622c19e5faee404f4a322214f",
   "groups":{
     "worldgen":[
       {"id":"global","order":1,"textKey":"STRINGS.UI.SANDBOXMENU.CHOICEGLOBAL"},
