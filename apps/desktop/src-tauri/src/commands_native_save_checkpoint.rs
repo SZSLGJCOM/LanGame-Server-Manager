@@ -450,7 +450,7 @@ fn restore_snapshot(checkpoint: &mut Checkpoint, module: &str) -> Result<(), Str
     // Enumerate again: stop may create a new numbered generation or recovery
     // member that did not exist at capture. Leaving it would let the loader
     // select the shutdown save instead of the manual point.
-    let roots = profiles::roots(module, saves)?;
+    let roots = profiles::restore_roots(module, saves)?;
     files(saves, &roots)?;
     let mut displaced = roots.clone();
     for root in &roots {
@@ -485,7 +485,7 @@ fn restore_snapshot(checkpoint: &mut Checkpoint, module: &str) -> Result<(), Str
         }
         copy_new(&source, &saves.join(name))?;
     }
-    if files(saves, &profiles::roots(module, saves)?)? != checkpoint.manifest {
+    if files(saves, &profiles::restore_roots(module, saves)?)? != checkpoint.manifest {
         return Err("Restored files differ from the exact manual checkpoint".into());
     }
     checkpoint.restored = true;
@@ -517,7 +517,7 @@ fn before_start_owned(fixture: &Path, details: &InstanceDetails) -> Result<(), S
         || checkpoint.saves != saves
         || files(
             &saves,
-            &profiles::roots(&details.summary.module_id, &saves)?,
+            &profiles::restore_roots(&details.summary.module_id, &saves)?,
         )? != checkpoint.manifest
     {
         return Err("Restart did not begin with the exact manual checkpoint".into());
@@ -541,8 +541,9 @@ pub(super) async fn verify<R: tauri::Runtime>(
 ) -> Result<(), Box<dyn std::error::Error>> {
     terraria::verify_loaded(runtime, running, "restart").await?;
     necesse::verify_loaded(runtime, running, "restart").await?;
-    let (fixture, running) = input(runtime, running)?;
-    worker(move || verify_owned(&fixture, &running)).await
+    let (fixture, owned) = input(runtime, running)?;
+    worker(move || verify_owned(&fixture, &owned)).await?;
+    super::super::barotrauma_campaign::finish_readback(runtime, running).await
 }
 
 fn verify_owned(fixture: &Path, running: &InstanceDetails) -> Result<(), String> {
@@ -820,6 +821,58 @@ mod tests {
             )
             .unwrap(),
             checkpoint.manifest
+        );
+        fs::remove_dir_all(checkpoint.fixture).unwrap();
+    }
+
+    #[test]
+    fn barotrauma_restore_offers_only_the_captured_campaign_and_character_data() {
+        let fixture = crate::commands::tests::temp_test_dir("barotrauma-checkpoint");
+        let saves = fixture.join("config/Multiplayer");
+        let copy = fixture.join("manual-checkpoint");
+        fs::create_dir_all(&saves).unwrap();
+        fs::create_dir(&copy).unwrap();
+        let primary = saves.join("lgsm_native_manual_save.save");
+        let characters = saves.join("lgsm_native_manual_save_CharacterData.xml");
+        let recovery = saves.join("lgsm_native_manual_save.save.bk0");
+        fs::write(&recovery, b"older campaign").unwrap();
+        fs::write(&characters, b"character data").unwrap();
+        assert!(profiles::roots("barotrauma", &saves).is_err());
+        fs::write(&primary, b"").unwrap();
+        assert!(profiles::roots("barotrauma", &saves).is_err());
+        fs::write(&primary, b"manual campaign").unwrap();
+        let roots = profiles::roots("barotrauma", &saves).unwrap();
+        assert_eq!(roots, [primary.clone(), characters.clone()]);
+        let manifest = files(&saves, &roots).unwrap();
+        for name in manifest.keys() {
+            copy_new(&saves.join(name), &copy.join(name)).unwrap();
+        }
+        fs::write(&primary, b"shutdown campaign").unwrap();
+        fs::write(&characters, b"shutdown character data").unwrap();
+        let mut checkpoint = Checkpoint {
+            fixture,
+            saves,
+            copy,
+            manifest,
+            run_id: 1,
+            native_before: String::new(),
+            capture_logs: Vec::new(),
+            logs: Vec::new(),
+            restored: false,
+            read_back: false,
+        };
+        restore_snapshot(&mut checkpoint, "barotrauma").unwrap();
+        assert_eq!(fs::read(&primary).unwrap(), b"manual campaign");
+        assert_eq!(fs::read(&characters).unwrap(), b"character data");
+        assert!(!recovery.exists());
+        let shutdown = checkpoint.fixture.join("shutdown-checkpoint");
+        assert_eq!(
+            fs::read(shutdown.join(primary.file_name().unwrap())).unwrap(),
+            b"shutdown campaign"
+        );
+        assert_eq!(
+            fs::read(shutdown.join(recovery.file_name().unwrap())).unwrap(),
+            b"older campaign"
         );
         fs::remove_dir_all(checkpoint.fixture).unwrap();
     }

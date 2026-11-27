@@ -90,13 +90,14 @@ requires the live anonymous readback recorded in the receipt.
 
 ## Executable-bound ASA symbols
 
-[`symbol-caches.json`](symbol-caches.json) separately pins reviewed runtime
-symbol ZIPs. The current entry is for Steam build 26564816, executable SHA-256
-`79b0ce800a05e254f0a591967acea9ae0fcd0c03becf75ab04182e2c3cd0ab02`.
-Its original 23,155,786-byte archive contains 704,423 offset entries, 13,055
-bitfield entries and the upstream symbol-name text. No game executable, content,
-world or credentials are included. The [dated publication record](symbols-publication-2026-11-12.json)
-records all five attachments passing full anonymous size/hash verification.
+[`symbol-caches.json`](symbol-caches.json) pins each reviewed symbol ZIP to a
+Steam server executable. The upstream ZIPs contain the offset and bitfield maps
+and a text list of symbol names. The publication records for [build 26564816](symbols-publication-2026-11-12.json)
+and [build 26749470 (98.9)](symbols-publication-2026-11-23.json) document anonymous verification of all five attachments.
+
+Each desktop release embeds its mirror list. Desktop 0.2.4 includes the mirror
+for build 26564816. For 98.9 it reuses a matching local cache or downloads from
+the maintainers when the operator installs or updates the extension on a stopped instance.
 
 Chinese requests prefer the reviewed GitCode cache. International requests
 prefer the three existing maintainer CDNs, then GitCode. Known images enforce
@@ -105,11 +106,13 @@ the upstream-only lookup. All routes retain executable binding, ZIP/map bounds,
 atomic generation selection and existing-cache preservation. Ordinary startup
 and status inspection still do not download symbols.
 
-Prepare an individual reviewed cache outside the repository:
+To prepare the cache for a reviewed server build, set `$serverExe` to its
+`ArkAscendedServer.exe` and run the publisher from the repository root.
 
 ```powershell
-$symbolWork = Join-Path $env:TEMP 'langame-asa-symbols-26564816'
-python -B -E -s scripts/publish_ark_symbol_cache.py --work-dir $symbolWork --executable-sha256 79b0ce800a05e254f0a591967acea9ae0fcd0c03becf75ab04182e2c3cd0ab02
+$exeHash = (Get-FileHash -Algorithm SHA256 -LiteralPath $serverExe).Hash.ToLowerInvariant()
+$symbolWork = Join-Path $env:TEMP "langame-asa-symbols-$exeHash"
+python -B -E -s scripts/publish_ark_symbol_cache.py --work-dir $symbolWork --executable-sha256 $exeHash
 ```
 
 Review `prepared.json`, the unchanged ZIP, `symbols.json`, `SHA256SUMS`,

@@ -43,9 +43,9 @@ class SymbolPublicationTests(unittest.TestCase):
 
     def test_manifest_binds_executable_and_content_addressed_mirror(self):
         manifest = symbols.load_manifest()
-        self.assertEqual(len(manifest["packages"]), 1)
         for change in (
             lambda x: x.update(mirrorRepository="unrelated/repo"),
+            lambda x: x["packages"].clear(),
             lambda x: x["packages"][0].update(executableSha256="a" * 64),
             lambda x: x["packages"][0].update(sha256="invalid"),
             lambda x: x["packages"][0].update(size=True),

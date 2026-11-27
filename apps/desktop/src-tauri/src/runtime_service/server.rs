@@ -463,6 +463,7 @@ mod admission_tests {
             "create_instance_record",
             "start_instance_process",
             "download_steam_workshop_items",
+            "prepare_ark_tools",
             "assistant_confirm_operation",
             "install_manual_mod_references",
             "manage_manual_mod",

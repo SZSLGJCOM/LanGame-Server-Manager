@@ -6,12 +6,13 @@ use std::time::Duration;
 use app_network::{NetworkError, SourcePreference};
 use reqwest::{Client, Url};
 use serde::Deserialize;
-use tokio::time::{Instant, timeout_at};
 
 use super::{InstallPhase, InstallReporter, InstallUpdate, digest};
 
 const MAX_ARCHIVE: usize = 32 * 1024 * 1024;
-const SOURCE_BUDGET: Duration = Duration::from_secs(90);
+// Header retries are bounded per source. Once data arrives, only a stalled
+// read should time out, regardless of the archive size or the link speed.
+pub(super) const HEADER_RETRY_BUDGET: Duration = Duration::from_secs(90);
 
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
@@ -117,10 +118,14 @@ fn allowed_delivery(url: &Url) -> bool {
         })
 }
 
-fn client() -> Result<Client, String> {
+pub(super) fn archive_client_builder() -> reqwest::ClientBuilder {
     Client::builder()
         .connect_timeout(Duration::from_secs(10))
         .read_timeout(Duration::from_secs(30))
+}
+
+fn client() -> Result<Client, String> {
+    archive_client_builder()
         .user_agent("LanGame-Server-Manager/ARK-Tools")
         .redirect(reqwest::redirect::Policy::custom(|attempt| {
             if attempt.previous().len() >= 5 || !allowed_delivery(attempt.url()) {
@@ -173,7 +178,7 @@ async fn read_source(
     client: &Client,
     url: &str,
     package: &Package,
-    deadline: Instant,
+    header_retry_budget: Duration,
     report: &InstallReporter,
 ) -> Result<Vec<u8>, Failure> {
     let request = client.get(url).build().map_err(|error| Failure {
@@ -186,12 +191,7 @@ async fn read_source(
         .unwrap_or("download source")
         .to_owned();
     update(report, InstallPhase::Connecting, &source, 0, package.size);
-    let mut response = app_network::send_with_retry(
-        client,
-        request,
-        deadline.saturating_duration_since(Instant::now()),
-    )
-    .await?;
+    let mut response = app_network::send_with_retry(client, request, header_retry_budget).await?;
     if response
         .content_length()
         .is_some_and(|length| length != package.size as u64)
@@ -231,11 +231,6 @@ async fn read_source(
             "The ARK dependency archive does not match the pinned release checksum",
         ));
     }
-    if Instant::now() >= deadline {
-        return Err(invalid(
-            "Download timed out before archive verification completed",
-        ));
-    }
     Ok(bytes)
 }
 
@@ -243,31 +238,12 @@ async fn fetch_from(
     client: &Client,
     package: &Package,
     urls: &[&str],
-    budget: Duration,
+    header_retry_budget: Duration,
     report: &InstallReporter,
 ) -> Result<Vec<u8>, String> {
-    let deadline = Instant::now() + budget;
     let mut failures = Vec::new();
-    for (index, url) in urls.iter().enumerate() {
-        let remaining = deadline.saturating_duration_since(Instant::now());
-        if remaining.is_zero() {
-            break;
-        }
-        // Reserve a bounded opportunity for the other source even if this one
-        // accepts a connection but never delivers a complete response body.
-        let source_deadline =
-            Instant::now() + (remaining / (urls.len() - index) as u32).min(SOURCE_BUDGET);
-        let outcome = timeout_at(
-            source_deadline,
-            read_source(client, url, package, source_deadline, report),
-        )
-        .await
-        .unwrap_or_else(|_| {
-            Err(invalid(
-                "Download timed out before the complete archive arrived",
-            ))
-        });
-        match outcome {
+    for url in urls {
+        match read_source(client, url, package, header_retry_budget, report).await {
             Ok(bytes) => return Ok(bytes),
             Err(error) => {
                 let source = Url::parse(url)
@@ -293,7 +269,7 @@ pub(super) async fn fetch(
         &client()?,
         package,
         &sources(package, preference),
-        SOURCE_BUDGET * 2,
+        HEADER_RETRY_BUDGET,
         report,
     )
     .await

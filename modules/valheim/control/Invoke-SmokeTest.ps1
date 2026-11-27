@@ -3,7 +3,7 @@ param(
     [Parameter(Mandatory = $true)][string]$FixtureRoot,
     [string]$SessionManifest,
     [int]$ExpectedPid,
-    [ValidateSet('25730807', '26870897')][string]$BuildId = '25730807'
+    [ValidateSet('25730807', '26870897', '26949048')][string]$BuildId = '25730807'
 )
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
@@ -48,8 +48,13 @@ if ($fixture -notmatch '(?i)[\\/]work[\\/]' -or -not [IO.Directory]::Exists($fix
 }
 Assert-PlainPath $fixture
 $managed = Join-Path $fixture 'valheim_server_Data/Managed'
-$expected = if ($BuildId -eq '26870897') {
-    $evidence = Get-Content -Raw -LiteralPath (Join-Path $PSScriptRoot '../reference-fixtures/2026-11-25-native_build_26870897.json') | ConvertFrom-Json
+$evidenceFile = switch ($BuildId) {
+    '26870897' { '2026-11-25-native_build_26870897.json' }
+    '26949048' { '2026-11-27-native_build_26949048.json' }
+}
+$expected = if ($evidenceFile) {
+    $path = Join-Path $PSScriptRoot "../reference-fixtures/$evidenceFile"
+    $evidence = Get-Content -Raw -LiteralPath $path | ConvertFrom-Json
     $evidence.package.assembly_sha256
 } else {
     [pscustomobject]@{

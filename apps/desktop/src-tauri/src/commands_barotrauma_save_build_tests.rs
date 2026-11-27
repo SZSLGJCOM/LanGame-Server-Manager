@@ -10,11 +10,16 @@ const SECURITY_PATCH: (&str, &str) = (
     "d058bbde56286699aa3ffcdd95e87d4d1e430b184ecc3c4007ea442ee9518a46",
     "48d637d505a2af5136feaafa871e5057e1f280a56f502d08e52f372816efe606",
 );
+const COMPANION_UPDATE: (&str, &str) = (
+    "8b39b613abc8de1f53248f085d36b9646af79e6a1f7028e3491354d6d7a82a02",
+    "e04362c36714bb5e64d610eb05d94b29168829a5f52da600b09b303836ce53cb",
+);
 
 #[test]
-fn barotrauma_save_admits_both_complete_packages_and_rejects_mixed_assemblies() {
+fn barotrauma_save_admits_complete_packages_and_rejects_mixed_assemblies() {
     let game = super::super::profile("barotrauma").unwrap();
-    for pair in [SUMMER, SECURITY_PATCH] {
+    let packages = [SUMMER, SECURITY_PATCH, COMPANION_UPDATE];
+    for pair in packages {
         let mut files = native_files(game).unwrap();
         assert!(select_barotrauma_files(pair.0, pair.1, &mut files));
         assert_eq!(
@@ -24,16 +29,23 @@ fn barotrauma_save_admits_both_complete_packages_and_rejects_mixed_assemblies() 
                 ("BarotraumaCore.dll", pair.1)
             ]
         );
-    }
-    for pair in [
-        (SUMMER.0, SECURITY_PATCH.1),
-        (SECURITY_PATCH.0, SUMMER.1),
-        ("unreviewed-server", SECURITY_PATCH.1),
-        (SECURITY_PATCH.0, "unreviewed-core"),
-    ] {
-        let mut files = native_files(game).unwrap();
         let unchanged = files.clone();
-        assert!(!select_barotrauma_files(pair.0, pair.1, &mut files));
+        for other in packages {
+            if pair != other {
+                assert!(!select_barotrauma_files(pair.0, other.1, &mut files));
+                assert_eq!(files, unchanged);
+            }
+        }
+        assert!(!select_barotrauma_files(
+            "unreviewed-server",
+            pair.1,
+            &mut files
+        ));
+        assert!(!select_barotrauma_files(
+            pair.0,
+            "unreviewed-core",
+            &mut files
+        ));
         assert_eq!(files, unchanged);
     }
 }

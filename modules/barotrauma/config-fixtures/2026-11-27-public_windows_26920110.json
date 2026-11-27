@@ -1,0 +1,48 @@
+{
+  "fixture_version": 1,
+  "module_id": "barotrauma",
+  "evidence": {
+    "status": "best_effort_verified",
+    "verified_at": "2026-11-27",
+    "build": "Steam public build 26920110 / DedicatedServer 1.15.33.2",
+    "source_ids": ["public_windows_26920110"]
+  },
+  "coverage": {
+    "editable": 0,
+    "specialized": 0,
+    "derived": 0,
+    "generated": 0,
+    "excluded": 3
+  },
+  "classifications": {
+    "editable": [],
+    "specialized": [],
+    "derived": [],
+    "generated": [],
+    "excluded": [
+      "public_windows_26920110.Data/dlc_catalog.xml",
+      "public_windows_26920110.Data/PublicKey.dat",
+      "public_windows_26920110.Data/campaignsettings.xml"
+    ]
+  },
+  "settings": {
+    "server_name": "Outpost Audit",
+    "server_password": "fixture-generated-valid-value"
+  },
+  "expected": {
+    "files": [
+      {
+        "root": "config",
+        "path": "serversettings.xml",
+        "format": "xml",
+        "fragments": [
+          "DestructibleOutposts=\"true\""
+        ]
+      }
+    ],
+    "launch": {
+      "executable_suffix": "DedicatedServer.exe",
+      "arguments": []
+    }
+  }
+}

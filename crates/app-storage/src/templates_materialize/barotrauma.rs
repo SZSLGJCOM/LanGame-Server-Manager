@@ -2,10 +2,31 @@ use std::fs;
 use std::path::Path;
 
 use super::StorageError;
+use crate::atomic_file::compare_and_swap_file_atomically;
+use crate::instance_file_patch::io::{guard_directories, read_bytes_with_limit};
+use crate::instance_file_patch::sha256;
+use crate::private_runtime_refresh::hash_file;
 use crate::templates::templates_materialize::package_staging::copy_package_file;
 
 const MAX_FILES: usize = 50_000;
 const MAX_DEPTH: usize = 24;
+
+#[derive(Clone, Copy)]
+enum FilePolicy {
+    Program,
+    PublisherData,
+    Seed,
+    CampaignPresets,
+}
+
+// The published v1.13.5.0 presets, with LF or Windows CRLF, and the exact
+// Windows replacement from build 26920110. Operator edits have other hashes.
+const PRIOR_CAMPAIGN_PRESETS: [&str; 2] = [
+    "46a2573ca53e83dbb660130eb770c37b7282279aeeebe5d3946d6209555d6dec",
+    "bf4b7dddae0c7970419769e467695b1f0a0df4d43bbae45fc1e76d1f675caec4",
+];
+const UPDATED_CAMPAIGN_PRESETS: &str =
+    "cb1e3a5780f7af989b00f20babac35addb48340b55df59f5fdb0a3e6beb56801";
 
 /// Barotrauma resets cwd to its entry assembly directory. The actual executable,
 /// dependencies and content must therefore live beside the instance-owned XML.
@@ -13,7 +34,14 @@ pub(super) fn materialize_runtime(install: &Path, instance: &Path) -> Result<(),
     if !install.join("DedicatedServer.exe").is_file() {
         return Ok(());
     }
+    let _package_guard = guard_directories(install)?;
+    let existing_parent = instance
+        .ancestors()
+        .find(|path| path.exists())
+        .unwrap_or(instance);
+    let _parent_guard = guard_directories(existing_parent)?;
     fs::create_dir_all(instance).map_err(|error| failure(instance, error))?;
+    let _instance_guard = guard_directories(instance)?;
     let source_root = fs::canonicalize(install).map_err(|error| failure(install, error))?;
     let target_root = fs::canonicalize(instance).map_err(|error| failure(instance, error))?;
     if target_root.starts_with(&source_root) || source_root.starts_with(&target_root) {
@@ -36,25 +64,27 @@ pub(super) fn materialize_runtime(install: &Path, instance: &Path) -> Result<(),
             || lower.ends_with(".runtimeconfig.json")
             || lower == "steam_appid.txt"
         {
-            copy_file(&entry.path(), &instance.join(name), false, &mut files)?;
+            copy_file(
+                &entry.path(),
+                &instance.join(name),
+                FilePolicy::Program,
+                &mut files,
+            )?;
         }
     }
     copy_directory(
         &install.join("Content"),
         &instance.join("Content"),
-        false,
         0,
         &mut files,
     )?;
-    // The shared package may have been used as an old server's working directory.
-    // Only seed known shipped defaults; never inherit permissions, bans or saves.
+    // Only named shipped Data files belong in the instance. A shared package
+    // may also contain a previous server's permissions, bans or saves.
     let source_data = install.join("Data");
     let target_data = instance.join("Data");
-    reject_link(&source_data)?;
-    if target_data.exists() {
-        reject_link(&target_data)?;
-    }
+    let _source_guard = guard_directories(&source_data)?;
     fs::create_dir_all(&target_data).map_err(|error| failure(&target_data, error))?;
+    let _data_guard = guard_directories(&target_data)?;
     for entry in fs::read_dir(&source_data).map_err(|error| failure(&source_data, error))? {
         let entry = entry.map_err(|error| failure(&source_data, error))?;
         let name = entry.file_name();
@@ -62,16 +92,18 @@ pub(super) fn materialize_runtime(install: &Path, instance: &Path) -> Result<(),
             continue;
         };
         let lower = name_text.to_ascii_lowercase();
-        if matches!(
-            lower.as_str(),
-            "campaignsettings.xml"
-                | "forbiddenwordlist.txt"
-                | "karmasettings.xml"
-                | "languageoptions.xml"
-        ) || (lower.starts_with("permissionpresets") && lower.ends_with(".xml"))
-        {
-            copy_file(&entry.path(), &target_data.join(name), true, &mut files)?;
-        }
+        let policy = match lower.as_str() {
+            "dlc_catalog.xml" | "publickey.dat" => FilePolicy::PublisherData,
+            "campaignsettings.xml" => FilePolicy::CampaignPresets,
+            "forbiddenwordlist.txt" | "karmasettings.xml" | "languageoptions.xml" => {
+                FilePolicy::Seed
+            }
+            name if name.starts_with("permissionpresets") && name.ends_with(".xml") => {
+                FilePolicy::Seed
+            }
+            _ => continue,
+        };
+        copy_file(&entry.path(), &target_data.join(name), policy, &mut files)?;
     }
     Ok(())
 }
@@ -79,7 +111,6 @@ pub(super) fn materialize_runtime(install: &Path, instance: &Path) -> Result<(),
 fn copy_directory(
     source: &Path,
     target: &Path,
-    preserve: bool,
     depth: usize,
     files: &mut usize,
 ) -> Result<(), StorageError> {
@@ -102,9 +133,9 @@ fn copy_directory(
             .file_type()
             .map_err(|error| failure(&source_path, error))?;
         if kind.is_dir() {
-            copy_directory(&source_path, &target_path, preserve, depth + 1, files)?;
+            copy_directory(&source_path, &target_path, depth + 1, files)?;
         } else {
-            copy_file(&source_path, &target_path, preserve, files)?;
+            copy_file(&source_path, &target_path, FilePolicy::Program, files)?;
         }
     }
     Ok(())
@@ -113,7 +144,7 @@ fn copy_directory(
 fn copy_file(
     source: &Path,
     target: &Path,
-    preserve: bool,
+    policy: FilePolicy,
     files: &mut usize,
 ) -> Result<(), StorageError> {
     *files += 1;
@@ -130,21 +161,61 @@ fn copy_file(
             if !existing.is_file() {
                 return Err(failure(target, "Instance entry is not a regular file."));
             }
-            if preserve
-                || (existing.len() == source_metadata.len()
-                    && existing
-                        .modified()
-                        .ok()
-                        .zip(source_metadata.modified().ok())
-                        .is_some_and(|(target_time, source_time)| target_time == source_time))
-            {
-                return Ok(());
+            let same_length = existing.len() == source_metadata.len();
+            match policy {
+                FilePolicy::Seed => return Ok(()),
+                FilePolicy::CampaignPresets => {
+                    return upgrade_stock_presets(
+                        source,
+                        target,
+                        source_metadata.len(),
+                        existing.len(),
+                    );
+                }
+                FilePolicy::PublisherData
+                    if same_length && hash_file(source, None)? == hash_file(target, None)? =>
+                {
+                    return Ok(());
+                }
+                FilePolicy::Program
+                    if same_length
+                        && existing
+                            .modified()
+                            .ok()
+                            .zip(source_metadata.modified().ok())
+                            .is_some_and(|(target, source)| target == source) =>
+                {
+                    return Ok(());
+                }
+                _ => {}
             }
         }
         Err(error) if error.kind() == std::io::ErrorKind::NotFound => {}
         Err(error) => return Err(failure(target, error)),
     }
     copy_package_file("barotrauma", source, target)
+}
+
+fn upgrade_stock_presets(
+    source: &Path,
+    target: &Path,
+    source_size: u64,
+    target_size: u64,
+) -> Result<(), StorageError> {
+    if source_size != 2840 || !matches!(target_size, 2755 | 2840) {
+        return Ok(());
+    }
+    let original = read_bytes_with_limit(target, 2840)?;
+    if !PRIOR_CAMPAIGN_PRESETS.contains(&sha256(&original).as_str()) {
+        return Ok(());
+    }
+    let replacement = read_bytes_with_limit(source, 2840)?;
+    if sha256(&replacement) == UPDATED_CAMPAIGN_PRESETS {
+        // A concurrent edit that changed the expected bytes wins.
+        compare_and_swap_file_atomically(target, &original, &replacement)
+            .map_err(|error| failure(target, error))?;
+    }
+    Ok(())
 }
 
 fn reject_link(path: &Path) -> Result<fs::Metadata, StorageError> {
@@ -173,105 +244,5 @@ fn failure(path: &Path, message: impl std::fmt::Display) -> StorageError {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn runtime_is_independent_and_preserves_instance_permissions_and_saves() {
-        let root = std::env::temp_dir().join(format!(
-            "barotrauma-layout-{}-{}",
-            std::process::id(),
-            std::time::SystemTime::now()
-                .duration_since(std::time::UNIX_EPOCH)
-                .unwrap()
-                .as_nanos()
-        ));
-        let install = root.join("package");
-        let instance = root.join("instance");
-        fs::create_dir_all(install.join("Content")).unwrap();
-        fs::create_dir_all(install.join("Data")).unwrap();
-        fs::create_dir_all(instance.join("Data")).unwrap();
-        fs::create_dir_all(instance.join("Content")).unwrap();
-        fs::create_dir_all(instance.join("Multiplayer")).unwrap();
-        fs::write(instance.join("Content/Operator.xml"), "operator content").unwrap();
-        fs::write(install.join("DedicatedServer.exe"), "executable").unwrap();
-        fs::write(install.join("DedicatedServer.dll"), "assembly").unwrap();
-        fs::write(install.join("DedicatedServer.runtimeconfig.json"), "{}").unwrap();
-        fs::write(install.join("Content/Vanilla.xml"), "package content").unwrap();
-        fs::write(install.join("Data/campaignsettings.xml"), "default").unwrap();
-        fs::write(
-            install.join("Data/bannedplayers.xml"),
-            "another server's bans",
-        )
-        .unwrap();
-        fs::write(
-            install.join("Data/bannedplayers.txt"),
-            "another server's old bans",
-        )
-        .unwrap();
-        fs::write(
-            install.join("Data/clientpermissions.xml"),
-            "package permissions",
-        )
-        .unwrap();
-        fs::write(
-            instance.join("Data/clientpermissions.xml"),
-            "instance permissions",
-        )
-        .unwrap();
-        fs::write(instance.join("serversettings.xml"), "instance settings").unwrap();
-        fs::write(instance.join("Multiplayer/world.save"), "retained world").unwrap();
-        materialize_runtime(&install, &instance).unwrap();
-        assert_eq!(
-            fs::read_to_string(instance.join("DedicatedServer.dll")).unwrap(),
-            "assembly"
-        );
-        assert_eq!(
-            fs::read_to_string(instance.join("Content/Vanilla.xml")).unwrap(),
-            "package content"
-        );
-        assert_eq!(
-            fs::read_to_string(instance.join("Data/clientpermissions.xml")).unwrap(),
-            "instance permissions"
-        );
-        assert_eq!(
-            fs::read_to_string(instance.join("Data/campaignsettings.xml")).unwrap(),
-            "default"
-        );
-        assert!(!instance.join("Data/bannedplayers.xml").exists());
-        assert!(!instance.join("Data/bannedplayers.txt").exists());
-        assert_eq!(
-            fs::read_to_string(instance.join("serversettings.xml")).unwrap(),
-            "instance settings"
-        );
-        assert_eq!(
-            fs::read_to_string(instance.join("Multiplayer/world.save")).unwrap(),
-            "retained world"
-        );
-        fs::write(install.join("DedicatedServer.dll"), "updated assembly").unwrap();
-        fs::write(
-            instance.join("Data/campaignsettings.xml"),
-            "operator campaign",
-        )
-        .unwrap();
-        materialize_runtime(&install, &instance).unwrap();
-        assert_eq!(
-            fs::read_to_string(instance.join("DedicatedServer.dll")).unwrap(),
-            "updated assembly"
-        );
-        assert_eq!(
-            fs::read_to_string(instance.join("Content/Operator.xml")).unwrap(),
-            "operator content"
-        );
-        assert_eq!(
-            fs::read_to_string(instance.join("Data/campaignsettings.xml")).unwrap(),
-            "operator campaign"
-        );
-        assert!(materialize_runtime(&install, &install).is_err());
-        let fresh_instance = root.join("fresh-instance");
-        materialize_runtime(&install, &fresh_instance).unwrap();
-        assert!(!fresh_instance.join("Data/clientpermissions.xml").exists());
-        assert!(!fresh_instance.join("Data/bannedplayers.xml").exists());
-        fs::remove_dir_all(root).unwrap();
-    }
-}
+#[path = "barotrauma_tests.rs"]
+mod tests;

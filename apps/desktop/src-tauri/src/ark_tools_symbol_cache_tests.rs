@@ -44,6 +44,49 @@ fn stage(prepared: &mut Prepared) {
     prepared.extract().unwrap();
 }
 
+#[tokio::test]
+async fn progressing_asa_symbol_download_outlives_header_budget_and_publishes() {
+    use tokio::io::{AsyncReadExt, AsyncWriteExt};
+
+    let fixture = fixture();
+    let prepared = Prepared::inspect(&fixture.0).unwrap();
+    let bytes = archive(&[
+        ("cached_offsets.cache", &map(b"Function", 8)),
+        ("cached_bitfields.cache", &map(b"BitField", 32)),
+    ]);
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let url = format!("http://{}/symbols.zip", listener.local_addr().unwrap());
+    let server = tokio::spawn(async move {
+        let (mut stream, _) = listener.accept().await.unwrap();
+        let mut request = [0; 2048];
+        assert!(stream.read(&mut request).await.unwrap() > 0);
+        let headers = format!("HTTP/1.1 200 OK\r\nContent-Length: {}\r\n\r\n", bytes.len());
+        stream.write_all(headers.as_bytes()).await.unwrap();
+        for (index, chunk) in bytes.chunks(bytes.len().div_ceil(3)).enumerate() {
+            if index > 0 {
+                tokio::time::sleep(Duration::from_millis(400)).await;
+            }
+            stream.write_all(chunk).await.unwrap();
+        }
+    });
+    let client = archive_client_builder().no_proxy().build().unwrap();
+    let report: InstallReporter = std::sync::Arc::new(|_| {});
+    let verified = super::super::prepare_from_sources(
+        prepared,
+        &client,
+        &[url],
+        None,
+        Duration::from_millis(600),
+        &report,
+    )
+    .await
+    .unwrap();
+    verified.publish().unwrap();
+    assert!(Prepared::inspect(&fixture.0).unwrap().ready());
+    server.await.unwrap();
+    fixture.finish();
+}
+
 #[test]
 fn asa_symbols_enforce_upstream_executable_path_and_combined_cache_bounds() {
     assert!(executable_path_supported(Path::new(&"a".repeat(259))).is_ok());

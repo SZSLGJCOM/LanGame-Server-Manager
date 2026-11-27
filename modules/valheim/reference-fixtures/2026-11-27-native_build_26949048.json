@@ -1,0 +1,89 @@
+{
+  "schema": 1,
+  "verified_on": "2026-11-27",
+  "scope": "Official Windows Steam public server, the bundled account and save controller, and desktop-managed manual save and restart in disposable private worlds.",
+  "package": {
+    "steam_app_id": 896660,
+    "build_id": "26949048",
+    "game_version": "1.0.31",
+    "network_version": 42,
+    "world_format": 42,
+    "public_updated_utc": "2026-11-26T14:05:22Z",
+    "release_notes": "https://www.valheimgame.com/news/hotfix-1-0-31/",
+    "state_flags": 4,
+    "target_build_id": "26949048",
+    "update_result": 0,
+    "installed_bytes": 2116501134,
+    "depots": {"1004": "7604377918839582995", "896662": "6665245643235079405"},
+    "executable_sha256": "68a5ab743a4eb2d8ecc44247676301cf7a79fb44e1e865aac5e7c4eb8f962a20",
+    "assembly_sha256": {
+      "assembly_valheim.dll": "f60248f9f2570739b38d33264c017bbea1da038ef670512cfa3402df59205a02",
+      "assembly_utils.dll": "31e35f53fe3b383ecb6f5e6d6e16ef56d58d9cfd1f55650db70989c40e1882ae",
+      "Splatform.dll": "5fa4fda2b7a16420b95d00e4a39811d0c920c5180b68152512babf2ea96428f7"
+    },
+    "validation": "Anonymous SteamCMD validation completed. On the Windows test host all 996 files from depot 896662 matched Valve's sizes and SHA-1 digests. Its eight shared Steamworks libraries and Steam appmanifest also matched the acquired source by SHA-256."
+  },
+  "static_review": {
+    "previous_build": "26870897",
+    "dedicated_manual_sha256": "d19ecbe906e5b7bef064df43342a1c9e80c9f80d9e4daf0e6904b902b9732b8b",
+    "dedicated_settings": "The six-page manual matches the digest recorded for build 25527701. All 16 documented argument families remain present in the dedicated parser. The module's port pair, seven presets, five modifier families, four world keys, backup defaults and roster files match the manual.",
+    "native_contract": "Static metadata inspection found all 41 method, field and property bindings with their required types and visibility. FileSource.Local is 2 and both native peer socket classes implement ISocket. SaveWorldThread performs its automatic backup check after a successful EndSave, which commits the new save counter.",
+    "windows_runtime": "The project's PE import inspection returned no additional Windows runtime requirements for valheim_server.exe."
+  },
+  "regression": {
+    "before_change": "The new tuple was rejected by the previous host and plugin in the focused Rust and C# regressions.",
+    "gates": ["Rust supported_profile", "plugin SupportedProfile", "plugin SupportedWorldSaveProfile"],
+    "cases_per_gate": 294,
+    "accepted_complete_profiles": 5,
+    "rejected_mixed_or_unknown_per_gate": 289,
+    "csharp_boundary_tests_with_compiler_references": 31,
+    "csharp_boundary_tests_with_real_unity_and_loader_references": 31
+  },
+  "standalone_control": {
+    "started_utc": "2026-11-27T03:44:42.967024Z",
+    "completed_utc": "2026-11-27T03:45:38.178688Z",
+    "loader": "BepInExPack_Valheim 5.4.2351",
+    "loader_archive_sha256": "bce631497976a93977ceb08e166712e6c31d15244956f89f17df092a9b62e29f",
+    "verified_immutable_loader_files": 20,
+    "deployed_compiler_reference_plugin_sha256": "b9bdb7972166ea2aaf62e10fcb7ff1ce3435795b18b581d7edb04dea49014c74",
+    "roster": "Both processes returned an empty peer list. The first added one synthetic platform ID to each native admin and permitted file. Both the explicit native reload and a subsequent query returned that ID in both lists. After removal both operations returned empty lists. The banned list remained empty.",
+    "manual_saves": [
+      {"previous_save_number": 0, "committed_save_number": 1, "evidence": "native_commit"},
+      {"previous_save_number": 1, "committed_save_number": 2, "evidence": "native_commit"}
+    ],
+    "checkpoint": "Five files were captured before the first Ctrl+C. A fresh process opened an independent copy and logged the same world at save generation 1. All five hashes still matched at readiness before its second save. Both FWL2 generations reported world format 42.",
+    "checkpoint_sha256": {
+      "ValheimReview/00_00__0_1.chunk": "309337528132b420e570f0db9d7a1e5673064754cbd5a25edbb71aaa305eff1c",
+      "ValheimReview/_main.1.chunks": "0c82ef6fd54cedf3d5e0a34c909190b23ee12649b23d079df6c71c01c4869e29",
+      "ValheimReview/_main.1.db2": "bfa29c094e83170704012a9268f49cfb9b2dce89d0ec332526f1927dbf65d518",
+      "ValheimReview/_main.1.fwl2": "826df558c9c6211eadf9603dc1cb483e3b6e4bd9613419bf47ed51d8417b9b97",
+      "ValheimReview/_main.1.ok": "e8a4b2ee7ede79a3afb332b5b6cc3d952a65fd8cffb897f5d18016577c33d7cc"
+    },
+    "normal_ctrl_c_exits": [0, 0],
+    "forced_terminations_in_completed_run": 0,
+    "initial_harness_attempt": "A preliminary private run verified roster reload and save 0 to 1. Its SSH launcher passed an inherited Ctrl+C-ignore state to the child, which required forced cleanup. An independent console receiver reproduced the inherited flag. The two completed sessions explicitly cleared it before process creation.",
+    "native_receipt_sha256": "283dd1f1af3c75ecb72a4c9ccc6bd8c0c2eb0c49d66695aad998051cbaf90702"
+  },
+  "managed_control": {
+    "selector": "commands::tests::manual_runtime_tests::native_lifecycle_tests::native_manual_save",
+    "started_utc": "2026-11-27T03:52:28.354259Z",
+    "completed_utc": "2026-11-27T03:58:19.094620Z",
+    "source_identity_sha256": "f62ef826fa5de3c90557e370bc9b6d591d8c90f0c7f8bd8f7ea7e3a5fbc558cb",
+    "test_binary_sha256": "7be3dca61a7b563b3af7201143b42bb4782efe595aa4f9e25e2fc204731b03d6",
+    "native_log_sha256": "ce2e93c37e30d7b4bd329e5e80dd3f528227eb907af381e83e29da9d6ab32dff",
+    "process_observations_sha256": "f9b3244ef635964c31a606a34828cd195a46c53c040d3f52ff97085c67d9b011",
+    "package_identity": "The manager prepared an independent program from the supplied Windows package. A separate observer read the three managed DLLs from each of the two distinct running server programs. All six SHA-256 measurements matched the official tuple.",
+    "manual_save": {"action": "save_world", "attempts": 1, "retried": false, "confirmation": "confirmed", "response_bytes": 52},
+    "checkpoint_sha256": {
+      "worlds_local/n/00_00__0_1.chunk": "96da94cda91ee4cf79aa74bf0edc4eb85aa6bb5ba43648354db998794757f957",
+      "worlds_local/n/_main.1.chunks": "33a1474fcd8aa02756efa4ca9e880781f79feeb90ad5e03cb3e8c92b556959fb",
+      "worlds_local/n/_main.1.db2": "03bbe6b657176f2ff0306cb57ec040c9c3f0fc3dc67e14df20d3bee67526dd84",
+      "worlds_local/n/_main.1.fwl2": "8f6fc18428a756c2e47fe60c69f67a74bfa7b767d707e39a8098c7401693793a",
+      "worlds_local/n/_main.1.ok": "e8a4b2ee7ede79a3afb332b5b6cc3d952a65fd8cffb897f5d18016577c33d7cc"
+    },
+    "readback": "The harness captured all five files before the initial managed stop. After exit it restored that checkpoint and verified each SHA-256, excluding shutdown writes. The fresh managed process logged world n at save generation 1. The readback completed before any further manual save request.",
+    "normal_managed_exit_codes": [0, 0],
+    "test_exit_code": 0
+  },
+  "outside_scope": ["connected client identities and moderation", "crossplay", "public server query", "migration of an existing populated world"]
+}

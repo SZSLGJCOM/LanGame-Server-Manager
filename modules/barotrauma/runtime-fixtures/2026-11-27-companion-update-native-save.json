@@ -1,0 +1,142 @@
+{
+  "module_id": "barotrauma",
+  "verified_at": "2026-11-27",
+  "status": "best_effort_verified",
+  "official_release_url": "https://store.steampowered.com/news/app/602960/view/719048701512778979",
+  "acquisition": {
+    "steam_app_id": 1026340,
+    "branch": "public",
+    "build_id": "26920110",
+    "target_build_id": "26920110",
+    "public_time_utc": "2026-11-26T12:27:47Z",
+    "state_flags": 4,
+    "update_result": 0,
+    "steamcmd_validate_exit": 0,
+    "depots": {
+      "1004": "7604377918839582995",
+      "1026341": "6270959672951779708"
+    },
+    "windows_depot_files_verified": 1101,
+    "windows_depot_bytes_verified": 143604886,
+    "windows_depot_manifest_sha256": "e362031c0273c6fca93832474d999ab590329e9f30d6732cf981595d8e1ffce5"
+  },
+  "packages": [
+    {
+      "native_version": "1.13.5.0",
+      "build_id": "26144270",
+      "sha256": {
+        "DedicatedServer.dll": "d058bbde56286699aa3ffcdd95e87d4d1e430b184ecc3c4007ea442ee9518a46",
+        "BarotraumaCore.dll": "48d637d505a2af5136feaafa871e5057e1f280a56f502d08e52f372816efe606"
+      }
+    },
+    {
+      "native_version": "1.15.33.2",
+      "build_id": "26920110",
+      "informational_revision": "9a0a459131613b4285fe9f2ea829a4311826bd7e",
+      "sha256": {
+        "DedicatedServer.exe": "2d13274f294096cdc885fe21698a8171ce91b2af1f38468610a7e9488d7bf474",
+        "DedicatedServer.dll": "8b39b613abc8de1f53248f085d36b9646af79e6a1f7028e3491354d6d7a82a02",
+        "BarotraumaCore.dll": "e04362c36714bb5e64d610eb05d94b29168829a5f52da600b09b303836ce53cb"
+      }
+    }
+  ],
+  "native_contract": {
+    "inspection": "Read-only managed type and member declarations in the official 1.15.33.2 DedicatedServer.dll and API documentation in its DedicatedServer.xml.",
+    "save_method": "Barotrauma.SaveUtil.SaveGame(Barotrauma.CampaignDataPath, System.Boolean)",
+    "save_arguments": "The current GameSession.DataPath and isSavingOnLoading=false.",
+    "owner_and_campaign_members": [
+      "GameMain.MainThread", "GameMain.Server", "GameMain.GameSession",
+      "CrossThread.enqueuedTasks", "CrossThread.RequestExecutionOnMainThread",
+      "NetworkMember.GameStarted", "GameSession.IsRunning", "GameSession.Campaign",
+      "CampaignMode.PendingSubmarineSwitch", "GameSession.SubmarineInfo",
+      "GameSession.DataPath", "CampaignDataPath.SavePath"
+    ],
+    "plugin_contract": "PluginCampaignSaveDelegate is a campaign save notification. ISettingsService.Save persists plugin settings."
+  },
+  "deterministic_tests": {
+    "entry_point": "modules/barotrauma/control/tests/Run.ps1",
+    "compiler": "Windows .NET Framework csc 14.8.10001.0, C# 5, warnings as errors",
+    "source_sha256": {
+      "BarotraumaSave.cs": "7821e0b132c23312e6cbd2ed5148d7a9fc455a1b6903d5c201f33930d1023625",
+      "BarotraumaControlTests.cs": "8f6e7c8da7f02ea2b13635b6495cc30c14929ee1df7d8e1ab28cf35313af0f65",
+      "NativeBuildTests.cs": "a429cc4da103667d701f6dc46e090f3ab1d2eaa51e600feaaaf23375577c5cdb",
+      "tests/Run.ps1": "884766656352593778eab0d91c75a0b86c717e10c3ea09a3b56f32eb5b96c285"
+    },
+    "real_file_admission": {
+      "executable_sha256": "e0695972767cc4f7e0be8ed598b511e1b06b7770733d0d170557aeeb314d47fc",
+      "before": { "26144270": "admitted", "26920110": "unsupported_native_build" },
+      "after": { "26144270": "admitted", "26920110": "admitted" },
+      "mixed_pairs_rejected": 2,
+      "known_plus_unknown_dll_pairs_rejected": 4,
+      "exit_code": 0
+    },
+    "production_policy": {
+      "executable_sha256": "39c9d79ef81bab541438281ca5b1642a4e81e6145d45c39e4d82e0db171014e5",
+      "environment": "Production C# adapter and shared protocol with synthetic game objects and disposable files.",
+      "admission": "Absent campaign, running round and pending submarine switch rejected. Wrong-thread callback stopped before dispatch.",
+      "current_campaign": "A changed session, primary path or pending submarine switch before invocation prevented a native call. Replacing the session inside the call produced an unknown outcome. Replacing the data-path object with the same primary path still allowed confirmation.",
+      "primary_write": "New nonempty primary, changed length and same-length rewrite with changed last-write time confirmed. Missing primary, backup-only write and empty primary produced native_outcome_unknown.",
+      "exceptions_and_queue": "Swallowed owner-thread write error produced an unknown outcome. Escaping I/O error propagated. Unrelated worker exception, observer cleanup, bounded owner queue, skipped busy tick and completed event disposal passed.",
+      "exit_code": 0
+    },
+    "retained_1_13_4": {
+      "build_id": "23799137",
+      "previous_fixture": "2026-10-28-security-patch-native-save.json",
+      "tested_with_real_dlls_this_run": false,
+      "reason": "The anonymous SteamCMD request for the historical Windows depot returned No subscription."
+    }
+  },
+  "receipts_sha256": {
+    "native-api.json": "9039c70d0b60c2fc0d00a5314307b333ab242e639e6a2b29b6d78e970dc7a825",
+    "checkpoint-contract.json": "165d1f18aaf14dbdea3ad5fb7e38915b0d14890a5ee9e80dee607fb6b7df9c7d"
+  },
+  "scope": "Official package identity, native checkpoint API, DLL admission and a two-process managed campaign with a locked-file failure and exact pre-shutdown manual-save readback.",
+  "native_runtime": {
+    "test": "commands::tests::manual_runtime_tests::native_lifecycle_tests::native_manual_save",
+    "started_utc": "2026-11-27T04:07:13.654631+00:00",
+    "finished_utc": "2026-11-27T04:10:14.533046+00:00",
+    "source_snapshot_sha256": "6332b83fe28c5046e1fd8abcc8cac977a88c8fb60645118b3a7d30ea798e22c8",
+    "test_binary_sha256": "bdbe417a7d5cedf6cbdc87f96f302c17be5a97368eb5cc6e618fefac6bae1bc1",
+    "native_log_sha256": "cd4c45d7b73b54175d123a0b7826b861a28cbef5da15678d5c3eadfb375fc27b",
+    "process_observations_sha256": "f6c1fb92bc6662cc97f70c62d8091c55573399fa03a4a2de2b64dce624db4ada",
+    "environment": "Non-elevated Windows ConPTY, zero-player private server, two distinct managed processes with DLL hashes matching build 26920110.",
+    "instance_settings": {
+      "DestructibleOutposts": true,
+      "matching_package_files": [
+        "dlc_catalog.xml",
+        "PublicKey.dat",
+        "campaignsettings.xml"
+      ]
+    },
+    "locked_primary": {
+      "result": "unknown",
+      "primary_sha256_unchanged": true,
+      "sharing_failure_observed": true,
+      "response_correlated_to_new_request": true,
+      "retried": false
+    },
+    "manual_save": {
+      "action": "save_world",
+      "attempts": 1,
+      "result": "confirmed",
+      "receipt_bytes": 89,
+      "after_releasing_lock": true
+    },
+    "checkpoint_files": {
+      "lgsm_native_manual_save.save": {
+        "bytes": 69770,
+        "sha256": "e4cad1878bdb887397240c39c990723dabdc648565ea5fa916af66d0ff4b839e"
+      },
+      "lgsm_native_manual_save_CharacterData.xml": {
+        "bytes": 60,
+        "sha256": "dc213c490ea195343b6392ea9cbe86786bc4c48223335368ed88c3265fc9012b"
+      }
+    },
+    "readback": "Both active campaign files were captured before the first normal stop. The fixture put shutdown files and rotated backups aside and restored the two captured SHA-256 values. A fresh process selected the sole full path in the native load menu, loaded the existing campaign and started a round. Readback preceded endgame and any second manual save. The server then returned to the lobby.",
+    "normal_managed_exit_codes": [
+      0,
+      0
+    ],
+    "fixture_cleanup": "passed"
+  }
+}

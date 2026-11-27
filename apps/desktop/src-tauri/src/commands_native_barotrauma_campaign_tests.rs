@@ -1,6 +1,22 @@
 use super::*;
 
 #[test]
+fn checkpoint_readback_requires_native_load_and_round_from_the_existing_selector() {
+    assert!(readback_log(&format!(
+        "{LOAD_PROMPT}\n{CAMPAIGN_LOADED}\n{ROUND_STARTED}"
+    )));
+    for invalid in [
+        format!("{CAMPAIGN_LOADED}\n{ROUND_STARTED}"),
+        format!("{LOAD_PROMPT}\n{ROUND_STARTED}"),
+        format!("{LOAD_PROMPT}\n{CAMPAIGN_LOADED}"),
+        format!("{CAMPAIGN_LOADED}\n{ROUND_STARTED}\n{LOAD_PROMPT}"),
+        format!("{LOAD_PROMPT}\nCampaign started!\n{CAMPAIGN_LOADED}\n{ROUND_STARTED}"),
+    ] {
+        assert!(!readback_log(&invalid));
+    }
+}
+
+#[test]
 fn native_default_folder_accepts_only_the_verified_empty_knownfolder_literal() {
     let config = std::env::temp_dir().join("baro_owned_config");
     let mut native = NativeRoots {

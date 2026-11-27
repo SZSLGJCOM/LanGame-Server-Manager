@@ -92,7 +92,7 @@ import {
 import { AppViewRouter } from "./views/AppViewRouter";
 import { InstanceSelectionCursor } from "./instance-panel-refresh";
 import { instancePanelReader, formatInstancePanelError, type InstancePanelLoadState, type InstancePanelPatch } from "./instance-panel-loader";
-import { completedInstallationJob } from "./installation-job";
+import { completedInstallationJob, installationResultKey } from "./installation-job";
 import { getLocalizedModuleDisplayName } from "./store-media";
 import { preventUnhandledDropNavigation } from "./desktop-file-drop";
 
@@ -651,10 +651,7 @@ function DesktopApp({ theme, onThemeChange }: DesktopAppProps) {
     const finished = completedInstallationJob(bootstrap.state.jobs, jobs);
     if (finished) {
       const name = getLocalizedModuleDisplayName(finished.target_id, locale, finished.label);
-      const status = finished.status.toLowerCase();
-      const operation = finished.kind.toLowerCase() === "validategame" ? "validated"
-        : finished.kind.toLowerCase() === "uninstallgame" ? "uninstalled" : "completed";
-      setActivity(message(`installation.${status === "completed" ? operation : status}`, {
+      setActivity(message(installationResultKey(finished), {
         name, message: finished.detail ?? finished.output_excerpt ?? ""
       }));
     }

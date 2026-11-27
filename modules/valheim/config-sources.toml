@@ -1,6 +1,14 @@
 status = "best_effort_verified"
-last_verified = "2026-07-13"
+last_verified = "2026-11-27"
 notes = "The prior SteamCMD anonymous app_update 896660 validate completed with Success! App '896660' fully installed; its manifest and Iron Gate's official dedicated-server guide were rechecked on 2026-07-13. The recorded package reports buildid 21981590, TargetBuildID 21981590, SizeOnDisk 1636649733, and depots 1004/896662. The official guide was checked again on 2026-09-07: Normal is an explicit preset, modifiers consume separate name and value arguments after the preset, and the documented world keys are nobuildcost, playerevents, passivemobs, and nomap. Configuration and argv acceptance checks cover these corrections. Separate private-mode native lifecycle evidence from 2026-09-20 is recorded below; public A2S and crossplay are not validated by that run."
+
+[[sources]]
+id = "native_control_and_save_20261127"
+kind = "runtime_probe"
+path = "reference-fixtures/2026-11-27-native_build_26949048.json"
+url = "https://www.valheimgame.com/news/hotfix-1-0-31/"
+authority = "official_windows_steam_package_static_comparison_and_isolated_native_runtime"
+description = "Valheim 1.0.31 build 26949048 changes all three managed assembly fingerprints. The dedicated manual, network version 42 and world format 42 match prior records. The standalone controller reloaded additions and removals in the admin and permitted lists and confirmed save generations 0 to 1 and 1 to 2 across two processes. A separate desktop-managed test confirmed one manual save, restored all five pre-stop files by SHA-256 and loaded generation 1 on restart before a second save request. An independent observer matched the three official DLL hashes for both managed processes. All four server sessions exited 0."
 
 [[sources]]
 id = "native_control_and_save_20261125"

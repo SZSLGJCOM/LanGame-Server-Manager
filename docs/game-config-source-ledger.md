@@ -8,7 +8,7 @@
 | `arksurvivalascended` | best_effort_verified | 283 | 295 | 315 | 55 |
 | `arksurvivalevolved` | exhaustive_verified | 375 | 414 | 137 | 36 |
 | `astroneer` | best_effort_verified | 20 | 20 | 6 | 21 |
-| `barotrauma` | best_effort_verified | 125 | 125 | 4 | 39 |
+| `barotrauma` | best_effort_verified | 125 | 125 | 7 | 41 |
 | `conanexiles` | best_effort_verified | 305 | 305 | 47 | 35 |
 | `corekeeper` | verified_with_direct_connection | 15 | 24 | 19 | 27 |
 | `dontstarve` | best_effort_verified | 335 | 335 | 32 | 35 |
@@ -33,6 +33,6 @@
 | `terraria` | best_effort_verified | 40 | 40 | 10 | 18 |
 | `theforest` | exhaustive_verified | 22 | 22 | 6 | 17 |
 | `unturned` | best_effort_verified | 301 | 301 | 13 | 64 |
-| `valheim` | best_effort_verified | 18 | 18 | 7 | 49 |
+| `valheim` | best_effort_verified | 18 | 18 | 7 | 50 |
 | `vrising` | best_effort_verified | 194 | 197 | 8 | 29 |
 | `windrose` | best_effort_verified | 23 | 23 | 13 | 11 |

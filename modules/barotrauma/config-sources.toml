@@ -1,6 +1,21 @@
 status = "best_effort_verified"
-last_verified = "2026-10-28"
-notes = "Current package admission additionally covers 1.13.5.0 build 26144270, reviewed separately in the 2026-10-28 release and native-contract sources. The historical configuration inventory uses Barotrauma Dedicated Server app 1026340 public build 23799137 / v1.13.4.0. The 106 root and 18 campaign XML attributes are cross-checked against the installed package and official v1.13.4.0 release source ca7f5976fe16de7b153585ac4f6a12bdccbbbf8e. All 125 managed fields have reviewed types, English/Chinese semantics and section ownership. Closed enums follow the release source; new numeric limits follow property setters, while UI-only slider ranges do not restrict native configuration. XML spelling alone is not used to infer types. Per-admin command lists remain an explicit permission-surface exclusion. The 2026-09-30 semantic recheck retains the full 125-field explicit metadata review against v1.13.4.0 source/build 23799137: native float types, clamping, enum values, units and bilingual labels are explicit; mod/admin owners remain outside configuration. Fractional XML regressions and five frontend contracts cover the corrected types, bounds, labels and grouping. No new live server probe was performed in this recheck."
+last_verified = "2026-11-27"
+notes = "The 2026-11-27 Windows package and native settings check covers build 26920110 / 1.15.33.2. Its 106 root and 18 campaign attributes retain their previous names. DestructibleOutposts now defaults to true. The package also supplies DLC catalog and signature verification data and revises two campaign difficulty presets. The historical 125-field semantic review uses build 23799137 / v1.13.4.0 and official source ca7f5976fe16de7b153585ac4f6a12bdccbbbf8e for XML mapping, types, setter bounds, English/Chinese labels and section ownership. Per-admin command lists remain an explicit permission-surface exclusion. The earlier 1.13.5.0 package and native save checks are recorded separately."
+
+[[sources]]
+id = "public_windows_26920110"
+kind = "runtime_probe"
+path = "reference-fixtures/2026-11-27-windows-config-26920110.json"
+authority = "official_windows_depot_and_isolated_native_settings"
+url = "https://store.steampowered.com/news/app/602960/view/719048701512778979?l=english"
+description = "Steam app 1026340 public Windows build 26920110, manifest 6270959672951779708. Isolated DedicatedServer 1.15.33.2 reserialized the server and campaign settings. The receipt records the sanitized native reference, the four official difficulty presets and the publisher-owned DLC catalog and public key."
+
+[[sources]]
+id = "companion_update_checkpoint_20261127"
+kind = "runtime_probe"
+path = "runtime-fixtures/2026-11-27-companion-update-native-save.json"
+authority = "official_windows_assemblies_and_isolated_native_campaign"
+description = "The Companion Update save adapter checks the complete native assembly pair, the current lobby campaign and a write to its primary save. A locked primary produced an unknown result with identical bytes. After unlocking, the manager confirmed a new manual save. A fresh server loaded the SHA-256-verified pre-stop campaign and character files and returned to the lobby. Both processes exited normally."
 
 [[sources]]
 id = "managed_native_manual_save_20261031"
@@ -932,6 +947,21 @@ reason = "Per-admin allowed command restrictions are intentionally excluded from
 source = "console_commands"
 key = "runtime moderation commands"
 reason = "Runtime actions are declared in module.toml rather than schema fields."
+
+[[exclusions]]
+source = "public_windows_26920110"
+key = "Data/dlc_catalog.xml"
+reason = "Publisher-owned DLC catalog. Stopped startup refreshes the instance copy from the installed package."
+
+[[exclusions]]
+source = "public_windows_26920110"
+key = "Data/PublicKey.dat"
+reason = "Publisher-owned verification key. Stopped startup refreshes the instance copy from the installed package."
+
+[[exclusions]]
+source = "public_windows_26920110"
+key = "Data/campaignsettings.xml"
+reason = "The installed package seeds the four difficulty presets. An existing file is upgraded only when its complete bytes match the reviewed prior release and the installed replacement matches the reviewed Windows build. Operator presets are retained."
 
 [[sources]]
 id = "semantic_review_20260930"

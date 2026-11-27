@@ -164,6 +164,17 @@ async fn barotrauma_instance_materializes_workshop_content_packages() {
     .await
     .unwrap();
 
+    let config_root = paths
+        .instances_root
+        .join(&created.summary.id)
+        .join("config");
+    let server_settings = config_root.join("serversettings.xml");
+    assert!(
+        fs::read_to_string(&server_settings)
+            .unwrap()
+            .contains("DestructibleOutposts=\"true\"")
+    );
+
     update_instance(
         &paths,
         UpdateInstanceInput {
@@ -174,6 +185,7 @@ async fn barotrauma_instance_materializes_workshop_content_packages() {
             settings_json: String::from(
                 r#"{
   "server_name": "Barotrauma Abyss",
+  "destructible_outposts": false,
   "mod_workshop_ids": "123456789\nmissing"
 }"#,
             ),
@@ -183,10 +195,11 @@ async fn barotrauma_instance_materializes_workshop_content_packages() {
     .await
     .unwrap();
 
-    let config_root = paths
-        .instances_root
-        .join(&created.summary.id)
-        .join("config");
+    assert!(
+        fs::read_to_string(&server_settings)
+            .unwrap()
+            .contains("DestructibleOutposts=\"false\"")
+    );
     let local_mod_root = config_root.join("LocalMods").join("123456789");
     assert_eq!(
         fs::read_to_string(local_mod_root.join("filelist.xml")).unwrap(),
@@ -206,6 +219,26 @@ async fn barotrauma_instance_materializes_workshop_content_packages() {
     assert!(!config_player.contains("LocalMods/missing/filelist.xml"));
 
     cleanup_root(&root);
+}
+
+#[test]
+fn barotrauma_legacy_missing_setting_inherits_the_current_native_default() {
+    let descriptor = barotrauma_test_descriptor(Path::new("."));
+    for (saved, expected) in [(None, true), (Some(false), false), (Some(true), true)] {
+        let mut prior = serde_json::Map::new();
+        if let Some(value) = saved {
+            prior.insert("destructible_outposts".into(), value.into());
+        }
+        let settings = normalize_complete_instance_settings(
+            Some(&descriptor),
+            prior,
+            "legacy",
+            "Legacy Barotrauma",
+            "0.0.0.0",
+        )
+        .unwrap();
+        assert_eq!(settings["destructible_outposts"].as_bool(), Some(expected));
+    }
 }
 
 fn conan_test_descriptor(root: &Path) -> ModuleDescriptor {

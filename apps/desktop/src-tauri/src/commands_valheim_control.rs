@@ -213,6 +213,11 @@ fn supported_profile(main: &str, utils: &str, platform: &str) -> bool {
             "3dfb0fc0feb9ef4a65f8604ad835475f7a1ff78132a10de5c46c171b12b55af1",
             "19b9abca2dfc4641a06c61913d0ac3df9e560e3adac5fb676a68573b0a40bbad",
         ),
+        (
+            "f60248f9f2570739b38d33264c017bbea1da038ef670512cfa3402df59205a02",
+            "31e35f53fe3b383ecb6f5e6d6e16ef56d58d9cfd1f55650db70989c40e1882ae",
+            "5fa4fda2b7a16420b95d00e4a39811d0c920c5180b68152512babf2ea96428f7",
+        ),
     ];
     known
         .iter()

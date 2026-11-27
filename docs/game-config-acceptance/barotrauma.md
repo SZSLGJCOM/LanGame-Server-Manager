@@ -75,3 +75,39 @@
   }
 }
 ```
+
+## `2026-11-27-public_windows_26920110.json`
+
+- Evidence: `best_effort_verified` at `2026-11-27` (build `Steam public build 26920110 / DedicatedServer 1.15.33.2`)
+- Sources: `public_windows_26920110`
+- Coverage: editable `0`, specialized `0`, derived `0`, generated `0`, excluded `3`
+
+### Settings
+
+```json
+{
+  "server_name": "Outpost Audit",
+  "server_password": "fixture-generated-valid-value"
+}
+```
+
+### Expected outputs
+
+```json
+{
+  "files": [
+    {
+      "format": "xml",
+      "fragments": [
+        "DestructibleOutposts=\"true\""
+      ],
+      "path": "serversettings.xml",
+      "root": "config"
+    }
+  ],
+  "launch": {
+    "arguments": [],
+    "executable_suffix": "DedicatedServer.exe"
+  }
+}
+```

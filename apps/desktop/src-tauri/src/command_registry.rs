@@ -145,7 +145,7 @@ register_commands! {
     (send_instance_gm_command, [crate::commands::commands_assistant_ops], Runtime, Allowed, Bounded),
     (read_ark_tools_status, [crate::commands::commands_ark_tools], Runtime, Denied, Bounded),
     (read_ark_tools_install_progress, [crate::commands::commands_ark_tools], Runtime, Denied, Bounded),
-    (prepare_ark_tools, [crate::commands::commands_ark_tools], Runtime, Denied, Bounded),
+    (prepare_ark_tools, [crate::commands::commands_ark_tools], Runtime, Denied, Owned),
     (remove_ark_tools, [crate::commands::commands_ark_tools::removal], Runtime, Denied, Owned),
     (spawn_ark_creature, [crate::commands::commands_ark_tools], Runtime, Denied, Bounded),
     (read_ark_map, [crate::commands::commands_ark_map], Runtime, Denied, Bounded),

@@ -9,7 +9,7 @@ for (const extension of [".ts", ".tsx"]) {
     module._compile(transpileTypeScript(fs.readFileSync(filename, "utf8"), filename), filename);
   };
 }
-const { selectActiveInstallationJob, installationJobPercent, completedInstallationJob } = require("../src/installation-job.ts");
+const { selectActiveInstallationJob, installationJobPercent, completedInstallationJob, installationResultKey } = require("../src/installation-job.ts");
 const { InstallationActivity } = require("../src/components/InstallationActivity.tsx");
 const { ZH_CN_UI_MESSAGES } = require("../src/i18n-messages-zh-ui.ts");
 const { EN_US_EXTRA_MESSAGES } = require("../src/i18n-messages-en-extra.ts");
@@ -21,6 +21,25 @@ function render(value, catalog = ZH_CN_UI_MESSAGES, extra = {}) {
   const t = (key, params = {}) => Object.entries(params).reduce((text, [key, value]) => text.replaceAll(`{${key}}`, String(value)), catalog[key] ?? key);
   return renderToStaticMarkup(React.createElement(InstallationActivity, { job: value, name: "Game", locale: "zh-CN", t, ...extra }));
 }
+
+test("runtime checks, downloads and actual installs have distinct activity labels", () => {
+  const runtime = job({ id: "instance-runtime-environment:instance:attempt", kind: "ValidateGame" });
+  for (const [phase, zh, en] of [
+    ["queued", "等待检查运行环境", "Waiting to check runtime prerequisites"],
+    ["preparing", "正在准备运行环境", "Preparing runtime prerequisites"],
+    ["verifying", "正在检查运行环境", "Checking runtime prerequisites"],
+    ["downloading", "正在下载", "Downloading"],
+    ["installing", "正在安装", "Installing"],
+    ["ready", "运行环境已就绪", "Runtime prerequisites are ready"],
+  ]) {
+    const current = { ...runtime, install_progress: { ...runtime.install_progress, phase } };
+    assert.ok(render(current).includes(zh));
+    assert.ok(render(current, EN_US_EXTRA_MESSAGES).includes(en));
+  }
+  assert.equal(installationResultKey({ ...runtime, status: "Completed" }), "installation.runtimeCompleted");
+  assert.equal(installationResultKey({ ...runtime, status: "Failed" }), "installation.failed");
+  assert.equal(installationResultKey(job({ kind: "ValidateGame", status: "Completed" })), "installation.validated");
+});
 
 test("global footer chooses active installation over queued work and excludes unrelated jobs", () => {
   const queued = job({ id: "queued", install_progress: { phase: "queued" } });

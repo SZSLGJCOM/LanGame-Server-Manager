@@ -19,12 +19,13 @@ ordinary-file `SaveFiles.cs` from Core Keeper control.
 
 ## Native contract
 
-The admitted packages are 1.13.4.0 (Steam build `23799137`, build string
-`release/summer-update-2026-hotfix-1`, revision `6029cd01d7`) and the
-[1.13.5.0 security patch](https://steamcommunity.com/games/602960/announcements/detail/685268529568554108)
-(Steam build `26144270`, informational revision
-`0a9af9a7f0efeef46d63a4fe80103b4446a21dee`). A complete pair must match before
-initialization; mixed versions and unknown packages are rejected.
+The Windows extension checks both native assemblies against one release
+before initialization. The admitted versions are 1.13.4.0 (Steam build
+`23799137`, revision `6029cd01d7`), 1.13.5.0 (Steam build `26144270`,
+revision `0a9af9a7f0efeef46d63a4fe80103b4446a21dee`) and 1.15.33.2
+(Steam build `26920110`, revision `9a0a459131613b4285fe9f2ea829a4311826bd7e`).
+See the [security patch](https://steamcommunity.com/games/602960/announcements/detail/685268529568554108)
+and [Companion Update](https://store.steampowered.com/news/app/602960/view/719048701512778979).
 
 1.13.4.0:
 
@@ -35,6 +36,11 @@ initialization; mixed versions and unknown packages are rejected.
 
 - `DedicatedServer.dll`: `d058bbde56286699aa3ffcdd95e87d4d1e430b184ecc3c4007ea442ee9518a46`
 - `BarotraumaCore.dll`: `48d637d505a2af5136feaafa871e5057e1f280a56f502d08e52f372816efe606`
+
+1.15.33.2:
+
+- `DedicatedServer.dll`: `8b39b613abc8de1f53248f085d36b9646af79e6a1f7028e3491354d6d7a82a02`
+- `BarotraumaCore.dll`: `e04362c36714bb5e64d610eb05d94b29168829a5f52da600b09b303836ce53cb`
 
 The reviewed public [CrossThread implementation](https://github.com/FakeFishGames/Barotrauma/blob/ca7f5976fe16de7b153585ac4f6a12bdccbbbf8e/Barotrauma/BarotraumaShared/SharedSource/Utils/CrossThread.cs)
 and [native save implementation](https://github.com/FakeFishGames/Barotrauma/blob/ca7f5976fe16de7b153585ac4f6a12bdccbbbf8e/Barotrauma/BarotraumaShared/SharedSource/Utils/SaveUtil.cs)
@@ -63,9 +69,10 @@ object. A durable dispatch marker precedes the call, and nonce reuse cannot
 repeat it. Timeout or an exception after that marker is unknown, never a reason
 for automatic resend.
 
-`SaveGame` returns void and catches four classes of save failure. The extension
-therefore observes `AppDomain.FirstChanceException` only for the request's owner
-thread and only during that exact native invocation. Any exception, including
+`SaveGame` returns void. In the reviewed 1.13.x builds it catches four classes
+of save failure. Across the admitted versions the extension observes
+`AppDomain.FirstChanceException` only for the request's owner thread and only
+during that exact native invocation. Any exception, including
 one swallowed by the game or raised by a stream's disposal, leaves the outcome
 unknown. The observer is always removed before returning or propagating an
 exception; another worker thread cannot acknowledge or reject the request.
@@ -79,7 +86,7 @@ their signatures. `ProcessTasks`, `SaveGame`, `CompressDirectory`,
 path; `GameSession.Save` still selects `throwExceptions=true` and `maxRetries=0`.
 The fixed extension preserves that native sanitizer and never bypasses it.
 
-The installed hash-pinned IL was checked through `SaveUtil.SaveGame`,
+For versions 1.13.4.0 and 1.13.5.0 the installed IL was checked through `SaveUtil.SaveGame`,
 `GameSession.Save`, `SafeXML.SaveSafe`, `SubmarineInfo.SaveAs`,
 `CompressStringToFile` and `CompressDirectory`. All early returns in this save
 path follow exceptions. `GameSession.Save` passes `throwExceptions=true` and
@@ -90,7 +97,29 @@ the same server, session, campaign and SavePath produce `status=completed`.
 The desktop then records confirmed native completion. This is a campaign
 checkpoint between rounds, with the live-round guards still enforced.
 
+Version 1.15.33.2 documents the same synchronous
+`SaveUtil.SaveGame(CampaignDataPath, bool)` call in `DedicatedServer.xml`.
+The plugin campaign-save event reports a save that the game has already started.
+The extension calls the native save on the owner thread and checks the current
+campaign, submarine and game-selected primary path on both sides of that call.
+It also observes the primary file's length and last-write time in that interval.
+Completion requires an exception-free return and a new or changed, nonempty
+primary. A silent return with an unchanged primary leaves the outcome unknown.
+
 ## Verification
+
+On 2026-11-27 the previous verifier admitted the official 1.13.5.0 DLL pair
+and rejected the 1.15.33.2 pair. The updated verifier admitted both pairs,
+rejected both mixed pairs and rejected all four pairings with an unknown DLL.
+The C# boundary tests also exercised wrong-thread rejection, a silent save
+with an unchanged primary, a backup-only write, an empty primary and a
+same-length rewrite. The 1.13.4.0 real-package comparison is recorded in the
+2026-10-28 fixture below. The [Companion Update checkpoint fixture](../runtime-fixtures/2026-11-27-companion-update-native-save.json)
+records the tested assemblies, API declarations and managed campaign run.
+With the primary locked, the native write failed and its SHA-256 stayed the
+same. Once unlocked, a new request confirmed the save. A fresh managed process
+loaded the exact pre-stop primary and character XML, started a round and
+returned to the lobby. Both processes stopped normally with exit code 0.
 
 On 2026-10-28, version 1.13.5.0 / build `26144270` passed the isolated
 `native_manual_save` acceptance using immutable test binary SHA-256
@@ -113,14 +142,15 @@ invocation, swallowed and escaping I/O failures, unrelated-worker isolation,
 observer cleanup, bounded task publication, nonblocking busy-owner behavior and
 completed-event disposal. It does not replace real game acceptance.
 
-The optional real-file admission test compiles the same production verifier,
-accepts both supplied packages, rejects both cross-version pairs and rejects an
-unknown server DLL without starting a game. Use an external output directory:
+The optional real-file admission test compiles the production verifier. It checks
+each supplied package, every cross-version pair, and each native DLL paired with
+an unknown counterpart. Use an external output directory.
 
 ```powershell
 & modules/barotrauma/control/tests/Run.ps1 -OutputRoot <external-output> `
-    -PackageRoot <official-1.13.5.0-package> `
-    -PreviousPackageRoot <retained-1.13.4.0-package>
+    -PackageRoot <official-1.15.33.2-package> `
+    -PreviousPackageRoot <retained-1.13.5.0-package> `
+    -AdditionalPackageRoot <retained-1.13.4.0-package>
 ```
 
 Real acceptance used an ordinary copied server with a newly generated,

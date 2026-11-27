@@ -1,0 +1,47 @@
+{
+  "schema_version": 1,
+  "verified_on": "2026-11-23",
+  "status": "published_and_anonymously_verified",
+  "repository": "SZSLGJCOM/LanGame-Server-Manager-Releases",
+  "tag": "ark-tools-symbols-asa-c466aa79c7057375",
+  "release_status": "pre",
+  "publisher_completed_utc": "2026-11-23T13:23:51Z",
+  "steam_build_id": "26749470",
+  "server_version": "98.9",
+  "executable_sha256": "6434fe81cc0c950e0ee9a84c3f98c0fb010388339e097e33790200ef9432c6fb",
+  "archive": {
+    "bytes": 23143527,
+    "sha256": "c466aa79c7057375137f9abec3b9e49169f7992d37b1d30fdce784febe3207c2",
+    "matching_upstream_downloads": 3,
+    "offset_entries": 704590,
+    "bitfield_entries": 13056
+  },
+  "publisher_readback": {
+    "anonymous": true,
+    "verified_assets": 5,
+    "prepared_inventory_sha256": "ee5f4dbd00234e8ed5b151783932656255a86cab44bf6e8269da2598065dafb1",
+    "symbol_manifest_sha256": "7e6cbdeb0747b4ddadebaa7123df9e15ea0844f08429ced2155ad200737fd70e",
+    "receipt_sha256": "fea83971da9d423afec06542f95e619c58b8ba9d95f5aa65885512491c2023c2"
+  },
+  "independent_windows_readback": {
+    "http_status": 200,
+    "proxy_used": false,
+    "duration_seconds": 4.454,
+    "archive_size_and_sha256_matched": true
+  },
+  "runtime_prepare_validation": {
+    "test": "asa_reviewed_symbol_mirror_prepares_owned_copy",
+    "preference": "ChinaFirst",
+    "connecting_sources": ["api.gitcode.com"],
+    "cache_ready_after_publication_and_reopen": true,
+    "duration_seconds": 6.69,
+    "exit_code": 0
+  },
+  "existing_managed_instance": {
+    "scope": "Isolated backend test using the 0.2.4 preparation code and separately built plugin binaries.",
+    "matching_cache_reused": true,
+    "prepare_seconds": 37.761,
+    "native_plugin_handshake": true,
+    "server_stop_exit_code": 0
+  }
+}

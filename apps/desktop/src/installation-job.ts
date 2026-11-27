@@ -32,6 +32,9 @@ export function installationJobPercent(job: BackgroundJob): number | null {
 
 export function installationJobPhaseLabel(job: BackgroundJob, t: TranslateFn): string {
   const phase = installationJobPhase(job);
+  if (isRuntimeEnvironmentJob(job) && ["queued", "preparing", "verifying", "ready"].includes(phase)) {
+    return t(`installation.runtime.${phase}`);
+  }
   const detail = job.detail?.trim() ?? "";
   const retry = /^Retry ([1-4]): (.*)$/s.exec(detail);
   const verification = phase === "verifying" ? job.install_progress?.verification : null;
@@ -83,6 +86,21 @@ function installationStepLabel(phase: ReturnType<typeof installationJobPhase>, d
     if (step) return t(step[1]);
   }
   return t(`installation.phase.${phase}`);
+}
+
+function isRuntimeEnvironmentJob(job: BackgroundJob): boolean {
+  return job.id.startsWith("instance-runtime-environment:");
+}
+
+export function installationResultKey(job: BackgroundJob): string {
+  const status = job.status.toLowerCase();
+  if (status !== "completed") return `installation.${status}`;
+  if (isRuntimeEnvironmentJob(job)) return "installation.runtimeCompleted";
+  switch (job.kind.toLowerCase()) {
+    case "validategame": return "installation.validated";
+    case "uninstallgame": return "installation.uninstalled";
+    default: return "installation.completed";
+  }
 }
 
 export function completedInstallationJob(previous: BackgroundJob[], current: BackgroundJob[]): BackgroundJob | null {

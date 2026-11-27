@@ -1,11 +1,11 @@
 //! Matching symbol preparation belongs to the explicit, stopped-instance
 //! installation command. Ordinary status inspection and startup never download.
+use super::download::{HEADER_RETRY_BUDGET, archive_client_builder};
 use super::*;
 use app_network::SourcePreference;
 use std::sync::OnceLock;
 use std::time::Duration;
 use tokio::io::AsyncWriteExt;
-use tokio::time::{Instant, timeout_at};
 
 #[path = "ark_tools_symbol_cache.rs"]
 mod cache;
@@ -15,7 +15,6 @@ const SOURCES: [&str; 3] = [
     "https://cdn.shadowhunter.co.za/cache/",
     "https://cdn.shadowhunter-systems.co.za/cache/",
 ];
-const BUDGET: Duration = Duration::from_secs(180);
 
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
@@ -109,9 +108,7 @@ fn allowed(url: &reqwest::Url, reviewed: bool) -> bool {
 
 fn client(reviewed: bool) -> Result<reqwest::Client, String> {
     let redirect_limit = if reviewed { 5 } else { 3 };
-    reqwest::Client::builder()
-        .connect_timeout(Duration::from_secs(10))
-        .read_timeout(Duration::from_secs(30))
+    archive_client_builder()
         .user_agent("LanGame-Server-Manager/ARK-Symbols")
         .redirect(reqwest::redirect::Policy::custom(move |attempt| {
             if attempt.previous().len() >= redirect_limit || !allowed(attempt.url(), reviewed) {
@@ -128,7 +125,7 @@ async fn download(
     client: &reqwest::Client,
     url: &str,
     path: &Path,
-    deadline: Instant,
+    header_retry_budget: Duration,
     report: &InstallReporter,
     reviewed: Option<&ReviewedCache>,
 ) -> Result<(), String> {
@@ -143,13 +140,9 @@ async fn download(
         downloaded_bytes: Some(0),
         total_bytes: None,
     });
-    let mut response = app_network::send_with_retry(
-        client,
-        request,
-        deadline.saturating_duration_since(Instant::now()),
-    )
-    .await
-    .map_err(|error| error.to_string())?;
+    let mut response = app_network::send_with_retry(client, request, header_retry_budget)
+        .await
+        .map_err(|error| error.to_string())?;
     let total = response.content_length();
     let limit = reviewed.map_or(cache::MAX_ARCHIVE, |package| package.size);
     if total.is_some_and(|size| size == 0 || size > limit || reviewed.is_some() && size != limit) {
@@ -209,7 +202,7 @@ pub(super) async fn prepare(
     preference: SourcePreference,
     report: InstallReporter,
 ) -> Result<cache::Prepared, String> {
-    let mut prepared = tokio::task::spawn_blocking(move || cache::Prepared::inspect(&root))
+    let prepared = tokio::task::spawn_blocking(move || cache::Prepared::inspect(&root))
         .await
         .map_err(|error| format!("ASA symbol inspection task failed: {error}"))??;
     if prepared.ready() {
@@ -217,21 +210,29 @@ pub(super) async fn prepare(
     }
     let (sources, reviewed) = sources(&prepared.executable_hash, preference)?;
     let client = client(reviewed.is_some())?;
-    let deadline = Instant::now() + BUDGET;
+    prepare_from_sources(
+        prepared,
+        &client,
+        &sources,
+        reviewed,
+        HEADER_RETRY_BUDGET,
+        &report,
+    )
+    .await
+}
+
+async fn prepare_from_sources(
+    mut prepared: cache::Prepared,
+    client: &reqwest::Client,
+    sources: &[String],
+    reviewed: Option<&ReviewedCache>,
+    header_retry_budget: Duration,
+    report: &InstallReporter,
+) -> Result<cache::Prepared, String> {
     let mut failures = Vec::new();
-    for (index, source) in sources.iter().enumerate() {
-        let remaining = deadline.saturating_duration_since(Instant::now());
-        if remaining.is_zero() {
-            break;
-        }
-        let source_deadline = Instant::now() + remaining / (sources.len() - index) as u32;
+    for source in sources {
         let path = prepared.archive_path()?;
-        let fetched = timeout_at(
-            source_deadline,
-            download(&client, source, &path, source_deadline, &report, reviewed),
-        )
-        .await
-        .unwrap_or_else(|_| Err("ASA symbol download timed out".into()));
+        let fetched = download(client, source, &path, header_retry_budget, report, reviewed).await;
         let result = match fetched {
             Ok(()) => {
                 report(InstallUpdate {
@@ -421,7 +422,7 @@ mod tests {
                 &client,
                 &url,
                 &output,
-                Instant::now() + Duration::from_secs(5),
+                Duration::from_secs(5),
                 &report,
                 Some(&pin),
             )
@@ -464,15 +465,8 @@ mod tests {
             } else {
                 "complete.zip"
             });
-            let result = download(
-                &client,
-                &url,
-                &path,
-                Instant::now() + Duration::from_secs(5),
-                &report,
-                None,
-            )
-            .await;
+            let result =
+                download(&client, &url, &path, Duration::from_secs(5), &report, None).await;
             server.await.unwrap();
             if oversized {
                 assert!(result.unwrap_err().contains("bounded download size"));

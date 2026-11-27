@@ -23,7 +23,7 @@ fn test_report() -> (InstallReporter, Arc<Mutex<Vec<InstallUpdate>>>) {
 }
 
 fn test_client() -> Client {
-    Client::builder().no_proxy().build().unwrap()
+    archive_client_builder().no_proxy().build().unwrap()
 }
 
 async fn request(stream: &mut tokio::net::TcpStream) {
@@ -97,7 +97,7 @@ fn delivery_redirects_keep_https_and_approved_provider_hosts() {
 }
 
 #[tokio::test]
-async fn real_partial_bytes_are_reported_before_the_archive_completes() {
+async fn progressing_framework_download_reports_partial_bytes_and_outlives_header_budget() {
     let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
     let url = format!("http://{}/archive.zip", listener.local_addr().unwrap());
     let (release, released) = oneshot::channel();
@@ -109,7 +109,10 @@ async fn real_partial_bytes_are_reported_before_the_archive_completes() {
             .await
             .unwrap();
         released.await.unwrap();
-        stream.write_all(b"ck").await.unwrap();
+        for byte in b"ck" {
+            tokio::time::sleep(Duration::from_millis(400)).await;
+            stream.write_all(&[*byte]).await.unwrap();
+        }
     });
     let gate = Mutex::new(Some(release));
     let (record, events) = test_report();
@@ -125,7 +128,7 @@ async fn real_partial_bytes_are_reported_before_the_archive_completes() {
             &test_client(),
             &test_package(b"pack"),
             &[&url],
-            Duration::from_secs(2),
+            Duration::from_millis(600),
             &report,
         ),
     )
@@ -191,10 +194,15 @@ async fn stalled_body_preserves_a_bounded_opportunity_for_the_other_source() {
     let (good, succeeded) =
         source(b"HTTP/1.1 200 OK\r\nContent-Length: 4\r\nConnection: close\r\n\r\npack").await;
     let (report, _) = test_report();
+    let client = archive_client_builder()
+        .no_proxy()
+        .read_timeout(Duration::from_millis(250))
+        .build()
+        .unwrap();
     let result = tokio::time::timeout(
         Duration::from_secs(3),
         fetch_from(
-            &test_client(),
+            &client,
             &test_package(b"pack"),
             &[&stalled, &good],
             Duration::from_secs(1),

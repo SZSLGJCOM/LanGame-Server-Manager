@@ -5,6 +5,8 @@ use std::collections::BTreeSet;
 use std::fs;
 use std::path::{Component, Path, PathBuf};
 
+use super::super::super::barotrauma_campaign;
+
 pub(super) fn roots(module: &str, saves: &Path) -> Result<Vec<PathBuf>, String> {
     if !saves.is_absolute()
         || saves
@@ -19,6 +21,20 @@ pub(super) fn roots(module: &str, saves: &Path) -> Result<Vec<PathBuf>, String> 
         // Return children: the owner must retain the saves directory itself.
         "corekeeper" | "runescapedragonwilds" | "enshrouded" | "returntomoria" | "terraria" => {
             children(saves)
+        }
+        "barotrauma" => {
+            let primary = barotrauma_campaign::require_checkpoint_primary(saves)?;
+            // Multiplayer contains the active campaign and its character XML.
+            // Leave rotated .save.bkN and .xml.bkN out of the restart input.
+            let mut entries = children(saves)?;
+            entries.retain(|path| {
+                path == &primary
+                    || (path.is_file()
+                        && path
+                            .extension()
+                            .is_some_and(|ext| ext.eq_ignore_ascii_case("xml")))
+            });
+            Ok(entries)
         }
         // Preserve complete generations: .chunk plus .chunks/.db2/.fwl2/.ok,
         // rather than treating any one leaf as a standalone Valheim checkpoint.
@@ -42,6 +58,15 @@ pub(super) fn roots(module: &str, saves: &Path) -> Result<Vec<PathBuf>, String> 
         "scum" => Ok(vec![saves.join("SaveFiles/SCUM.db")]),
         _ => Err(format!("{module}: no verified native checkpoint profile")),
     }
+}
+
+pub(super) fn restore_roots(module: &str, saves: &Path) -> Result<Vec<PathBuf>, String> {
+    if module == "barotrauma" {
+        // Displace the entire stopped campaign directory's contents. Only the
+        // captured active files will be offered to the native campaign loader.
+        return children(saves);
+    }
+    roots(module, saves)
 }
 
 /// Only the verified default SQLite databases use the transactional backup API.
@@ -127,6 +152,7 @@ pub(super) fn native_logs(module: &str, program: &Path, details: &InstanceDetail
 
 pub(super) fn require_loaded(module: &str, before: &str, fresh: &str) -> Result<(), String> {
     let loaded = match module {
+        "barotrauma" => barotrauma_campaign::readback_log(fresh),
         // The native spelling "finishied" is intentional. A new-world seed
         // without deserialization is insufficient.
         "corekeeper" => {

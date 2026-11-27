@@ -163,14 +163,8 @@ pub(super) fn native_files(game: Profile) -> Result<Vec<(&'static str, &'static 
             ),
         ],
         "barotrauma" => vec![
-            (
-                "DedicatedServer.dll",
-                "18278624996b543a2595a0ea9c0c4c14881d511ac307e1a69028d6579e67ad3c",
-            ),
-            (
-                "BarotraumaCore.dll",
-                "72acd77784b83a0e09584262ab1eea9ee40395b95f3a2e3ec3974da0bc0151b3",
-            ),
+            ("DedicatedServer.dll", BAROTRAUMA_PACKAGES[0].0),
+            ("BarotraumaCore.dll", BAROTRAUMA_PACKAGES[0].1),
         ],
         _ => return Err("This module has no verified managed save build.".into()),
     })
@@ -250,27 +244,32 @@ fn select_corekeeper_files(primary: &str, files: &mut [(&'static str, &'static s
     true
 }
 
+const BAROTRAUMA_PACKAGES: &[(&str, &str)] = &[
+    (
+        "18278624996b543a2595a0ea9c0c4c14881d511ac307e1a69028d6579e67ad3c",
+        "72acd77784b83a0e09584262ab1eea9ee40395b95f3a2e3ec3974da0bc0151b3",
+    ),
+    (
+        "d058bbde56286699aa3ffcdd95e87d4d1e430b184ecc3c4007ea442ee9518a46",
+        "48d637d505a2af5136feaafa871e5057e1f280a56f502d08e52f372816efe606",
+    ),
+    (
+        "8b39b613abc8de1f53248f085d36b9646af79e6a1f7028e3491354d6d7a82a02",
+        "e04362c36714bb5e64d610eb05d94b29168829a5f52da600b09b303836ce53cb",
+    ),
+];
+
 fn select_barotrauma_files(
     primary: &str,
     core: &str,
     files: &mut [(&'static str, &'static str)],
 ) -> bool {
-    let pair = match primary {
-        "18278624996b543a2595a0ea9c0c4c14881d511ac307e1a69028d6579e67ad3c" => (
-            "18278624996b543a2595a0ea9c0c4c14881d511ac307e1a69028d6579e67ad3c",
-            "72acd77784b83a0e09584262ab1eea9ee40395b95f3a2e3ec3974da0bc0151b3",
-        ),
-        "d058bbde56286699aa3ffcdd95e87d4d1e430b184ecc3c4007ea442ee9518a46" => (
-            "d058bbde56286699aa3ffcdd95e87d4d1e430b184ecc3c4007ea442ee9518a46",
-            "48d637d505a2af5136feaafa871e5057e1f280a56f502d08e52f372816efe606",
-        ),
-        _ => return false,
-    };
-    // Both packages remain in use. Admit a complete reviewed release, never a
-    // mixture of independently known server and core assemblies.
-    if core != pair.1 {
+    let Some(pair) = BAROTRAUMA_PACKAGES
+        .iter()
+        .find(|&&pair| pair == (primary, core))
+    else {
         return false;
-    }
+    };
     files[0].1 = pair.0;
     files[1].1 = pair.1;
     true

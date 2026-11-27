@@ -812,7 +812,7 @@
       "type": "boolean",
       "title": "Destructible outposts",
       "description": "Allow damage to outpost structures.",
-      "default": false,
+      "default": true,
       "x-lsgm-section": "gameplay",
       "x-lsgm-order": 1043,
       "x-lsgm-source": "server_settings",

@@ -165,8 +165,8 @@ a mirror address. Every source for a reviewed image must match its pinned ZIP;
 all archives still pass bounded ZIP/member and offset/bitfield-map validation
 before a complete generation is atomically selected. Existing caches remain
 available if preparation fails. Requests contain the executable's SHA-256,
-not its contents or local path. The [publication record](symbols-publication-2026-11-12.json)
-binds the current build 26564816 cache to complete anonymous mirror readback.
+not its contents or local path. The [publication records](README.md#executable-bound-asa-symbols)
+identify the server builds and archives verified by anonymous mirror download.
 
 Ordinary startup does not download symbols. After program updates, the manager
 refreshes its owned ASA proxy and configuration through the existing installation

@@ -57,9 +57,10 @@ ABI; it does not replace an isolated server/client integration test.
 
 ## Native contract
 
-Native reflection is limited to explicitly checked members and four
-complete three-assembly SHA-256 profiles:
+Native reflection checks the required members and the complete three-assembly
+SHA-256 profile for each reviewed build.
 
+- Build 26949048 (1.0.31) uses `f60248f9f2570739b38d33264c017bbea1da038ef670512cfa3402df59205a02`
 - Build 26870897 (1.0.30): `4299a2e2c22cbdbe52c1985e20319cb6f7c602945edcc703ac48e4c153ba2373`
 - Build 26266951 (1.0.21): `648f3f8ed7b44c3d3cd612acd782743d9e03af7e60b7fe72d5827523e95505fd`
 - Build 25909431: `ef8c8d3a1f45694ef7a701e8e2a25bf8a3874c951a2639c81dfe614ce3aa5fa3`
@@ -76,7 +77,7 @@ Both require `Splatform.dll`
 `8953c24a2f2af7ae257cc64fb36dde9d102c871c29b4cdd97d0c3c001de5bd5a`.
 Mixed or unknown tuples are rejected.
 
-All four profiles were inspected statically. The fixed contract uses public
+All listed profiles were inspected statically. The fixed contract uses public
 `ZNet.instance`, `IsServer()`, `GetPeers()`, `ZNetPeer.IsReady()`, peer uid/name/socket,
 `ISocket.IsConnected()/GetHostName()`, `ZNet.IsAdmin(string)`, private
 `InternalKick(ZNetPeer)` and `SendAdminList()`, and the three private `SyncedList`
@@ -128,6 +129,20 @@ and manual save generation 1. A fresh process loaded the five files captured
 before shutdown and advanced that save to generation 2. Both Ctrl+C exits
 returned zero. The exact DLL tuple and static comparison are recorded in the
 [1.0.30 native build fixture](../reference-fixtures/2026-11-25-native_build_26870897.json).
+
+Build 26949048 retains network version 42 and world format 42. An isolated
+private server confirmed additions and removals in both the admin and permitted
+lists through native reload and fresh queries. It confirmed manual save 0 to 1.
+A second process loaded the five-file pre-stop checkpoint with all SHA-256
+hashes intact, then confirmed manual save 1 to 2. Both Ctrl+C exits returned 0.
+
+The desktop manager also confirmed one `save_world` request in a separate
+private world. Its acceptance test captured five files before stopping, restored
+and verified each SHA-256 after exit, and restarted through the normal launcher.
+The fresh process logged save generation 1 before any further manual save.
+Both managed processes used the reviewed DLL tuple and exited normally with
+code 0. The package and both sets of checkpoint hashes are recorded in the
+[1.0.31 native build fixture](../reference-fixtures/2026-11-27-native_build_26949048.json).
 
 For direct Steam sockets, the native bare host is passed to
 `Splatform.PlatformUserID("Steam", host)`. PlayFab sockets already return a full
@@ -287,9 +302,9 @@ migration, multiplayer, crossplay or power-loss durability.
 
 ## Isolated smoke test
 
-`Invoke-SmokeTest.ps1 -Mode Prepare -FixtureRoot <private-work/vh> -BuildId 26870897`
-verifies the 1.0.30 assemblies and creates a fresh isolated IPC root, session
-file, save directory and manifest. Omitting `-BuildId` selects the original
+`Invoke-SmokeTest.ps1 -Mode Prepare -FixtureRoot <private-work/vh> -BuildId 26949048`
+verifies the 1.0.31 assemblies and creates a fresh isolated IPC root, session
+file, save directory and manifest. Build `26870897` selects 1.0.30. Omitting `-BuildId` selects the original
 25730807 fixture. The command outputs the manifest path. The caller installs the reviewed
 loader and plugin separately, then starts that fixture executable with the
 manifest's `control_root` as `LGSM_VALHEIM_CONTROL_ROOT` and `savedir` as `-savedir`.

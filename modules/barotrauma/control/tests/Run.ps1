@@ -1,7 +1,8 @@
 param(
     [Parameter(Mandatory)][string]$OutputRoot,
     [string]$PackageRoot,
-    [string]$PreviousPackageRoot
+    [string]$PreviousPackageRoot,
+    [string]$AdditionalPackageRoot
 )
 $ErrorActionPreference = 'Stop'
 $control = Split-Path -Parent $PSScriptRoot
@@ -19,9 +20,10 @@ $response = Join-Path $output 'tests.rsp'
 if ($LASTEXITCODE -ne 0) { throw "Boundary test compilation failed ($LASTEXITCODE)" }
 & (Join-Path $output 'DedicatedServer.exe')
 if ($LASTEXITCODE -ne 0) { throw "Boundary tests failed ($LASTEXITCODE); artifacts: $output" }
-if ($PackageRoot -or $PreviousPackageRoot) {
-    if (!$PackageRoot -or !$PreviousPackageRoot) { throw 'Real admission tests require both package roots.' }
-    $packages = @((Resolve-Path -LiteralPath $PackageRoot).Path, (Resolve-Path -LiteralPath $PreviousPackageRoot).Path)
+if ($PackageRoot -or $PreviousPackageRoot -or $AdditionalPackageRoot) {
+    $packages = @(foreach ($root in @($PackageRoot, $PreviousPackageRoot, $AdditionalPackageRoot)) {
+        if ($root) { (Resolve-Path -LiteralPath $root).Path }
+    })
     foreach ($package in $packages) {
         if ($output -eq $package -or $output.StartsWith($package.TrimEnd('\')+'\',[StringComparison]::OrdinalIgnoreCase)) {
             throw 'Admission output must be outside the read-only packages.'
@@ -36,7 +38,7 @@ if ($PackageRoot -or $PreviousPackageRoot) {
     [IO.File]::WriteAllLines($response,$arguments,[Text.UTF8Encoding]::new($true))
     & (Join-Path $env:WINDIR 'Microsoft.NET/Framework64/v4.0.30319/csc.exe') ('@'+$response)
     if ($LASTEXITCODE -ne 0) { throw "Native admission compilation failed ($LASTEXITCODE)" }
-    & (Join-Path $output 'NativeBuildTests.exe') $packages[0] $packages[1] $output
+    & (Join-Path $output 'NativeBuildTests.exe') @packages $output
     if ($LASTEXITCODE -ne 0) { throw "Native admission tests failed ($LASTEXITCODE); artifacts: $output" }
 }
 Write-Output "Barotrauma boundary artifacts: $output; native game not started"

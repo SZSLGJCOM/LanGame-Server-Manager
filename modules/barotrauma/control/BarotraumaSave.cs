@@ -20,6 +20,15 @@ public static class StartupHook
     private static FieldInfo taskDone, taskEvent;
     private static Type main;
     private static int stopped;
+    private static bool requirePrimaryWrite;
+    private const string CompanionServer = "8b39b613abc8de1f53248f085d36b9646af79e6a1f7028e3491354d6d7a82a02";
+    private static readonly string[,] SupportedBuilds = {
+        { CompanionServer, "e04362c36714bb5e64d610eb05d94b29168829a5f52da600b09b303836ce53cb" },
+        { "d058bbde56286699aa3ffcdd95e87d4d1e430b184ecc3c4007ea442ee9518a46",
+          "48d637d505a2af5136feaafa871e5057e1f280a56f502d08e52f372816efe606" },
+        { "18278624996b543a2595a0ea9c0c4c14881d511ac307e1a69028d6579e67ad3c",
+          "72acd77784b83a0e09584262ab1eea9ee40395b95f3a2e3ec3974da0bc0151b3" }
+    };
     private const BindingFlags Static = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static;
     private const BindingFlags Instance = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance;
 
@@ -29,7 +38,7 @@ public static class StartupHook
         {
             string root = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
             string runtime = Path.GetDirectoryName(root);
-            VerifyNativeBuild(runtime);
+            requirePrimaryWrite = VerifyNativeBuild(runtime) == CompanionServer;
             main = NativeBinding.Type("DedicatedServer", "Barotrauma.GameMain");
             Type crossThread = NativeBinding.Type("DedicatedServer", "Barotrauma.CrossThread");
             taskType = crossThread.GetNestedType("Task", BindingFlags.NonPublic);
@@ -50,23 +59,20 @@ public static class StartupHook
         }
         catch (Exception error) { Fail(error); }
     }
-    private static void VerifyNativeBuild(string runtime)
+    private static string VerifyNativeBuild(string runtime)
     {
-        try
+        for (int i = 0; i < SupportedBuilds.GetLength(0); i++)
         {
-            NativeBinding.VerifyFile(Path.Combine(runtime, "DedicatedServer.dll"),
-                "18278624996b543a2595a0ea9c0c4c14881d511ac307e1a69028d6579e67ad3c");
-            NativeBinding.VerifyFile(Path.Combine(runtime, "BarotraumaCore.dll"),
-                "72acd77784b83a0e09584262ab1eea9ee40395b95f3a2e3ec3974da0bc0151b3");
+            try { NativeBinding.VerifyFile(Path.Combine(runtime, "DedicatedServer.dll"), SupportedBuilds[i, 0]); }
+            catch (SaveFailure failure)
+            {
+                if (failure.Code != "unsupported_native_build") throw;
+                continue;
+            }
+            NativeBinding.VerifyFile(Path.Combine(runtime, "BarotraumaCore.dll"), SupportedBuilds[i, 1]);
+            return SupportedBuilds[i, 0];
         }
-        catch (SaveFailure failure)
-        {
-            if (failure.Code != "unsupported_native_build") throw;
-            NativeBinding.VerifyFile(Path.Combine(runtime, "DedicatedServer.dll"),
-                "d058bbde56286699aa3ffcdd95e87d4d1e430b184ecc3c4007ea442ee9518a46");
-            NativeBinding.VerifyFile(Path.Combine(runtime, "BarotraumaCore.dll"),
-                "48d637d505a2af5136feaafa871e5057e1f280a56f502d08e52f372816efe606");
-        }
+        throw new SaveFailure("unsupported_native_build");
     }
     private static object Member(Type type, object owner, string name, BindingFlags flags)
     {
@@ -144,32 +150,58 @@ public static class StartupHook
         return delegate
         {
             // The same owner callback invokes this immediately after admission.
-            if (!Object.ReferenceEquals(Member(main, null, "Server", Static), server)
-                || !Object.ReferenceEquals(Member(main, null, "GameSession", Static), session)
-                || !Object.ReferenceEquals(Member(sessionType, session, "Campaign", Instance), campaign)
-                || Boolean(server.GetType(), server, "GameStarted") || Boolean(sessionType, session, "IsRunning"))
+            object currentPath = CurrentCheckpoint(server, session, campaign, submarine, destination);
+            if (currentPath == null)
                 throw new SaveFailure("world_context_changed");
-            // In the two hash-pinned native assemblies, every SaveGame early
-            // return is an exception handler. The successful path serializes
-            // GameSession and submarines, then CompressDirectory disposes both
-            // GZipStream and output stream. Observe exceptions *before* native
-            // catches swallow them; a normal void return alone proves nothing.
+            FileInfo before = requirePrimaryWrite ? ReadPrimary(destination) : null;
+            // The game can swallow disk errors. Observe them within this call
+            // on its owner thread, including exceptions during stream disposal.
             bool failed;
             using (NativeSaveExceptions observer = new NativeSaveExceptions())
             {
-                method.Invoke(null, new object[] {path, false});
+                method.Invoke(null, new object[] {currentPath, false});
                 failed = observer.Failed;
             }
-            if (failed) throw new SaveFailure("native_outcome_unknown");
-            object currentPath = Member(sessionType, session, "DataPath", Instance);
-            if (!Object.ReferenceEquals(Member(main, null, "GameSession", Static), session)
-                || !Object.ReferenceEquals(Member(main, null, "Server", Static), server)
-                || !Object.ReferenceEquals(Member(sessionType, session, "Campaign", Instance), campaign)
-                || currentPath == null || !String.Equals(destination,
-                    Member(currentPath.GetType(), currentPath, "SavePath", Instance) as string, StringComparison.Ordinal))
+            if (failed || CurrentCheckpoint(server, session, campaign, submarine, destination) == null)
                 throw new SaveFailure("native_outcome_unknown");
+            if (requirePrimaryWrite)
+            {
+                FileInfo after = ReadPrimary(destination);
+                if (after == null || after.Length == 0 || (before != null
+                    && before.Length == after.Length && before.LastWriteTimeUtc == after.LastWriteTimeUtc))
+                    throw new SaveFailure("native_outcome_unknown");
+            }
             return SaveReceipt.Completed;
         };
+    }
+
+    private static object CurrentCheckpoint(object server, object session, object campaign, object submarine, string destination)
+    {
+        Type type = session.GetType();
+        if (!Object.ReferenceEquals(Member(main, null, "Server", Static), server)
+            || !Object.ReferenceEquals(Member(main, null, "GameSession", Static), session)
+            || !Object.ReferenceEquals(Member(type, session, "Campaign", Instance), campaign)
+            || !Object.ReferenceEquals(Member(type, session, "SubmarineInfo", Instance), submarine)
+            || Member(campaign.GetType(), campaign, "PendingSubmarineSwitch", Instance) != null
+            || Boolean(server.GetType(), server, "GameStarted") || Boolean(type, session, "IsRunning")) return null;
+        object path = Member(type, session, "DataPath", Instance);
+        return path != null && String.Equals(destination,
+            Member(path.GetType(), path, "SavePath", Instance) as string, StringComparison.Ordinal) ? path : null;
+    }
+
+    private static FileInfo ReadPrimary(string destination)
+    {
+        try
+        {
+            if ((File.GetAttributes(destination) & (FileAttributes.Directory | FileAttributes.ReparsePoint)) != 0)
+                throw new SaveFailure("native_outcome_unknown");
+            // Keep the cached metadata without holding a handle across the save.
+            var file = new FileInfo(destination);
+            file.Refresh();
+            return file;
+        }
+        catch (FileNotFoundException) { return null; }
+        catch (DirectoryNotFoundException) { return null; }
     }
 
     private sealed class NativeSaveExceptions : IDisposable

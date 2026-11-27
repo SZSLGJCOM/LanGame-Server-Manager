@@ -11,6 +11,16 @@
       "mirrorUrl": "https://api.gitcode.com/api/v5/repos/SZSLGJCOM/LanGame-Server-Manager-Releases/releases/ark-tools-symbols-asa-e5abbfc6189c3a29/attach_files/79b0ce800a05e254f0a591967acea9ae0fcd0c03becf75ab04182e2c3cd0ab02.zip/download",
       "size": 23155786,
       "sha256": "e5abbfc6189c3a29bf78009a5e7101ff31d61ef78b82a48e2069653202e4e315"
+    },
+    {
+      "steamBuildId": "26749470",
+      "executableSha256": "6434fe81cc0c950e0ee9a84c3f98c0fb010388339e097e33790200ef9432c6fb",
+      "fileName": "6434fe81cc0c950e0ee9a84c3f98c0fb010388339e097e33790200ef9432c6fb.zip",
+      "upstreamUrl": "https://cdn.pelayori.com/cache/6434fe81cc0c950e0ee9a84c3f98c0fb010388339e097e33790200ef9432c6fb.zip",
+      "mirrorTag": "ark-tools-symbols-asa-c466aa79c7057375",
+      "mirrorUrl": "https://api.gitcode.com/api/v5/repos/SZSLGJCOM/LanGame-Server-Manager-Releases/releases/ark-tools-symbols-asa-c466aa79c7057375/attach_files/6434fe81cc0c950e0ee9a84c3f98c0fb010388339e097e33790200ef9432c6fb.zip/download",
+      "size": 23143527,
+      "sha256": "c466aa79c7057375137f9abec3b9e49169f7992d37b1d30fdce784febe3207c2"
     }
   ]
 }

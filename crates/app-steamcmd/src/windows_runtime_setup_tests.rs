@@ -94,12 +94,45 @@ fn directx_is_installed_once_but_keeps_both_architecture_probes() {
 }
 
 #[test]
-fn newer_visual_cpp_packages_do_not_downgrade_current_installations() {
-    assert!(version_is_newer("14.44.35211.0", Some("v14.40.33816.00")).unwrap());
-    assert!(!version_is_newer("14.44.35211", Some("v14.44.35211.00")).unwrap());
-    assert!(!version_is_newer("14.44.35211.0", Some("14.50.0.0")).unwrap());
-    assert!(version_is_newer("14.44.35211.0", None).unwrap());
-    assert!(version_is_newer("untrusted version", None).is_err());
+fn only_missing_dependencies_or_a_proven_v14_upgrade_need_an_installer() {
+    let rolling = catalog::package(Family::VisualCpp2015, Architecture::X64);
+    let probe = |ready, version: Option<&str>| process::RuntimeProbe {
+        ready,
+        version: version.map(str::to_owned),
+        unavailable: Vec::new(),
+    };
+    for version in [None, Some("unreadable")] {
+        assert_eq!(
+            package_action(rolling, &probe(true, version)),
+            PackageAction::UseInstalled
+        );
+        assert_eq!(
+            package_action(rolling, &probe(false, version)),
+            PackageAction::InstallMissing
+        );
+    }
+    let registered = Some("v14.51.36247.00");
+    assert_eq!(
+        package_action(rolling, &probe(false, registered)),
+        PackageAction::InstallMissing
+    );
+    assert_eq!(
+        package_action(catalog::XNA, &probe(true, None)),
+        PackageAction::UseInstalled
+    );
+    assert_eq!(
+        package_action(catalog::XNA, &probe(false, None)),
+        PackageAction::InstallMissing
+    );
+    let PackageAction::CheckForUpdate(installed) =
+        package_action(rolling, &probe(true, registered))
+    else {
+        panic!("a registered and loadable v14 runtime must still check official updates");
+    };
+    assert!(version_is_newer("14.52.37029.0", installed).unwrap());
+    assert!(!version_is_newer("14.51.36247", installed).unwrap());
+    assert!(!version_is_newer("14.44.35211.0", installed).unwrap());
+    assert!(version_is_newer("untrusted version", installed).is_err());
 }
 
 #[test]
@@ -212,6 +245,61 @@ fn failed_atomic_state_publication_preserves_the_target_and_leaves_no_partial_fi
     let saved: serde_json::Value =
         serde_json::from_slice(&fs::read(fixture.0.join(REBOOT_MARKER)).unwrap()).unwrap();
     assert_eq!(saved["boot_identity"], "12345");
+}
+
+#[cfg(windows)]
+#[tokio::test]
+async fn pending_installs_block_on_the_same_boot_and_expire_after_a_reboot() {
+    let fixture = RuntimeFixture::new();
+    let deadline = InstallDeadline::new("read-only Windows boot identity", Duration::from_secs(30));
+    let boot = process::boot_identity(deadline).await.unwrap();
+    for (marker, message) in [
+        (REBOOT_MARKER, "需要先重启电脑"),
+        (INSTALLING_MARKER, "已阻止重复安装"),
+    ] {
+        process::publish_install_state(&fixture.0, marker, &boot, "fixture").unwrap();
+        let error = process::check_reboot_marker(&fixture.0, deadline)
+            .await
+            .unwrap_err();
+        assert!(error.to_string().contains(message), "{error}");
+        assert!(fixture.0.join(marker).is_file());
+        process::publish_install_state(&fixture.0, marker, "0", "fixture").unwrap();
+        process::check_reboot_marker(&fixture.0, deadline)
+            .await
+            .unwrap();
+        assert!(!fixture.0.join(marker).exists());
+    }
+}
+
+#[cfg(windows)]
+#[tokio::test]
+async fn a_missing_dll_can_be_installed_but_an_invalid_game_local_copy_must_be_repaired() {
+    let fixture = RuntimeFixture::new();
+    let filename = "langame-runtime-fixture-absent.dll";
+    let request = WindowsRuntimeRequirement {
+        family: Family::VisualCpp2015,
+        architecture: Architecture::X64,
+        imported_dlls: vec![filename.into()],
+        search_directories: vec![fixture.0.clone()],
+    };
+    let deadline = InstallDeadline::new("read-only native DLL probe", Duration::from_secs(30));
+    let missing = process::probe(Some(&request), deadline).await.unwrap();
+    assert_eq!(missing.unavailable, vec![filename]);
+    let package = catalog::package(request.family, request.architecture);
+    assert_eq!(
+        package_action(package, &missing),
+        PackageAction::InstallMissing
+    );
+
+    fs::write(
+        fixture.0.join(filename),
+        b"unsigned local file, never loaded",
+    )
+    .unwrap();
+    let error = process::probe(Some(&request), deadline).await.unwrap_err();
+    let detail = error.to_string();
+    assert!(detail.contains(filename), "{detail}");
+    assert!(detail.contains("验证游戏文件"), "{detail}");
 }
 
 #[cfg(windows)]
@@ -333,22 +421,26 @@ function Assert-MicrosoftSignature([string]$Path) {
         } else {
             "function Assert-MicrosoftSignature([string]$Path) { throw 'Untrusted runtime fixture' }\n"
         };
-        let mut script = process::probe_script(Some(&request))
+        let script = process::probe_script(Some(&request))
             .replacen(process::SIGNATURE_FUNCTION, signature, 1)
             .replacen(process::NATIVE_LOADER_FUNCTION, fake_loader, 1);
-        script.push_str(
-            "\nif ([LanGameRuntimeLoader]::BaseLoaded) { throw 'Leaked base runtime handle' }\n",
+        let check = if trusted {
+            "if ([LanGameRuntimeLoader]::Frees -ne 2) { throw 'Runtime handles were not retained/freed correctly' }"
+        } else {
+            "if ([LanGameRuntimeLoader]::Loads -ne 0) { throw 'An untrusted runtime was loaded' }"
+        };
+        let script = format!(
+            "try {{\n{script}\n}} finally {{\nif ([LanGameRuntimeLoader]::BaseLoaded) {{ throw 'Leaked base runtime handle' }}\n{check}\n}}"
         );
-        script.push_str(if trusted { "if ([LanGameRuntimeLoader]::Frees -ne 2) { throw 'Runtime handles were not retained/freed correctly' }\n" }
-            else { "if ([LanGameRuntimeLoader]::Loads -ne 0) { throw 'An untrusted runtime was loaded' }\n" });
         let output = capture_fixture_script(&script);
-        assert!(
-            output.status.success(),
-            "Local CRT fixture failed: {}",
-            output_excerpt(&output.stdout, &output.stderr)
-        );
-        let result: serde_json::Value = serde_json::from_slice(&output.stdout).unwrap();
-        assert_eq!(result["ready"], trusted);
+        let detail = output_excerpt(&output.stdout, &output.stderr);
+        assert_eq!(output.status.success(), trusted, "{detail}");
+        if trusted {
+            let result: serde_json::Value = serde_json::from_slice(&output.stdout).unwrap();
+            assert_eq!(result["ready"], true);
+        } else {
+            assert!(detail.contains("Untrusted runtime fixture"), "{detail}");
+        }
     }
 }
 

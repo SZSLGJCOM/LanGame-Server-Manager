@@ -7,6 +7,9 @@ use std::io::{Read, Seek, SeekFrom};
 use std::process::{Child, Command, Stdio};
 
 const SAVE_NAME: &str = "lgsm_native_manual_save";
+const LOAD_PROMPT: &str = "Select a save file to load (0 - 0):";
+const CAMPAIGN_LOADED: &str = "Campaign loaded!";
+const ROUND_STARTED: &str = "Round started";
 const MAX_LOG: u64 = 1024 * 1024;
 const EMPTY_KNOWN_FOLDER: &str = "Daedalic Entertainment GmbH/Barotrauma/Multiplayer";
 const FOLDER_PROBE: &str = r#"
@@ -49,45 +52,18 @@ struct Owner {
     log: PathBuf,
 }
 
-pub(super) async fn prepare<R: tauri::Runtime>(
-    runtime: &runtime::NativeRuntime<'_, '_, R>,
+fn owned_campaign(
+    fixture: &Path,
     running: &InstanceDetails,
-    cycle: &str,
-) -> Result<(), Box<dyn std::error::Error>> {
-    if running.summary.module_id != "barotrauma"
-        || std::env::var("LANGAME_NATIVE_MANUAL_SAVE").as_deref() != Ok("true")
-    {
-        return Ok(());
-    }
-    if !matches!(cycle, "initial" | "restart") {
-        return Err("Unsupported native campaign fixture cycle".into());
-    }
-    let _operation = runtime
-        .state
-        .begin_storage_context_operation("isolated native Barotrauma campaign setup")?;
-    let fixture = runtime.package.root.canonicalize()?;
+) -> Result<(Owner, PathBuf, PathBuf), Box<dyn std::error::Error>> {
     let config = Path::new(&running.config_file_path)
         .parent()
         .ok_or("Campaign fixture has no configuration directory")?
         .canonicalize()?;
     let saves = Path::new(&running.saves_path).canonicalize()?;
-    if config == fixture || !config.starts_with(&fixture) || saves != config.join("Multiplayer") {
+    if config == fixture || !config.starts_with(fixture) || saves != config.join("Multiplayer") {
         return Err("Campaign setup requires the isolated native save directory".into());
     }
-    let player_config = config.join("config_player.xml");
-    ordinary_file(&player_config, 1024 * 1024)?;
-    let native = read_native_roots(&player_config).await?;
-    if !native.savepath.is_absolute() || native.savepath.canonicalize()? != config {
-        return Err("Native config_player.xml does not force the fixture save root".into());
-    }
-    let (default_multiplayer, must_exist) = default_multiplayer(&native, &config, &fixture)?;
-    // GetSaveFiles also enumerates its default despite a custom savepath. An
-    // external KnownFolder must already exist and contain no user campaigns.
-    // Only a verified default inside this fixture may be newly created.
-    require_empty_fallback(&default_multiplayer, must_exist)?;
-    require_empty_fallback(&config.join("Data/Saves/Multiplayer"), false)?;
-    let save = saves.join(format!("{SAVE_NAME}.save"));
-    validate_campaign_files(&saves, &save, cycle == "initial")?;
     let run = running
         .active_run
         .as_ref()
@@ -113,9 +89,44 @@ pub(super) async fn prepare<R: tauri::Runtime>(
         .canonicalize()?,
     };
     let image = Path::new(&owner.identity.image_path).canonicalize()?;
-    if !owner.log.starts_with(&fixture) || image.parent() != Some(config.as_path()) {
+    if !owner.log.starts_with(fixture) || image.parent() != Some(config.as_path()) {
         return Err("Campaign process or console escaped its fixture".into());
     }
+    Ok((owner, config, saves))
+}
+
+pub(super) async fn prepare<R: tauri::Runtime>(
+    runtime: &runtime::NativeRuntime<'_, '_, R>,
+    running: &InstanceDetails,
+    cycle: &str,
+) -> Result<(), Box<dyn std::error::Error>> {
+    if running.summary.module_id != "barotrauma"
+        || std::env::var("LANGAME_NATIVE_MANUAL_SAVE").as_deref() != Ok("true")
+    {
+        return Ok(());
+    }
+    if !matches!(cycle, "initial" | "restart") {
+        return Err("Unsupported native campaign fixture cycle".into());
+    }
+    let _operation = runtime
+        .state
+        .begin_storage_context_operation("isolated native Barotrauma campaign setup")?;
+    let fixture = runtime.package.root.canonicalize()?;
+    let (owner, config, saves) = owned_campaign(&fixture, running)?;
+    let player_config = config.join("config_player.xml");
+    ordinary_file(&player_config, 1024 * 1024)?;
+    let native = read_native_roots(&player_config).await?;
+    if !native.savepath.is_absolute() || native.savepath.canonicalize()? != config {
+        return Err("Native config_player.xml does not force the fixture save root".into());
+    }
+    let (default_multiplayer, must_exist) = default_multiplayer(&native, &config, &fixture)?;
+    // GetSaveFiles also enumerates its default despite a custom savepath. An
+    // external KnownFolder must already exist and contain no user campaigns.
+    // Only a verified default inside this fixture may be newly created.
+    require_empty_fallback(&default_multiplayer, must_exist)?;
+    require_empty_fallback(&config.join("Data/Saves/Multiplayer"), false)?;
+    let save = saves.join(format!("{SAVE_NAME}.save"));
+    validate_campaign_files(&saves, &save, cycle == "initial")?;
     let offset = send(runtime, running, &owner, "gamemode campaign").await?;
     wait(
         runtime,
@@ -142,24 +153,17 @@ pub(super) async fn prepare<R: tauri::Runtime>(
         offset
     } else {
         let offset = send(runtime, running, &owner, "n").await?;
-        let text = wait(
-            runtime,
-            running,
-            &owner,
-            offset,
-            "Select a save file to load (0 - 0):",
-        )
-        .await?;
+        let text = wait(runtime, running, &owner, offset, LOAD_PROMPT).await?;
         validate_selector(&text, &save)?;
         let offset = send(runtime, running, &owner, "0").await?;
-        wait(runtime, running, &owner, offset, "Campaign loaded!").await?;
+        wait(runtime, running, &owner, offset, CAMPAIGN_LOADED).await?;
         offset
     };
     // Both native creation and loading start a round. EndGame synchronously
     // clears GameSession.IsRunning and Server.GameStarted before logging this
     // completion; the formal save's owner-thread preflight rechecks both flags.
     // This native round teardown is not attributed to the manual-save action.
-    wait(runtime, running, &owner, round_offset, "Round started").await?;
+    wait(runtime, running, &owner, round_offset, ROUND_STARTED).await?;
     if cycle == "restart"
         && std::env::var("LANGAME_NATIVE_EXACT_SAVE_READBACK").as_deref() == Ok("true")
     {
@@ -170,9 +174,46 @@ pub(super) async fn prepare<R: tauri::Runtime>(
         );
         return Ok(());
     }
-    let offset = send(runtime, running, &owner, "endgame").await?;
-    wait(runtime, running, &owner, offset, "Round ended.").await?;
-    validate_campaign_files(&saves, &save, false)?;
+    return_to_lobby(runtime, running, &owner, &saves, cycle).await
+}
+
+pub(super) fn require_checkpoint_primary(saves: &Path) -> Result<PathBuf, String> {
+    let primary = saves.join(format!("{SAVE_NAME}.save"));
+    validate_campaign_files(saves, &primary, false).map_err(|error| error.to_string())?;
+    Ok(primary)
+}
+
+pub(super) fn readback_log(fresh: &str) -> bool {
+    // prepare() already checked the single selector path against the canonical
+    // captured primary and sent its index to the live process identified above.
+    !fresh.contains("Campaign started!")
+        && fresh.split_once(LOAD_PROMPT).is_some_and(|(_, selected)| {
+            selected.contains(CAMPAIGN_LOADED) && selected.contains(ROUND_STARTED)
+        })
+}
+
+pub(super) async fn finish_readback<R: tauri::Runtime>(
+    runtime: &runtime::NativeRuntime<'_, '_, R>,
+    running: &InstanceDetails,
+) -> Result<(), Box<dyn std::error::Error>> {
+    if running.summary.module_id != "barotrauma" {
+        return Ok(());
+    }
+    let fixture = runtime.package.root.canonicalize()?;
+    let (owner, _, saves) = owned_campaign(&fixture, running)?;
+    return_to_lobby(runtime, running, &owner, &saves, "restart").await
+}
+
+async fn return_to_lobby<R: tauri::Runtime>(
+    runtime: &runtime::NativeRuntime<'_, '_, R>,
+    running: &InstanceDetails,
+    owner: &Owner,
+    saves: &Path,
+    cycle: &str,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let offset = send(runtime, running, owner, "endgame").await?;
+    wait(runtime, running, owner, offset, "Round ended.").await?;
+    require_checkpoint_primary(saves)?;
     println!(
         "NATIVE_BAROTRAUMA_CAMPAIGN cycle={cycle} phase=lobby_ready source=native_console native_lifecycle_saves=not_attributed_to_manual_action"
     );

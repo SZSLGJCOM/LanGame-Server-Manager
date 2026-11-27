@@ -91,6 +91,18 @@ class BarotraumaSettingMetadataTests(unittest.TestCase):
         }.items():
             self.assertEqual(properties[key]["x-lsgm-section"], section, key)
 
+    def test_generator_updates_the_reviewed_outpost_default_from_the_native_xml(self):
+        root, campaign = generator.exact_inventory()
+        self.assertEqual(dict(root)["DestructibleOutposts"], "True")
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "schema.json"
+            old_schema = json.loads(generator.SCHEMA_PATH.read_bytes())
+            old_schema["properties"]["destructible_outposts"]["default"] = False
+            path.write_text(json.dumps(old_schema), encoding="utf-8")
+            with patch.object(generator, "SCHEMA_PATH", path):
+                generator.update_schema(root, campaign)
+            self.assertIs(json.loads(path.read_bytes())["properties"]["destructible_outposts"]["default"], True)
+
     def test_field_catalog_regeneration_keeps_public_export_names_and_group_copy(self):
         with tempfile.TemporaryDirectory() as directory:
             repository = Path(directory)

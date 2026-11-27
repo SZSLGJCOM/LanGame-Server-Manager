@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using System.Reflection;
 using System.Threading;
 using LanGame.SaveControl;
@@ -13,7 +14,7 @@ namespace Barotrauma
     {
         public static GameServer Server;
         public static GameSession GameSession;
-        public static Thread MainThread { get { return Thread.CurrentThread; } }
+        public static Thread MainThread { get; set; }
     }
     public sealed class GameServer { public bool GameStarted { get; set; } }
     public sealed class GameSession
@@ -30,6 +31,7 @@ namespace Barotrauma
         public static int Calls;
         public static CampaignDataPath Path;
         public static int FailureMode;
+        public static Action<CampaignDataPath> AfterSave;
         public static void SaveGame(CampaignDataPath path, bool loading)
         {
             if (loading) throw new Exception("Wrong native save mode");
@@ -41,6 +43,7 @@ namespace Barotrauma
                 var worker = new Thread(delegate() { try { throw new System.IO.IOException("unrelated worker"); } catch (System.IO.IOException) { } });
                 worker.Start(); worker.Join();
             }
+            if (AfterSave != null) AfterSave(path);
         }
     }
     public static class CrossThread
@@ -73,9 +76,60 @@ internal static class BarotraumaControlTests
             return error.InnerException.Message == issue && Barotrauma.SaveUtil.Calls == before;
         }
     }
+    private static void ExpectFailure(Func<SaveReceipt> invoke, string expected)
+    {
+        try { invoke(); }
+        catch (SaveFailure failure) { if (failure.Code == expected) return; throw; }
+        throw new Exception("Expected " + expected);
+    }
+    private static void CheckCompanionCheckpoint()
+    {
+        var session = Barotrauma.GameMain.GameSession;
+        string savePath = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "campaign.save");
+        session.DataPath.SavePath = savePath;
+        Set("requirePrimaryWrite", true);
+        ExpectFailure(Prepare(), "native_outcome_unknown");
+        Barotrauma.SaveUtil.AfterSave = delegate { File.WriteAllText(savePath, "checkpoint"); };
+        if (Prepare()() != SaveReceipt.Completed) throw new Exception("New primary was not confirmed");
+
+        // A silent return, an unrelated write, and an empty primary give no confirmation.
+        Barotrauma.SaveUtil.AfterSave = delegate { File.WriteAllText(savePath + ".bk0", "backup"); };
+        ExpectFailure(Prepare(), "native_outcome_unknown");
+        Barotrauma.SaveUtil.AfterSave = delegate { File.WriteAllText(savePath, ""); };
+        ExpectFailure(Prepare(), "native_outcome_unknown");
+        Barotrauma.SaveUtil.AfterSave = delegate { File.WriteAllText(savePath, "new checkpoint"); };
+        if (Prepare()() != SaveReceipt.Completed) throw new Exception("Changed primary was not confirmed");
+        File.SetLastWriteTimeUtc(savePath, new DateTime(2001, 1, 1, 0, 0, 0, DateTimeKind.Utc));
+        if (Prepare()() != SaveReceipt.Completed) throw new Exception("Same-length rewrite was not confirmed");
+
+        int calls = Barotrauma.SaveUtil.Calls;
+        var invoke = Prepare();
+        session.DataPath.SavePath = savePath + ".other";
+        ExpectFailure(invoke, "world_context_changed");
+        session.DataPath.SavePath = savePath;
+        invoke = Prepare();
+        session.Campaign.PendingSubmarineSwitch = new object();
+        ExpectFailure(invoke, "world_context_changed");
+        session.Campaign.PendingSubmarineSwitch = null;
+        if (Barotrauma.SaveUtil.Calls != calls) throw new Exception("Changed campaign was written");
+
+        // Native SaveGame may normalize the data path object for this same primary.
+        Barotrauma.SaveUtil.AfterSave = delegate {
+            File.WriteAllText(savePath, "normalized path");
+            session.DataPath = new Barotrauma.CampaignDataPath { SavePath = savePath };
+        };
+        if (Prepare()() != SaveReceipt.Completed) throw new Exception("Same native path was rejected");
+        Barotrauma.SaveUtil.AfterSave = delegate {
+            File.WriteAllText(savePath, "changed session");
+            Barotrauma.GameMain.GameSession = new Barotrauma.GameSession();
+        };
+        ExpectFailure(Prepare(), "native_outcome_unknown");
+        Barotrauma.SaveUtil.AfterSave = null;
+    }
     public static int Main()
     {
         Set("main", typeof(Barotrauma.GameMain));
+        Barotrauma.GameMain.MainThread = Thread.CurrentThread;
         if (!Rejected("campaign_not_ready")) return 1;
         Barotrauma.GameMain.Server = new Barotrauma.GameServer();
         Barotrauma.GameMain.GameSession = new Barotrauma.GameSession();
@@ -114,6 +168,7 @@ internal static class BarotraumaControlTests
         if (Prepare()() != SaveReceipt.Completed) return 19;
         Barotrauma.SaveUtil.FailureMode = 0;
         if (Prepare()() != SaveReceipt.Completed) return 20;
+        CheckCompanionCheckpoint();
 
         var queue = new List<Barotrauma.CrossThread.Task>();
         Set("queue", queue); Set("taskType", typeof(Barotrauma.CrossThread.Task));
@@ -142,7 +197,19 @@ internal static class BarotraumaControlTests
             if (!completed || queue.Count != 1) return 14;
         }
         queue[0].Mre.Dispose();
-        Console.WriteLine("PASS Barotrauma production policy: guards, exact checkpoint, swallowed failure observation, escaped failure, unrelated worker isolation, scope cleanup, bounded owner queue");
+        TextWriter original = Console.Error;
+        using (var diagnostic = new StringWriter())
+        {
+            Console.SetError(diagnostic);
+            try
+            {
+                var other = new Thread(delegate() { Hook.GetMethod("Tick", Flags).Invoke(null, null); });
+                other.Start(); other.Join();
+            }
+            finally { Console.SetError(original); }
+            if (!diagnostic.ToString().Contains("wrong_owner_thread")) return 21;
+        }
+        Console.WriteLine("PASS Barotrauma production policy: campaign and path guards, fixed-target primary creation and rewrite, unchanged/empty primary rejection, native failure observation, bounded owner queue");
         return 0;
     }
 }

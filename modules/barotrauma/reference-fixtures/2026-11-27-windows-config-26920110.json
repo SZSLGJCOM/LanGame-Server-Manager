@@ -1,0 +1,67 @@
+{
+  "verified_at": "2026-11-27",
+  "scope": "Windows dedicated-server configuration and package data",
+  "package": {
+    "steam_app": 1026340,
+    "branch": "public",
+    "build": "26920110",
+    "released_utc": "2026-11-26T12:27:47Z",
+    "windows_depot": "1026341",
+    "windows_manifest": "6270959672951779708",
+    "manifest_regular_files_verified_by_size_and_sha1": 1101,
+    "native_version": "1.15.33.2",
+    "dedicated_server_dll_sha256": "8b39b613abc8de1f53248f085d36b9646af79e6a1f7028e3491354d6d7a82a02",
+    "release_announcement_version": "1.15.30.0",
+    "release_announcement": "https://store.steampowered.com/news/app/602960/view/719048701512778979?l=english"
+  },
+  "server_settings": {
+    "observed_at": "2026-11-27T10:58:51+08:00",
+    "stock_server_started": true,
+    "settings_reserialized": true,
+    "stock_process_forced_after_exit_command": true,
+    "previous_reference": "reference-configs/serversettings-v1.13.4.0.xml",
+    "sanitized_reference": "reference-configs/serversettings-v1.15.33.2.xml",
+    "root_attributes": 106,
+    "campaign_attributes": 18,
+    "added_attributes": [],
+    "removed_attributes": [],
+    "default_changes": {
+      "DestructibleOutposts": {"previous": false, "current": true}
+    },
+    "same_members_with_different_order": ["SelectedCoalitionPerks", "SelectedSeparatistsPerks"],
+    "operational_values_excluded_from_default_comparison": ["name", "ServerName", "IsPublic", "enableupnp", "port", "queryport", "password"],
+    "instance_behavior": "Creation and legacy settings without destructible_outposts inherit true. An explicitly persisted boolean takes precedence over the current default."
+  },
+  "publisher_data": {
+    "Data/dlc_catalog.xml": {
+      "bytes": 661,
+      "sha256": "d29be82f0ca936b9d67026609b3d3ef00ace71ffb1a95e99e798f2c498e6ae97"
+    },
+    "Data/PublicKey.dat": {
+      "bytes": 294,
+      "sha256": "7fb1171e3b46cb24b819048f0e383dfa5436ae66b195da70794004d526953ec7"
+    },
+    "instance_behavior": "Stopped startup copies these two named files from the installed program and refreshes differences by content."
+  },
+  "campaign_presets": {
+    "native_path": "Data/campaignsettings.xml",
+    "text_reference": "reference-configs/campaignsettings-v1.15.33.2.xml",
+    "windows_bytes": 2840,
+    "windows_sha256": "cb1e3a5780f7af989b00f20babac35addb48340b55df59f5fdb0a3e6beb56801",
+    "prior_source": "https://raw.githubusercontent.com/FakeFishGames/Barotrauma/8e24b8991f7b282b8e471afd1c0960e5a51766bd/Barotrauma/BarotraumaShared/Data/campaignsettings.xml",
+    "prior_source_version": "1.13.5.0",
+    "prior_source_utf8_bom_lf_sha256": "46a2573ca53e83dbb660130eb770c37b7282279aeeebe5d3946d6209555d6dec",
+    "prior_source_converted_to_crlf_sha256": "bf4b7dddae0c7970419769e467695b1f0a0df4d43bbae45fc1e76d1f675caec4",
+    "prior_windows_build": "26144270",
+    "prior_windows_bytes": 2840,
+    "prior_source_note": "A retained Windows 1.13.5.0 installation provided the same 2,840 bytes as the complete published source converted to CRLF. The new package provided the recorded replacement.",
+    "shipyard_price_multiplier": {
+      "Easy": {"previous": 0.9, "current": 0.9},
+      "Normal": {"previous": 1.0, "current": 1.0},
+      "Hard": {"previous": 1.5, "current": 1.0},
+      "Abyssal": {"previous": 2.0, "current": 1.2}
+    },
+    "instance_behavior": "New instances receive the installed file. For an existing file, both a complete prior-source identity and the reviewed replacement identity are required for automatic migration. A different local or replacement file is retained."
+  },
+  "operator_data": "Existing permission and language presets, forbidden words and karma settings are seeded only when absent. Package bans, client permissions and saves are excluded from program data copying."
+}

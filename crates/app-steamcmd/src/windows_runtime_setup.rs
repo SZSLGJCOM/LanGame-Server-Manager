@@ -74,11 +74,16 @@ where
             let package = plan.package;
             deadline.check_cancelled()?;
             let probe = process::probe_all(&plan.requirements, deadline).await?;
+            let action = package_action(package, &probe);
+            if action == PackageAction::UseInstalled {
+                if package.rolling {
+                    on_progress(InstallProgressUpdate::stage(InstallPhase::Verifying,
+                        format!("{} 所需 DLL 已能加载，系统未提供可比较的安装版本，继续使用当前运行库。", package.name)));
+                }
+                continue;
+            }
             let path = package_path(&root, package);
             let fresh = cache_is_fresh(&path, SystemTime::now());
-            // Fixed historical releases have no update stream. v14 is checked
-            // at most daily, even when an older installed runtime loads today.
-            if probe.ready && !package.rolling { continue; }
             let download = if !fresh || !path.is_file() {
                 let detail = format!("正在下载并验证 {}...", package.name);
                 on_progress(InstallProgressUpdate::stage(InstallPhase::Downloading, &detail));
@@ -110,14 +115,17 @@ where
             download?;
             validate_cache_path(&path)?;
             process::verify_package(&path, package, deadline).await?;
-            let update_needed = if probe.ready && package.rolling {
-                let package_version = process::package_version(&path, deadline).await?;
-                version_is_newer(&package_version, probe.version.as_deref())?
-            } else { !probe.ready };
-            if !update_needed { continue; }
+            let reason = if let PackageAction::CheckForUpdate(installed) = action {
+                let version = process::package_version(&path, deadline).await?;
+                if !version_is_newer(&version, installed)? { continue; }
+                let [major, minor, build, revision] = installed;
+                format!("检测到微软新版，当前版本 {major}.{minor}.{build}.{revision}，目标版本 {version}")
+            } else {
+                format!("以下必需组件未通过加载检查：{}", probe.unavailable.join("、"))
+            };
             deadline.check_cancelled()?;
             on_progress(InstallProgressUpdate::stage(InstallPhase::Installing,
-                format!("正在安装 {}；如系统要求请允许 UAC。安装开始后会等待实际完成，再响应取消。", package.name)));
+                format!("{reason}。正在安装 {}；如系统要求请允许 UAC。安装开始后会等待实际完成，再响应取消。", package.name)));
             let boot = process::boot_identity(deadline).await?;
             // The detached blocking owner keeps this lease even if its async
             // caller is dropped. Elevated installers must never be terminated
@@ -311,25 +319,45 @@ fn is_reparse(metadata: &fs::Metadata) -> bool {
     }
 }
 
-fn version_parts(version: &str) -> Option<Vec<u32>> {
+#[derive(Debug, PartialEq, Eq)]
+enum PackageAction {
+    UseInstalled,
+    CheckForUpdate([u32; 4]),
+    InstallMissing,
+}
+
+fn package_action(package: RuntimePackage, probe: &process::RuntimeProbe) -> PackageAction {
+    if !probe.ready {
+        return PackageAction::InstallMissing;
+    }
+    // App-local DLLs can load without a registered system redistributable.
+    // Only a comparable installed version can establish a rolling upgrade.
+    if package.rolling
+        && let Some(version) = probe.version.as_deref().and_then(version_parts)
+    {
+        return PackageAction::CheckForUpdate(version);
+    }
+    PackageAction::UseInstalled
+}
+
+fn version_parts(version: &str) -> Option<[u32; 4]> {
     let version = version.trim().trim_start_matches(['v', 'V']);
-    let parts = version
+    let mut parts = version
         .split('.')
         .map(str::parse::<u32>)
         .collect::<Result<Vec<_>, _>>()
         .ok()?;
-    (parts.len() >= 2 && parts.len() <= 4).then_some(parts)
+    if !(2..=4).contains(&parts.len()) {
+        return None;
+    }
+    parts.resize(4, 0);
+    parts.try_into().ok()
 }
 
-fn version_is_newer(package: &str, installed: Option<&str>) -> Result<bool, SteamCmdError> {
-    let mut package =
+fn version_is_newer(package: &str, installed: [u32; 4]) -> Result<bool, SteamCmdError> {
+    let available =
         version_parts(package).ok_or_else(|| runtime_error("微软运行库安装包版本无效。"))?;
-    let Some(mut installed) = installed.and_then(version_parts) else {
-        return Ok(true);
-    };
-    package.resize(4, 0);
-    installed.resize(4, 0);
-    Ok(package > installed)
+    Ok(available > installed)
 }
 
 #[cfg(test)]

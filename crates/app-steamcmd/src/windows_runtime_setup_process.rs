@@ -5,6 +5,7 @@ use app_runtime::{WindowsRuntimeArchitecture as Architecture, WindowsRuntimeFami
 pub(super) struct RuntimeProbe {
     pub ready: bool,
     pub version: Option<String>,
+    pub unavailable: Vec<String>,
 }
 
 #[cfg(windows)]
@@ -76,16 +77,20 @@ pub(super) async fn probe_all(
     let mut combined = RuntimeProbe {
         ready: true,
         version: None,
+        unavailable: Vec::new(),
     };
     for requirement in requirements {
         let result = probe(Some(requirement), deadline).await?;
         combined.ready &= result.ready;
+        combined.unavailable.extend(result.unavailable);
         // Plans share a package and architecture, except DirectX (which has no
         // version update stream). Every actual importing directory is probed.
         if let Some(version) = result.version {
             combined.version = Some(version);
         }
     }
+    combined.unavailable.sort();
+    combined.unavailable.dedup();
     Ok(combined)
 }
 
@@ -227,14 +232,12 @@ pub(super) fn probe_script(requirement: Option<&WindowsRuntimeRequirement>) -> S
         // XNA 4 is a .NET Framework assembly. Probe it in a 32-bit Framework
         // PowerShell process, not CoreCLR / .NET (which has a different loader).
         return format!(
-            r#"{SCRIPT_HEADER}$ready=$true
+            r#"{SCRIPT_HEADER}$unavailable=New-Object 'System.Collections.Generic.List[string]'
 foreach ($assembly in @('Microsoft.Xna.Framework','Microsoft.Xna.Framework.Game','Microsoft.Xna.Framework.Graphics','Microsoft.Xna.Framework.Xact')) {{
     try {{ $null=[Reflection.Assembly]::Load($assembly+', Version=4.0.0.0, Culture=neutral, PublicKeyToken=842cf8be1de50553') }}
-    catch [System.IO.FileNotFoundException] {{ $ready=$false }}
-    catch [System.IO.FileLoadException] {{ $ready=$false }}
-    catch [System.BadImageFormatException] {{ $ready=$false }}
+    catch [System.IO.FileNotFoundException], [System.IO.FileLoadException], [System.BadImageFormatException] {{ $unavailable.Add($assembly) }}
 }}
-@{{ready=$ready;version=$null}}|ConvertTo-Json -Compress
+@{{ready=($unavailable.Count -eq 0);version=$null;unavailable=$unavailable.ToArray()}}|ConvertTo-Json -Compress
 "#
         );
     };
@@ -265,10 +268,15 @@ foreach ($view in @([Microsoft.Win32.RegistryView]::Registry64,[Microsoft.Win32.
         $base=[Microsoft.Win32.RegistryKey]::OpenBaseKey([Microsoft.Win32.RegistryHive]::LocalMachine,$view)
         $key=$base.OpenSubKey('SOFTWARE\Microsoft\VisualStudio\14.0\VC\Runtimes\{architecture}')
         if ($null -ne $key -and $key.GetValue('Installed') -eq 1) {{
-            $found=[string]$key.GetValue('Version')
-            if ($found -match '^v?\d+(\.\d+){{1,3}}$' -and
-                ($null -eq $version -or [Version]$found.TrimStart('v') -gt [Version]$version.TrimStart('v'))) {{ $version=$found }}
+            $value=([string]$key.GetValue('Version')).TrimStart('v','V')
+            $found=$null
+            if ([Version]::TryParse($value,[ref]$found) -and
+                ($null -eq $version -or $found -gt [Version]$version)) {{ $version=$found.ToString() }}
         }}
+    }} catch [System.Security.SecurityException] {{
+        # Registry metadata is optional when the actual DLLs load.
+    }} catch [System.UnauthorizedAccessException] {{
+        # The other registry view may still provide the installed version.
     }} finally {{
         if ($null -ne $key) {{ $key.Dispose() }}
         if ($null -ne $base) {{ $base.Dispose() }}
@@ -281,7 +289,6 @@ foreach ($view in @([Microsoft.Win32.RegistryView]::Registry64,[Microsoft.Win32.
     };
     format!(
         r#"{SCRIPT_HEADER}{SIGNATURE_FUNCTION}{FILE_LEASE_FUNCTION}{NATIVE_LOADER_FUNCTION}
-$ready=$true
 $version=$null
 $directories=@({directories})
 $leases=New-Object 'System.Collections.Generic.List[IDisposable]'
@@ -304,41 +311,42 @@ foreach ($library in @({libraries})) {{
             $leases.Add($lease)
             Assert-MicrosoftSignature $candidate
             $lease.Validate()
-        }} catch {{ $ready=$false; continue }}
+        }} catch {{
+            [Console]::Error.WriteLine(("无法验证游戏目录中的运行库 {{0}}。请检查文件访问权限或验证游戏文件后重试。原因：{{1}}" -f $candidate,$_.Exception.Message))
+            exit 1
+        }}
     }}
     $priority=1
     if ($library -match '^(ucrtbase|vcruntime\d+(_\d+)?|msvcr\d+)\.dll$') {{ $priority=0 }}
     $pending.Add([PSCustomObject]@{{Path=$candidate;Priority=$priority}})
 }}
-if ($ready) {{
-    # Preload verified base CRTs and retain their handles. Loaded-module lookup
-    # can then satisfy dependent app-local runtimes without searching arbitrary
-    # neighboring DLLs. Retry only while a pass makes measurable progress.
-    $ordered=@($pending | Sort-Object Priority)
-    $pending.Clear()
-    foreach ($entry in $ordered) {{ $pending.Add($entry) }}
-    $budget=[Math]::Min(128,$pending.Count)
-    for ($pass=0; $pass -lt $budget -and $pending.Count -gt 0; $pass++) {{
-        $advanced=$false
-        foreach ($entry in $pending.ToArray()) {{
-            $candidate=$entry.Path
-            $handle=[LanGameRuntimeLoader]::LoadLibraryEx($candidate,[IntPtr]::Zero,0x800)
-            if ($handle -ne [IntPtr]::Zero) {{
-                $loaded.Add($handle)
-                $null=$pending.Remove($entry)
-                $advanced=$true
-            }}
+# Preload verified base CRTs and retain their handles. Loaded-module lookup
+# can then satisfy dependent app-local runtimes without searching arbitrary
+# neighboring DLLs. Retry only while a pass makes measurable progress.
+$ordered=@($pending | Sort-Object Priority)
+$pending.Clear()
+foreach ($entry in $ordered) {{ $pending.Add($entry) }}
+$budget=[Math]::Min(128,$pending.Count)
+for ($pass=0; $pass -lt $budget -and $pending.Count -gt 0; $pass++) {{
+    $advanced=$false
+    foreach ($entry in $pending.ToArray()) {{
+        $candidate=$entry.Path
+        $handle=[LanGameRuntimeLoader]::LoadLibraryEx($candidate,[IntPtr]::Zero,0x800)
+        if ($handle -ne [IntPtr]::Zero) {{
+            $loaded.Add($handle)
+            $null=$pending.Remove($entry)
+            $advanced=$true
         }}
-        if (!$advanced) {{ break }}
     }}
-    $ready=($pending.Count -eq 0)
+    if (!$advanced) {{ break }}
 }}
+$unavailable=@($pending | ForEach-Object {{ [IO.Path]::GetFileName($_.Path) }})
 }} finally {{
     for ($index=$loaded.Count-1; $index -ge 0; $index--) {{ $null=[LanGameRuntimeLoader]::FreeLibrary($loaded[$index]) }}
     for ($index=$leases.Count-1; $index -ge 0; $index--) {{ $leases[$index].Dispose() }}
 }}
 {registry}
-@{{ready=$ready;version=$version}}|ConvertTo-Json -Compress
+@{{ready=($unavailable.Count -eq 0);version=$version;unavailable=$unavailable}}|ConvertTo-Json -Compress
 "#
     )
 }

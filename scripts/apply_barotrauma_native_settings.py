@@ -17,7 +17,7 @@ if str(ROOT) not in sys.path:
 from scripts.barotrauma_setting_metadata import BOUNDS, ENUMS, FIELDS
 
 MODULE_ROOT = ROOT / "modules" / "barotrauma"
-REFERENCE_PATH = MODULE_ROOT / "reference-configs" / "serversettings-v1.13.4.0.xml"
+REFERENCE_PATH = MODULE_ROOT / "reference-configs" / "serversettings-v1.15.33.2.xml"
 SCHEMA_PATH = MODULE_ROOT / "schema.json"
 LEDGER_PATH = MODULE_ROOT / "config-sources.toml"
 TEMPLATE_PATH = MODULE_ROOT / "templates" / "serversettings.xml.hbs"
@@ -136,6 +136,10 @@ def update_schema(
                 continue
             key = setting_key(native_key, campaign=campaign)
             if key in properties:
+                if key == "destructible_outposts":
+                    properties[key]["default"] = native_property(
+                        native_key, default, campaign=campaign, order=order
+                    )["default"]
                 properties[key]["x-lsgm-source"] = (
                     "barotrauma_campaign_settings_xml" if campaign else "server_settings"
                 )

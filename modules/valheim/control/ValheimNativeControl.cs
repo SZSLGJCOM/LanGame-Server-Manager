@@ -23,6 +23,9 @@ namespace Lgsm.Valheim.Control
         internal const string Build26870897GameSha256 = "4299a2e2c22cbdbe52c1985e20319cb6f7c602945edcc703ac48e4c153ba2373";
         internal const string Build26870897UtilitiesSha256 = "3dfb0fc0feb9ef4a65f8604ad835475f7a1ff78132a10de5c46c171b12b55af1";
         internal const string Build26870897PlatformSha256 = "19b9abca2dfc4641a06c61913d0ac3df9e560e3adac5fb676a68573b0a40bbad";
+        private const string Build26949048GameSha256 = "f60248f9f2570739b38d33264c017bbea1da038ef670512cfa3402df59205a02";
+        private const string Build26949048UtilitiesSha256 = "31e35f53fe3b383ecb6f5e6d6e16ef56d58d9cfd1f55650db70989c40e1882ae";
+        private const string Build26949048PlatformSha256 = "5fa4fda2b7a16420b95d00e4a39811d0c920c5180b68152512babf2ea96428f7";
         private const BindingFlags PublicInstance = BindingFlags.Public | BindingFlags.Instance;
         private const BindingFlags PrivateInstance = BindingFlags.NonPublic | BindingFlags.Instance;
         private sealed class ReferenceIdentity : IEqualityComparer<object>
@@ -71,12 +74,8 @@ namespace Lgsm.Valheim.Control
 
         internal static bool SupportedProfile(string game, string utilities, string platform)
         {
-            return (platform == PlatformSha256 && ((game == GameSha256 && utilities == UtilitiesSha256) ||
-                (game == LocalProofGameSha256 && utilities == LocalProofUtilitiesSha256))) ||
-                (game == Build26266951GameSha256 && utilities == Build26266951UtilitiesSha256 &&
-                    platform == Build26266951PlatformSha256) ||
-                (game == Build26870897GameSha256 && utilities == Build26870897UtilitiesSha256 &&
-                    platform == Build26870897PlatformSha256);
+            // Each save-capable profile has also been reviewed for account control.
+            return SupportedWorldSaveProfile(game, utilities, platform);
         }
 
         internal static bool SupportedWorldSaveProfile(string game, string utilities, string platform)
@@ -88,7 +87,9 @@ namespace Lgsm.Valheim.Control
                 (game == Build26266951GameSha256 && utilities == Build26266951UtilitiesSha256 &&
                     platform == Build26266951PlatformSha256) ||
                 (game == Build26870897GameSha256 && utilities == Build26870897UtilitiesSha256 &&
-                    platform == Build26870897PlatformSha256);
+                    platform == Build26870897PlatformSha256) ||
+                (game == Build26949048GameSha256 && utilities == Build26949048UtilitiesSha256 &&
+                    platform == Build26949048PlatformSha256);
         }
 
         private static string Digest(Assembly assembly)
