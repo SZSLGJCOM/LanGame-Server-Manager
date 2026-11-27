@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::super::commands_mod_staging::{ONLINE_MOD_MANIFEST, manage_package};
 use super::super::commands_mods::mod_inventory::read_inventory;
 use super::*;

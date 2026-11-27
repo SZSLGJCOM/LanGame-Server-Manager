@@ -33,7 +33,7 @@ const CONAN_SECTIONS: Array<{ id: string; title: string; description: string }> 
   {
     id: "combat",
     title: "Combat & Damage",
-    description: "Player, NPC, thrall, building, and friendly-fire damage posture."
+    description: "Player, NPC, thrall, building, and friendly-fire damage rules."
   },
   {
     id: "network",

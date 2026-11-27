@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 
 // Exact text emitted by build 26335402 through SetPersistentString(..., false)

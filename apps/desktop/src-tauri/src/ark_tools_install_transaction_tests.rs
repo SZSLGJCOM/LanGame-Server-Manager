@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::super::tests::{Fixture, hashes, payload};
 use super::*;
 

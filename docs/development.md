@@ -12,7 +12,7 @@
 | --- | --- |
 | `apps/desktop/` | React 界面、翻译、前端检查与 Tauri 命令适配层 |
 | `crates/` | 领域类型、存储、运行时、模块接入、SteamCMD 与 Windows 支持 |
-| `modules/` | 游戏清单、设置 Schema、原生模板与验收夹具 |
+| `modules/` | 游戏清单、设置 Schema、原生模板与验收样本 |
 | `migrations/` | 数据库结构 |
 | `scripts/` | 校验、生成与构建工具 |
 | `docs/` | 使用指南、接入规范、协议与配置来源 |
@@ -42,7 +42,7 @@ LAN 入口最多同时接受两个 `Owned` 长操作，为取消、状态与静�
 
 路径更新与在途操作由存储上下文租约协调。后台文件工作捕获本次 `StorageBootstrap` 或 `StoragePaths`，通过已有任务 helper 携带租约，直至实际完成；实例锁与安装锁也由执行工作的任务持有，不能随等待方取消而提前释放。需要延后重新读取存储位置的后台任务捕获 `StorageSource`，保留相同用户定位根。授权、预览确认、实例变更前置条件及关闭流程的专用租约仍保持各自职责。
 
-跨进程安装锁由 `DesktopState` 的 `InstallLockContext` 持有，显式传入安装、Mod、启动和移除链路。锁根固定在用户定位根，并与存储模块共用默认定位规则；切换数据目录不会产生另一套安装锁。涉及进程全局环境及 Windows 进程的桌面测试保持串行，环境变更夹具使用独立子进程。
+跨进程安装锁由 `DesktopState` 的 `InstallLockContext` 持有，显式传入安装、Mod、启动和移除链路。锁根固定在用户定位根，并与存储模块共用默认定位规则；切换数据目录不会产生另一套安装锁。涉及进程全局环境及 Windows 进程的桌面测试保持串行，环境变更测试使用独立子进程。
 
 服务器列表与运行概览直接加载；配置、Mod、玩家、GM 工具和维护工作区首次访问时加载代码，共用已有的可恢复模块加载机制。维护工作区访问后保留挂载，由 `active` 控制后台读取，实例切换时重置；这用于保留在途操作与存档结果。新增重型目录或功能时检查实际构建依赖，避免能力判断等轻量入口再次静态引入整个工作区。
 
@@ -50,7 +50,7 @@ LAN 入口最多同时接受两个 `Owned` 长操作，为取消、状态与静�
 
 Windows 开发环境需要 Git、MSVC C++ 构建工具、WebView2、Python 3.11 或更高版本，以及仓库固定的 Rust 和 Node.js/npm 环境。Rust 版本以 [`rust-toolchain.toml`](../rust-toolchain.toml) 为准，Node.js/npm 要求见 [`apps/desktop/package.json`](../apps/desktop/package.json) 的 `engines`。Tauri 的系统依赖见[官方前置条件](https://v2.tauri.app/start/prerequisites/)。
 
-TypeScript 7 CLI 负责正式类型检查；`@typescript/typescript6` 为源码分析与测试夹具提供稳定的 compiler API，两者有不同职责。`windows-core` 的 COM 类型必须与 `webview2-com` 一致，当前分别固定为 `0.62.2` / `0.39.1`，应作为兼容组合核验，不能仅按更大的版本号单独替换。
+TypeScript 7 CLI 负责正式类型检查；`@typescript/typescript6` 为源码分析与测试辅助工具提供稳定的 compiler API，两者有不同职责。`windows-core` 的 COM 类型必须与 `webview2-com` 一致，当前分别固定为 `0.62.2` / `0.39.1`，应作为兼容组合核验，不能仅按更大的版本号单独替换。
 
 构建 ARK 扩展时，可将 `LANGAME_ARK_ARCHIVE_DIR` 设为已存在的绝对目录，复用 `AsaApi-sdk.zip`、`AseApi-sdk.zip`、`asa-runtime.zip` 和 `AsaApiLoader-sdk.zip`。文件名、官方来源及固定 SHA-256 见 `scripts/build_ark_tools.ps1`。构建输出不能写入此只读目录；缺失文件或校验失败会直接停止，不回退联网。`LANGAME_PROXY_SOURCE_DIR` 同样接受只读绝对目录，按 `modules/runescapedragonwilds/extensions/proxy-sources.json` 的相对路径提供 32 个固定版本源码；Dragonwilds 与 Unreal loader 构建校验后复制到各自输出目录，再沿用短路径构建及 Git blob 校验。未设置这些变量时保持原有下载与验证流程。
 
@@ -107,7 +107,7 @@ CI 将 Rust 检查、核心、存储、进程服务、桌面和原生验收分�
 
 浏览器回归在独立 Edge/Chrome 会话中挂载生产 React 组件，通过模拟 IPC 或受控 HTTP 检查交互、焦点、布局和订阅清理；原生验收运行 Tauri/WebView2 宿主。真实数据库、游戏进程和安装升级仍需对应原生或发行验收。
 
-普通 React 夹具使用锁定 Vite 的 bundled dev 模式；通信、原始脚本及未适配的中间件夹具使用 ESM。导航测试按真实 lazy 请求验证延迟加载及首次加载失败后的恢复。升级 Vite 时核对初始构建等待、lazy 请求映射和两种模式。worker 仅复用相同夹具与模式的编译缓存，各场景的浏览器配置、服务和界面状态独立，结束后清理缓存。
+普通 React 测试页面使用锁定 Vite 的 bundled dev 模式；通信、原始脚本及未适配的中间件测试页面使用 ESM。导航测试按真实 lazy 请求验证延迟加载及首次加载失败后的恢复。升级 Vite 时核对初始构建等待、lazy 请求映射和两种模式。worker 仅复用相同测试入口与模式的编译缓存，各场景的浏览器配置、服务和界面状态独立，结束后清理缓存。
 
 只执行某层时仍使用同一入口：
 
@@ -122,15 +122,15 @@ python -B scripts/verify_project.py --tier full --output 'C:\Verification\LanGam
 
 已有 npm 入口也复用共享规则：`npm --prefix apps/desktop run verify` 运行前端快速检查和当前源码秘密/公开边界检查，`verify:release` 增加全部浏览器测试和完整公开历史检查。这两个入口均不包含 Rust 或原生桌面验收；CI 的前端分片不重复独立 policy 任务中的公开检查。
 
-完整检查使用新的仓库外证据目录；`runtime/report.json` 和 `desktop/report.json` 记录实际运行结果。`--nsis-root` 可附加运行安装器守卫及语言夹具；没有提供时明确报告未执行，不将其算作安装/升级验收。实际发行要求见[桌面发行指南](desktop-release.md)。
+完整检查使用新的仓库外证据目录；`runtime/report.json` 和 `desktop/report.json` 记录实际运行结果。`--nsis-root` 可附加运行安装器守卫及语言测试；没有提供时明确报告未执行，不将其算作安装/升级验收。实际发行要求见[桌面发行指南](desktop-release.md)。
 
 可通过 `--cargo-wrapper` 和 `--node-wrapper` 显式接入构建环境封装。`--frontend-output` 指定尚不存在的仓库外构建目录，`--frontend-dist` 复用当前候选版本的已验证前端。使用 Cargo 封装时，原生验收另以 `--native-executable` 指定带 `desktop-reliability` 特性的已构建程序。
 
-CI 的风险路径在共享入口统一定义，浏览器、Rust 和原生桌面三层独立选择。已核实消费者的局部界面变更运行关键集合和相关完整功能组；关键集合覆盖创建实例、配置控件与恢复、维护保存、实例导航、退出、订阅清理和生产通信。功能组复用现有测试文件，不减少文件内的断言或视口。共享壳、公共 API、全局样式、前端依赖、公共浏览器运行器以及未知归属保留全部浏览器测试。私有夹具通过实际引用定位所属测试；不能确定归属时回退全量。普通前端单测或源码扫描测试变更保留快速层。`frontend-browser` 不带选择参数仍运行完整集合；`--base <commit>` 使用与 CI 相同的规则选择该提交到 `HEAD` 的相关集合，基线无效时回退全量；显式 `--tier full` 始终全量。
+CI 的风险路径在共享入口统一定义，浏览器、Rust 和原生桌面三层独立选择。已核实消费者的局部界面变更运行关键集合和相关完整功能组；关键集合覆盖创建实例、配置控件与恢复、维护保存、实例导航、退出、订阅清理和生产通信。功能组复用现有测试文件，不减少文件内的断言或视口。共享壳、公共 API、全局样式、前端依赖、公共浏览器运行器以及未知归属保留全部浏览器测试。私有测试辅助文件通过实际引用定位所属测试；不能确定归属时回退全量。普通前端单测或源码扫描测试变更保留快速层。`frontend-browser` 不带选择参数仍运行完整集合；`--base <commit>` 使用与 CI 相同的规则选择该提交到 `HEAD` 的相关集合，基线无效时回退全量；显式 `--tier full` 始终全量。
 
 Rust 生产变更从各 `Cargo.toml` 的本地依赖关系选择所属包及其全部消费者，包含 target、build 和 dev dependencies；这些包运行完整测试，核心单测和存档保护的快速基线仍保留，同一包不重复运行完整套件。独立测试模块可在文件开头声明 `#![cfg(test)]`，由 Rust 自身保证只参与测试；只改这种文件时验证所属包，不连带触发浏览器和原生桌面验收。仅文件名含 `test` 不足以缩小范围，无法确认归属或删除文件时保守处理。`--base <commit>` 对该提交到 `HEAD` 使用与 CI 相同的选择规则。
 
-Tauri、共享领域契约、游戏模块和迁移等生产边界变更仍运行全部浏览器测试；Tauri、共享领域契约、存储、运行时、Windows 平台和原生夹具变更保留 Tauri/WebView2 验收。共享依赖、构建与检查入口变更、未知归属或无效基线进入全部相关层。CI 分别显示 Rust 格式/编译/Clippy/许可检查与行为测试，按编译模式复用缓存；`rust-checks` 和 `rust-tests` 可单独执行，`rust` 仍完整包含两者。每日回归及手动 `full` 始终运行全部包和浏览器套件，不能被局部选择缩减；显式手动 `quick` 保留快速基线。提交前仍先运行相关行为测试。完整代码验证不创建或发布安装包，也不替代真实安装与开服验收。
+Tauri、共享领域契约、游戏模块和迁移等生产边界变更仍运行全部浏览器测试；Tauri、共享领域契约、存储、运行时、Windows 平台和原生测试套件变更保留 Tauri/WebView2 验收。共享依赖、构建与检查入口变更、未知归属或无效基线进入全部相关层。CI 分别显示 Rust 格式/编译/Clippy/许可检查与行为测试，按编译模式复用缓存；`rust-checks` 和 `rust-tests` 可单独执行，`rust` 仍完整包含两者。每日回归及手动 `full` 始终运行全部包和浏览器套件，不能被局部选择缩减；显式手动 `quick` 保留快速基线。提交前仍先运行相关行为测试。完整代码验证不创建或发布安装包，也不替代真实安装与开服验收。
 
 公开历史扫描和快照导出由独立 `policy_full` 范围控制：定时、手动完整检查、公开检查实现、排除规则及快照入口变更触发。普通 Rust、界面或工具测试变更仍检查当前源码秘密和公开边界，不因行为测试进入完整层就重复扫描全部 Git 历史。
 
@@ -152,9 +152,9 @@ Tauri、共享领域契约、游戏模块和迁移等生产边界变更仍运行
 
 恢复验收以实际停服时的设置为归档基线，莫瑞亚由游戏维护的权限名单必须逐字节保留，不能拿创建时的空名单比较或忽略该字段。恢复后启动会重新渲染 `instance.json`；启动前后比较只排除经过类型校验的 `generated_at_unix_ms`，其他 JSON 字段和全部存档文件保持严格核对。归档恢复本身仍须保留归档时的配置原始字节。
 
-饥荒地图的真实验收使用 ignored 测试 `smoke_dst_native_world_generation_save_and_reload`。在已隔离的官方包和存储目录中，设置 `LANGAME_DST_SMOKE_SCENARIO=custom_mods`，以 `LANGAME_DST_SMOKE_CUSTOM_MODS_JSON` 提供 1–16 个互不重复的标准十进制工坊 ID 字符串数组；原有命名场景拒绝此覆盖。可选的 `LANGAME_DST_SMOKE_MAP_FIXTURES_JSON` 只在此场景接受 1–8 个互不重复的建筑 prefab 名称（ASCII `[a-z][a-z0-9_]*`，每项最多 128 字节）；两种 JSON 输入各最多 4096 字节。建筑只在首轮生成后由原生游戏布置，第二轮重载不会再次创建；报告绑定原始输入哈希、实体位置及 `test_arranged` 分类，不能据此声称自然生成或玩家制作。夹具不修改原作者 Mod、不创建或移动玩家；真实玩家移动和保存重载仍须分别验证。
+饥荒地图的真实验收使用 ignored 测试 `smoke_dst_native_world_generation_save_and_reload`。在已隔离的官方包和存储目录中，设置 `LANGAME_DST_SMOKE_SCENARIO=custom_mods`，以 `LANGAME_DST_SMOKE_CUSTOM_MODS_JSON` 提供 1–16 个互不重复的标准十进制工坊 ID 字符串数组；原有命名场景拒绝此覆盖。可选的 `LANGAME_DST_SMOKE_MAP_FIXTURES_JSON` 只在此场景接受 1–8 个互不重复的建筑 prefab 名称（ASCII `[a-z][a-z0-9_]*`，每项最多 128 字节）；两种 JSON 输入各最多 4096 字节。建筑只在首轮生成后由原生游戏布置，第二轮重载不会再次创建；报告绑定原始输入哈希、实体位置及 `test_arranged` 分类，不能据此声称自然生成或玩家制作。测试流程不修改原作者 Mod、不创建或移动玩家；真实玩家移动和保存重载仍须分别验证。
 
-饥荒原生验收可通过 `LANGAME_SMOKE_RESOURCE_POLICY` 指定仓库外 JSON 文件，记录可回收资源副本并检查复制容量。未设置时不创建托管登记；一旦设置，缺失或无效策略、越界活动根、重叠根及重解析路径均拒绝运行。策略为 `{"schemaVersion":1,"minimumFreeSpaceBytes":137438953472,"managedRoots":[{"activityRoot":"C:\\BuildScratch\\runs","registryRoot":"C:\\BuildScratch\\resource-registry"}]}`；路径必须为绝对路径，活动目录必须是配置根的严格子目录，登记目录必须位于所有活动根之外。每次复制重新读取容量底线并在文件清点前后查询剩余空间。托管工作站的启动器应显式注入与其实际根、登记消费者和容量规则一致的策略；登记本身不授予删除权限。
+饥荒原生验收可通过 `LANGAME_SMOKE_RESOURCE_POLICY` 指定仓库外 JSON 文件，记录可回收资源副本并检查复制容量。未设置时不创建托管登记；一旦设置，缺失或无效策略、越界活动根、重叠根及重解析路径均拒绝运行。策略为 `{"schemaVersion":1,"minimumFreeSpaceBytes":137438953472,"managedRoots":[{"activityRoot":"C:\\BuildScratch\\runs","registryRoot":"C:\\BuildScratch\\resource-registry"}]}`；路径必须为绝对路径，活动目录必须是配置根的严格子目录，登记目录必须位于所有活动根之外。每次复制重新读取容量底线并在文件清点前后查询剩余空间。外部测试启动器可显式注入与其实际根、登记消费者和容量规则一致的策略；登记本身不授予删除权限。
 
 真实包校验基准为 ignored 测试 `native_valheim_verification_benchmark_and_three_instance_acceptance`，使用 `--ignored --test-threads=1 --nocapture` 单独执行。`LANGAME_VERIFICATION_FIXTURE_ROOT` 指向已复制的完整 Valheim 包，`LANGAME_VERIFICATION_STEAMCMD_ROOT` 指向含对应 `depotcache` 的独立目录；`LANGAME_SMOKE_RUNTIME_ROOT` 和 `LANGAME_VERIFICATION_REPORT` 必须是仓库外已创建的测试、报告目录。可用 `LANGAME_VERIFICATION_SECOND_FIXTURE_ROOT` 与 `LANGAME_VERIFICATION_SECOND_MODULE` 添加第二个包的计时。测试不会下载、运行 SteamCMD 或启动游戏；它复制输入，在副本中校验、篡改及创建三个实例，成功后清理副本并保留 JSON 报告。基准预热后交错执行四次双重哈希对照与四次当前证据复用，两边均完整执行官方 SHA-1/SHA-256；报告当前构建的本地耗时和 Windows 进程逻辑读取量，不代表旧提交完整二进制、冷磁盘或 SteamCMD 下载/validate 的耗时。
 
@@ -166,7 +166,7 @@ Tauri、共享领域契约、游戏模块和迁移等生产边界变更仍运行
 
 ### 模块与生成文件
 
-新增游戏或修改配置、启动、生命周期、端口、查询及玩家管理时，遵循[游戏接入验证](game-integration-validation.md)。设置与排除项记录在 `config-sources.toml`，脱敏夹具放在 `modules/<module-id>/config-fixtures/`；支持声明应有权威来源或可复现的专用服务器证据。
+新增游戏或修改配置、启动、生命周期、端口、查询及玩家管理时，遵循[游戏接入验证](game-integration-validation.md)。设置与排除项记录在 `config-sources.toml`，脱敏测试样本放在 `modules/<module-id>/config-fixtures/`；支持声明应有权威来源或可复现的专用服务器证据。
 
 配置台账与验收 Markdown 来自模块源文件。修改源文件或生成器后重新生成，不直接编辑生成结果：
 
@@ -298,7 +298,7 @@ See [Runtime and save lifecycle](runtime-lifecycle.md#english) for ownership, op
 
 The ignored `smoke_dst_native_world_generation_save_and_reload` test accepts arbitrary Workshop samples through `LANGAME_DST_SMOKE_SCENARIO=custom_mods` and `LANGAME_DST_SMOKE_CUSTOM_MODS_JSON`, a JSON array of 1–16 unique canonical decimal Workshop ID strings. Use isolated official package copies and evidence storage; existing named scenarios reject this override. Optional `LANGAME_DST_SMOKE_MAP_FIXTURES_JSON` accepts 1–8 unique building prefab names only in this scenario (ASCII `[a-z][a-z0-9_]*`, at most 128 bytes each); each JSON input is limited to 4096 bytes. The native game places these structures only after the first generation, never again on reload. Reports bind the exact input hashes, entity positions and `test_arranged` classification; this is not evidence of natural generation or player crafting. The fixture does not change author Mods or create or move players. Real-player movement and save/reload still require separate verification.
 
-For the DST native smoke test, `LANGAME_SMOKE_RESOURCE_POLICY` optionally names an external JSON file for disposable-copy provenance and capacity admission. Without it, no managed registration is created. Once configured, missing or invalid policy, out-of-scope activity roots, overlapping roots and reparse paths fail closed. Use schema `{"schemaVersion":1,"minimumFreeSpaceBytes":137438953472,"managedRoots":[{"activityRoot":"C:\\BuildScratch\\runs","registryRoot":"C:\\BuildScratch\\resource-registry"}]}`. Paths must be absolute; each activity must be a strict child of its configured root, and registries must be outside every activity root. Each copy rereads the capacity floor and queries free space before and after inventory. Managed workstation launchers must explicitly supply a policy matching their actual roots, registry consumer and capacity rules. Registration alone does not authorize deletion.
+For the DST native smoke test, `LANGAME_SMOKE_RESOURCE_POLICY` optionally names an external JSON file for disposable-copy provenance and capacity admission. Without it, no managed registration is created. Once configured, missing or invalid policy, out-of-scope activity roots, overlapping roots and reparse paths fail closed. Use schema `{"schemaVersion":1,"minimumFreeSpaceBytes":137438953472,"managedRoots":[{"activityRoot":"C:\\BuildScratch\\runs","registryRoot":"C:\\BuildScratch\\resource-registry"}]}`. Paths must be absolute; each activity must be a strict child of its configured root, and registries must be outside every activity root. Each copy rereads the capacity floor and queries free space before and after inventory. External runner launchers may supply a policy matching their actual roots, registry consumer and capacity rules. Registration alone does not authorize deletion.
 
 The ignored `native_valheim_verification_benchmark_and_three_instance_acceptance` test runs alone with `--ignored --test-threads=1 --nocapture`. Point `LANGAME_VERIFICATION_FIXTURE_ROOT` to a copied complete Valheim package and `LANGAME_VERIFICATION_STEAMCMD_ROOT` to an isolated directory containing its exact `depotcache`. Create external directories for `LANGAME_SMOKE_RUNTIME_ROOT` and `LANGAME_VERIFICATION_REPORT`. Optional `LANGAME_VERIFICATION_SECOND_FIXTURE_ROOT` and `LANGAME_VERIFICATION_SECOND_MODULE` add timing for another package. The test copies its inputs, verifies and tampers with owned copies, and creates three instances without downloading, running SteamCMD or starting games. Successful runs remove owned copies and retain JSON reports. After warmup it interleaves four full second-hash controls and four current-evidence reuse samples; both perform complete official SHA-1/SHA-256 verification. Measurements describe the current build's local wall time and Windows logical process reads, not an old-commit binary, cold disk or native download/validate timing.
 

@@ -71,7 +71,7 @@ export const ARK_ASE_FOUNDATION_GROUPS: Record<string, ArkGroupSpec[]> = {
     {
       id: "gate",
       titleKey: "ark.settings.groups.join.gate.title",
-      fallbackTitle: "Entry posture",
+      fallbackTitle: "Entry policy",
       layoutClass: "ark-join-gate",
       keys: [
         "exclusive_join_enabled",
@@ -149,7 +149,7 @@ export const ARK_ASE_FOUNDATION_GROUPS: Record<string, ArkGroupSpec[]> = {
     {
       id: "combat-and-carry",
       titleKey: "ark.settings.groups.gameplay.combat-and-carry.title",
-      fallbackTitle: "Combat posture",
+      fallbackTitle: "Combat rules",
       layoutClass: "ark-gameplay-combat",
       keys: [
         "allow_flyer_carry_pve",

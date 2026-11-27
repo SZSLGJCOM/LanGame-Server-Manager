@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 use std::os::windows::process::CommandExt;
 use std::sync::atomic::AtomicBool;

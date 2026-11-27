@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::{ExistingClient, evidence};
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};

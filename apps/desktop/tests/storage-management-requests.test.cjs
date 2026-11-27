@@ -119,21 +119,6 @@ test("archive and deletion APIs share the mutation gate with archive management"
   assert.equal(h.calls[2].command, "list_instance_archives"); h.calls[2].resolve(inventory("retained")); await listing;
 });
 
-test("scan cancellation bypasses the mutation gate but does not release ownership before scan completion", async () => {
-  const h = harness();
-  const scan = h.storage.scanStorageUsage("scan-one");
-  const listing = h.storage.listInstanceArchives();
-  await settle(); assert.deepEqual(h.commands(), ["scan_storage_usage"]);
-  const cancellation = h.storage.cancelStorageUsageScan("scan-one");
-  assert.deepEqual(h.commands(), ["scan_storage_usage", "cancel_storage_usage_scan"]);
-  assert.equal(h.calls[1].args.input.scan_id, "scan-one");
-  h.calls[1].resolve(true); assert.equal(await cancellation, true);
-  await assert.rejects(h.api.archiveInstance("one"), /storage operation is in progress/);
-  await settle(); assert.equal(h.calls.length, 2, "Cancellation acknowledgement must not start the waiting read");
-  h.calls[0].resolve({ status: "cancelled" }); await scan; await settle();
-  assert.equal(h.calls[2].command, "list_instance_archives"); h.calls[2].resolve(inventory("after-scan")); await listing;
-});
-
 test("removal previews and cached bootstrap remain independent of archive mutation serialization", async () => {
   const h = harness();
   const mutation = h.storage.restoreInstanceArchive("archive-one"); await settle();
@@ -142,23 +127,6 @@ test("removal previews and cached bootstrap remain independent of archive mutati
   assert.deepEqual(h.commands(), ["restore_instance_archive", "bootstrap", "inspect_instance_removal"]);
   h.calls[1].resolve({ state: {} }); h.calls[2].resolve({ removable: true }); await Promise.all([bootstrap, removalRead]);
   h.calls[0].resolve({ restored: true }); await mutation;
-});
-
-test("a scan is admitted immediately or rejected without becoming a delayed uncancellable request", async () => {
-  const h = harness();
-  const listing = h.storage.listInstanceArchives();
-  await assert.rejects(h.storage.scanStorageUsage("blocked-by-read"), /storage operation is in progress/);
-  await settle(); assert.deepEqual(h.commands(), ["list_instance_archives"]);
-  h.calls[0].resolve(inventory("ready")); await listing;
-  const mutation = h.api.archiveInstance("one");
-  await assert.rejects(h.storage.scanStorageUsage("blocked-by-write"), /storage operation is in progress/);
-  h.calls[1].resolve({ archived: true }); await mutation; await settle();
-  assert.deepEqual(h.commands(), ["list_instance_archives", "archive_instance_record"]);
-  const scan = h.storage.scanStorageUsage("admitted");
-  assert.equal(h.calls[2].command, "scan_storage_usage", "The scan ID reaches the native bridge before cancellation can be requested");
-  const cancellation = h.storage.cancelStorageUsageScan("admitted");
-  assert.equal(h.calls[3].command, "cancel_storage_usage_scan");
-  h.calls[3].resolve(true); await cancellation; h.calls[2].resolve({ status: "cancelled" }); await scan;
 });
 
 test("synchronous transport failures release the mutation gate without swallowing diagnostics", async () => {
@@ -173,8 +141,7 @@ test("host-only requests reject before joining a native request and do not poiso
   const h = harness(); h.useLan();
   for (const request of [() => h.storage.listInstanceArchives(), () => h.storage.restoreInstanceArchive("a"),
     () => h.storage.readInstanceArchiveDetails("a"),
-    () => h.storage.purgeInstanceArchive("a"), () => h.storage.scanStorageUsage("s"),
-    () => h.storage.cancelStorageUsageScan("s"), () => h.api.archiveInstance("one")]) {
+    () => h.storage.purgeInstanceArchive("a"), () => h.api.archiveInstance("one")]) {
     await assert.rejects(request(), /desktop host/);
   }
   assert.equal(h.calls.length, 0);

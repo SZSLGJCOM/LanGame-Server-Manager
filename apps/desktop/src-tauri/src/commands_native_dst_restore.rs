@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::{InstanceDetails, ProbeResult, fs, inventory, settings_readback};
 use serde_json::Value;
 use std::collections::BTreeMap;

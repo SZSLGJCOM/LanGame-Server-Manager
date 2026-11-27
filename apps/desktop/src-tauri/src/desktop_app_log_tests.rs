@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 use serde_json::{Value, json};
 use std::path::PathBuf;

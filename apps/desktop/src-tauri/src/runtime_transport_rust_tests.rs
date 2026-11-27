@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use std::io::{Cursor, Read, Write};
 
 use super::super::{

@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 //! Test-only admission policy. Reserving an instance does not prove ownership of
 //! its processes: each worker must still verify the returned run/session and OS
 //! process identities, then complete only after its normal-stop cleanup finishes.

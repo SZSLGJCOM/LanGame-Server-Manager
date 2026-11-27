@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 
 const ACCOUNT: u64 = 76_561_198_000_000_001;

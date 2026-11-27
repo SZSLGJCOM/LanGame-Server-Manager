@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 //! Admission for future copies in registered, one-shot native smoke roots only.
 use std::fs::{self, OpenOptions};
 use std::io::{self, Read};

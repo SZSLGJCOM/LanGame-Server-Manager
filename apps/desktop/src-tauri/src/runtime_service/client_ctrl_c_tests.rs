@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 //! Exercise the actual detached service creator without a service database or UI.
 //! The libtest logfile argument carries each isolated fixture's output directory.
 use super::*;

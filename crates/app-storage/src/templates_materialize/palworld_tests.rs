@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 
 const SECTION: &str = "[/Script/Pal.PalGameWorldSettings]";

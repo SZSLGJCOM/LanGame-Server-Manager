@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::inventory::save_inventory;
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};

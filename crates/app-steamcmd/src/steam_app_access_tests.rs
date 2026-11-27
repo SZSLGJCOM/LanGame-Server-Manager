@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 
 fn output(success: bool, excerpt: &str) -> StreamingCommandResult {

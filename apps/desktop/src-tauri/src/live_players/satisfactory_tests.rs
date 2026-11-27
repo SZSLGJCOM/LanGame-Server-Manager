@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 
 const NORMAL: &[u8] = include_bytes!("../../test-data/live-players/satisfactory/normal.json");

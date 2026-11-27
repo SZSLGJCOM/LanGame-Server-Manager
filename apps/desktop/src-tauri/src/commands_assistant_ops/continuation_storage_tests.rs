@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::continuation_tests::paused_creation_task;
 use super::*;
 use std::sync::Arc;

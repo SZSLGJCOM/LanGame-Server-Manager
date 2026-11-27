@@ -51,7 +51,7 @@ export const EN_US_ASTRONEER_MESSAGES: MessageCatalog = {
   "astroneer.settings.sections.network": "Network",
   "astroneer.settings.sections.networkDescription": "Player join address, ports and remote console.",
   "astroneer.settings.sections.access": "Access",
-  "astroneer.settings.sections.accessDescription": "Join password and allowlist posture.",
+  "astroneer.settings.sections.accessDescription": "Join password and allowlist policy.",
   "astroneer.settings.sections.world": "World",
   "astroneer.settings.sections.worldDescription": "World loading and native map changes.",
   "astroneer.settings.sections.performance": "Performance",

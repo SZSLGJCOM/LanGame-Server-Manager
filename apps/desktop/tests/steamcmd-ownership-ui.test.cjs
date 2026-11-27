@@ -18,7 +18,6 @@ const statusSource = readSource("src", "steamcmd-ui.ts");
 const systemViewSource = readSource("src", "views", "system", "StoragePathsPanel.tsx");
 const mockSource = readSource("src", "api-mock.ts");
 const {
-  describeSteamCmdStatus,
   steamCmdDetailMessage,
   steamCmdSummaryMessage
 } = require("../src/steamcmd-ui.ts");
@@ -46,10 +45,6 @@ test("an external SteamCMD installation stays detected without claiming manageme
     executable_path: "external-steamcmd/steamcmd.exe"
   };
 
-  assert.deepEqual(describeSteamCmdStatus(status, (key) => key), {
-    label: "system.steamCmdDetected",
-    tone: "is-success"
-  });
   assert.equal(steamCmdSummaryMessage(status).key, "activity.steamCmdDetected");
   assert.deepEqual(steamCmdDetailMessage(status), {
     key: "activity.steamCmdDetectedAt",
@@ -62,8 +57,6 @@ test("an external SteamCMD installation stays detected without claiming manageme
 test("a failed bootstrapper executable never claims that SteamCMD is ready", () => {
   for (const ownership of ["managed", "external"]) {
     const status = { ownership, executable_exists: true, ready: false, root: "steamcmd", executable_path: "steamcmd/steamcmd.exe" };
-    assert.equal(describeSteamCmdStatus(status, (key) => key).label, "system.steamCmdNotReady");
-    assert.equal(describeSteamCmdStatus(status, (key) => key).tone, "is-danger");
     assert.equal(steamCmdSummaryMessage(status).key, "system.steamCmdNotReady");
     assert.equal(steamCmdDetailMessage(status).key, "activity.steamCmdNotReadyAt");
   }

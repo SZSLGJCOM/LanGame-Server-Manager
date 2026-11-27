@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 
 const RUN: &str = "LGSM_UWS_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";

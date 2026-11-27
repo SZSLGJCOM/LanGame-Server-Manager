@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 //! Native console completion and world-seed readback for disposable Necesse saves.
 //! The product receipt remains Requested; no runtime plugin is installed.
 use super::*;

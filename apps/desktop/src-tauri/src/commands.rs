@@ -43,7 +43,6 @@ use app_runtime::{
     ManagedInstance, ManagedProcess, StoppedManagedProcess, apply_runtime_performance_policy,
     build_launch_plan_with_override, inspect_process_identity, kill_process_by_pid,
     process_identities_match, process_is_running, process_matches_identity,
-    resolve_runtime_performance_policy_for_instance,
     resolve_runtime_performance_policy_with_preview_for_instance, stabilize_spawned_process,
     stop_managed_instance, stop_spawned_process,
 };
@@ -347,7 +346,6 @@ pub use commands_runtime_lifecycle::{
 };
 use commands_runtime_observability::{
     RuntimeRestartCandidate, build_palworld_operator_snapshot,
-    build_runtime_performance_diagnostic, build_runtime_performance_snapshot,
     build_runtime_startup_queue_snapshot, build_sevendaystodie_operator_snapshot,
     collect_system_snapshot, extract_instance_player_capacity, json_bool,
     lightweight_system_snapshot, load_module_runtime_capability_map, now_unix_ms,
@@ -1265,15 +1263,18 @@ async fn read_steam_workshop_installation_status_with_storage(
     instance_id: String,
     ids: Vec<String>,
 ) -> Result<SteamWorkshopInstallationSnapshot, String> {
-    initialize_database(&storage.paths)
-        .await
-        .map_err(|error| error.to_string())?;
     let instance = read_instance_details(&storage.paths, &instance_id)
         .await
         .map_err(|error| error.to_string())?;
-    let descriptors =
-        discover_modules(&storage.paths.modules_root).map_err(|error| error.to_string())?;
-    let descriptor = find_descriptor(&descriptors, &instance.summary.module_id)?;
+    let descriptor =
+        app_modules::discover_module(&storage.paths.modules_root, &instance.summary.module_id)
+            .map_err(|error| error.to_string())?
+            .ok_or_else(|| {
+                format!(
+                    "module descriptor not found for `{}`",
+                    instance.summary.module_id
+                )
+            })?;
     let workshop = descriptor.workshop.as_ref().ok_or_else(|| {
         format!(
             "module `{}` does not declare [workshop]",
@@ -1339,9 +1340,6 @@ pub async fn read_dontstarve_mod_configuration_specs(
     let storage_context_operation =
         state.begin_storage_context_operation("Don't Starve Mod configuration read")?;
     let storage = state.bootstrap_storage()?;
-    initialize_database(&storage.paths)
-        .await
-        .map_err(|error| error.to_string())?;
     let instance = read_instance_details(&storage.paths, &instance_id)
         .await
         .map_err(|error| error.to_string())?;
@@ -1391,10 +1389,6 @@ async fn read_project_zomboid_workshop_mods_snapshot_with_storage(
     instance_id: String,
     ids: Vec<String>,
 ) -> Result<ProjectZomboidWorkshopModsSnapshot, String> {
-    initialize_database(&storage.paths)
-        .await
-        .map_err(|error| error.to_string())?;
-
     let instance = read_instance_details(&storage.paths, &instance_id)
         .await
         .map_err(|error| error.to_string())?;
@@ -1404,9 +1398,15 @@ async fn read_project_zomboid_workshop_mods_snapshot_with_storage(
         ));
     }
 
-    let descriptors =
-        discover_modules(&storage.paths.modules_root).map_err(|error| error.to_string())?;
-    let descriptor = find_descriptor(&descriptors, &instance.summary.module_id)?;
+    let descriptor =
+        app_modules::discover_module(&storage.paths.modules_root, &instance.summary.module_id)
+            .map_err(|error| error.to_string())?
+            .ok_or_else(|| {
+                format!(
+                    "module descriptor not found for `{}`",
+                    instance.summary.module_id
+                )
+            })?;
     let install_root = PathBuf::from(commands_runtime_lifecycle::private_runtime_install_root(
         &instance,
     )?);
@@ -2056,15 +2056,14 @@ async fn load_module_installation_summaries(
     storage: &app_storage::StorageBootstrap,
     descriptors: &[ModuleDescriptor],
 ) -> Result<Vec<ModuleSummary>, String> {
+    let overrides = app_storage::resolve_all_module_install_roots(&storage.paths)
+        .await
+        .unwrap_or_default();
     let mut summaries = Vec::with_capacity(descriptors.len());
     for descriptor in descriptors {
-        let install_root_override =
-            load_module_install_root_override(&storage.paths, &descriptor.summary.id).await;
-        let summary = module_summary_with_install_state(
-            &storage.settings,
-            descriptor,
-            install_root_override.as_deref(),
-        );
+        let install_root_override = overrides.get(&descriptor.summary.id).map(String::as_str);
+        let summary =
+            module_summary_with_install_state(&storage.settings, descriptor, install_root_override);
         summaries.push(summary);
     }
 
@@ -2136,16 +2135,18 @@ async fn persist_descriptor_install_states(
     storage: &app_storage::StorageBootstrap,
     descriptors: &[ModuleDescriptor],
 ) -> Result<(), String> {
+    let overrides = app_storage::resolve_all_module_install_roots(&storage.paths)
+        .await
+        .unwrap_or_default();
     let mut records = Vec::with_capacity(descriptors.len());
 
     for descriptor in descriptors {
-        let install_root_override =
-            load_module_install_root_override(&storage.paths, &descriptor.summary.id).await;
+        let install_root_override = overrides.get(&descriptor.summary.id).map(String::as_str);
         records.push(build_game_install_sync_record(
             &storage.settings,
             descriptor,
             false,
-            install_root_override.as_deref(),
+            install_root_override,
         ));
     }
 

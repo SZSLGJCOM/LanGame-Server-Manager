@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use crate::runtime_log_stream::file_identity::{LogFileIdentity, log_identity};
 use std::fs::File;
 use std::io::{Read, Seek, SeekFrom};

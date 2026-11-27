@@ -274,25 +274,6 @@ export function useInstanceActions(options: InstanceActionOptions) {
     });
   }
 
-  async function handleRefreshWorkspace(scopeKey: string) {
-    options.setActivity(message("activity.refreshingScope", {}, { scopeKey }));
-    try {
-      const latest = await options.reloadBootstrap(undefined, { refreshOverlays: true });
-      if (scopeKey === "monitor") {
-        options.markRuntimeRefreshed();
-      }
-      options.setActivity(
-        message(
-          "activity.scopeRefreshed",
-          { servers: latest.state.instances.length, modules: latest.state.modules.length },
-          { scopeKey }
-        )
-      );
-    } catch (error) {
-      options.setActivity(message("activity.refreshScopeFailed", { message: describeError(error) }, { scopeKey }));
-    }
-  }
-
   async function handleCreateServer(input: CreateInstanceInput) {
     const existing = creationRequests.current.get(input.module_id);
     if (existing) return existing.promise;
@@ -653,6 +634,17 @@ export function useInstanceActions(options: InstanceActionOptions) {
     }
   }
 
+  async function completeBackupMutation(instanceId: string, completed: (name?: string) => UiMessage) {
+    try {
+      const details = options.instanceDetailsById[instanceId] ?? await readInstanceDetails(instanceId);
+      const backups = await listInstanceBackups(instanceId);
+      updateSelectedBackups(instanceId, backups);
+      options.setActivity(completed(details.summary.name));
+    } catch (error) {
+      reportOperationRefreshFailure(completed(), error);
+    }
+  }
+
   async function handleCreateBackup(instanceId: string) {
     options.setActivity(message("activity.backingUpSaves", { id: instanceId }));
     let result: InstanceBackupResult;
@@ -662,16 +654,8 @@ export function useInstanceActions(options: InstanceActionOptions) {
       options.setActivity(message("activity.instanceBackupFailed", { message: describeError(error) }));
       return;
     }
-    const completed = (name = options.instanceDetailsById[instanceId]?.summary.name ?? instanceId) =>
-      message("activity.instanceBackupCreated", { name, path: result.backup_path, count: result.file_count });
-    try {
-      const details = options.instanceDetailsById[instanceId] ?? await readInstanceDetails(instanceId);
-      const backups = await listInstanceBackups(instanceId);
-      updateSelectedBackups(instanceId, backups);
-      options.setActivity(completed(details.summary.name));
-    } catch (error) {
-      reportOperationRefreshFailure(completed(), error);
-    }
+    await completeBackupMutation(instanceId, (name = options.instanceDetailsById[instanceId]?.summary.name ?? instanceId) =>
+      message("activity.instanceBackupCreated", { name, path: result.backup_path, count: result.file_count }));
   }
 
   async function handleRestoreBackup(instanceId: string, backupId: string) {
@@ -683,16 +667,8 @@ export function useInstanceActions(options: InstanceActionOptions) {
       options.setActivity(message("activity.instanceBackupRestoreFailed", { message: describeError(error) }));
       return;
     }
-    const completed = (name = options.instanceDetailsById[instanceId]?.summary.name ?? instanceId) =>
-      message("activity.instanceBackupRestored", { name, backupId: result.backup_id, safeguardId: result.safeguard_backup_id });
-    try {
-      const details = options.instanceDetailsById[instanceId] ?? await readInstanceDetails(instanceId);
-      const backups = await listInstanceBackups(instanceId);
-      updateSelectedBackups(instanceId, backups);
-      options.setActivity(completed(details.summary.name));
-    } catch (error) {
-      reportOperationRefreshFailure(completed(), error);
-    }
+    await completeBackupMutation(instanceId, (name = options.instanceDetailsById[instanceId]?.summary.name ?? instanceId) =>
+      message("activity.instanceBackupRestored", { name, backupId: result.backup_id, safeguardId: result.safeguard_backup_id }));
   }
 
   async function handleRenameBackup(instanceId: string, backup: InstanceBackupResult, displayName: string): Promise<boolean> {
@@ -715,16 +691,8 @@ export function useInstanceActions(options: InstanceActionOptions) {
       options.setActivity(message("activity.instanceBackupRenameFailed", { message: describeError(error) }));
       return false;
     }
-    const completed = (name = options.instanceDetailsById[instanceId]?.summary.name ?? instanceId) =>
-      message("activity.instanceBackupRenamed", { name, backupName: backupLabel(result) });
-    try {
-      const details = options.instanceDetailsById[instanceId] ?? await readInstanceDetails(instanceId);
-      const backups = await listInstanceBackups(instanceId);
-      updateSelectedBackups(instanceId, backups);
-      options.setActivity(completed(details.summary.name));
-    } catch (error) {
-      reportOperationRefreshFailure(completed(), error);
-    }
+    await completeBackupMutation(instanceId, (name = options.instanceDetailsById[instanceId]?.summary.name ?? instanceId) =>
+      message("activity.instanceBackupRenamed", { name, backupName: backupLabel(result) }));
     return true;
   }
 
@@ -737,16 +705,8 @@ export function useInstanceActions(options: InstanceActionOptions) {
       options.setActivity(message("activity.instanceBackupDeleteFailed", { message: describeError(error) }));
       return;
     }
-    const completed = (name = options.instanceDetailsById[instanceId]?.summary.name ?? instanceId) =>
-      message("activity.instanceBackupDeleted", { name, backupName: backupLabel(result) });
-    try {
-      const details = options.instanceDetailsById[instanceId] ?? await readInstanceDetails(instanceId);
-      const backups = await listInstanceBackups(instanceId);
-      updateSelectedBackups(instanceId, backups);
-      options.setActivity(completed(details.summary.name));
-    } catch (error) {
-      reportOperationRefreshFailure(completed(), error);
-    }
+    await completeBackupMutation(instanceId, (name = options.instanceDetailsById[instanceId]?.summary.name ?? instanceId) =>
+      message("activity.instanceBackupDeleted", { name, backupName: backupLabel(result) }));
   }
 
   async function handleArchiveInstance(instanceId: string) {
@@ -869,7 +829,6 @@ export function useInstanceActions(options: InstanceActionOptions) {
   return {
     creatingModuleIds,
     creationStartedAtByModule: new Map([...creationRequests.current].map(([id, request]) => [id, request.startedAt])),
-    handleRefreshWorkspace,
     handleCreateServer,
     handleStartServer,
     handleStopServer,

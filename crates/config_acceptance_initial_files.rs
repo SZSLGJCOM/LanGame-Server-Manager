@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use std::collections::BTreeSet;
 use std::fs::{self, OpenOptions};
 use std::io::Write;

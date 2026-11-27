@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 use crate::instance_archive_roots::validate_archive_root;
 

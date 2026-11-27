@@ -17,7 +17,7 @@ const { parseSource, visitSyntax } = desktopRequire(path.join(
 const DEFAULT_ENTRY_PATHS = [
   "/",
   "/src/main.tsx",
-  "/src/views/ServerWorkspaceView.tsx",
+  "/src/views/ServersView.tsx",
 ];
 
 const UNRESOLVED_VITE_CLIENT_PLACEHOLDER =

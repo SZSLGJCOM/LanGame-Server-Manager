@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 
 const XML: &[u8] = br#"<Atlas><Texture filename="customisation.tex"/><Elements>

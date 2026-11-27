@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 
 fn snapshot(assigned: u32, count: u32) -> ProcessIdList {

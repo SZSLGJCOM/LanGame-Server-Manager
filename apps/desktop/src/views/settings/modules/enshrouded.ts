@@ -82,7 +82,7 @@ function buildEnshroudedFieldGroups(
         description: t(
           "enshrouded.settings.groups.playersDescription",
           undefined,
-          "Health, stamina, mana, and player survivability posture."
+          "Health, stamina, mana, and player survivability settings."
         ),
         keys: ["player_health_factor", "player_mana_factor", "player_stamina_factor", "player_body_heat_factor", "player_diving_time_factor", "shroud_time_factor"]
       }

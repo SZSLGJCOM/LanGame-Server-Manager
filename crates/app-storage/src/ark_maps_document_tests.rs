@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 use crate::templates::{
     InstanceConfigInput, ModuleSupportMaterializationContext, write_pending_instance_configuration,

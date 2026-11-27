@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 use app_core::{CreateInstanceInput, InstanceStatus, InstanceSummary};
 use app_modules::discover_modules;

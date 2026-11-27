@@ -9,9 +9,6 @@ pub async fn read_valheim_world_rules(
 ) -> Result<ValheimWorldRules, String> {
     let operation = state.begin_storage_context_operation("Valheim world rules read")?;
     let storage = state.bootstrap_storage()?;
-    initialize_database(&storage.paths)
-        .await
-        .map_err(|error| error.to_string())?;
     spawn_storage_context_task(&operation, async move {
         app_storage::read_valheim_world_rules(&storage.paths, &instance_id, &world_name)
             .await

@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 
 fn parse_necesse(text: &str) -> Result<ParsedPlayerList, String> {

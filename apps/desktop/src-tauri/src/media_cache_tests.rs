@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 
 fn protocol(url: &str, kind: &str) -> String {

@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 use crate::{StoragePaths, initialize_database};
 use sqlx::sqlite::{SqliteConnectOptions, SqliteJournalMode, SqlitePoolOptions};

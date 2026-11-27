@@ -64,7 +64,7 @@ function Harness() {
     <main className="server-detail-panel" style={{ flex: 1, minHeight: 0 }}>
       {mode === "configuration" ? <ConfigurationWorkspace details={details} moduleDetails={descriptor}
         moduleDetailsError={null} onRetryModuleDetails={() => { throw new Error("Unexpected descriptor retry"); }}
-        bindAddressCandidates={[]} runtime={null} launchPlan={null} launchPlanError={null} onSave={save} />
+        bindAddressCandidates={[]} launchPlanError={null} onSave={save} />
         : mode === "mods" ? <ModWorkbench details={details} moduleDetails={descriptor} launchPlan={null} onSaveSettings={save} />
           : <RuntimeSurfaceWorkbench details={details} moduleDetails={descriptor} runtime={null} runtimeWindows={null}
             startupPending={false} launchHostSurface="managed" />}

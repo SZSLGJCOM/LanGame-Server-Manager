@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 
 const MARKER: &str = ".langame-server-manager.json";

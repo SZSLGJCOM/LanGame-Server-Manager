@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 // Copy tests use the creation owner; adoption fixtures model interrupted transfers
 // whose durable journals still require recovery after library-preserving creation.
 use super::*;

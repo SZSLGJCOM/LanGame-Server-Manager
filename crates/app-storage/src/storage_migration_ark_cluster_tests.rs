@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 use crate::storage_migration as migration;
 use std::sync::{Arc, atomic::AtomicBool};

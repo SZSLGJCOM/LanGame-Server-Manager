@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::super::{
     DeadlineTcpStream, websocket_rcon_exchange, websocket_rcon_exec, websocket_read_frame,
     websocket_read_http_headers,

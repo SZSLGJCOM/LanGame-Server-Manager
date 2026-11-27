@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 use crate::test_support::unique_test_root;
 use app_core::{InstanceStatus, InstanceSummary};

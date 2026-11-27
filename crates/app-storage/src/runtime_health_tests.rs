@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 
 fn log_snapshot(lines: &[&str]) -> LogTailSnapshot {

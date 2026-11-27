@@ -13,7 +13,7 @@
     "build_receipt_sha256": "3b41c14c37c71323baf1b6026724c1dde183eed49caeda1f8242494c8380b2e5",
     "runtime_source_proof_sha256": "baf92e36f0be6ad14ec25b3627e4891b18c0c5180547ceb3541a9d99fccc2da8",
     "actual_invocation_receipt_sha256": "e7785d0ea4d5641d97192832454b8d164503b5b59e17b9d96467c7f24768effe",
-    "actual_entry_point": "invoke-task-cargo.ps1",
+    "actual_entry_point": "isolated Cargo test runner",
     "actual_entry_point_sha256": "3ed87587c3b62d026d90eee052dda4cc725d77cdc8fbff891a65b54989d8bb01",
     "canonical_entry_point_sha256": "a49fe85bfed0b558354bc5a605e84b5a2f9a30c251c2bc57ff4ddc51503223b2",
     "central_policy_sha256": "2458b598bac668890f72d2cb39e4e1b06a8c34920667e10ed0f2bc354960c9a6",
@@ -22,7 +22,7 @@
     "maximum_compiler_jobs": 1,
     "shared_queue_and_target_pool_preserved": true,
     "global_policy_modified": false,
-    "receipt_interpretation": "The snapshot build receipt names the canonical entry point. The separate actual-invocation receipt establishes that this build used the approved task wrapper and the listed resource limits."
+    "receipt_interpretation": "The snapshot build receipt names the canonical entry point. The separate actual-invocation receipt establishes that this build used the isolated Cargo test runner and the listed resource limits."
   },
   "package": {
     "steam_app_id": 2430930,

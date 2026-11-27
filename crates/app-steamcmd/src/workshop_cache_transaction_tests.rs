@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 use std::collections::BTreeMap;
 use std::sync::atomic::AtomicU64;

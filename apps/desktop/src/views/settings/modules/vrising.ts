@@ -206,7 +206,7 @@ function buildVRisingFieldGroups(
     survival: [
       {
         id: "survival",
-        title: t("vrising.settings.groups.survival", undefined, "Survival posture"),
+        title: t("vrising.settings.groups.survival", undefined, "Survival rules"),
         description: t(
           "vrising.settings.groups.survivalDescription",
           undefined,

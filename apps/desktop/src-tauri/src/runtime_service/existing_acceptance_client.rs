@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 //! Opt-in acceptance only: pin an explicitly selected existing backend. The
 //! production client continues requiring its own executable as the pipe owner.
 use super::wire;

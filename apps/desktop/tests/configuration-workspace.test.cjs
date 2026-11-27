@@ -221,8 +221,6 @@ test("mounts one embedded ConfigurationWorkspace in the detail region", () => {
     "details",
     "moduleDetails",
     "bindAddressCandidates",
-    "runtime",
-    "launchPlan",
     "launchPlanError",
     "onSave"
   ]) {

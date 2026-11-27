@@ -81,7 +81,7 @@
   "source_manifest_sha256": "fa722c8a3e54190d3828e01467f995b968496396ba5f4cd55cfc1f07de7b100d",
   "build": {
     "receipt": "native-build-12.json",
-    "entry_point": "workspace-managed Cargo wrapper (local path and filename omitted)",
+    "entry_point": "isolated Cargo test runner",
     "entry_point_sha256": "a49fe85bfed0b558354bc5a605e84b5a2f9a30c251c2bc57ff4ddc51503223b2",
     "cargo_command": "test",
     "cargo_arguments": [

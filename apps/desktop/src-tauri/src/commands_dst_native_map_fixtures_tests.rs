@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, HashSet};

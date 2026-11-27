@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 use crate::state::RuntimeStartReservationAttempt;
 use std::cell::Cell;

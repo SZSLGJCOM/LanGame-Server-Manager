@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 //! Opt-in loopback fixture for real browser Range/HLS playback through this cache.
 //! The caller supplies an MP4 and stops the server after its browser assertions.
 use super::*;

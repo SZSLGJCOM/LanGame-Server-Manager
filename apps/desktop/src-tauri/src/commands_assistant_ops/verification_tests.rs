@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 
 fn details(running: bool) -> InstanceDetails {

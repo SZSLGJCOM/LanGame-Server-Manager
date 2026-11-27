@@ -590,6 +590,45 @@ class OpenSourceBoundaryTests(unittest.TestCase):
                 {path.as_posix() for path in private_paths},
             )
 
+    def test_rejects_prohibited_local_environment_and_wrapper_markers(self):
+        host_upper = bytes.fromhex("504c4150").decode("ascii")
+        host_lower = bytes.fromhex("706c6170").decode("ascii")
+        runner_brand = bytes.fromhex("436f646578").decode("ascii")
+        markers = (
+            f"Verified on {host_upper} host.",
+            f'{{"{host_lower}_anonymous_download": true}}',
+            f"Start-{runner_brand}CargoDirectChild",
+            f"Local\\\\{runner_brand}CargoFixture",
+            "invoke-cargo-" + "resource-guard.ps1",
+            "task-scoped invoke-task-" + "cargo.ps1",
+        )
+        for marker in markers:
+            with self.subTest(marker=marker), tempfile.TemporaryDirectory() as directory:
+                repository = Path(directory)
+                assets = self._write_required_files(repository)
+                path = Path("modules/example/reference-fixtures/probe.json")
+                (repository / path).parent.mkdir(parents=True)
+                (repository / path).write_text(f"header\n{marker}\n", encoding="utf-8")
+                findings = verify_boundary(repository, (*assets, path), frozenset())
+                self.assertEqual(
+                    [(item.rule, item.path, item.detail) for item in findings],
+                    [
+                        (
+                            "prohibited-local-marker",
+                            path.as_posix(),
+                            "source contains a prohibited local environment marker at line 2",
+                        )
+                    ],
+                )
+        with tempfile.TemporaryDirectory() as directory:
+            repository = Path(directory)
+            assets = self._write_required_files(repository)
+            path = Path("docs/example.md")
+            (repository / path).parent.mkdir(parents=True)
+            # Word boundaries ensure ordinary words like SPLASH or OVERLAPPING are unaffected.
+            (repository / path).write_text("SPLASH OVERLAPPING cargo-launcher.ps1\n", encoding="utf-8")
+            self.assertEqual(verify_boundary(repository, (*assets, path), frozenset()), [])
+
 
 if __name__ == "__main__":
     unittest.main()

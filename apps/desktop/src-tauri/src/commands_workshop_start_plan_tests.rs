@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::super::{ManagedModState, ManualModInventoryItem};
 use super::*;
 use serde_json::json;

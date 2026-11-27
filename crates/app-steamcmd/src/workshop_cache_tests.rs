@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 
 static NEXT_FIXTURE: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(1);

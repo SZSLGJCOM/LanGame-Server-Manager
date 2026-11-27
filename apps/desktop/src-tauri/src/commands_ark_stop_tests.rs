@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 use crate::runtime_transport::{source_rcon_read_packet, source_rcon_write_packet};
 

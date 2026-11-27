@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 //! Two owned Satisfactory worlds; no clients, Mods, downloads or shared profiles.
 //! Select native_satisfactory_instance_isolation with local_package,
 //! independent_pair and both manual-save flags. Keep FRM in its separate

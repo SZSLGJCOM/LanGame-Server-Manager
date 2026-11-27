@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 //! Bounded, read-only diagnostics after an unconfirmed normal stop. A finalized
 //! exit may make batch cleanup safe, but never changes failed stop acceptance.
 use super::super::{ExistingClient, InstanceDetails, InstanceRuntimeOverview, read, selection};

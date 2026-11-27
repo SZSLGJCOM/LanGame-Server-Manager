@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 //! Opt-in proof that production startup prepares a default-empty PublicIP.
 use super::*;
 use std::io::Read;

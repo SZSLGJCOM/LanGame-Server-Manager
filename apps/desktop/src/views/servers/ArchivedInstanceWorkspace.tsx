@@ -40,7 +40,7 @@ export function ArchivedInstanceWorkspace({ archive, requestedTab, onTabChange }
         {activeTab === "settings" ? <ConfigurationWorkspace key={archive.archive_id}
           details={state.details.instance} archive={state.details} moduleDetails={state.moduleDetails}
           moduleDetailsError={state.moduleError} onRetryModuleDetails={state.retry} bindAddressCandidates={[]}
-          runtime={null} launchPlan={null} launchPlanError={null} /> : null}
+          launchPlanError={null} /> : null}
         {activeTab === "runtime" ? <RuntimeSurfaceWorkbench details={state.details.instance} archive={state.details}
           runtime={null} runtimeWindows={null} startupPending={false} launchHostSurface="managed_terminal" /> : null}
         {activeTab === "mods" ? <ModWorkbench details={state.details.instance} moduleDetails={state.moduleDetails}

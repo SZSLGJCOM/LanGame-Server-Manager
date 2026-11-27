@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use app_core::InstanceDetails;
 use serde_json::Value;
 

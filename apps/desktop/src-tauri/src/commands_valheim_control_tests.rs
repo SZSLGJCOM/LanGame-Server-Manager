@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 use crate::live_players::valheim_control::{AccessLists, ControlSnapshot, ValidatedPeer};
 use app_storage::PlayerAccessMutationOperation::{Add, Remove};

@@ -2,9 +2,9 @@ import type { MessageCatalog } from "../../i18n-config";
 
 export const ZH_CN_SONS_OF_THE_FOREST_MESSAGES: MessageCatalog = {
   "sonsoftheforest.settings.sections.room": "服务器身份",
-  "sonsoftheforest.settings.sections.roomDescription": "服务器名称、人数上限和游戏模式姿态。",
+  "sonsoftheforest.settings.sections.roomDescription": "服务器名称、人数上限和游戏模式设置。",
   "sonsoftheforest.settings.sections.network": "网络",
-  "sonsoftheforest.settings.sections.networkDescription": "局域网姿态和网络可达性测试行为。",
+  "sonsoftheforest.settings.sections.networkDescription": "局域网模式与网络可达性检测行为。",
   "sonsoftheforest.settings.sections.world": "世界与自定义模式",
   "sonsoftheforest.settings.sections.worldDescription": "游戏模式、存档生命周期、通用世界规则与自定义模式参数。",
   "sonsoftheforest.settings.sections.access": "加入与管理员",

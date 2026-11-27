@@ -149,7 +149,7 @@ function Workspace({ archived }: { archived: boolean }) {
     archive={archived ? { archive_id: "retained", instance, maintenance: { autostart: false, auto_backup_on_stop: false,
       backup_retention_count: 3, crash_restart_limit: null, runtime_mode: null }, runs: { entries: [], total: 0, truncated: false },
       log: { relative_path: null, text: "", truncated: false, issues: [] }, backups: { entries: [], issues: [], truncated: false } } : undefined}
-    onRetryModuleDetails={() => { throw new Error("Unexpected descriptor retry"); }} bindAddressCandidates={[]} runtime={null} launchPlan={null} launchPlanError={null}
+    onRetryModuleDetails={() => { throw new Error("Unexpected descriptor retry"); }} bindAddressCandidates={[]} launchPlanError={null}
     onSave={async (input) => {
       settingsWrites.push(structuredClone(input)); saved = input.settings_json;
       const next = { ...instance, settings_json: saved }; setInstance(next); return next;

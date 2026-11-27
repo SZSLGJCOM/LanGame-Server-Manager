@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 //! Explicit fault injection only in the ignored disposable native acceptance.
 //! The OS denies primary replacement; neither native code nor its flags change.
 use super::*;

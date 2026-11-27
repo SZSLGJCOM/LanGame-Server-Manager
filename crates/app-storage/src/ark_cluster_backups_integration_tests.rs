@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::super::*;
 use super::ark_evolved::{ark_test_descriptor, prepare_ark_environment};
 

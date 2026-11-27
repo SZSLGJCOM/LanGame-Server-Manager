@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 
 fn interrupted(fixture: &Fixture, wanted: &BTreeMap<String, String>, index: usize) {

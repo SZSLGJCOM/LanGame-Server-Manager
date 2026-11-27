@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 //! Opt-in, network-free acceptance against explicitly supplied public snapshots.
 //! Output is retained for inspection; neither the source DB nor model cache is opened for writing.
 

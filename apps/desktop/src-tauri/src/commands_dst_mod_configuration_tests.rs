@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 
 const MOD_ID: &str = "4999999999";

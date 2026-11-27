@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 #[cfg(windows)]
 use std::io::Read;

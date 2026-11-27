@@ -60,7 +60,7 @@
       "--locked",
       "--no-run"
     ],
-    "resource_scope": "Standard managed-workstation Cargo wrapper; no task-specific resource override.",
+    "resource_scope": "isolated Cargo test runner; no task-specific resource override.",
     "gm_commands_sha256": "4b4148623e8bb40a52a1bb7bdffc5b552d97cee493f054dc9fe381553c1e562a",
     "gm_source_proof_sha256": "0f8037d2283a50b5fed5e26c1741e37a1886c34a9e4884e8a711060baab58fe5",
     "gm_producer_inputs_verified": 794,

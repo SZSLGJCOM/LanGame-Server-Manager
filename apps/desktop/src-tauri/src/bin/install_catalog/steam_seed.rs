@@ -18,11 +18,9 @@ pub(super) use app_steamcmd::steam_depot::{
 use serde::{Deserialize, Serialize};
 use sha1::{Digest, Sha1};
 
-#[path = "steam_manifest.rs"]
-mod manifest_format;
 #[cfg(test)]
-use manifest_format::manifest;
-use manifest_format::parse_acf;
+use app_steamcmd::steam_depot::manifest::manifest;
+use app_steamcmd::steam_depot::manifest::parse_acf;
 const RECEIPT: &str = ".langame-steam-cache-seed.json";
 const ACQUISITION: &str = ".langame-program-acquisition.json";
 const MAX_MANIFEST: usize = 128 * 1024 * 1024;

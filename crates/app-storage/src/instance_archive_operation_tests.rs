@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 
 pub(super) async fn with_program() -> (Fixture, PathBuf) {

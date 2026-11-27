@@ -57,6 +57,16 @@ class PublicationScopeTests(unittest.TestCase):
         self.assertFalse(scope.publication_full(paths))
         self.assertTrue(scope.publication_full([*paths, "scripts/source_literal_scan.py"]))
 
+    def test_every_browser_test_belongs_to_quick_baseline_or_a_feature_group(self):
+        quick = set(scope.QUICK_BROWSER_FILES)
+        prefixes = tuple(prefix for group_prefixes in scope.BROWSER_GROUPS.values() for prefix in group_prefixes)
+        uncovered = [
+            path
+            for path in scope.browser_repository_files()
+            if path not in quick and not Path(path).name.startswith(prefixes)
+        ]
+        self.assertEqual(uncovered, [], f"Uncovered browser tests: {uncovered}")
+
 
 class RustScopeTests(unittest.TestCase):
     def test_desktop_changes_run_its_complete_tests_without_unrelated_dependency_suites(self):

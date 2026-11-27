@@ -303,7 +303,7 @@ export const ZH_CN_UI_MESSAGES: MessageCatalog = {
   "common.windows": "Windows",
   "errors.instanceAlreadyRunning": "服务器 {instance} 已在运行，或仍有活动运行记录。请刷新状态后重试。",
   "errors.assistantRequestInterpretationFailed": "暂时没能理解这条请求，请重试。尚未执行任何操作。",
-  "errors.assistantBackendOutOfDate": "界面与后台程序版本不一致。请正常退出 LanGame，再通过启动入口重新打开。当前请求尚未执行。",
+  "errors.assistantBackendOutOfDate": "请从系统托盘完全退出并重新打开 LanGame Server Manager，以加载最新后台服务。",
   "errors.systemTelemetryBackendOutOfDate": "后台版本未更新，请完整退出并重新启动应用。",
   "errors.instanceNotRunning": "服务器 {instance} 未在运行。请刷新状态后重试。",
   "errors.moduleInUse": "无法卸载 {module}，以下服务器仍在运行：{instances}。请先停止这些服务器。",

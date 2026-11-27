@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 
 fn disk(index: u32, model: &str) -> DiskRecord {

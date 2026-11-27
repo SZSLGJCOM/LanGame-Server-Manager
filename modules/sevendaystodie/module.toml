@@ -41,6 +41,11 @@ port = 8080
 name = "telnet"
 protocol = "tcp"
 port = 8081
+
+[[runtime.port_groups]]
+id = "game_transport"
+members = ["game_udp", "game_tcp"]
+
 [runtime.player_query]
 protocol = "none"
 

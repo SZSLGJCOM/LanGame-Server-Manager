@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 
 #[path = "ark_tools_startup_tests.rs"]

@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::{AcceptanceResult, MOD_IDS};
 use serde_json::{Value, json};
 use std::collections::BTreeSet;

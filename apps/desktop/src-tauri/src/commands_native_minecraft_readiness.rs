@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 //! Existing Minecraft instances may deliberately disable GameSpy Query. Their
 //! game port still exposes Minecraft's read-only status handshake when enabled.
 use app_platform_win::ProcessNetworkEndpoint;

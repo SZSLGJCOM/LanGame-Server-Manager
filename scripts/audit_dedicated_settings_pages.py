@@ -88,14 +88,6 @@ def registered_module_ids() -> set[str]:
     return set(value)
 
 
-def legacy_settings_shells() -> list[Path]:
-    legacy = [path for path in SETTINGS_DIR.glob("*SettingsModal.tsx")]
-    router = SETTINGS_DIR / "SettingsModalRouter.tsx"
-    if router.exists():
-        legacy.append(router)
-    return sorted(set(legacy))
-
-
 def player_management_status(module_toml: dict) -> str:
     section = module_toml.get("player_management", {})
     if not isinstance(section, dict):
@@ -132,7 +124,6 @@ def collect_statuses(registered_ids: set[str] | None = None) -> list[ModuleSetti
 def print_markdown(statuses: list[ModuleSettingsPageStatus], unexpected_registrations: set[str]) -> None:
     missing_workspace = [status for status in statuses if status.route_kind != "configuration_workspace"]
     missing_definition = [status for status in statuses if not status.definition_file]
-    legacy_shells = legacy_settings_shells()
 
     print("# Dedicated Configuration Workspace Audit")
     print()
@@ -141,7 +132,6 @@ def print_markdown(statuses: list[ModuleSettingsPageStatus], unexpected_registra
     print(f"- missing Configuration registrations: {len(missing_workspace)}")
     print(f"- unexpected Configuration registrations: {len(unexpected_registrations)}")
     print(f"- missing per-game definition files: {len(missing_definition)}")
-    print(f"- legacy settings shells: {len(legacy_shells)}")
     print()
     print("| module | route | definition | fields | templates | player management |")
     print("| --- | --- | --- | ---: | ---: | --- |")
@@ -165,7 +155,7 @@ def main() -> int:
     parser.add_argument(
         "--strict",
         action="store_true",
-        help="Fail if a module lacks Configuration registration/definition or a legacy settings shell remains.",
+        help="Fail if a module lacks Configuration registration or its definition file.",
     )
     args = parser.parse_args()
 
@@ -182,7 +172,6 @@ def main() -> int:
             if status.route_kind != "configuration_workspace" or not status.definition_file
         ]
         failures.extend(sorted(unexpected_registrations))
-        failures.extend(path.name for path in legacy_settings_shells())
         if failures:
             print()
             print("strict dedicated settings page audit failed:")

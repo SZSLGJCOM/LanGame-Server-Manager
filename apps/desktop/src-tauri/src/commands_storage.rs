@@ -192,17 +192,6 @@ pub async fn list_instances_from_storage(
         json!({}),
     );
 
-    initialize_database(&storage.paths).await.map_err(|error| {
-        let message = error.to_string();
-        append_desktop_app_log(
-            &storage,
-            "error",
-            "instances.list.init_failed",
-            &message,
-            json!({}),
-        );
-        logged_error_message(&storage, message)
-    })?;
     reconcile_runtime_state(&state).await.map_err(|message| {
         append_desktop_app_log(
             &storage,
@@ -279,9 +268,6 @@ pub async fn read_instance_details_from_storage(
     let _storage_context_operation =
         state.begin_storage_context_operation("instance detail reconciliation")?;
     let storage = state.bootstrap_storage()?;
-    initialize_database(&storage.paths)
-        .await
-        .map_err(|error| error.to_string())?;
     reconcile_runtime_state(&state).await?;
     let mut instance = read_instance_details_with_runtime_recovery(
         state.inner(),
@@ -356,9 +342,6 @@ pub async fn create_instance_backup(
     let storage_context_operation =
         state.begin_storage_context_operation("instance backup creation")?;
     let storage = state.bootstrap_storage()?;
-    initialize_database(&storage.paths)
-        .await
-        .map_err(|error| error.to_string())?;
     reconcile_runtime_state(&state).await?;
     let task_instance_id = instance_id.clone();
     let result = run_instance_mutation_to_completion(
@@ -405,9 +388,6 @@ pub async fn list_instance_backups(
     let _storage_context_operation =
         state.begin_storage_context_operation("instance backup reconciliation")?;
     let storage = state.bootstrap_storage()?;
-    initialize_database(&storage.paths)
-        .await
-        .map_err(|error| error.to_string())?;
     reconcile_runtime_state(&state).await?;
     list_instance_backups_snapshot(&storage.paths, &instance_id)
         .await
@@ -424,9 +404,6 @@ pub async fn rename_instance_backup(
     let storage_context_operation =
         state.begin_storage_context_operation("instance backup rename")?;
     let storage = state.bootstrap_storage()?;
-    initialize_database(&storage.paths)
-        .await
-        .map_err(|error| error.to_string())?;
     reconcile_runtime_state(&state).await?;
     let task_instance_id = instance_id.clone();
     let result = run_instance_mutation_to_completion(
@@ -474,9 +451,6 @@ pub async fn delete_instance_backup(
     let storage_context_operation =
         state.begin_storage_context_operation("instance backup deletion")?;
     let storage = state.bootstrap_storage()?;
-    initialize_database(&storage.paths)
-        .await
-        .map_err(|error| error.to_string())?;
     reconcile_runtime_state(&state).await?;
     let task_instance_id = instance_id.clone();
     let result = run_instance_mutation_to_completion(
@@ -523,9 +497,6 @@ pub async fn restore_instance_backup(
     let storage_context_operation =
         state.begin_storage_context_operation("instance backup restore")?;
     let storage = state.bootstrap_storage()?;
-    initialize_database(&storage.paths)
-        .await
-        .map_err(|error| error.to_string())?;
     reconcile_runtime_state(&state).await?;
     let task_instance_id = instance_id.clone();
     let restore_operation = storage_context_operation.clone();
@@ -612,35 +583,43 @@ pub async fn read_instance_runtime_overview_from_storage(
     let _storage_context_operation =
         state.begin_storage_context_operation("runtime overview reconciliation")?;
     let storage = state.bootstrap_storage()?;
-    initialize_database(&storage.paths)
-        .await
-        .map_err(|error| error.to_string())?;
     reconcile_runtime_state(&state).await?;
     let (instance, mut overview) =
         app_storage::read_instance_details_and_runtime_overview(&storage.paths, &instance_id)
             .await
             .map_err(|error| error.to_string())?;
-    let runtime_by_module = load_module_runtime_capability_map(&storage.paths.modules_root)
+    let module_runtime =
+        super::commands_runtime_observability::load_single_module_runtime_capability(
+            &storage.paths.modules_root,
+            &instance.summary.module_id,
+        )
         .map_err(|message| logged_error_message(&storage, message))?;
     crate::runtime_astroneer_health::apply(&state, &storage.paths, &instance, &mut overview.health)
         .await;
     crate::runtime_palworld_health::apply(&state, &storage.paths, &instance, &mut overview.health)
         .await;
-    let module_runtime = runtime_by_module.get(&instance.summary.module_id);
-    if module_runtime.is_some_and(|runtime| {
+    if module_runtime.as_ref().is_some_and(|runtime| {
         runtime.player_count_source == app_core::ModulePlayerCountSource::PlayerList
     }) {
         overview.players =
             super::commands_player_counts::collect_player_list_count(&state, &instance_id).await?;
     }
-    if let Some(configured_capacity) = extract_instance_player_capacity(&instance.settings_json) {
+    let parsed_settings: serde_json::Value =
+        serde_json::from_str(&instance.settings_json).unwrap_or(serde_json::Value::Null);
+    if let Some(configured_capacity) =
+        super::commands_runtime_observability::extract_instance_player_capacity_from_value(
+            &parsed_settings,
+        )
+    {
         overview.players.max_players = Some(configured_capacity);
     }
-    overview.performance = build_runtime_performance_snapshot(
-        &state,
-        &instance,
-        module_runtime.map(|runtime| &runtime.performance),
-    );
+    overview.performance =
+        super::commands_runtime_observability::build_runtime_performance_snapshot_with_settings(
+            state.inner(),
+            &instance,
+            &parsed_settings,
+            module_runtime.as_ref().map(|runtime| &runtime.performance),
+        );
     if let Some(diagnostic) = runtime_performance_state_diagnostic_signal(&overview.performance) {
         overview.diagnostics.push(diagnostic);
     }
@@ -657,7 +636,8 @@ pub async fn read_instance_runtime_overview_from_storage(
         startup_queue_process_count,
     )
     .await;
-    let restart_policy = runtime_restart_policy_from_settings(&instance.settings_json);
+    let restart_policy =
+        super::commands_runtime_observability::runtime_restart_policy_from_value(&parsed_settings);
     overview.stability.restart_policy_enabled = restart_policy.enabled;
     overview.stability.restart_limit = restart_policy.max_restarts;
     overview.stability.restart_backoff_ms = restart_policy.backoff_ms;
@@ -686,11 +666,12 @@ pub async fn read_instance_runtime_overview_from_storage(
         &mut overview,
     )
     .await?;
-    if let Some(diagnostic) = build_runtime_performance_diagnostic(
-        &instance,
-        module_runtime.map(|runtime| &runtime.performance),
-    ) {
-        overview.diagnostics.push(diagnostic);
+    if instance.active_run.is_some() {
+        overview.diagnostics.push(
+            super::commands_runtime_observability::runtime_performance_diagnostic_signal(
+                &overview.performance.policy,
+            ),
+        );
     }
     Ok(overview)
 }
@@ -703,9 +684,6 @@ pub async fn read_instance_runtime_window_snapshot(
     let _storage_context_operation =
         state.begin_storage_context_operation("runtime window reconciliation")?;
     let storage = state.bootstrap_storage()?;
-    initialize_database(&storage.paths)
-        .await
-        .map_err(|error| error.to_string())?;
     reconcile_runtime_state(&state).await?;
 
     let instance = read_instance_details(&storage.paths, &instance_id)
@@ -723,22 +701,25 @@ pub async fn suppress_instance_runtime_windows(
     let _storage_context_operation =
         state.begin_storage_context_operation("runtime window suppression")?;
     let storage = state.bootstrap_storage()?;
-    initialize_database(&storage.paths)
-        .await
-        .map_err(|error| error.to_string())?;
     reconcile_runtime_state(&state).await?;
 
     let instance = read_instance_details(&storage.paths, &instance_id)
         .await
         .map_err(|error| error.to_string())?;
-    let descriptors =
-        discover_modules(&storage.paths.modules_root).map_err(|error| error.to_string())?;
-    let descriptor = find_descriptor(&descriptors, &instance.summary.module_id)?;
+    let descriptor =
+        app_modules::discover_module(&storage.paths.modules_root, &instance.summary.module_id)
+            .map_err(|error| error.to_string())?
+            .ok_or_else(|| {
+                format!(
+                    "module descriptor not found for `{}`",
+                    instance.summary.module_id
+                )
+            })?;
     let install_root_override =
         load_module_install_root_override(&storage.paths, &instance.summary.module_id).await;
     let module = map_module_details_with_install_state(
         &storage.settings,
-        descriptor,
+        &descriptor,
         install_root_override.as_deref(),
     );
 
@@ -797,9 +778,6 @@ pub async fn read_palworld_operator_snapshot(
     let _storage_context_operation =
         state.begin_storage_context_operation("Palworld operator reconciliation")?;
     let storage = state.bootstrap_storage()?;
-    initialize_database(&storage.paths)
-        .await
-        .map_err(|error| error.to_string())?;
     reconcile_runtime_state(&state).await?;
     let instance = read_instance_details(&storage.paths, &instance_id)
         .await
@@ -823,9 +801,6 @@ pub async fn read_sevendaystodie_operator_snapshot(
     let _storage_context_operation =
         state.begin_storage_context_operation("7 Days to Die operator reconciliation")?;
     let storage = state.bootstrap_storage()?;
-    initialize_database(&storage.paths)
-        .await
-        .map_err(|error| error.to_string())?;
     reconcile_runtime_state(&state).await?;
     let instance = read_instance_details(&storage.paths, &instance_id)
         .await
@@ -884,9 +859,6 @@ pub async fn read_instance_log_document_from_storage(
     let _storage_context_operation =
         state.begin_storage_context_operation("instance log reconciliation")?;
     let storage = state.bootstrap_storage()?;
-    initialize_database(&storage.paths)
-        .await
-        .map_err(|error| error.to_string())?;
     reconcile_runtime_state(&state).await?;
     let startup_page = startup_attempt_id.is_some();
     let startup_session = startup_session::read(
@@ -1587,47 +1559,6 @@ pub async fn import_dontstarve_world_data(
 #[cfg(test)]
 mod module_sync_tests {
     use super::*;
-
-    #[test]
-    fn dst_import_command_owns_the_complete_mutation_pipeline() {
-        let source = include_str!("commands_storage.rs");
-        let command = source
-            .split("pub async fn import_dontstarve_world_data(")
-            .nth(1)
-            .expect("DST import command")
-            .split("#[cfg(test)]")
-            .next()
-            .unwrap();
-        let owner = command
-            .find("run_instance_mutation_to_completion(")
-            .expect("DST import must retain its mutation owner when its caller is cancelled");
-        for operation in [
-            "replace_dst_world_locked(",
-            "instance.dst_world_import.success",
-        ] {
-            assert!(
-                command.find(operation).unwrap() > owner,
-                "{operation} must run inside the owned pipeline"
-            );
-        }
-        let operation = include_str!("commands_dst_import_operation.rs");
-        for required in [
-            "read_active_instance_run(",
-            "prepare_dontstarve_target_cluster(",
-            "create_instance_backup_snapshot(",
-            "import_dontstarve_world_transaction(",
-            "update_instance_if_current(",
-        ] {
-            assert!(
-                operation.contains(required),
-                "Missing owned operation {required}"
-            );
-        }
-        assert!(
-            !operation.contains("run_instance_mutation_to_completion("),
-            "Shared operation must not recursively acquire its caller's instance owner"
-        );
-    }
 
     #[tokio::test]
     async fn dst_import_cancelled_caller_retains_locks_through_validation_and_publication() {

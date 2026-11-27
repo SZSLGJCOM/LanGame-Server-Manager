@@ -366,7 +366,7 @@ class RuntimeReliabilityRunnerTests(unittest.TestCase):
             self.assertFalse(output.exists())
 
     def test_managed_node_profile_matches_the_stage_browser_requirement(self):
-        wrapper = Path("wrapper directory") / "run-guarded-node-command.cjs"
+        wrapper = Path("wrapper directory") / "node-launcher.cjs"
         browser_stage = stages()[-1]
         contract_stage = Stage("contracts", ("--test", "tests/fixture.test.cjs"), ROOT, (), "node")
         for stage, profile in ((browser_stage, "e2e"), (contract_stage, "contracts")):
@@ -566,20 +566,20 @@ class RuntimeReliabilityShardingTests(unittest.TestCase):
             batches = reliability.desktop_batches(("--bin", "langame-desktop"), names, managed=True)
             actual = []
             for command in batches:
-                # Match Start-CodexCargoDirectChild's payload fields, including
-                # wrapper-added Cargo paths and resource metadata.
+                # Match external Cargo launcher payload fields, including
+                # launcher-added Cargo paths and resource metadata.
                 path = "D:/managed/" + "directory/" * 60
                 payload = {"executable": path + "cargo.exe",
                            "arguments": [*command, "--manifest-path", path + "Cargo.toml", "--target-dir", path + "target"],
                            "workingDirectory": path, "memoryLimitBytes": 17179869184,
                            "hostReserveBytes": 4294967296, "maximumActiveProcesses": 128, "timeoutSeconds": 0,
                            "ownerProcessId": 12345, "ownerStartTimeUtcTicks": 639011234567890000,
-                           "jobName": "Local\\CodexCargoFixture"}
+                           "jobName": "Local\\CargoJobFixture"}
                 for escaped in (False, True):
                     encoded = base64.b64encode(json.dumps(payload, ensure_ascii=escaped).encode("utf-8")).decode("ascii")
                     guard = ["C:/Windows/System32/WindowsPowerShell/v1.0/powershell.exe", "-NoLogo", "-NoProfile",
                              "-NonInteractive", "-ExecutionPolicy", "Bypass", "-File",
-                             path + "invoke-cargo-resource-guard.ps1", "-CommandPayload", encoded]
+                             path + "cargo-launcher.ps1", "-CommandPayload", encoded]
                     self.assertLess(len(subprocess.list2cmdline(guard).encode("utf-16-le")) // 2, 32767)
                 actual.extend(command[command.index("--format=pretty") + 1:])
             self.assertEqual(actual, names)

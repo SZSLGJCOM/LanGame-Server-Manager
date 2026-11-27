@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 //! Opt-in native acceptance evidence; no production protocol or timer mutation.
 use super::*;
 use sha2::{Digest, Sha256};

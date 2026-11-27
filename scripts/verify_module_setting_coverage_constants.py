@@ -2,47 +2,6 @@ from __future__ import annotations
 
 import re
 
-NEW_MODULE_IDS = {
-    "astroneer",
-    "barotrauma",
-    "humanitz",
-    "nightingale",
-    "returntomoria",
-    "rimworld",
-    "romestead",
-    "runescapedragonwilds",
-    "scum",
-    "sonsoftheforest",
-    "soulmask",
-    "squad",
-    "theforest",
-    "windrose",
-}
-
-STRICT_MODULE_IDS = NEW_MODULE_IDS | {
-    "abioticfactor",
-    "arksurvivalascended",
-    "arksurvivalevolved",
-    "unturned",
-    "conanexiles",
-    "corekeeper",
-    "dontstarve",
-    "enshrouded",
-    "humanitz",
-    "minecraft",
-    "necesse",
-    "projectzomboid",
-    "palworld",
-    "rust",
-    "satisfactory",
-    "sevendaystodie",
-    "terraria",
-    "valheim",
-    "vrising",
-}
-
-SCHEMA_COVERAGE_MODULE_IDS = STRICT_MODULE_IDS
-
 TARGET_MODULE_IDS = {
     "abioticfactor",
     "arksurvivalascended",
@@ -77,6 +36,10 @@ TARGET_MODULE_IDS = {
     "vrising",
     "windrose",
 }
+
+NEW_MODULE_IDS = TARGET_MODULE_IDS
+STRICT_MODULE_IDS = TARGET_MODULE_IDS
+SCHEMA_COVERAGE_MODULE_IDS = TARGET_MODULE_IDS
 
 SETTING_TOKEN_RE = re.compile(
     r"(?:^|[\s\"'=])(?:(?:json|xml)\.)?settings\.([A-Za-z0-9_]+)(?:$|[\s\"'])"

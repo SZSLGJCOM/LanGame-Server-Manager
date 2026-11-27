@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 // Included by program_detach.rs to exercise durable publication boundaries.
 use super::*;
 use crate::program_runtime::prepare_shared_program_reference;

@@ -6,8 +6,8 @@ declare module "*LibraryView?module-retry" {
   export const LibraryView: typeof import("./views/LibraryView").LibraryView;
 }
 
-declare module "*ServerWorkspaceView?module-retry" {
-  export const ServerWorkspaceView: typeof import("./views/ServerWorkspaceView").ServerWorkspaceView;
+declare module "*ServersView?module-retry" {
+  export const ServersView: typeof import("./views/ServersView").ServersView;
 }
 
 declare module "*SystemView?module-retry" {

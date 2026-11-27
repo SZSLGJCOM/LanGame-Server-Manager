@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use std::ffi::c_void;
 use std::sync::atomic::{AtomicBool, Ordering};
 

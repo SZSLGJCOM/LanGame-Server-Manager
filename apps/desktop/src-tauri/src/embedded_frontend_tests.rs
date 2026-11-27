@@ -1,4 +1,5 @@
-#![cfg(all(test, feature = "custom-protocol"))]
+#![cfg(test)]
+#![cfg(feature = "custom-protocol")]
 
 use std::collections::{BTreeSet, HashMap};
 use std::path::{Path, PathBuf};

@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 use crate::state::AutostartQueue;
 use app_storage::StoragePaths;

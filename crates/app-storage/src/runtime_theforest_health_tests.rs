@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 
 const READY: &str = "[LanGame native control] world_ready=True";

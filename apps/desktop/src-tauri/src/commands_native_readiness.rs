@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use std::collections::HashMap;
 use std::path::{Component, Path, PathBuf};
 use std::time::{Duration, Instant};

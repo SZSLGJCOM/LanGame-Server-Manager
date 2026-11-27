@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 
 /// A deadline stops further steps, but cannot undo a submitted blocking write.

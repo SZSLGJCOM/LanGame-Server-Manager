@@ -20,7 +20,7 @@ cargo test --locked -p app-steamcmd export_portable_runtime_sandbox_bundle -- --
 & ./scripts/verify_windows_runtime_sandbox.ps1 -ManifestPath (Join-Path $env:LGSM_RUNTIME_SANDBOX_EXPORT_DIR 'manifest.json') -WorkRoot $runtimeWork -PortableExportDirectory $env:LANGAME_PORTABLE_SANDBOX_EXPORT
 ```
 
-受管工作站将 `runtimeWork` 设为符合本机资源策略的独立验收工作目录，并使用规定的 Cargo 包装器执行上述 Rust 命令。运行器使用独立 GUID 目录，不覆盖已有证据；`-PrepareOnly` 可仅准备输入，再用 `-PreparedRoot <准备目录>` 启动。沙盒仅映射只读输入和本次可写报告目录，并关闭剪贴板、音视频与打印机重定向。默认在来宾内下载官方包；宿主不执行安装包。报告写完后来宾自动关机；宿主超时不会强杀仍可能持有安装事务的来宾。
+测试环境将 `runtimeWork` 设为仓库外的独立验收工作目录，并按需通过外部 Cargo 启动器执行上述 Rust 命令。运行器使用独立 GUID 目录，不覆盖已有证据；`-PrepareOnly` 可仅准备输入，再用 `-PreparedRoot <准备目录>` 启动。沙盒仅映射只读输入和本次可写报告目录，并关闭剪贴板、音视频与打印机重定向。默认在来宾内下载官方包；宿主不执行安装包。报告写完后来宾自动关机；宿主超时不会强杀仍可能持有安装事务的来宾。
 
 `-PortableOnly` 在另一个新沙盒中仅安装 VC++ x64 引导环境，再执行 portable worker。可用 `-BootstrapPackagePath` 显式提供已有的微软官方引导包，输入仍绑定摘要并在来宾验签；报告区分缓存引导与首次下载，缓存引导不能证明当前官方包下载流程成功。
 
@@ -43,7 +43,7 @@ Portable worker 直接调用生产 `prepare_portable_runtime`：Minecraft Java 2
 
 ## English
 
-Real installation acceptance requires a working Windows Sandbox. Normal unit tests do not download or install system runtimes. The ignored export tests only export production scripts and the current test binary on the host; the runner installs packages exclusively inside its separate guest. Managed workstations must set `runtimeWork` to a separate acceptance directory permitted by their resource policy and use their prescribed Cargo wrapper.
+Real installation acceptance requires a working Windows Sandbox. Normal unit tests do not download or install system runtimes. The ignored export tests only export production scripts and the current test binary on the host; the runner installs packages exclusively inside its separate guest. Set `runtimeWork` to a separate external acceptance directory and use an optional Cargo launcher if required by your build environment.
 
 Instance startup and the acceptance worker share the native Microsoft downloader. Normal dual-stack requests record official HTTPS redirect targets for the current operation. A transport or handshake failure may retry that dynamic target once over IPv4 within the same owner budget, preserving TLS, digest and Microsoft signature verification. Untrusted redirects, HTTP authentication or rate limits, server deferrals, content validation, disk errors and cancellation do not trigger this recovery. Windows PowerShell explicitly imports its Security module from its own `$PSHOME`, avoiding an incompatible module inherited through PowerShell 7's module path.
 

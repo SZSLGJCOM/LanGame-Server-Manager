@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 use crate::commands::commands_mod_staging::{
     ManualModImportPresentation, archive_formats::tests::archive_fixture_bytes,

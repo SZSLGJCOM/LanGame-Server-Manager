@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 use crate::instance_archive::external::{ExternalFile, ExternalProgramPlan};
 

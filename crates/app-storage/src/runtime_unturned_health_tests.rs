@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 
 const STEAM_READY: &str = "Steam servers ready!";

@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 
 const APP: u32 = 1_623_730;

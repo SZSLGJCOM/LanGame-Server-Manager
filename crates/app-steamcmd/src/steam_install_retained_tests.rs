@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 
 #[path = "steam_install_payload_callback_tests.rs"]

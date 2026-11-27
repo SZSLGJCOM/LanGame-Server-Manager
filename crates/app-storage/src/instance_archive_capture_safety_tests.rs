@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 use crate::instance_archive::test_gate::{self, Point};
 use crate::test_file_snapshot::tree_snapshot;

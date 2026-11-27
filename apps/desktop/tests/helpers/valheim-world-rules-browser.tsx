@@ -64,7 +64,7 @@ function Workspace() {
   flush = () => coordinator.flush(instance.summary.id);
   return <ConfigurationWorkspace details={details} moduleDetails={moduleDetails} moduleDetailsError={null}
     onRetryModuleDetails={() => { throw new Error("Unexpected descriptor retry"); }} bindAddressCandidates={[]}
-    runtime={null} launchPlan={null} launchPlanError={null} onSave={async (input, options) => {
+    launchPlanError={null} onSave={async (input, options) => {
       if (input.id !== instance.summary.id || !sameSettings(options?.expectedSettingsJson, saved)) {
         throw new Error("Unexpected configuration save baseline");
       }

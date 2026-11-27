@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 use std::io::Write;
 const HOST_READY: &str = "R5LogCoopProxy: [000566] ...opProxyServer::SetIsReadyForHostOwnerConnect Host server is ready for owner to connect. Semaphore null";

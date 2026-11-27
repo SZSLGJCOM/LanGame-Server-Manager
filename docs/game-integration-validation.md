@@ -29,7 +29,7 @@ Use the strongest available evidence, in this order:
 3. A reproducible probe of a lawfully acquired dedicated-server package or running server.
 4. Maintained community material only as a lead or corroboration; it cannot be the sole basis for a support claim when first-party evidence is available.
 
-Each source entry in `config-sources.toml` records a stable source ID, kind, authority, URL or portable path, and a concise description of what it proves. Record the relevant build or release context and verification date in the ledger or acceptance fixture. Do not use a workstation path as evidence; describe the package-relative artifact or reproducible acquisition command instead.
+Each source entry in `config-sources.toml` records a stable source ID, kind, authority, URL or portable path, and a concise description of what it proves. Record the relevant build or release context and verification date in the ledger or acceptance fixture. Do not use a machine-specific path as evidence; describe the package-relative artifact or reproducible acquisition command instead.
 
 Use only the evidence statuses accepted by the repository verifier:
 
@@ -119,7 +119,7 @@ Before submitting module or backend behavior changes, run the shared complete ga
 python -B scripts/verify_project.py --tier full --output 'C:\Verification\LanGame-module-candidate'
 ~~~
 
-See [Development](development.md#change-and-verification) for focused components and managed-workstation wrappers. `npm --prefix apps/desktop run verify` covers quick frontend checks and current publication boundaries; `verify:release` adds browser tests and publication history. Neither npm entry includes Rust or native desktop acceptance. A real dedicated-server smoke run is required when the claim depends on installation, process, network, save, update, or administration behavior that deterministic fixtures cannot prove. Publish only the sanitized result and evidence classification; never publish the server package, credentials, private logs, or player data.
+See [Development](development.md#change-and-verification) for focused components and optional command-launcher flags. `npm --prefix apps/desktop run verify` covers quick frontend checks and current publication boundaries; `verify:release` adds browser tests and publication history. Neither npm entry includes Rust or native desktop acceptance. A real dedicated-server smoke run is required when the claim depends on installation, process, network, save, update, or administration behavior that deterministic fixtures cannot prove. Publish only the sanitized result and evidence classification; never publish the server package, credentials, private logs, or player data.
 
 ### Review checklist
 
@@ -148,7 +148,7 @@ See [Development](development.md#change-and-verification) for focused components
 4. **由证据支持的设置：**每个 Schema 字段都映射到已验证的原生键、启动参数、生成文件或派生值。主动不建模的原生能力必须记录原因。
 5. **有边界的生命周期：**明确进程所有权、就绪条件、超时、取消、失败报告和清理方式；重试与轮询必须有上限。
 6. **能力分别取证：**查询、加入、玩家、管理员、模组和创意工坊操作应分别启用，且必须先验证服务器侧可调用行为。
-7. **可公开的证据：**夹具和记录应确定、已脱敏，不含凭据、玩家数据、私有地址、本机绝对路径、私有日志或未经许可的媒体。
+7. **可公开的证据：**测试样本和记录应确定、已脱敏，不含凭据、玩家数据、私有地址、本机绝对路径、私有日志或未经许可的媒体。
 
 ### 证据优先级
 
@@ -159,7 +159,7 @@ See [Development](development.md#change-and-verification) for focused components
 3. 对合法获取的专用服务器程序包或运行中服务器执行的可复现探测。
 4. 维护良好的社区资料仅可作为线索或旁证；存在第一方证据时，不得将其作为支持结论的唯一依据。
 
-`config-sources.toml` 中的每个来源条目应记录稳定的来源 ID、类型、权威主体、URL 或可移植路径，以及该来源能够证明的事实。相关构建或发布上下文与验证日期应写入来源台账或验收夹具。不得使用工作站路径作为证据；应改为程序包内相对路径或可复现的获取命令。
+`config-sources.toml` 中的每个来源条目应记录稳定的来源 ID、类型、权威主体、URL 或可移植路径，以及该来源能够证明的事实。相关构建或发布上下文与验证日期应写入来源台账或验收样本。不得使用本机路径作为证据；应改为程序包内相对路径或可复现的获取命令。
 
 证据状态只能使用仓库校验器接受的值：
 
@@ -189,7 +189,7 @@ See [Development](development.md#change-and-verification) for focused components
 1. **确认程序包边界。**验证官方服务器程序包、Windows 可执行文件、体系结构、前置条件、安装与更新命令及许可证限制。
 2. **建立运行模型。**定义路径、端口角色、进程参数、环境、就绪条件、停止行为、备份根目录和资源所有权。
 3. **建立配置模型。**根据权威证据列举原生设置，将受支持项映射到 Schema 与模板；无法确认的内容应记录为排除项，不得猜测。
-4. **创建验收夹具。**使用安全的相对路径和非敏感值，断言设置生成的准确原生文件与启动参数。
+4. **创建验收样本。**使用安全的相对路径和非敏感值，断言设置生成的准确原生文件与启动参数。
 5. **分别增加可选能力。**查询、加入、玩家操作、模组和创意工坊支持分别需要协议与生命周期证据。
 6. **生成记录。**根据已评审源文件重新生成来源和验收文档。
 7. **验证并评审。**执行确定性检查，检查完整差异，并记录已脱敏的测试环境和真实服务器烟测结果。
@@ -218,17 +218,17 @@ python -B scripts/verify_game_config_provenance.py --write
 python -B scripts/verify_game_config_acceptance.py --require-all --write
 ~~~
 
-以下维护脚本分别负责特定模块源文件和夹具：
+以下维护脚本分别负责特定模块源文件和验收样本：
 
 | 脚本 | 输入与生成文件 |
 | --- | --- |
 | [`apply_barotrauma_native_settings.py`](../scripts/apply_barotrauma_native_settings.py) | 固定版本的 Barotrauma 参考 XML → Schema 字段、来源映射及原生 XML 模板 |
-| [`generate_ark_acceptance_fixtures.py`](../scripts/generate_ark_acceptance_fixtures.py) | ARK 对照表、模块 Schema 与来源台账 → ASE、ASA 配置及启动夹具 |
-| [`generate_native_inventory_acceptance_fixtures.py`](../scripts/generate_native_inventory_acceptance_fixtures.py) | 模块规格与来源台账 → Core Keeper、Enshrouded、Minecraft、Necesse、Project Zomboid、Sons of the Forest、V Rising 夹具 |
-| [`generate_native_output_acceptance_fixtures.py`](../scripts/generate_native_output_acceptance_fixtures.py) | 模块规格、Schema 与来源台账 → Barotrauma、Rust、7 Days to Die、Squad、Valheim 夹具 |
-| [`generate_scum_acceptance_fixture.py`](../scripts/generate_scum_acceptance_fixture.py) | SCUM 来源台账与夹具定义 → 配置、启动及生命周期夹具；`--check` 比较现有文件 |
+| [`generate_ark_acceptance_fixtures.py`](../scripts/generate_ark_acceptance_fixtures.py) | ARK 对照表、模块 Schema 与来源台账 → ASE、ASA 配置及启动验收样本 |
+| [`generate_native_inventory_acceptance_fixtures.py`](../scripts/generate_native_inventory_acceptance_fixtures.py) | 模块规格与来源台账 → Core Keeper、Enshrouded、Minecraft、Necesse、Project Zomboid、Sons of the Forest、V Rising 验收样本 |
+| [`generate_native_output_acceptance_fixtures.py`](../scripts/generate_native_output_acceptance_fixtures.py) | 模块规格、Schema 与来源台账 → Barotrauma、Rust、7 Days to Die、Squad、Valheim 验收样本 |
+| [`generate_scum_acceptance_fixture.py`](../scripts/generate_scum_acceptance_fixture.py) | SCUM 来源台账与样本定义 → 配置、启动及生命周期验收样本；`--check` 比较现有文件 |
 
-仅在对应输入变化时运行相关脚本。脚本会覆盖其负责的源文件或夹具；重新生成记录前，
+仅在对应输入变化时运行相关脚本。脚本会覆盖其负责的源文件或验收样本；重新生成记录前，
 应审查完整差异、保留无关断言，并验证受影响的原生行为。
 
 随后在仓库根目录执行确定性门禁：
@@ -248,14 +248,14 @@ npm --prefix apps/desktop run verify:configuration-regressions
 python -B scripts/verify_project.py --tier full --output 'C:\Verification\LanGame-module-candidate'
 ~~~
 
-相关组件的单独验证与托管工作站封装见[开发指南](development.md#改动与验证)。`npm --prefix apps/desktop run verify` 覆盖前端快速检查和当前公开边界；`verify:release` 再加入浏览器测试与完整公开历史。两个 npm 入口均不包含 Rust 或原生桌面验收。如果支持结论依赖安装、进程、网络、存档、更新或管理行为，且确定性夹具无法证明，则必须执行真实专用服务器烟测。公开内容仅限已脱敏结果和证据分类，不得公开服务器程序包、凭据、私有日志或玩家数据。
+相关组件的单独验证与可选构建启动器参数见[开发指南](development.md#改动与验证)。`npm --prefix apps/desktop run verify` 覆盖前端快速检查和当前公开边界；`verify:release` 再加入浏览器测试与完整公开历史。两个 npm 入口均不包含 Rust 或原生桌面验收。如果支持结论依赖安装、进程、网络、存档、更新或管理行为，且确定性测试样本无法证明，则必须执行真实专用服务器烟测。公开内容仅限已脱敏结果和证据分类，不得公开服务器程序包、凭据、私有日志或玩家数据。
 
 ### 评审清单
 
 - [ ] 模块对应可在 Windows 原生运行的专用服务器，并有合法获取路径。
 - [ ] 每项支持结论均引用正确权威级别和构建上下文的证据。
 - [ ] 每个 Schema 字段和排除项均记录在 `config-sources.toml` 中。
-- [ ] 夹具断言原生输出，且只使用可移植、已脱敏的数据。
+- [ ] 验收样本断言原生输出，且只使用可移植、已脱敏的数据。
 - [ ] 端口、路径、生命周期、取消、超时和备份归属均有明确定义。
 - [ ] 可选能力仅在独立证据完整后启用。
 - [ ] 生成文档来自源文件，且通过检查模式。

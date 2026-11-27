@@ -41,7 +41,7 @@ export const EN_US_SEVEN_DAYS_TO_DIE_MESSAGES: MessageCatalog = {
   "settings.7dtd.sections.threat": "Zombie Pressure",
   "settings.7dtd.sections.threatDescription": "Spawn budgets, movement presets, blood-moon cadence, and the performance ceiling behind them.",
   "settings.7dtd.sections.world": "World Rules",
-  "settings.7dtd.sections.worldDescription": "World identity, loot and death posture, day pacing, and the survival baseline for this host.",
+  "settings.7dtd.sections.worldDescription": "World identity, loot and death rules, day pacing, and the survival baseline for this host.",
   "settings.7dtd.validation.adminSlots": "Admin overflow slots cannot exceed the total player cap.",
   "settings.7dtd.validation.landClaimSize": "Use an odd land-claim size so the protected area stays centered on the claim block.",
   "settings.7dtd.validation.reservedSlots": "Reserved slots cannot exceed the total player cap.",

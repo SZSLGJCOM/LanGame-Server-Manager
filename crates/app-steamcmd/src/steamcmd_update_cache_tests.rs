@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 
 fn temporary_root() -> PathBuf {

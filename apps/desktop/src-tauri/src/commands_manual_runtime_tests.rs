@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 use crate::commands::commands_mod_staging::{
     stage_downloaded_workshop_items_into_manual_target, stage_manual_mod_sources,

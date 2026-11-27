@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 
 const BEFORE: &str = r#""AppState" { "appid" "42" "StateFlags" "4" "InstalledDepots" { "43" { "manifest" "12345678901234567890" } } "StagedDepots" { "44" { "manifest" "99" } } }"#;

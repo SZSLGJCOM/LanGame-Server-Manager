@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 //! Test-only bounded observation. Receipts retain counts and safe reason codes,
 //! never window titles, game output, launch arguments, or query response bodies.
 use super::{ExistingClient, InstanceDetails, InstanceRuntimeOverview, RuntimeWindowSnapshot};

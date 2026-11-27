@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::installed_app_state;
 
 fn app_state(fields: &str) -> String {

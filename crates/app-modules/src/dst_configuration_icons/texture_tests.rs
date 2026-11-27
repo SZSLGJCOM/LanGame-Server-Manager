@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 
 pub(in crate::dst_configuration_icons) fn texture_fixture(

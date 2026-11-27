@@ -34,7 +34,7 @@ use crate::settings_validation::{
 use crate::storage_db::{
     connect_pool, fetch_instance_record, load_instance_ports, load_instances,
     load_module_instance_records, resolve_installed_game_install_id_from_pool,
-    resolve_module_install_root_from_executor, resolve_module_install_root_from_pool,
+    resolve_module_install_root_from_executor,
 };
 use crate::templates::{
     NativeConfigurationSnapshots, PreparedWorkshopConfiguration,
@@ -319,7 +319,7 @@ async fn create_instance_in_pool(
             (Some(owner.id), root)
         } else {
             let id = resolve_installed_game_install_id_from_pool(pool, &input.module_id).await?;
-            let root = resolve_module_install_root_from_pool(pool, &input.module_id)
+            let root = resolve_module_install_root_from_executor(pool, &input.module_id)
                 .await?
                 .map(PathBuf::from)
                 .or_else(|| {

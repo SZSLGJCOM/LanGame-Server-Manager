@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 
 fn parse_manifest(text: &str) -> Result<u32, String> {

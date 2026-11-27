@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 use std::fs::{self, OpenOptions};
 use std::io::Write;

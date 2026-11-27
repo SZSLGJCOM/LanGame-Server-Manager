@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use std::collections::HashSet;
 use std::ffi::OsString;
 use std::fs;

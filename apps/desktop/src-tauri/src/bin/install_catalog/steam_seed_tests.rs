@@ -1,5 +1,7 @@
-use super::manifest_format::{fields, number};
+#![cfg(test)]
+
 use super::*;
+use app_steamcmd::steam_depot::manifest::{fields, number};
 
 // Independent synthetic protobuf bytes: file "x.bin"/"y.bin", contents "abc".
 // SHA1 is the standard abc vector; CRC values were produced by Python zlib.

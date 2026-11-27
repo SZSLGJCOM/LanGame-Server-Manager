@@ -1421,7 +1421,7 @@ export function ModWorkbench(props: ModWorkbenchProps) {
   function handleDisableEnabledRow(row: ModEnabledRow) {
     const id = formatEnabledRowDisplayId(row).trim();
     if (!id) {
-      setApplyMessage(t("servers.mods.applySummary.empty", undefined, "Select mods from the shelf first."));
+      setApplyMessage(t("servers.mods.applySummary.empty", undefined, "Select mods from the list first."));
       return;
     }
     if (isSteamWorkshopModule) {

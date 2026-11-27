@@ -346,8 +346,25 @@ fn collect_string_diagnostics(
         ));
     }
     if let Some(pattern) = schema.get("pattern").and_then(Value::as_str) {
-        match Regex::new(pattern) {
-            Ok(regex) if !regex.is_match(text) => diagnostics.push(diagnostic(
+        std::thread_local! {
+            static PATTERN_CACHE: std::cell::RefCell<std::collections::HashMap<String, Result<Regex, String>>> =
+                std::cell::RefCell::new(std::collections::HashMap::new());
+        }
+        let matched = PATTERN_CACHE.with(|cache| {
+            let mut cache = cache.borrow_mut();
+            if cache.len() >= 256 && !cache.contains_key(pattern) {
+                cache.clear();
+            }
+            let compiled = cache
+                .entry(pattern.to_owned())
+                .or_insert_with(|| Regex::new(pattern).map_err(|error| error.to_string()));
+            match compiled {
+                Ok(regex) => Ok(regex.is_match(text)),
+                Err(error) => Err(error.clone()),
+            }
+        });
+        match matched {
+            Ok(false) => diagnostics.push(diagnostic(
                 field_path,
                 "pattern",
                 &format!("must match schema pattern {pattern}"),
@@ -357,7 +374,7 @@ fn collect_string_diagnostics(
                 "schema_pattern",
                 &format!("schema pattern is invalid: {error}"),
             )),
-            _ => {}
+            Ok(true) => {}
         }
     }
     if schema.get("format").and_then(Value::as_str) == Some("date-or-local-datetime")

@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 use crate::templates::*;
 use serde_json::{Map, Value, json};

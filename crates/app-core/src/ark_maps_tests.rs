@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 use crate::{InstanceStatus, InstanceSummary};
 use serde_json::json;

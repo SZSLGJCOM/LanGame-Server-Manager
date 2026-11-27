@@ -21,7 +21,7 @@ export const EN_US_CORE_KEEPER_MESSAGES: MessageCatalog = {
   "corekeeper.settings.preview.networkTitle": "Join route and host files",
   "corekeeper.settings.preview.roomBody": "LanGame writes room identity into the native ServerConfig.json that Core Keeper reads before launch.",
   "corekeeper.settings.preview.roomTitle": "Identity materialization",
-  "corekeeper.settings.preview.worldBody": "World slot, seed, difficulty, and seasonal posture land in ServerConfig.json, while the live save stays under the managed worlds root.",
+  "corekeeper.settings.preview.worldBody": "World slot, seed, difficulty, and seasonal settings are written to ServerConfig.json, while the live save stays under the managed worlds root.",
   "corekeeper.settings.preview.worldTitle": "Managed world slot",
   "corekeeper.settings.season.anniversary": "Anniversary",
   "corekeeper.settings.season.automatic": "Automatic",
@@ -98,7 +98,7 @@ export const EN_US_CORE_KEEPER_MESSAGES: MessageCatalog = {
   "servers.corekeeper.pathsEyebrow": "Paths & backups",
   "servers.corekeeper.pathsTitle": "Managed folders and save safety",
   "servers.corekeeper.runtimeEyebrow": "Runtime",
-  "servers.corekeeper.runtimeTitle": "Runtime and launch posture",
+  "servers.corekeeper.runtimeTitle": "Runtime and launch settings",
   "servers.corekeeper.sectionJoin": "Join surface",
   "servers.corekeeper.sectionRoom": "Room",
   "servers.corekeeper.share.relay": "Steam relay Game ID",
@@ -162,7 +162,7 @@ export const EN_US_CORE_KEEPER_MESSAGES: MessageCatalog = {
   "corekeeper.settings.groups.access": "Platform admission",
   "corekeeper.settings.groups.accessDescription": "Allowed client platforms in direct-connection mode.",
   "corekeeper.settings.groups.network": "Network",
-  "corekeeper.settings.groups.networkDescription": "Direct join posture and packet cadence controls.",
+  "corekeeper.settings.groups.networkDescription": "Direct join mode and packet cadence controls.",
   "corekeeper.settings.groups.world": "World",
   "corekeeper.settings.groups.worldDescription": "World generation, difficulty, and seasonal content."
 };

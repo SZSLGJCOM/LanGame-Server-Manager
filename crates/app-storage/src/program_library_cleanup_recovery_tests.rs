@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 use crate::program_removals_db::{self as removals, ProgramRemovalRecord};
 

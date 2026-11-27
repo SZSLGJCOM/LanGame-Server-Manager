@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 //! Opt-in production download verification; no host installation.
 use super::*;
 

@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 // Execute the production frontend's Lua, replacing only the native entity API.
 // No copy of the cleanup predicate is maintained in this fixture.
 fn cleanup_command(lua: &mlua::Lua) -> String {

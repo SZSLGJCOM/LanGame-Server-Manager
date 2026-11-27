@@ -76,7 +76,8 @@ HTTP response is not that basis. Do not export a runtime media cache as source
 or add it to an installer on the strength of the network allowlist.
 
 The separately licensed Minecraft fallback illustration is recorded in NOTICE.
-Its reported in-house/AI creation does not license third-party game elements.
+This file is a first-party placeholder illustration created for the project and
+is not official Mojang artwork; it does not license third-party game elements.
 Neither that record nor this ledger declares all game media cleared for release.
 
 Archive decoder test fixtures

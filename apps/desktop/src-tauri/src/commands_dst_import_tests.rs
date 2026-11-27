@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 
 fn dst_import_test_root(label: &str) -> PathBuf {

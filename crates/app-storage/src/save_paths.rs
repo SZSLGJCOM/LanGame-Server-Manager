@@ -1,14 +1,12 @@
 use super::*;
 use crate::atomic_file::read_optional_file_to_string;
-use app_modules::{ModuleDescriptor, discover_modules};
+use app_modules::{ModuleDescriptor, discover_module};
 
 pub(crate) fn load_module_descriptor(
     paths: &StoragePaths,
     module_id: &str,
 ) -> Result<Option<ModuleDescriptor>, StorageError> {
-    Ok(discover_modules(&paths.modules_root)?
-        .into_iter()
-        .find(|descriptor| descriptor.summary.id.eq_ignore_ascii_case(module_id)))
+    Ok(discover_module(&paths.modules_root, module_id)?)
 }
 
 pub(crate) fn module_declares_saves_path(descriptor: Option<&ModuleDescriptor>) -> bool {

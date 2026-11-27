@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 use std::fs;
 struct Directory(std::path::PathBuf);

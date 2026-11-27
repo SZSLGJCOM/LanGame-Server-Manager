@@ -265,7 +265,7 @@ export const EN_US_RIMWORLD_MESSAGES: MessageCatalog = {
   "rimworld.settings.groups.runtime.title": "Runtime",
   "rimworld.settings.groups.runtime.description": "Server process and save behavior.",
   "rimworld.settings.sections.network": "Network",
-  "rimworld.settings.sections.networkDescription": "Bind address, browser visibility, and telemetry posture.",
+  "rimworld.settings.sections.networkDescription": "Bind address, browser visibility, and telemetry settings.",
   "rimworld.settings.sections.advanced": "Advanced",
   "rimworld.settings.sections.advancedDescription": "Version-specific launch arguments.",
   "rimworld.settings.groups.network.title": "Network",

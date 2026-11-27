@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 //! Explicit task-checkpoint seed for the disposable native acceptance only.
 //! The game loads this unmodified archive normally; no native flag is changed.
 use super::*;

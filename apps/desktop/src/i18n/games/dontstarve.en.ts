@@ -102,7 +102,7 @@ export const EN_US_DONT_STARVE_MESSAGES: MessageCatalog = {
   "dst.settings.sections.mods": "Mod Management",
   "dst.settings.sections.modsDescription": "Manage this instance's downloads, shard enable lists, and per-Mod options.",
   "dst.settings.sections.network": "Network",
-  "dst.settings.sections.networkDescription": "DST process bind address and host-level network posture.",
+  "dst.settings.sections.networkDescription": "DST process bind address and host-level network settings.",
   "dst.settings.sections.room": "Room Settings",
   "dst.settings.sections.roomDescription": "Room name, visibility, join gate, admins, whitelist, and blocklist controls.",
   "dst.settings.sections.world": "World & Caves",

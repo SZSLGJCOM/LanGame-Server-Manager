@@ -192,7 +192,7 @@
   ],
   "scope_limits": [
     "Fresh isolated world, no migration of existing populated saves.",
-    "Only the three recorded wild creatures were tested; online-player taming was deferred at the user's request and tamed-creature persistence was not exercised.",
+    "Scope covered wild creature persistence; live-player taming and populated-world migration were not exercised.",
     "Dino damage and resistance multipliers were zero in this controlled fixture; this does not verify their gameplay defaults.",
     "Persistence was tested across a normal save/stop/restart, not an abrupt crash or power loss.",
     "No desktop release or dependency mirror publication was performed during this follow-up; the prior AsaApi 2.1 mirror remains the referenced dependency release.",

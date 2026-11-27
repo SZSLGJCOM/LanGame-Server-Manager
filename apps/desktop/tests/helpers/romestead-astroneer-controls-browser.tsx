@@ -76,7 +76,7 @@ function Workspace({ moduleId, archived }: { moduleId: "romestead" | "astroneer"
       log: { relative_path: null, text: "", truncated: false, issues: [] },
       backups: { entries: [], issues: [], truncated: false } } : undefined}
     onRetryModuleDetails={() => { throw new Error("Unexpected descriptor retry"); }} bindAddressCandidates={[]}
-    runtime={null} launchPlan={null} launchPlanError={null} onSave={async (input) => {
+    launchPlanError={null} onSave={async (input) => {
       check(input.id === activeId, "settings writes target the active instance");
       writes.push(structuredClone(input));
       saved = input.settings_json;

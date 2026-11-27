@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 
 fn file_set_plan() -> Value {

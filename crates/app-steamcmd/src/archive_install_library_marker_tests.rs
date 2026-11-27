@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 use crate::install_publication_metadata::RETAINED_LIBRARY_MARKER;
 

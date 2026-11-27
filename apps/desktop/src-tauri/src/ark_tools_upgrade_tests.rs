@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 
 const ASA_2_03: &str = "7d12ff5fd238c4094da863d99651f3b54d7ffde1752eaa7cc263222cb7cd09d5";

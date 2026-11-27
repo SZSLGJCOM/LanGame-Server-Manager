@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 use crate::commands::commands_ark_tools::{self as ark, protocol};
 

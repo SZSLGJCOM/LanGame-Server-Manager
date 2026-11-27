@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 
 #[path = "dst_import_world_options_tests.rs"]

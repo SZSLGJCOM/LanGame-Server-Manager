@@ -88,7 +88,7 @@ async function run() {
   const props: ConfigurationWorkspaceProps = {
     details, moduleDetails: descriptor, moduleDetailsError: null,
     onRetryModuleDetails: () => { throw new Error("Unexpected retry"); },
-    bindAddressCandidates: [], runtime: null, launchPlan: null, launchPlanError: null,
+    bindAddressCandidates: [], launchPlanError: null,
     onSave: async (input) => {
       saved.push(input.settings_json);
       props.details = { ...props.details, settings_json: input.settings_json };

@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 
 fn identity(created: u64) -> ProcessIdentity {

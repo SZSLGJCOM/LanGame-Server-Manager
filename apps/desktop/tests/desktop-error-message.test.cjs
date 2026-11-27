@@ -240,8 +240,8 @@ test("assistant interpretation failures show the localized action boundary witho
 test("the exact assistant conversation schema rejection explains the native and frontend version mismatch", () => {
   const diagnostic = "invalid args `input` for command `assistant_execute_operation`: unknown field `conversationMessages`, expected one of `settings`, `prompt`, `priorRequests`, `context`, `selectedInstanceId`, `selectedModuleId`";
   for (const error of [diagnostic, new Error(diagnostic)]) {
-    assert.equal(formatDesktopError(translator("zh-CN"), error), "界面与后台程序版本不一致。请正常退出 LanGame，再通过启动入口重新打开。当前请求尚未执行。");
-    assert.equal(formatDesktopError(translator("en-US"), error), "The interface and backend program versions do not match. Exit LanGame normally, then reopen it using the launcher. This request has not been executed.");
+    assert.equal(formatDesktopError(translator("zh-CN"), error), "请从系统托盘完全退出并重新打开 LanGame Server Manager，以加载最新后台服务。");
+    assert.equal(formatDesktopError(translator("en-US"), error), "Quit LanGame Server Manager completely from the system tray and reopen it to load the updated background service.");
   }
   for (const unrelated of [
     diagnostic.replace("assistant_execute_operation", "assistant_confirm_operation"),

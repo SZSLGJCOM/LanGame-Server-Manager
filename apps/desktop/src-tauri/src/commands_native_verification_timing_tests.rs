@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 //! Controlled real-package comparison; neither mode trusts a historical cache.
 use super::*;
 use app_core::InstallVerificationProgress;

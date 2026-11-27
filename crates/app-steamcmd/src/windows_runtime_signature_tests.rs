@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::{capture_fixture_script, output_excerpt, process};
 
 // Certificates and keys exist only in memory. Exporting and reloading public DER

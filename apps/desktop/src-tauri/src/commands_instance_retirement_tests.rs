@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 use crate::commands::commands_instance_retirement::{Retirement, retire_instance};
 

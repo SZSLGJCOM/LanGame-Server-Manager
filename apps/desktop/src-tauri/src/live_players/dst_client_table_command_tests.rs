@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::dst_client_table::{CollectedLivePlayers, DstCaptureOutcome, parse_dst_client_table};
 
 const REQUEST_ID: &str = "0123456789abcdef0123456789abcdef";

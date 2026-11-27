@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 
 #[path = "commands_creation_isolation_tests.rs"]

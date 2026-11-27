@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 
 const URL: &str = "https://www.curseforge.com/ark-survival-ascended/mods/devkitlivemodtesting";

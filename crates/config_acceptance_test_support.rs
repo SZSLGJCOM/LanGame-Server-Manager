@@ -1,5 +1,7 @@
-// This test-only source is included by two crates that use complementary helper subsets.
+#![cfg(test)]
 #![allow(dead_code)]
+
+// This test-only source is included by two crates that use complementary helper subsets.
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::fs;

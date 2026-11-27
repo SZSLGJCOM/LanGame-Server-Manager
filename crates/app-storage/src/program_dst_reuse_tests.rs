@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 
 const SUPPORT_FILES: [&str; 5] = [

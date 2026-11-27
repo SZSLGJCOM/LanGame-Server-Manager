@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 use crate::commands::commands_program_storage::{
     LibraryBaselineRecorder, ProgramUpdateRequest, acquire_library_program_mutation,

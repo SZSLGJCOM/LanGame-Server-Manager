@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 
 fn plan(action: &str, instance: &str, module: &str) -> AssistantOperationPlan {

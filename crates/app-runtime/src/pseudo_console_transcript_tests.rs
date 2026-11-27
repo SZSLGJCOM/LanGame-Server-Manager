@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 
 fn push(terminal: &mut TerminalTranscript, bytes: &[u8]) -> io::Result<String> {

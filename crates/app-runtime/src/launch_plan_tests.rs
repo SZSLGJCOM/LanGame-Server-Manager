@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 use crate::performance_policy::{
     balanced_affinity_group_count, balanced_affinity_mask_for_group, host_reserve_affinity_mask,

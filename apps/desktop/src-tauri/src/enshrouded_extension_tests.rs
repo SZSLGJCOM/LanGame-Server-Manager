@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 
 fn fixture_key() -> PublicKey {

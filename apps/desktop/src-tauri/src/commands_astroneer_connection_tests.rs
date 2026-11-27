@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 
 async fn no_public_lookup() -> Result<Ipv4Addr, String> {

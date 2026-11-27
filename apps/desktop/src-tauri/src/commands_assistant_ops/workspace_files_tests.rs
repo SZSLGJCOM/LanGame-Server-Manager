@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 
 fn document(file: &str, content: &str) -> app_storage::InstanceWorkspaceDocument {

@@ -70,7 +70,7 @@
         "--locked",
         "--no-run"
       ],
-      "actual_entry_point": "task-scoped approved Cargo wrapper; local path omitted",
+      "actual_entry_point": "isolated Cargo test runner",
       "actual_entry_point_sha256": "3ed87587c3b62d026d90eee052dda4cc725d77cdc8fbff891a65b54989d8bb01",
       "actual_invocation_started_utc": "2026-11-07T07:45:43.5736218Z",
       "resource_override": {
@@ -100,7 +100,7 @@
         "--locked",
         "--no-run"
       ],
-      "actual_entry_point": "task-scoped approved Cargo wrapper; local path omitted",
+      "actual_entry_point": "isolated Cargo test runner",
       "actual_entry_point_sha256": "3ed87587c3b62d026d90eee052dda4cc725d77cdc8fbff891a65b54989d8bb01",
       "actual_invocation_started_utc": "2026-11-07T05:47:15.4061625Z",
       "resource_override": {

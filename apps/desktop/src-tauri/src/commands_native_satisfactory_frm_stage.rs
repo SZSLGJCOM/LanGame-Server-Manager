@@ -1,7 +1,8 @@
+#![cfg(test)]
+
 //! Fixed official WindowsServer inputs for this opt-in native acceptance only.
 //! Product Mod mutations intentionally reject Satisfactory until its installation
 //! workflow is modeled; this fixture must not change that production boundary.
-#![cfg(test)]
 use sha2::{Digest, Sha256};
 use std::collections::BTreeSet;
 use std::fs::{self, File};

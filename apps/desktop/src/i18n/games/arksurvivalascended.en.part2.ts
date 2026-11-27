@@ -231,7 +231,7 @@ export const EN_US_ARK_SURVIVAL_ASCENDED_MESSAGES_PART_2: MessageCatalog = {
   "ark.settings.parents.clusterTransfer": "Cluster & Transfer",
   "ark.settings.parents.clusterTransferDescription": "Cluster identity, tribute storage, uploads, downloads, and transfer filters.",
   "ark.settings.parents.worldGameplay": "World & Gameplay",
-  "ark.settings.parents.worldGameplayDescription": "Difficulty, time, PvE or PvP posture, player visibility, and core world rules.",
+  "ark.settings.parents.worldGameplayDescription": "Difficulty, time, PvE or PvP mode, player visibility, and core world rules.",
   "ark.settings.parents.ratesProgression": "Rates, Progression & Character Stats",
   "ark.settings.parents.ratesProgressionDescription": "Rates, combat balance, experience curves, and per-level survivor or creature stats.",
   "ark.settings.parents.buildingResources": "Building, Breeding, Farming & Resources",

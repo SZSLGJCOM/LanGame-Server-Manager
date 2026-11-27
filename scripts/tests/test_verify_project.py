@@ -346,6 +346,30 @@ class VerificationSelectionTests(unittest.TestCase):
         self.assertEqual(run.call_args_list[1].args[0][-3:],
                          ["scripts/tests/test_desktop_installer_guard.ps1", "-NsisRoot", "nsis"])
 
+    def test_policy_runs_both_enshrouded_extension_node_suites(self):
+        runner = Runner(argparse.Namespace(frontend_dist=None, tier="quick"))
+        with patch.object(runner, "python"), patch.object(runner, "publication"), patch.object(runner, "node") as node:
+            runner.policy()
+        node.assert_called_once_with(
+            "--test",
+            "scripts/tests/enshrouded_control_package.test.cjs",
+            "scripts/tests/enshrouded_native_profiles.test.cjs",
+        )
+
+    def test_frontend_build_runs_i18n_catalog_verifier_without_redundant_surface_audit(self):
+        runner = Runner(argparse.Namespace(frontend_dist=None, frontend_output=None, plan=True, node_wrapper=None))
+        with patch.object(runner, "node") as node, patch.object(runner, "python"), patch.object(runner, "npm"):
+            runner.frontend_build()
+        node_calls = [call.args for call in node.call_args_list]
+        self.assertEqual(
+            node_calls,
+            [
+                ("apps/desktop/scripts/generate_npm_third_party_licenses.mjs", "--check"),
+                ("apps/desktop/scripts/verify_i18n_catalogs.cjs",),
+                ("--test", "scripts/tests/verify_desktop_update_signature.test.cjs"),
+            ],
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

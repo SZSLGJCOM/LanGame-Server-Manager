@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 //! Actual native-loader/stdin checks, only within the disposable package fixture.
 use super::*;
 use std::io::{Read, Seek, SeekFrom};

@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 
 fn pull(source: &Events, cursor: &mut Cursor) -> (bool, Vec<Event>) {

@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 
 fn store_evidence(root: &Directory) -> serde_json::Value {

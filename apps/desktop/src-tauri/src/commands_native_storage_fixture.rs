@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 //! Keep exported native-test binaries bound to their reviewed source resources.
 use super::*;
 

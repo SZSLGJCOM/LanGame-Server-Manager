@@ -357,7 +357,7 @@ export const ZH_CN_PALWORLD_MESSAGES: MessageCatalog = {
   "palworld.module.groups.operatorInterfaces": "服主管理接口",
   "palworld.module.groups.operatorInterfacesDescription": "用于管理服务器的 REST 和游戏数据 API。",
   "palworld.module.groups.travelAndWorldEvents": "旅行与世界事件",
-  "palworld.module.groups.travelRulesAndInvasionPostureShapeTheWorldSFeelImmediately": "旅行规则和入侵姿态会立刻改变世界手感。",
+  "palworld.module.groups.travelRulesAndInvasionPostureShapeTheWorldSFeelImmediately": "旅行规则和入侵机制会直接改变世界体验。",
   "palworld.module.groups.continuityAndResets": "持续性与重置",
   "palworld.module.groups.offlineBehaviorGuildResetsAndHardcoreGuardrailsBelongTogether": "下线行为、工会重置和硬核护栏应该一起看。",
   "palworld.module.groups.globalProgressionRules": "全局成长规则",

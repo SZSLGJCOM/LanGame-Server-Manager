@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 
 const TARGET: &str = "EOS_00000000000000000000000000000001";

@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 
 const PROJECT: &str = "https://www.nexusmods.com/7daystodie/mods/2264";

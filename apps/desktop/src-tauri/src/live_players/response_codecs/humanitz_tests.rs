@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::{info_player_count, response_is_complete};
 use crate::live_players::response_codecs::parse;
 use app_core::ModulePlayerListCodec;

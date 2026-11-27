@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::render_palworld_option_settings;
 use serde_json::{Map, Value};
 

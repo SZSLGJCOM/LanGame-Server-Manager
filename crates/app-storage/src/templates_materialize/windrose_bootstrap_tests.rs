@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::windrose_tests::{TestRoot, seed_server, seed_world, server_path};
 use super::*;
 use serde_json::json;

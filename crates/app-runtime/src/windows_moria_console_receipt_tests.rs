@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 
 // Model ordinary console writes/newlines over a full buffer independently of

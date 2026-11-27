@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 use crate::live_players::{ark_profile::tests::asa_profile, response_codecs};
 

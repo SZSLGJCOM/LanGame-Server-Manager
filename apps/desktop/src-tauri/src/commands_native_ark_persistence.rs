@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 //! Opt-in native entity persistence: never replay Spawn after the server restarts.
 use super::*;
 use crate::commands::commands_ark_tools::{self as tools, protocol::Creature};

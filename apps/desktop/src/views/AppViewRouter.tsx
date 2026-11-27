@@ -44,9 +44,9 @@ const libraryViewModule = createDeferredModule(
   () => import("./LibraryView").then((module) => module.LibraryView),
   () => import("./LibraryView?module-retry").then((module) => module.LibraryView)
 );
-const serverWorkspaceModule = createDeferredModule(
-  () => import("./ServerWorkspaceView").then((module) => module.ServerWorkspaceView),
-  () => import("./ServerWorkspaceView?module-retry").then((module) => module.ServerWorkspaceView)
+const serversViewModule = createDeferredModule(
+  () => import("./ServersView").then((module) => module.ServersView),
+  () => import("./ServersView?module-retry").then((module) => module.ServersView)
 );
 const systemViewModule = createDeferredModule(
   () => import("./SystemView").then((module) => module.SystemView),
@@ -136,14 +136,14 @@ interface AppViewRouterProps {
 
 export function AppViewRouter(props: AppViewRouterProps) {
   const library = useDeferredModule(libraryViewModule, props.activeView === "library");
-  const servers = useDeferredModule(serverWorkspaceModule, props.activeView === "servers");
+  const servers = useDeferredModule(serversViewModule, props.activeView === "servers");
   const system = useDeferredModule(systemViewModule, props.activeView === "system");
   const selected = props.activeView === "library" ? library : props.activeView === "servers" ? servers : system;
   if (selected.status !== "ready") {
     return <ViewLoadingState error={selected.error} canRetry={selected.canRetry} onRetry={selected.retry} />;
   }
   const LibraryView = library.value;
-  const ServerWorkspaceView = servers.value;
+  const ServersView = servers.value;
   const SystemView = system.value;
   let content: ReactNode = null;
 
@@ -198,9 +198,9 @@ export function AppViewRouter(props: AppViewRouterProps) {
       );
       break;
     case "servers":
-      if (!ServerWorkspaceView) break;
+      if (!ServersView) break;
       content = (
-        <ServerWorkspaceView
+        <ServersView
           aiSettings={props.aiSettings}
           moduleInstallations={props.moduleInstallations}
           instanceLaunchPlans={props.instanceLaunchPlans}
@@ -229,8 +229,8 @@ export function AppViewRouter(props: AppViewRouterProps) {
           onActivity={props.onActivity}
           onResumeAutoRefresh={props.onResumeRuntimeAutoRefresh}
           onSelectInstance={props.onSelectInstance}
-          onStartServer={props.onStartServer}
-          onStopServer={props.onStopServer}
+          onStart={props.onStartServer}
+          onStop={props.onStopServer}
           onPickDirectory={props.onPickDirectory}
           onImportDontStarveWorldData={props.onImportDontStarveWorldData}
           onOpenLocalPath={props.onOpenLocalPath}

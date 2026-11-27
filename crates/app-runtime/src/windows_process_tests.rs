@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 #[cfg(windows)]
 use crate::windows_console_control::{

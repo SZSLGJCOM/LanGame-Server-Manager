@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 use crate::commands::commands_save_startup as save_startup;
 use sha1::{Digest, Sha1};

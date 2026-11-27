@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 
 const MISSING_PREFAB: &str =

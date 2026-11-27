@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 use app_platform_win::ProcessNetworkEndpoint;
 use serde_json::{Map, Value, json};

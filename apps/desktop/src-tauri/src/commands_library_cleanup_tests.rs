@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 use crate::commands::commands_storage_management::{
     InstanceArchiveInput, restore_instance_archive,

@@ -291,7 +291,8 @@ pub use settings::{
     save_app_settings, save_app_settings_with_paths,
 };
 pub use storage_db::{
-    initialize_database, resolve_module_install_root, sync_game_installs, sync_modules,
+    initialize_database, resolve_all_module_install_roots, resolve_module_install_root,
+    sync_game_installs, sync_modules,
 };
 pub use templates::dst_world_settings::{
     dst_world_setting_evidence_known, extract_dst_static_lua_table, inspect_dst_mod_enablement,

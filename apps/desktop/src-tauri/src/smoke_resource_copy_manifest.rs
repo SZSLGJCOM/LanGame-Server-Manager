@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 //! Opt-in provenance for disposable native smoke assets. A manifest is not
 //! deletion authority: the registered consumer still pins and verifies leaves.
 use std::fs::{self, File};

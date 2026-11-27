@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 
 async fn pending_delete_waits_for_explicit_retry(moved: bool, committed: bool) {

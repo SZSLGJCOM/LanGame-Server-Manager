@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use tokio::io::{AsyncBufReadExt, BufReader};
 use tokio::net::TcpListener;
 

@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::super::acquisition::begin_empty_library_program_acquisition;
 use super::*;
 

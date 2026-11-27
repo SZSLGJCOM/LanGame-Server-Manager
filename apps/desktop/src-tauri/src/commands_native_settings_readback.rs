@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 //! Verify native settings projections without exempting settings from readback.
 use super::*;
 use crate::commands::commands_managed_save_control::{guard_pin_directories, guard_read_regular};

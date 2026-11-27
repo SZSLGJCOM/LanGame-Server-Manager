@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::frame::{Capture, Screen};
 use super::*;
 

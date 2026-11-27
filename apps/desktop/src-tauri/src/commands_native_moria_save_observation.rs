@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 //! Test-only content oracle for the exact pre-shutdown Moria checkpoint.
 //! Difficulty is read from the native running world, never inferred from a
 //! timestamp, readiness, a save receipt, or the create-world configuration.

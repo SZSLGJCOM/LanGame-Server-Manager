@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 
 fn write_mod_evidence_fixture(root: &Path, metadata: &str) -> std::io::Result<()> {

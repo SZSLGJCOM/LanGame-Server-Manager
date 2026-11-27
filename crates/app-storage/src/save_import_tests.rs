@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 
 #[path = "save_import_profile_tests.rs"]

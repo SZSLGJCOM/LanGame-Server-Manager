@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use app_core::{InstanceDetails, RuntimeLivePlayerIssueCode, RuntimePlayerIdentityKind};
 use std::path::{Path, PathBuf};
 

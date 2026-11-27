@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::assistant_intent_workflow_tests::serve_call;
 use super::assistant_repair_integration_tests::read_repair_model_request;
 use super::assistant_tool_fixtures::openai_tool_response;

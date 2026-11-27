@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 //! Test-only SQLite checkpoints. A live database must be copied through SQLite,
 //! including its committed WAL view; copying the main file is not a checkpoint.
 use libsqlite3_sys as ffi;

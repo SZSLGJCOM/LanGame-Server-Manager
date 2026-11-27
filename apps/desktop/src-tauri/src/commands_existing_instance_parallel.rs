@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 //! Test-only bounded orchestration. Every admitted future is joined, including
 //! after a worker panic, an unsafe stop, or a receipt write failure.
 use super::{ExistingClient, InstanceDetails, InstanceSummary, ModuleDescriptor, Receipt};

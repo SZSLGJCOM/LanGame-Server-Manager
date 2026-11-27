@@ -79,7 +79,7 @@ async function run() {
   const saved: string[] = [];
   const props: ConfigurationWorkspaceProps = {
     details, moduleDetails: null, moduleDetailsError: null, bindAddressCandidates: [],
-    runtime: null, launchPlan: null, launchPlanError: null,
+    launchPlanError: null,
     onRetryModuleDetails: () => {
       retryCount++;
       props.moduleDetails = null;

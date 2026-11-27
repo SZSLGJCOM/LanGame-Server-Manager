@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 //! Boundary fixtures for the documented SDK flow; these do not run ASA.
 use super::*;
 use std::io::Write;

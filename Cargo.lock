@@ -101,7 +101,7 @@ checksum = "330a5ed07fa54e4702c9d6c4174f74427fc0ef6e214bbd677ae50a5099946470"
 
 [[package]]
 name = "app-core"
-version = "0.2.4"
+version = "0.2.5"
 dependencies = [
  "dunce",
  "serde",
@@ -110,7 +110,7 @@ dependencies = [
 
 [[package]]
 name = "app-knowledge"
-version = "0.2.4"
+version = "0.2.5"
 dependencies = [
  "app-network",
  "dom_query 0.29.0",
@@ -135,7 +135,7 @@ dependencies = [
 
 [[package]]
 name = "app-modules"
-version = "0.2.4"
+version = "0.2.5"
 dependencies = [
  "app-core",
  "image",
@@ -148,7 +148,7 @@ dependencies = [
 
 [[package]]
 name = "app-network"
-version = "0.2.4"
+version = "0.2.5"
 dependencies = [
  "httpdate",
  "reqwest",
@@ -161,7 +161,7 @@ dependencies = [
 
 [[package]]
 name = "app-platform-win"
-version = "0.2.4"
+version = "0.2.5"
 dependencies = [
  "app-core",
  "app-runtime",
@@ -171,7 +171,7 @@ dependencies = [
 
 [[package]]
 name = "app-runtime"
-version = "0.2.4"
+version = "0.2.5"
 dependencies = [
  "app-core",
  "app-modules",
@@ -183,7 +183,7 @@ dependencies = [
 
 [[package]]
 name = "app-steamcmd"
-version = "0.2.4"
+version = "0.2.5"
 dependencies = [
  "app-core",
  "app-network",
@@ -200,7 +200,7 @@ dependencies = [
 
 [[package]]
 name = "app-storage"
-version = "0.2.4"
+version = "0.2.5"
 dependencies = [
  "app-core",
  "app-modules",
@@ -2853,7 +2853,7 @@ dependencies = [
 
 [[package]]
 name = "langame-desktop"
-version = "0.2.4"
+version = "0.2.5"
 dependencies = [
  "app-core",
  "app-knowledge",

@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 
 fn recovery_directory(root: &Path) -> PathBuf {

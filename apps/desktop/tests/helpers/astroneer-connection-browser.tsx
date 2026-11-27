@@ -86,7 +86,7 @@ function Workspace() {
   return <ActivityNoticeTarget.Provider value={{ element: noticeTarget, dismissLabel: zh ? "关闭" : "Close" }}>
     <main style={{ flex: 1, minHeight: 0 }}>
       {generic ? <PlayerJoinAddressSelect details={details} candidates={candidates} /> : <ConfigurationWorkspace details={details} moduleDetails={moduleDetails} moduleDetailsError={null}
-        onRetryModuleDetails={() => {}} bindAddressCandidates={candidates} runtime={null} launchPlan={null} launchPlanError={null}
+        onRetryModuleDetails={() => {}} bindAddressCandidates={candidates} launchPlanError={null}
         requestedFieldKey={requestedField} onFieldNavigationHandled={() => { requestedField = undefined; draw(); }} onSave={onSave} />}
     </main>
     <footer className="shell-activity-bar"><span className="shell-activity-label">{zh ? "活动" : "Activity"}</span>

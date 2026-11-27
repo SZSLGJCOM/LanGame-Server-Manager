@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::response::parse;
 use super::transport::*;
 use super::*;

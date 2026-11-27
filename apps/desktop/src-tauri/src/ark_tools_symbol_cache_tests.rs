@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::super::super::tests::Fixture;
 use super::*;
 

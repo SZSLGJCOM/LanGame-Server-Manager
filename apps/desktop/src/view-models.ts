@@ -1,14 +1,10 @@
 import type {
   BindAddressCandidate,
-  InstanceBackupKind,
-  InstanceBackupResult,
   InstanceDetails,
   InstanceRuntimeOverview,
   InstanceSummary,
   ModuleSummary,
-  OverlayFamily,
-  PortBinding,
-  StorageStatus
+  PortBinding
 } from "./types";
 import { instanceHasRunningProcess } from "./runtime-action-state";
 import { astroneerRadminCandidates, readAstroneerAdvertisedAddress, readAstroneerConnectionMode } from "./astroneer-network-settings";
@@ -418,71 +414,6 @@ export function buildJoinEndpoint(
   return `${fallbackAddress}:${port.port}`;
 }
 
-export function buildJoinHint(details: InstanceDetails | null | undefined, t: TranslateFn): string {
-  const port = primaryPort(details);
-  if (!port) {
-    return t("messages.createInstanceFirst");
-  }
-  return `${String(port.protocol).toUpperCase()} ${port.port}`;
-}
-
-export function formatPorts(ports: PortBinding[], t: TranslateFn): string {
-  if (!ports.length) {
-    return t("common.noPorts");
-  }
-  return ports.map((port) => `${port.name}: ${String(port.protocol).toUpperCase()} ${port.port}`).join(" / ");
-}
-
-export function formatBackupKind(kind: InstanceBackupKind, t: TranslateFn): string {
-  switch (kind) {
-    case "auto_stop":
-      return t("servers.backups.kind.auto_stop");
-    case "pre_restore":
-      return t("servers.backups.kind.pre_restore");
-    case "manual":
-    default:
-      return t("servers.backups.kind.manual");
-  }
-}
-
-export function latestBackupByKind(
-  backups: InstanceBackupResult[],
-  kind: InstanceBackupKind
-): InstanceBackupResult | null {
-  return backups.find((backup) => backup.backup_kind === kind) ?? null;
-}
-
-export function buildBackupPolicySummary(details: InstanceDetails, t: TranslateFn): string {
-  return details.auto_backup_on_stop
-    ? t("servers.details.backupPolicyEnabled", { count: details.backup_retention_count })
-    : t("servers.details.backupPolicyDisabled", { count: details.backup_retention_count });
-}
-
-export function overlaySummary(overlays: OverlayFamily[], t: TranslateFn): string {
-  const names = overlays.map((overlay) => overlay.name).filter(Boolean);
-  return names.length ? names.join(" / ") : t("common.noOverlay");
-}
-
-export function overlayMatchSummary(overlay: OverlayFamily, t: TranslateFn): string {
-  const patterns = [
-    ...(overlay.adapter_name_patterns ?? []),
-    ...(overlay.executable_name_patterns ?? [])
-  ].filter(Boolean);
-
-  return patterns.length ? patterns.join(", ") : t("common.notProvided");
-}
-
-export function storageIsReady(storage: StorageStatus): boolean {
-  return Boolean(storage.database_exists && storage.migrations_applied);
-}
-
-export function storageStatusCopy(storage: StorageStatus, t: TranslateFn): string {
-  if (storageIsReady(storage)) {
-    return t("messages.storageReady", { version: storage.schema_version ?? 0 });
-  }
-  return t("messages.storagePending");
-}
-
 export function formatTime(locale: LocaleCode, value: string | number | Date | null | undefined): string {
   return formatDateTime(locale, value, {
     month: "2-digit",
@@ -506,52 +437,8 @@ export function formatRelativeTime(locale: LocaleCode, valueMs: number, nowMs = 
   return format.format(0, "minute");
 }
 
-export function formatRuntimeAge(
-  value: string | number | Date | null | undefined,
-  t: TranslateFn
-): string {
-  if (!value) return t("messages.timeJustNow");
-  const date = value instanceof Date ? value : new Date(value);
-  const diffMs = Math.max(0, Date.now() - date.getTime());
-  const diffMinutes = Math.floor(diffMs / 60000);
-
-  if (diffMinutes < 1) return t("messages.timeJustNow");
-  if (diffMinutes < 60) return t("messages.timeMinutes", { count: diffMinutes });
-
-  const diffHours = Math.floor(diffMinutes / 60);
-  if (diffHours < 24) return t("messages.timeHours", { count: diffHours });
-
-  const diffDays = Math.floor(diffHours / 24);
-  return t("messages.timeDays", { count: diffDays });
-}
-
 export function latestRun(runtime: InstanceRuntimeOverview | null | undefined) {
   return runtime?.recent_runs[0] ?? null;
-}
-
-export function buildRuntimeMeta(
-  instance: InstanceSummary,
-  runtime: InstanceRuntimeOverview | null | undefined,
-  locale: LocaleCode,
-  t: TranslateFn
-): string {
-  const latest = latestRun(runtime);
-  if (!latest) return t("messages.runtimeWaitingFirstStart");
-  if (isRunningStatus(latest.status) && latest.started_at) {
-    return t("messages.runtimeRunningSince", { value: formatRuntimeAge(latest.started_at, t) });
-  }
-  if (latest.stopped_at) {
-    return t("messages.runtimeLastStopped", { value: formatTime(locale, latest.stopped_at) });
-  }
-  return formatInstanceStatus(latest.status || instance.status, t);
-}
-
-export function latestLogPath(
-  details: InstanceDetails | null | undefined,
-  runtime: InstanceRuntimeOverview | null | undefined,
-  t: TranslateFn
-): string {
-  return details?.active_run?.log_path ?? latestRun(runtime)?.log_path ?? t("messages.noLogFile");
 }
 
 export function processCount(

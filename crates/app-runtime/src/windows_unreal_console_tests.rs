@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 use std::ffi::c_void;
 use std::os::windows::process::CommandExt;

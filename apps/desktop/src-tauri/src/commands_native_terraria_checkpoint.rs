@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 //! Disposable vanilla acceptance: mutate the world clock, save once, then query
 //! the restored world without mutating it. This does not upgrade product receipts.
 use super::*;

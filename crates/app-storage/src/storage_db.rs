@@ -720,21 +720,36 @@ where
     .await?)
 }
 
-pub(crate) async fn resolve_module_install_root_from_pool(
-    pool: &SqlitePool,
-    module_id: &str,
-) -> Result<Option<String>, StorageError> {
-    resolve_module_install_root_from_executor(pool, module_id).await
-}
-
 pub async fn resolve_module_install_root(
     paths: &StoragePaths,
     module_id: &str,
 ) -> Result<Option<String>, StorageError> {
     let pool = connect_pool(paths).await?;
-    let result = resolve_module_install_root_from_pool(&pool, module_id).await;
+    let result = resolve_module_install_root_from_executor(&pool, module_id).await;
     pool.close().await;
     result
+}
+
+pub async fn resolve_all_module_install_roots(
+    paths: &StoragePaths,
+) -> Result<std::collections::HashMap<String, String>, StorageError> {
+    let pool = connect_pool(paths).await?;
+    let rows = sqlx::query_as::<_, (String, String)>(
+        r#"
+        SELECT module_id, install_root
+        FROM game_installs
+        WHERE scope = 'library' AND install_state = 'installed'
+        ORDER BY COALESCE(last_verified_at, updated_at) DESC, id DESC
+        "#,
+    )
+    .fetch_all(&pool)
+    .await;
+    pool.close().await;
+    let mut overrides = std::collections::HashMap::new();
+    for (module_id, install_root) in rows? {
+        overrides.entry(module_id).or_insert(install_root);
+    }
+    Ok(overrides)
 }
 
 pub(crate) fn install_state_to_db_value(install_state: &InstallState) -> &'static str {

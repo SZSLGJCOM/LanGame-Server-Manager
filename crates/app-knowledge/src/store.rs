@@ -258,12 +258,47 @@ impl KnowledgeLibrary {
         let catalogs = tokio::task::spawn_blocking(move || sources::load_all(&root))
             .await
             .map_err(|e| KnowledgeError::Unavailable(e.to_string()))??;
-        let mut games = Vec::new();
+        type StoredSourceMeta = (String, Option<i64>, Option<i64>, Option<String>);
+        let source_rows = sqlx::query(
+            "SELECT module_id,source_id,state,checked_at,success_at,error FROM sources",
+        )
+        .fetch_all(&self.pool)
+        .await?;
+        let mut stored_sources: std::collections::HashMap<(String, String), StoredSourceMeta> =
+            std::collections::HashMap::with_capacity(source_rows.len());
+        for row in source_rows {
+            stored_sources.insert(
+                (row.try_get("module_id")?, row.try_get("source_id")?),
+                (
+                    row.try_get("state")?,
+                    row.try_get("checked_at")?,
+                    row.try_get("success_at")?,
+                    row.try_get("error")?,
+                ),
+            );
+        }
+        let count_rows = sqlx::query(
+            "SELECT d.module_id,d.source_id,COUNT(DISTINCT d.id) AS doc_count,COUNT(c.id) AS chunk_count \
+             FROM documents d LEFT JOIN chunks c ON c.module_id=d.module_id AND c.document_id=d.id \
+             GROUP BY d.module_id,d.source_id",
+        )
+        .fetch_all(&self.pool)
+        .await?;
+        let mut counts: std::collections::HashMap<(String, String), (i64, i64)> =
+            std::collections::HashMap::with_capacity(count_rows.len());
+        for row in count_rows {
+            counts.insert(
+                (row.try_get("module_id")?, row.try_get("source_id")?),
+                (row.try_get("doc_count")?, row.try_get("chunk_count")?),
+            );
+        }
+        let mut games = Vec::with_capacity(catalogs.len());
         for catalog in catalogs {
-            let mut statuses = Vec::new();
+            let mut statuses = Vec::with_capacity(catalog.sources.len());
             for source in catalog.sources {
-                let row = sqlx::query("SELECT state,checked_at,success_at,error FROM sources WHERE module_id=? AND source_id=?").bind(&catalog.module_id).bind(&source.id).fetch_optional(&self.pool).await?;
-                let (documents, chunks): (i64, i64) = sqlx::query_as("SELECT COUNT(DISTINCT d.id),COUNT(c.id) FROM documents d LEFT JOIN chunks c ON c.module_id=d.module_id AND c.document_id=d.id WHERE d.module_id=? AND d.source_id=?").bind(&catalog.module_id).bind(&source.id).fetch_one(&self.pool).await?;
+                let key = (catalog.module_id.clone(), source.id.clone());
+                let row = stored_sources.get(&key);
+                let (documents, chunks) = counts.get(&key).copied().unwrap_or((0, 0));
                 let source_url = source.citation_url(&source.seeds[0]);
                 statuses.push(SourceStatus {
                     id: source.id,
@@ -273,28 +308,22 @@ impl KnowledgeLibrary {
                     url: source_url,
                     document_count: documents as u64,
                     chunk_count: chunks as u64,
-                    state: if source.reference_only { "restricted".into() } else { row
-                        .as_ref()
-                        .map(|r| r.try_get("state"))
-                        .transpose()?
-                        .unwrap_or_else(|| "pending".into()) },
-                    last_checked_at: row
-                        .as_ref()
-                        .map(|r| r.try_get::<Option<i64>, _>("checked_at"))
-                        .transpose()?
-                        .flatten()
-                        .map(|n| n as u64),
-                    last_success_at: row
-                        .as_ref()
-                        .map(|r| r.try_get::<Option<i64>, _>("success_at"))
-                        .transpose()?
-                        .flatten()
-                        .map(|n| n as u64),
-                    last_error: if source.reference_only { Some("This source permits reference links only; background AI ingestion is disabled.".into()) } else { row
-                        .as_ref()
-                        .map(|r| r.try_get("error"))
-                        .transpose()?
-                        .flatten() },
+                    state: if source.reference_only {
+                        "restricted".into()
+                    } else {
+                        row.map(|r| r.0.clone())
+                            .unwrap_or_else(|| "pending".into())
+                    },
+                    last_checked_at: row.and_then(|r| r.1).map(|n| n as u64),
+                    last_success_at: row.and_then(|r| r.2).map(|n| n as u64),
+                    last_error: if source.reference_only {
+                        Some(
+                            "This source permits reference links only; background AI ingestion is disabled."
+                                .into(),
+                        )
+                    } else {
+                        row.and_then(|r| r.3.clone())
+                    },
                 });
             }
             games.push(GameStatus {

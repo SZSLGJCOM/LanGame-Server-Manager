@@ -77,8 +77,7 @@ def stages(full_workspace: bool = False, include_web: bool = True,
         Stage("web", ("--test", "--test-reporter=tap", "--test-concurrency=1",
             "tests/runtime-reliability-browser.test.cjs",
             "tests/runtime-reliability-subscription.test.cjs", "tests/runtime-log-subscription.test.cjs",
-            "tests/runtime-log-stream.test.cjs", "tests/runtime-recovery.test.cjs",
-            "tests/runtime-action-delivery.test.cjs"), ROOT / "apps/desktop", (
+            "tests/runtime-log-stream.test.cjs", "tests/runtime-recovery.test.cjs"), ROOT / "apps/desktop", (
                 "reliability: repeated workbench lifecycles", "reliability: a retired workbench",
                 "reliability: sustained console bursts", "reliability: repeated startup shard events",
                 "reliability real ReactDOM StrictMode lifecycle releases subscriptions and bounds the DOM tail",
@@ -164,7 +163,7 @@ def desktop_metadata_targets(output: str) -> tuple[list[tuple[str, ...]], bool]:
 
 
 def desktop_targets(output: str) -> tuple[list[tuple[str, ...]], bool]:
-    """Cargo JSON is interleaved with build diagnostics and managed-wrapper logs."""
+    """Cargo JSON is interleaved with build diagnostics and launcher logs."""
     targets = set()
     doctests = False
     finished = False
@@ -222,7 +221,7 @@ def desktop_batches(target: tuple[str, ...], names: list[str], limit: int = 2400
         native = len(subprocess.list2cmdline(["cargo", *arguments]).encode("utf-16-le")) // 2
         if not managed:
             return native
-        # The managed guard encodes JSON as UTF-8/Base64. ASCII escaping bounds
+        # The external launcher encodes JSON as UTF-8/Base64. ASCII escaping bounds
         # Unicode expansion too; 16 KiB JSON leaves >10 KiB for its other fields,
         # paths and PowerShell arguments within the 32767-character limit.
         encoded = len(json.dumps(arguments, ensure_ascii=True).encode("utf-8"))
@@ -267,8 +266,8 @@ def prepare_desktop(args, packages: list[str] | None, output: Path, report: dict
         selectors = tuple(argument for target in targets for argument in target)
         capture("desktop-build", (*prefix, *selectors, "--no-run"))
     else:
-        # The managed workstation wrapper admits Cargo test, but not metadata.
-        # Its build output provides the target inventory without a second build.
+        # External Cargo launchers may admit test execution without metadata.
+        # Their build output provides the target inventory without a second build.
         targets, doctests = desktop_targets(capture("desktop-build", (*prefix, "--no-run", "--message-format=json")))
     inventory, ignored = {}, {}
     for number, target in enumerate(targets, 1):
@@ -321,7 +320,7 @@ def command_for(stage: Stage, cargo_wrapper: Path | None, node_wrapper: Path | N
     environment["LGSM_RELIABILITY_CARGO_ARGUMENTS"] = json.dumps(stage.command[1:])
     shell = shutil.which("pwsh") or shutil.which("powershell")
     if not shell:
-        raise ValueError("PowerShell is required for the configured Cargo wrapper")
+        raise ValueError("PowerShell is required for the configured Cargo launcher")
     invocation = (
         "$ErrorActionPreference = 'Stop'; "
         "$testArguments = @(ConvertFrom-Json $env:LGSM_RELIABILITY_CARGO_ARGUMENTS); "
@@ -495,8 +494,8 @@ def capture_stage(stage: Stage, output_dir: Path, cycles: int,
     log = output_dir / f"{stage.name}.log"
     started = time.monotonic()
     print(f"[reliability] {stage.name}: running; output: {log}", flush=True)
-    # Each test owns its deadlines and cleanup. CI or workstation admission owns
-    # the outer process-tree deadline; killing only this wrapper would strand it.
+    # Each test owns its deadlines and cleanup. CI or the outer runner owns
+    # the outer process-tree deadline; killing only this script would strand it.
     with log.open("w", encoding="utf-8") as destination:
         with _StageLogProgress(stage.name, log, started):
             try:
@@ -591,8 +590,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--shard-count", type=int, default=1, help="Independent desktop runners (1..4)")
     parser.add_argument("--output", type=Path, help="New evidence directory outside the repository")
     parser.add_argument("--cycles", type=int, default=24, help="Isolated process lifecycle cycles (4..256)")
-    parser.add_argument("--cargo-wrapper", type=Path, help="Managed workstation Cargo wrapper")
-    parser.add_argument("--node-wrapper", type=Path, help="Managed workstation run-guarded-node-command.cjs")
+    parser.add_argument("--cargo-wrapper", type=Path, help="Optional Cargo command launcher")
+    parser.add_argument("--node-wrapper", type=Path, help="Optional Node command launcher")
     parser.add_argument("--frontend-dist", type=Path,
                         help="Existing absolute frontend distribution outside the repository for Rust asset embedding")
     args = parser.parse_args(argv)

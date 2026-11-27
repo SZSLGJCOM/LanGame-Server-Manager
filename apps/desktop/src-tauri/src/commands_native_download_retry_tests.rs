@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 
 /// Copy only plain files from a previously acquired isolated Steam fixture.

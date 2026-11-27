@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 use crate::managed_console_log::ManagedConsoleLog;
 use std::{fs, io::Write, path::PathBuf};

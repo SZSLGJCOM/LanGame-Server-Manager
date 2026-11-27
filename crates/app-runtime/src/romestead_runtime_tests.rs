@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 use crate::build_launch_plan_with_override;
 use app_core::{InstanceDetails, InstanceStatus, InstanceSummary, ModuleDetails};

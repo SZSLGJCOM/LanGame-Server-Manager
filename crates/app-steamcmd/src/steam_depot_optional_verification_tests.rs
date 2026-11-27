@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 
 // Independent depot fixture: one optional defaults directory and its abc file.

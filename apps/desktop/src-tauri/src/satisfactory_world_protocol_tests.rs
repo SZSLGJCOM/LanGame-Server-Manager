@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 use base64::Engine;
 use serde_json::json;

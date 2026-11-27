@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 use std::io;
 use std::os::windows::process::ExitStatusExt;

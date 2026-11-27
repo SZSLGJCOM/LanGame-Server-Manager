@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 use crate::commands::commands_dst_map::{DstMapInput, read_dontstarve_world_map};
 use std::io::Write;

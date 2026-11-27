@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 use crate::backups::save_import::tests::Fixture;
 

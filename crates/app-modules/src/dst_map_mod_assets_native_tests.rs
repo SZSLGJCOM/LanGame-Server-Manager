@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use std::path::PathBuf;
 
 use super::super::{DstMapIconFallbackKind, DstMapModSource, load_dst_map_assets};

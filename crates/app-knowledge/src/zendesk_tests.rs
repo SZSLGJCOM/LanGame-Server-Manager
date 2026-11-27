@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::tests::{API, response, source};
 use crate::{ContentUse, KnowledgeLibrary, embedding, extract, sources, store};
 

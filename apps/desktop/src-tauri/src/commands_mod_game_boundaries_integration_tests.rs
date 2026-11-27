@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 //! External managers own these games' effective Mod sets. Rejected commands
 //! must preserve the independent instance and its original program library.
 use super::*;

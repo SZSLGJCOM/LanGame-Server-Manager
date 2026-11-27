@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 use crate::instance_creation_io::test_gate::count_hash_reads;
 

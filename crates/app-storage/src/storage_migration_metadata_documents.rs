@@ -341,6 +341,127 @@ fn backups(
     Ok(())
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(deny_unknown_fields)]
+struct SteamCmdReadyFile {
+    name: String,
+    length: u64,
+    modified_ns: u128,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(deny_unknown_fields)]
+struct SteamCmdReadyRecord {
+    root: String,
+    files: Vec<SteamCmdReadyFile>,
+}
+
+fn steamcmd_fingerprint(root: &Path) -> Option<SteamCmdReadyRecord> {
+    let canonical = fs::canonicalize(root).ok()?;
+    let mut files = Vec::new();
+    for name in ["steamcmd.exe", "steamclient.dll", "steamclient64.dll"] {
+        let metadata = match fs::metadata(canonical.join(name)) {
+            Ok(metadata) if metadata.is_file() => metadata,
+            _ if name != "steamcmd.exe" => continue,
+            _ => return None,
+        };
+        let modified_ns = metadata
+            .modified()
+            .ok()?
+            .duration_since(std::time::UNIX_EPOCH)
+            .ok()?
+            .as_nanos();
+        if metadata.len() == 0 || modified_ns == 0 {
+            return None;
+        }
+        files.push(SteamCmdReadyFile {
+            name: name.to_owned(),
+            length: metadata.len(),
+            modified_ns,
+        });
+    }
+    Some(SteamCmdReadyRecord {
+        root: canonical.to_string_lossy().to_ascii_lowercase(),
+        files,
+    })
+}
+
+fn steamcmd_ready(
+    root: &Path,
+    moves: &[RootMove],
+    copied: bool,
+    plan: &mut MetadataPlan,
+) -> Result<(), StorageError> {
+    let path = root.join(".langame-steamcmd-ready.json");
+    if !exists(&path)? {
+        return Ok(());
+    }
+    let before = read_bytes(&path, 16 * 1024)?;
+    let Ok(record) = serde_json::from_slice::<SteamCmdReadyRecord>(&before) else {
+        return Ok(());
+    };
+    let Some(source_current) = steamcmd_fingerprint(root) else {
+        return Ok(());
+    };
+    // Rebind readiness only when the source runtime was genuinely verified
+    // immediately before migration; never promote an unverified or altered runtime.
+    if record != source_current || !copied || !moved(root, moves)? {
+        return Ok(());
+    }
+    let target_root = remap_path(root, moves)?;
+    let target_file = remap_path(&path, moves)?;
+    if read_bytes(&target_file, 16 * 1024)? != before {
+        return Err(invalid(
+            &target_file,
+            "Copied SteamCMD readiness metadata differs from its validated source.",
+        ));
+    }
+    let Some(target_current) = steamcmd_fingerprint(&target_root) else {
+        return Err(invalid(
+            &target_root,
+            "Copied SteamCMD runtime is incomplete after file verification.",
+        ));
+    };
+    if target_current.files.len() != source_current.files.len()
+        || target_current.files.iter().zip(&source_current.files).any(
+            |(after_file, before_file)| {
+                after_file.name != before_file.name || after_file.length != before_file.length
+            },
+        )
+    {
+        return Err(invalid(
+            &target_root,
+            "Copied SteamCMD runtime files do not match the verified source lengths.",
+        ));
+    }
+    let after = serde_json::to_vec(&target_current)?;
+    if after == before {
+        return Ok(());
+    }
+    let total: usize = plan
+        .files
+        .iter()
+        .map(|patch| patch.before.len().saturating_add(patch.after.len()))
+        .sum();
+    if total
+        .saturating_add(before.len())
+        .saturating_add(after.len())
+        > super::MAX_PLAN_BYTES
+    {
+        return Err(invalid(
+            &target_file,
+            "Migration metadata plan exceeds its byte limit.",
+        ));
+    }
+    plan.files.push(FilePatch {
+        path: target_file,
+        before_sha256: digest(&before),
+        before,
+        after,
+    });
+    Ok(())
+}
+
 fn steamcmd(
     root: &Path,
     moves: &[RootMove],
@@ -373,5 +494,6 @@ fn steamcmd(
         })?;
         value["canonical_root"] = Value::String(canonical.to_string_lossy().into_owned());
     }
-    add_json_patch(&path, &before, &value, moves, copied, plan)
+    add_json_patch(&path, &before, &value, moves, copied, plan)?;
+    steamcmd_ready(root, moves, copied, plan)
 }

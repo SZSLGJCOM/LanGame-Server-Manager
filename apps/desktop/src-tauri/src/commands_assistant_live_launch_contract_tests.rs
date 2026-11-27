@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::super::assistant_repair_integration_tests::read_repair_model_request;
 use super::super::assistant_tool_fixtures::{assert_native_tool_available, openai_tool_response};
 use super::launch_tests::{NativeLaunchDriver, run_native_new_launch};

@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 //! Script only the external server responses, OS observations and credential
 //! store. Tests still execute the production service, validation and decoder.
 use std::collections::{BTreeMap, VecDeque};

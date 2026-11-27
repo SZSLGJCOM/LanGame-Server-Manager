@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 
 fn capture_bytes(bytes: &[u8], log: impl Write, state: Arc<TerminalState>) {

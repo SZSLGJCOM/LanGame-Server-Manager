@@ -47,7 +47,7 @@ function Workspace({ descriptor, initial }: { descriptor: ModuleDetails; initial
   activeModule = descriptor.summary.id;
   return <ConfigurationWorkspace details={details} moduleDetails={descriptor} moduleDetailsError={null}
     onRetryModuleDetails={() => { throw new Error("Unexpected descriptor retry"); }} bindAddressCandidates={[]}
-    runtime={null} launchPlan={null} launchPlanError={null}
+    launchPlanError={null}
     onSave={async (input) => {
       saves.push(structuredClone(input));
       const saved = { ...details, settings_json: input.settings_json, ports: input.ports ?? details.ports,

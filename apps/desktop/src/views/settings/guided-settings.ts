@@ -305,7 +305,7 @@ function buildGenericSections(t: TranslateFn): GuidedSettingsSection[] {
     {
       id: "advanced",
       title: t("settings.guided.sections.advanced", undefined, "Advanced"),
-      description: t("settings.guided.sections.advancedDescription", undefined, "Less common fields that still need a direct UI.")
+      description: t("settings.guided.sections.advancedDescription", undefined, "Less common low-level and advanced parameters.")
     }
   ];
 }

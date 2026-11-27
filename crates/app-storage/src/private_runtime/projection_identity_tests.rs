@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 use crate::private_runtime::{PrivateRuntimeProjection, prepare_private_runtime_projection};
 use crate::private_runtime_refresh::{

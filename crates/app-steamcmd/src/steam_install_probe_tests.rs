@@ -1,6 +1,8 @@
+#![cfg(test)]
+
 use crate::*;
 
-// From the observed Workshop-only prefetch on PLAP: the old build remains
+// Observed in an isolated Workshop-only prefetch: the old build remains
 // installed while Steam advertises 50,548,454 bytes for a future update.
 const PREFETCHED: &str = r#""AppState"
 {

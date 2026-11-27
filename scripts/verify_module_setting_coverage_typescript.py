@@ -80,33 +80,6 @@ def extract_ts_bracket_block(source: str, open_bracket_index: int) -> str:
     return extract_ts_balanced_block(source, open_bracket_index, "[", "]")
 
 
-def extract_ts_object_block(source: str, marker: str) -> str:
-    start = source.find(marker)
-    if start < 0:
-        return ""
-    end = source.find("\n};", start)
-    return source[start:end] if end >= 0 else source[start:]
-
-
-def settings_definition_object_block(source: str, export_match: re.Match[str]) -> str:
-    open_brace_index = source.find("{", export_match.end())
-    return extract_ts_braced_block(source, open_brace_index)
-
-
-def ts_object_keys(source: str, const_name: str) -> set[str]:
-    block = extract_ts_object_block(source, f"const {const_name}")
-    keys: set[str] = set()
-    for line in block.splitlines():
-        quoted = re.match(r'^\s*"((?:\\.|[^"\\])*)"\s*:', line)
-        if quoted:
-            keys.add(quoted.group(1).replace('\\"', '"').replace("\\\\", "\\"))
-            continue
-        identifier = re.match(r"^\s*([A-Za-z0-9_]+)\s*:", line)
-        if identifier:
-            keys.add(identifier.group(1))
-    return keys
-
-
 def ts_object_string_values(source: str) -> dict[str, str]:
     values: dict[str, str] = {}
     for line in source.splitlines():
@@ -120,69 +93,6 @@ def ts_object_string_values(source: str) -> dict[str, str]:
         value = match.group(2).replace('\\"', '"').replace("\\\\", "\\")
         values[key] = value
     return values
-
-
-def ts_string_sequence(source: str, const_name: str) -> set[str]:
-    marker = f"const {const_name}"
-    start = source.find(marker)
-    if start < 0:
-        return set()
-    line_end = source.find("\n", start)
-    line = source[start:] if line_end < 0 else source[start:line_end]
-    return set(re.findall(r'"((?:\\.|[^"\\])*)"', line))
-
-
-def ts_object_has_property(object_block: str, property_name: str) -> bool:
-    return (
-        re.search(
-            rf"(^|[{{,]\s*){re.escape(property_name)}\s*(?::|\()",
-            object_block,
-            re.MULTILINE,
-        )
-        is not None
-    )
-
-
-def ts_object_has_string_property(
-    object_block: str, property_name: str, expected_value: str
-) -> bool:
-    return (
-        re.search(
-            rf"(^|[{{,]\s*){re.escape(property_name)}\s*:\s*[\"']{re.escape(expected_value)}[\"']",
-            object_block,
-            re.MULTILINE,
-        )
-        is not None
-    )
-
-
-def ts_string_literals(source: str) -> set[str]:
-    return set(re.findall(r"[\"']([A-Za-z0-9_\-.]+)[\"']", source))
-
-
-def ts_const_string_array(source: str, const_name: str) -> list[str]:
-    match = re.search(
-        rf"\b(?:export\s+)?const\s+{re.escape(const_name)}\s*=\s*\[", source
-    )
-    if match is None:
-        return []
-    open_index = source.find("[", match.end() - 1)
-    array_block = extract_ts_bracket_block(source, open_index)
-    return re.findall(r'["\']([A-Za-z0-9_\-.]+)["\']', array_block)
-
-
-def ts_group_key_literal_entries(source: str) -> list[str]:
-    keys: list[str] = []
-    for match in re.finditer(r"\bkeys\s*:\s*\[([^\]]*)\]", source, re.DOTALL):
-        block = match.group(1)
-        keys.extend(re.findall(r"[\"']([A-Za-z0-9_\-.]+)[\"']", block))
-        for const_name in re.findall(r"\.\.\.([A-Za-z0-9_]+)", block):
-            keys.extend(ts_const_string_array(source, const_name))
-    return keys
-
-
-def ts_group_key_literals(source: str) -> set[str]:
-    return set(ts_group_key_literal_entries(source))
 
 
 def ts_section_ids_from_array_block(array_block: str) -> set[str]:

@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 
 fn package(intent: Option<ThunderstoreInstallIntent>, version: &str) -> InstalledPackage {

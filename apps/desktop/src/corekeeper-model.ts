@@ -1,5 +1,4 @@
 import type { TranslateFn } from "./i18n";
-import type { InstanceDetails } from "./types";
 
 export interface CoreKeeperSteamIdListParseResult {
   entries: string[];
@@ -54,7 +53,7 @@ export function normalizeCoreKeeperGameId(raw: unknown): string | null {
   return sanitized.length >= 15 && sanitized.length <= 28 ? sanitized : null;
 }
 
-export function deriveCoreKeeperGameId(instanceId: string): string {
+function deriveCoreKeeperGameId(instanceId: string): string {
   const sanitizedInstanceId = readString(instanceId)
     .split("")
     .filter((character) => /[a-z0-9]/i.test(character))
@@ -111,14 +110,6 @@ export function parseCoreKeeperSteamIdList(raw: unknown): CoreKeeperSteamIdListP
     entries,
     invalidEntries
   };
-}
-
-export function normalizeCoreKeeperSteamIdList(raw: unknown): string[] {
-  return parseCoreKeeperSteamIdList(raw).entries;
-}
-
-export function readCoreKeeperPort(details: InstanceDetails, portName = "game"): number | null {
-  return details.ports.find((port) => port.name === portName)?.port ?? null;
 }
 
 export function isCoreKeeperDirectConnectionEnabled(settings: Record<string, unknown>): boolean {
@@ -192,24 +183,4 @@ export function formatCoreKeeperJoinMode(directConnectionEnabled: boolean, t: Tr
   return directConnectionEnabled
     ? t("servers.corekeeper.valueDirectMode", undefined, "Direct IP")
     : t("servers.corekeeper.valueRelayMode", undefined, "Steam relay");
-}
-
-export function formatCoreKeeperSecretState(
-  value: string,
-  t: TranslateFn,
-  options?: {
-    placeholder?: string;
-    openWhenEmpty?: boolean;
-  }
-): string {
-  const trimmed = readString(value).trim();
-  if (!trimmed) {
-    return options?.openWhenEmpty
-      ? t("servers.corekeeper.valueOpen", undefined, "Open")
-      : t("servers.corekeeper.valueNotSet", undefined, "Not set");
-  }
-  if (options?.placeholder && trimmed === options.placeholder) {
-    return t("servers.corekeeper.valuePlaceholder", undefined, "Placeholder");
-  }
-  return t("servers.corekeeper.valueConfigured", undefined, "Configured");
 }

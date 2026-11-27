@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::windrose_tests::{
     TestRoot, seed_rendered_server, seed_server, seed_world, server_path, world_settings,
 };

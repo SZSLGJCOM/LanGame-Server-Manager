@@ -54,7 +54,7 @@ The regional endpoint returns only a small manifest: China-allocated addresses s
 
 The updater requires the trusted signature comment to contain the advertised version. Do not disable `requireSignedVersion` for a mirror: an old, validly signed binary must not be relabeled as a newer update. The pinned Tauri bundler writes the version into its signed comment; exported artifacts retain those signature bytes unchanged.
 
-Automatic updates reject small installers exceeding 256 MiB; oversized bodies or advertised lengths cancel that source before installation. This is a response-byte rejection threshold, not a hard process-memory limit: the plugin cancels at its next asynchronous yield and may allocate the current chunk and extra buffer capacity first. The mirror publisher enforces the same small-package limit. Offline companions remain manual downloads. The release workstation checks stable GitHub Releases every five minutes and verifies all seven attachments before publishing the GitCode pointer. It must be on and logged in, with its configured GitHub proxy available. The GitHub mirror workflow remains disabled to keep one writer. See the [service guide](../deploy/desktop-updates/README.md) for credential storage, routing and recovery. Complete the first live synchronization and metadata-service acceptance before publishing regional builds.
+Automatic updates reject small installers exceeding 256 MiB; oversized bodies or advertised lengths cancel that source before installation. This is a response-byte rejection threshold, not a hard process-memory limit: the plugin cancels at its next asynchronous yield and may allocate the current chunk and extra buffer capacity first. The mirror publisher enforces the same small-package limit. Offline companions remain manual downloads. When a scheduled mirror publisher is deployed, it polls stable GitHub Releases every five minutes and verifies all seven attachments before publishing the GitCode pointer. Keep the GitHub mirror workflow disabled when running an external publisher so only one writer updates the pointer. See the [service guide](../deploy/desktop-updates/README.md) for credential storage, routing and recovery. Complete the first live synchronization and metadata-service acceptance before publishing regional builds.
 
 ## Build signed installers on a portable Windows build host
 
@@ -68,7 +68,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts/build_desktop_update
 
 `-BuildPortable` is explicit. It runs Tauri from `apps/desktop`, pins `x86_64-pc-windows-msvc` and NSIS, forwards Cargo `--locked`, applies the generated merge configuration, and restores the caller's frontend and static-runtime environment settings afterward. Both the exact current-version installer and its `.exe.sig` must be freshly generated. Omitting both `-EnableGitHubUpdates` and `-EnableRegionalUpdates` produces a signed build whose update checks remain disabled.
 
-Managed build environments supply an external PowerShell script through `-ManagedBuildAdapter` or `LGSM_DESKTOP_BUILD_ADAPTER` and select `-BuildManaged`. With an adapter configured, `-BuildPortable` is rejected. The repository does not discover workstation scripts or import private build modules.
+Managed build environments supply an external PowerShell script through `-ManagedBuildAdapter` or `LGSM_DESKTOP_BUILD_ADAPTER` and select `-BuildManaged`. With an adapter configured, `-BuildPortable` is rejected. The repository does not auto-discover external scripts or import private build modules.
 
 The adapter runs in a separate Windows PowerShell process and supports two actions:
 
@@ -157,7 +157,7 @@ The Windows native CI job prepares the Tauri-pinned NSIS tools with `scripts/pre
 
 Before public distribution, use disposable data on a supported Windows test machine to verify:
 
-1. On a disposable Windows image without WebView2, verify small-package installation with Microsoft connectivity, and verify a blocked runtime download reports failure instead of claiming a usable installation. Disconnect networking and verify the offline package installs and launches in both installer languages, plus Windows uninstall registration. Verify both packages reuse an existing runtime without downloading one. Do not remove the developer workstation's runtime to simulate these tests.
+1. On a disposable Windows image without WebView2, verify small-package installation with Microsoft connectivity, and verify a blocked runtime download reports failure instead of claiming a usable installation. Disconnect networking and verify the offline package installs and launches in both installer languages, plus Windows uninstall registration. Verify both packages reuse an existing runtime without downloading one. Do not remove the development machine's runtime to simulate these tests.
 2. Manual upgrade/uninstall while LGSM or its runtime is running: the operation waits or refuses safely without killing processes. Retry after coordinated shutdown.
 3. Upgrade and uninstall with the application stopped, including retained configuration, instances, saves, archives, and backups; reinstall and read back retained data.
 4. An older signed build discovers a higher version, displays notes, downloads, verifies the real signature, stops servers safely, installs, and restarts with data intact.
@@ -186,9 +186,9 @@ References: [Tauri updater and static JSON](https://v2.tauri.app/plugin/updater/
 2. 在仓库外的新目录准备 UTF-8 更新说明。普通 Windows 主机使用 `-BuildPortable`；受管主机通过 `-ManagedBuildAdapter` 或 `LGSM_DESKTOP_BUILD_ADAPTER` 指定仓库外 PowerShell 适配器并使用 `-BuildManaged`；适配器执行构建及回执验证，签名和更新选项保持一致。无法安全复用构建目录时，可加 `-FreshTarget` 申请受管独立目录，仍遵守资源准入与容量限制。私钥通过发行环境传入，保留现有 updater 公钥。
 3. 小包使用 `embedBootstrapper`，缺 WebView2 时从微软联网安装。用独立输出目录加 `-OfflineInstaller` 构建内嵌完整 WebView2 的离线包；两包版本、更新通道与签名密钥一致。
 4. `-EnableGitHubUpdates` 启用 GitHub 更新；`-EnableRegionalUpdates` 同时启用官网地区清单。地区服务、GitCode 附件与匿名读取须先通过[部署验收](../deploy/desktop-updates/README.md)。
-5. 检查实际安装包、两份 updater 签名、微软 WebView2 载荷签名和两个应用可执行文件的运行库依赖。在隔离 Windows 环境执行安装、升级、卸载、数据保留、真实开服和旧版在线更新验收。编译夹具或配置回执不能替代实际安装。
+5. 检查实际安装包、两份 updater 签名、微软 WebView2 载荷签名和两个应用可执行文件的运行库依赖。在隔离 Windows 环境执行安装、升级、卸载、数据保留、真实开服和旧版在线更新验收。编译测试或配置回执不能替代实际安装。
 6. 创建正式 `v<version>` Release，上传两包、两份 `.exe.sig`、`latest.json`、`SHA256SUMS` 和 `SHA256SUMS.offline`。核对上传后文件名、版本、哈希与匿名下载；本地计划和回执不上传。
-7. 核实本机镜像发布器的该版本记录为 `succeeded`，再核对官网地区清单和 GitCode 的完整版本指针。GitHub 镜像工作流保持禁用，确保只有一个发布者。
+7. 核实镜像发布器的该版本记录为 `succeeded`，再核对官网地区清单和 GitCode 的完整版本指针。使用自托管发布器时，GitHub 镜像工作流保持禁用，确保只有一个发布者。
 
 客户端初始化后检查一次，空闲时每四小时检查；发现新版本时在右上角 Header 显示下载按钮，点击后打开更新详情，不自动弹窗。关闭详情后入口保留，可再次查看版本、下载进度或失败原因。更新下载并验签完成后才协调停止后台及游戏进程。手动安装或卸载前使用应用的安全退出，关闭到托盘不等于退出。
 
@@ -206,22 +206,22 @@ WebView 的 Windows 配置文件、浏览器存储和浏览器缓存与上述目
 
 发布者为 Entro Genesis。安装器在 Tauri 初始化页面前复制缺失的设置，以沿用此前 LanGame Team 的安装目录和语言。已有的 Entro Genesis 设置和显式指定的 `/D` 安装目录优先。只有安装成功才会弃用旧的已知值，属于其他安装路径的记录会被保留。产品名称、应用标识符、数据位置和更新签名身份保持不变。
 
-Tauri 的应用内更新会替换卸载程序的资源列表，但不会移除早期安装包已弃用的文件。`apps/desktop/src-tauri/installer/retired-resources.nsh` 记录这些文件的确切路径和原始 SHA256（包括分发时的行尾）。安装和卸载只删除完全匹配的文件；被编辑的文件、额外文件和目录链接会被保留。弃用其他内置资源时，把其原始身份加入此列表，并通过同一安装器夹具验证。不得改为递归删除 modules 目录。
+Tauri 的应用内更新会替换卸载程序的资源列表，但不会移除早期安装包已弃用的文件。`apps/desktop/src-tauri/installer/retired-resources.nsh` 记录这些文件的确切路径和原始 SHA256（包括分发时的行尾）。安装和卸载只删除完全匹配的文件；被编辑的文件、额外文件和目录链接会被保留。弃用其他内置资源时，把其原始身份加入此列表，并通过同一安装器测试套件验证。不得改为递归删除 modules 目录。
 
-一次性 NSIS 保护夹具在不使用真实服务器数据的情况下验证进程保护、安装器语言和弃用资源清理：
+一次性 NSIS 保护测试在不使用真实服务器数据的情况下验证进程保护、安装器语言和弃用资源清理：
 
 ```powershell
 pwsh -NoProfile -File scripts/tests/test_desktop_installer_guard.ps1 `
     -NsisRoot 'C:\BuildTools\NSIS'
 ```
 
-`-NsisRoot` 必须包含 `makensis.exe` 以及测试所需的 Tauri NSIS 插件。`-CompileOnly` 只验证编译；省略它即执行安装/卸载场景，包括保留已修改文件以及删除失败后重试。完整夹具应在受支持、且应用控制策略允许测试可执行文件运行的 Windows 测试机上执行。仅编译通过不能证明运行时行为。
+`-NsisRoot` 必须包含 `makensis.exe` 以及测试所需的 Tauri NSIS 插件。`-CompileOnly` 只验证编译；省略它即执行安装/卸载场景，包括保留已修改文件以及删除失败后重试。完整测试应在受支持、且应用控制策略允许测试可执行文件运行的 Windows 测试机上执行。仅编译通过不能证明运行时行为。
 
-Windows 原生 CI 任务通过 `scripts/prepare_desktop_installer_tools.ps1` 准备 Tauri 固定版本的 NSIS 工具，校验下载的资产，并运行同一夹具入口。
+Windows 原生 CI 任务通过 `scripts/prepare_desktop_installer_tools.ps1` 准备 Tauri 固定版本的 NSIS 工具，校验下载的资产，并运行同一测试入口。
 
 公开分发前，在受支持的 Windows 测试机上使用可丢弃数据验证：
 
-1. 在没有 WebView2 的一次性 Windows 镜像上，验证小包在可连接微软时能安装；运行库下载被阻断时报告失败，而不是声称安装可用。断开网络，验证离线包在两种安装器语言下都能安装和启动，并核对 Windows 卸载登记。验证两种安装包都会复用已有运行库而不重新下载。不要卸载开发工作站的运行库来模拟这些测试。
+1. 在没有 WebView2 的一次性 Windows 镜像上，验证小包在可连接微软时能安装；运行库下载被阻断时报告失败，而不是声称安装可用。断开网络，验证离线包在两种安装器语言下都能安装和启动，并核对 Windows 卸载登记。验证两种安装包都会复用已有运行库而不重新下载。不要卸载开发机的运行库来模拟这些测试。
 2. LGSM 或其运行时正在运行时手动升级/卸载：操作应安全地等待或拒绝，不强制结束进程；协调关闭后重试。
 3. 应用停止时升级和卸载，包括保留配置、实例、存档、归档和备份；重新安装后读回保留的数据。
 4. 较旧的已签名版本发现更高版本，显示更新说明，下载，验证真实签名，安全停止服务器，安装，并在数据完整的情况下重启。

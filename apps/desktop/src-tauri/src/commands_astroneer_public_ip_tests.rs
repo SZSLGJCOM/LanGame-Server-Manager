@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 use crate::astroneer_public_ip::prepare_with_sources;
 use app_platform_win::BindAddressCandidate;

@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 use std::fs::{self, FileTimes};
 use std::path::PathBuf;

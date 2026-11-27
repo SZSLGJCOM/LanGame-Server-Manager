@@ -84,7 +84,7 @@ async function run() {
   await Promise.all([
     prepareBrowserLocaleCatalogs(),
     import("../../src/api-mock"),
-    import("../../src/views/ServerWorkspaceView")
+    import("../../src/views/ServersView")
   ]);
   render();
   await until(() => Boolean(resolveInitialStatus), "Initial native status was not requested");

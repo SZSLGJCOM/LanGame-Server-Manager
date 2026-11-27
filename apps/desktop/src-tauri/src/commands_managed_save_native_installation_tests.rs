@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 //! Opt-in installation acceptance against local native SDKs and official loaders.
 //! This probe never launches a game or changes the supplied source packages.
 use super::*;

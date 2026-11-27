@@ -2,7 +2,7 @@ import { isTauri } from "@tauri-apps/api/core";
 import { invokeOrMock, shouldUseLanApi } from "./api-transport";
 import { storageManagementRequests } from "./storage-management-requests";
 import type {
-  InstanceArchiveDetails, InstanceArchiveList, InstanceArchivePurgeResult, InstanceArchiveRestoreResult, StorageUsageReport,
+  InstanceArchiveDetails, InstanceArchiveList, InstanceArchivePurgeResult, InstanceArchiveRestoreResult,
   InstanceRemovalPlan, ModuleProgramInventory
 } from "./storage-management-types";
 import type { InstanceProgramMode } from "./types";
@@ -31,12 +31,6 @@ export const restoreInstanceArchive = (archiveId: string) =>
   mutateStorage<InstanceArchiveRestoreResult>("restore_instance_archive", { input: { archive_id: archiveId } });
 export const purgeInstanceArchive = (archiveId: string) =>
   mutateStorage<InstanceArchivePurgeResult>("purge_instance_archive", { input: { archive_id: archiveId } });
-export const scanStorageUsage = (scanId: string) =>
-  // Never queue a scan whose cancellation identifier has not reached the host.
-  onStorageHost(() => storageManagementRequests.mutate(() =>
-    invokeOrMock<StorageUsageReport>("scan_storage_usage", { input: { scan_id: scanId } }), { immediate: true }));
-export const cancelStorageUsageScan = (scanId: string) =>
-  onStorageHost(() => invokeOrMock<boolean>("cancel_storage_usage_scan", { input: { scan_id: scanId } }));
 export const inspectModulePrograms = async (moduleId: string, programMode: InstanceProgramMode, programSource: "verified" | "local") => {
   const inspect = (includeArchivedSources: boolean) => invokeOrMock<ModuleProgramInventory>("inspect_module_programs", {
     input: { module_id: moduleId, program_mode: programMode, program_source: programSource, include_archived_sources: includeArchivedSources }

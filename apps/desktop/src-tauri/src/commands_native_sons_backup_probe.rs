@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 //! Opt-in archive checks around real Sons saves and normal native shutdown.
 //! Read-only; never calls saving or repairs a game file to make acceptance pass.
 use super::*;

@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 //! Compare explicit INI overrides with the independent native HTTPS readback.
 use app_core::satisfactory_world::SatisfactoryWorldSnapshot;
 use serde_json::Value;

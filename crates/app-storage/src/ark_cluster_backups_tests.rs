@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 use crate::ark_clusters::{ArkClusterIssue, ArkClusterMember};
 use app_core::{InstanceSummary, PortBinding};

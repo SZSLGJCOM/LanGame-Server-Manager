@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 
 const GAME_STARTED: &str = "logStoreGamemode: Display: [ GAME STARTED. ]";

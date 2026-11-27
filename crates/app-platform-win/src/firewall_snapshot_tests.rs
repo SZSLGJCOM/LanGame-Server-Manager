@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 //! Contract checks for bulk CIM identities and multi-rule recovery, without host writes.
 use super::*;
 

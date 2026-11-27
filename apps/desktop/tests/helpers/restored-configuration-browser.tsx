@@ -96,7 +96,7 @@ function RestoredConfiguration() {
   useSelectedInstanceModuleDetailsSync({ enabled: true, selectedModuleId: details.summary.module_id, retryGeneration: retry,
     onLoaded: (value, failure) => { setLoaded(value); setError(failure?.message ?? null); } });
   return <ConfigurationWorkspace details={details} moduleDetails={loaded} moduleDetailsError={error}
-    onRetryModuleDetails={requestRetry} bindAddressCandidates={[]} runtime={null} launchPlan={null} launchPlanError={null}
+    onRetryModuleDetails={requestRetry} bindAddressCandidates={[]} launchPlanError={null}
     onSave={async () => { saveCalls++; return details; }} />;
 }
 

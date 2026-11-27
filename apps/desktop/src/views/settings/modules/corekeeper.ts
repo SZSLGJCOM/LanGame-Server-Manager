@@ -156,7 +156,7 @@ function buildCoreKeeperSections(t: TranslateFn): GuidedSettingsSection[] {
       description: t(
         "corekeeper.settings.sections.worldDescription",
         undefined,
-        "Choose which managed world slot to boot and what seasonal or difficulty posture it should carry."
+        "Choose which managed world slot to boot and configure its seasonal and difficulty settings."
       )
     },
     {
@@ -249,7 +249,7 @@ function buildCoreKeeperFieldGroups(
         description: t(
           "corekeeper.settings.groups.networkDescription",
           undefined,
-          "Direct join posture and packet cadence controls."
+          "Direct join mode and packet cadence controls."
         ),
         keys: ["max_packets_per_frame", "network_send_rate", "direct_connection_enabled"]
       }

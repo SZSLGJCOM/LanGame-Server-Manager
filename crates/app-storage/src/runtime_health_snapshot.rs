@@ -53,9 +53,8 @@ pub(super) async fn read(
             } else {
                 None
             };
-        let health_scan =
-            read_log_snapshot(log_source_path.clone(), RUNTIME_HEALTH_SCAN_LINE_LIMIT);
-        let log_tail = read_log_snapshot(log_source_path, 32);
+        let (health_scan, log_tail) =
+            read_log_snapshot_pair(log_source_path, RUNTIME_HEALTH_SCAN_LINE_LIMIT, 32);
         let health = ark_health_instance
             .as_ref()
             .and_then(ark_readiness::analyze_ark_maps_runtime_health)

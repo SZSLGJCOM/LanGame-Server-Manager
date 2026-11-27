@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 use std::io::{Read, Write};
 use std::os::windows::process::CommandExt;

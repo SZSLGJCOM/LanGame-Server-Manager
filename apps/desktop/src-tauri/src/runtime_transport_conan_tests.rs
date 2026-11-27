@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use std::io::{Cursor, Error, ErrorKind};
 
 use super::*;

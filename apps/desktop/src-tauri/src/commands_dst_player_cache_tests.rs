@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 use crate::live_players::cache::CachedLivePlayerSnapshot;
 use crate::live_players::service::build_cache_key;

@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::super::{
     load_dst_map_assets,
     tests::{TestRoot, icon_atlas, rgba_texture},

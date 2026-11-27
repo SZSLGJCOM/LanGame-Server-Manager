@@ -65,7 +65,7 @@ body:
     id: provenance
     attributes:
       label: Provenance and redistribution limits / 来源与再分发限制
-      description: State who publishes the package and any terms relevant to downloading, testing, fixtures, screenshots, or media. / 说明程序包发布者，以及下载、测试、夹具、截图或媒体涉及的条款。
+      description: State who publishes the package and any terms relevant to downloading, testing, fixtures, screenshots, or media. / 说明程序包发布者，以及下载、测试、测试样本、截图或媒体涉及的条款。
     validations:
       required: true
 

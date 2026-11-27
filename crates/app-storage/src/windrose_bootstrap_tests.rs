@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 use app_core::{CreateInstanceInput, PortBinding};
 use serde_json::{Value, json};

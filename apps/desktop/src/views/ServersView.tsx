@@ -764,8 +764,6 @@ export function ServersView(props: ServersViewProps) {
                   moduleDetailsError={props.selectedModuleDetailsError}
                   onRetryModuleDetails={props.onResumeAutoRefresh}
                   bindAddressCandidates={props.bindAddressCandidates}
-                  runtime={props.runtime}
-                  launchPlan={props.launchPlan}
                   launchPlanError={props.launchPlanError}
                   onSave={props.onSaveSettings}
                 />

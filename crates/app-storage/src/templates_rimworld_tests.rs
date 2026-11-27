@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 use crate::templates::rimworld::{
     preserve_retired_settings, render_rimworld_password_json, validate_before_start,

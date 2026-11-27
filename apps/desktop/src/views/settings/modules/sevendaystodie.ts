@@ -7,7 +7,7 @@ const SEVEN_DAYS_SECTIONS: GuidedSettingsSection[] = [
   {
     id: "world",
     title: "World Rules",
-    description: "World identity, loot and death posture, day pacing, and the survival baseline for this host."
+    description: "World identity, loot and death rules, day pacing, and the survival baseline for this host."
   },
   {
     id: "threat",

@@ -158,7 +158,7 @@ function buildAbioticFieldGroups(
     world: [
       {
         id: "difficulty",
-        title: t("abiotic.settings.groups.worldPosture", undefined, "World posture"),
+        title: t("abiotic.settings.groups.worldPosture", undefined, "World rules"),
         description: t("abiotic.settings.groups.difficultyHardcoreAndHomeWorldsDefineWhetherThisRoomFeelsLikeARelaxedCoOpSpaceOr", undefined, "Difficulty, hardcore, and Home Worlds define whether this room feels like a relaxed co-op space or a high-pressure challenge save."),
         layoutClass: "world-posture",
         keys: ["game_difficulty", "hardcore_mode", "allow_iron_mode", "home_worlds", "allow_character_reset"]
@@ -252,7 +252,7 @@ function buildAbioticFieldGroups(
       },
       {
         id: "radiation",
-        title: t("abiotic.settings.groups.radiationPosture", undefined, "Radiation posture"),
+        title: t("abiotic.settings.groups.radiationPosture", undefined, "Radiation rules"),
         description: t("abiotic.settings.groups.theseTogglesControlWhetherRadiationStaysAReadableUIHazardOrBecomesSomethingPlaye", undefined, "These toggles control whether radiation stays a readable UI hazard or becomes something players must detect with tools and experience."),
         layoutClass: "combat-radiation",
         keys: ["invisible_radiation", "radiation_deals_damage"]

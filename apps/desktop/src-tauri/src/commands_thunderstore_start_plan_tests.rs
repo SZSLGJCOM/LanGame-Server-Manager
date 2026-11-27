@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 //! Synthetic metadata substitutes only the provider boundary. Ownership,
 //! persisted root policy, actual native payload hashing and package publication
 //! use production code; no account or public download is used.

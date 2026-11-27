@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 
 async fn dependency_fixture(mode: &str) -> Fixture {

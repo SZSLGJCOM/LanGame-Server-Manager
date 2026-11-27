@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 use crate::assistant_sessions::AssistantSessionStore;
 use std::sync::Arc;

@@ -1,4 +1,6 @@
-//! These tests exclusively own UUID fixtures; none resolve default/PLAP storage.
+#![cfg(test)]
+
+//! These tests exclusively own UUID fixtures; none resolve default host storage.
 use super::*;
 use std::fs;
 
@@ -524,4 +526,121 @@ async fn publication_is_reported_non_cancellable_before_settings_and_cleanup() {
         .position(|phase| *phase == Phase::Completed)
         .unwrap();
     assert!(applying < cleaning && cleaning < completed);
+}
+
+#[tokio::test]
+async fn steamcmd_migration_preserves_verified_managed_readiness() {
+    let fixture = Fixture::new();
+    fs::create_dir_all(&fixture.paths.steamcmd_root).unwrap();
+    fs::write(
+        fixture.paths.steamcmd_root.join("steamcmd.exe"),
+        b"verified steamcmd binary",
+    )
+    .unwrap();
+    fs::write(
+        fixture.paths.steamcmd_root.join("steamclient64.dll"),
+        b"verified steamclient64",
+    )
+    .unwrap();
+    let canonical_before = fs::canonicalize(&fixture.paths.steamcmd_root).unwrap();
+    fs::write(
+        fixture
+            .paths
+            .steamcmd_root
+            .join(".langame-steamcmd-owner.json"),
+        serde_json::to_vec(&serde_json::json!({
+            "product": "langame-server-manager",
+            "canonical_root": canonical_before,
+        }))
+        .unwrap(),
+    )
+    .unwrap();
+    let ready_files = ["steamcmd.exe", "steamclient64.dll"]
+        .into_iter()
+        .map(|name| {
+            let meta = fs::metadata(canonical_before.join(name)).unwrap();
+            let modified_ns = meta
+                .modified()
+                .unwrap()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos();
+            serde_json::json!({
+                "name": name,
+                "length": meta.len(),
+                "modified_ns": modified_ns,
+            })
+        })
+        .collect::<Vec<_>>();
+    fs::write(
+        fixture
+            .paths
+            .steamcmd_root
+            .join(".langame-steamcmd-ready.json"),
+        serde_json::to_vec(&serde_json::json!({
+            "root": canonical_before.to_string_lossy().to_ascii_lowercase(),
+            "files": ready_files,
+        }))
+        .unwrap(),
+    )
+    .unwrap();
+
+    let mut next = fixture.paths.settings();
+    let moved_steamcmd = fixture.root.join("moved-steamcmd");
+    next.steamcmd_root = moved_steamcmd.to_string_lossy().into_owned();
+    let prepared = preview(
+        &fixture.paths,
+        next,
+        uuid::Uuid::new_v4().to_string(),
+        vec![],
+        Arc::new(AtomicBool::new(false)),
+        Arc::new(|_| {}),
+    )
+    .await
+    .unwrap();
+    let status = execute(
+        &fixture.paths,
+        prepared,
+        Arc::new(AtomicBool::new(false)),
+        Arc::new(|_| {}),
+    )
+    .await
+    .unwrap();
+    assert_eq!(status.phase, Phase::Completed);
+    let canonical_after = fs::canonicalize(&moved_steamcmd).unwrap();
+    let ready_after: serde_json::Value = serde_json::from_slice(
+        &fs::read(moved_steamcmd.join(".langame-steamcmd-ready.json")).unwrap(),
+    )
+    .unwrap();
+    assert_eq!(
+        ready_after["root"].as_str(),
+        Some(
+            canonical_after
+                .to_string_lossy()
+                .to_ascii_lowercase()
+                .as_str()
+        ),
+        "migrated SteamCMD readiness record should rebind to destination canonical root"
+    );
+    let expected_after_files = ["steamcmd.exe", "steamclient64.dll"]
+        .into_iter()
+        .map(|name| {
+            let meta = fs::metadata(canonical_after.join(name)).unwrap();
+            let modified_ns = meta
+                .modified()
+                .unwrap()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos();
+            serde_json::json!({
+                "name": name,
+                "length": meta.len(),
+                "modified_ns": modified_ns,
+            })
+        })
+        .collect::<Vec<_>>();
+    assert_eq!(
+        ready_after["files"],
+        serde_json::json!(expected_after_files)
+    );
 }

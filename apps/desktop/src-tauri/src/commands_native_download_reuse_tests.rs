@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 use crate::commands::tests::creation_lifecycle_tests::CREATION_INSTALL_FORBIDDEN;
 use sha2::{Digest, Sha256};

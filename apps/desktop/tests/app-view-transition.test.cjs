@@ -52,8 +52,8 @@ test("top-level navigation selects the requested view synchronously", () => {
 });
 
 test("route imports remain deferred with an immediate local loading and retry surface", () => {
-  assert.match(routerSource, /const serverWorkspaceModule = createDeferredModule\(\s*\(\) =>/);
-  assert.match(routerSource, /useDeferredModule\(serverWorkspaceModule, props.activeView === "servers"\)/);
+  assert.match(routerSource, /const serversViewModule = createDeferredModule\(\s*\(\) =>/);
+  assert.match(routerSource, /useDeferredModule\(serversViewModule, props.activeView === "servers"\)/);
   assert.match(routerSource, /return <ViewLoadingState error=\{selected.error\} canRetry=\{selected.canRetry\} onRetry=\{selected.retry\} \/>/);
   assert.doesNotMatch(routerSource, /\b(?:Suspense|lazy)\b/);
 });

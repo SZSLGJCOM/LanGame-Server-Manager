@@ -16,8 +16,6 @@ import type {
   AssistantProviderSettingsInput,
   AssistantExecuteOperationInput,
   AssistantExecuteOperationOutput,
-  AssistantRunInput,
-  AssistantRunOutput,
   AppUpdateCheckResult,
   AppUpdateInstallEvent,
   AssistantSecretDescriptor,
@@ -483,7 +481,6 @@ export const readAssistantSecretStatus = (descriptor: AssistantSecretDescriptor)
 export const storeAssistantSecret = (descriptor: AssistantSecretDescriptor, apiKey: string) => invokeOrMock<AssistantSecretStatus>("assistant_store_secret", { descriptor, apiKey });
 export const clearAssistantSecret = (descriptor: AssistantSecretDescriptor) => invokeOrMock<AssistantSecretStatus>("assistant_clear_secret", { descriptor });
 export const listOllamaModels = (baseUrl?: string | null) => invokeOrMock<string[]>("assistant_list_ollama_models", { baseUrl });
-export const runAssistant = (input: AssistantRunInput) => invokeOrMock<AssistantRunOutput>("assistant_run", { input });
 export const getAssistantConversationState = (conversationId: string, settings: AssistantProviderSettingsInput, afterCursor?: number) =>
   invokeOrMock<AssistantConversationState>("assistant_get_conversation_state", { input: { conversationId, settings, afterCursor } });
 export const listAssistantConversations = (settings: AssistantProviderSettingsInput) =>

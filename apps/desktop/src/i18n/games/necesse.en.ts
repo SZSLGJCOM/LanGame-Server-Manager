@@ -140,7 +140,7 @@ export const EN_US_NECESSE_MESSAGES: MessageCatalog = {
   "servers.necesse.pathsEyebrow": "Paths & backups",
   "servers.necesse.pathsTitle": "Managed folders and save safety",
   "servers.necesse.runtimeEyebrow": "Runtime",
-  "servers.necesse.runtimeTitle": "Runtime and launch posture",
+  "servers.necesse.runtimeTitle": "Runtime and launch settings",
   "servers.necesse.sectionWorld": "World",
   "servers.necesse.valueConfigured": "Configured",
   "servers.necesse.valueFolderSaves": "Folder save",

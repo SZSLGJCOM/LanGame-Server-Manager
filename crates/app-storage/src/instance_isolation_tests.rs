@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 use crate::{
     create_instance, initialize_database, materialize_instance_configuration_for_start,

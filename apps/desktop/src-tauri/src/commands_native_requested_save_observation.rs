@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 //! Independent native evidence for Requested saves in disposable acceptance.
 //! Product receipts remain Requested; shutdown and periodic writes cannot pay this debt.
 use super::*;

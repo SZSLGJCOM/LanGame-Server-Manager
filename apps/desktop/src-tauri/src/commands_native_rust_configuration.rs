@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 //! Read explicit Rust options back through the production, generation-bound RCON path.
 use super::{InstanceDetails, NativeRuntime, Path, Value};
 use crate::commands::commands_assistant_ops::send_assistant_runtime_command;

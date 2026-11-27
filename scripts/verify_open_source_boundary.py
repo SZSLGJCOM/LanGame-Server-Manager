@@ -124,6 +124,18 @@ DEVELOPER_MACHINE_PATH = re.compile(
     rb"D:[\\/]+LanGame[\\/]+(?:projects|scripts)(?:[\\/]+|\b)|"
     rb"D:[\\/]+LanGameTemp(?:[\\/]+|\b))"
 )
+PROHIBITED_SOURCE_MARKER = re.compile(
+    b"|".join(
+        (
+            b"\\b" + bytes.fromhex("504c4150") + b"\\b",
+            b"\\b" + bytes.fromhex("706c6170") + b"_anonymous_download\\b",
+            b"Start-" + bytes.fromhex("436f646578"),
+            bytes.fromhex("436f646578") + b"Cargo",
+            b"invoke-cargo-" + b"resource-guard",
+            b"invoke-task-" + b"cargo",
+        )
+    )
+)
 
 
 @dataclass(frozen=True)
@@ -372,6 +384,15 @@ def verify_boundary(
                     "developer-machine-path",
                     normalized_path,
                     "source contains a developer-specific absolute filesystem path",
+                )
+            )
+        if b"\0" not in payload and (marker_match := PROHIBITED_SOURCE_MARKER.search(payload)):
+            line = payload.count(b"\n", 0, marker_match.start()) + 1
+            findings.append(
+                BoundaryFinding(
+                    "prohibited-local-marker",
+                    normalized_path,
+                    f"source contains a prohibited local environment marker at line {line}",
                 )
             )
         for finding in scan_product_payload(path, payload):

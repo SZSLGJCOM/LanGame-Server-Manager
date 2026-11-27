@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 use crate::{adopt_library_install_for_instance, initialize_database};
 use sqlx::SqlitePool;

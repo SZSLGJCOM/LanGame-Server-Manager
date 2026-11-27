@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use app_core::{InstanceDetails, InstanceStatus, ModulePlayerCountSource, RuntimeLivePlayerStatus};
 use app_modules::ModuleDescriptor;
 

@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 
 pub(super) fn configure_scenario(scenario: &str, values: &mut serde_json::Map<String, Value>) {

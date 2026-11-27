@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 //! Explicit existing-backend ARK acceptance. No fixture, start/stop, installation,
 //! arbitrary command, automatic resend, or player/account-name evidence.
 use crate::commands::commands_ark_tools::protocol::Creature;

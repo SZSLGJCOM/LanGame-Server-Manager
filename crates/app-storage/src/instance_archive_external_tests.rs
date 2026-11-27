@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 
 pub(super) async fn exclusive_fixture(baseline: bool) -> (Fixture, PathBuf) {

@@ -69,9 +69,9 @@ test("Vite health check follows lazy modules and retries an outdated optimized d
       return send(response, 200, "text/javascript", 'import App from "/src/App.tsx";');
     }
     if (url.pathname === "/src/App.tsx") {
-      return send(response, 200, "text/javascript", 'const View = import("/src/views/ServerWorkspaceView.tsx");');
+      return send(response, 200, "text/javascript", 'const View = import("/src/views/ServersView.tsx");');
     }
-    if (url.pathname === "/src/views/ServerWorkspaceView.tsx") {
+    if (url.pathname === "/src/views/ServersView.tsx") {
       return send(
         response,
         200,
@@ -118,7 +118,7 @@ test("Vite health check reports the exact persistent nested module failure", asy
     if (url.pathname === "/src/main.tsx") {
       return send(response, 200, "text/javascript", 'import "/node_modules/.vite/deps/broken.js?v=1";');
     }
-    if (url.pathname === "/src/views/ServerWorkspaceView.tsx") {
+    if (url.pathname === "/src/views/ServersView.tsx") {
       return send(response, 200, "text/javascript", "export default function View() {}");
     }
     return send(response, 504, "text/plain", "Outdated Optimize Dep");
@@ -152,7 +152,7 @@ test("Vite health check rejects a missing module rewritten to the SPA HTML fallb
     if (url.pathname === "/src/main.tsx") {
       return send(response, 200, "text/javascript", 'import "/src/missing.tsx";');
     }
-    if (url.pathname === "/src/views/ServerWorkspaceView.tsx") {
+    if (url.pathname === "/src/views/ServersView.tsx") {
       return send(response, 200, "text/javascript", "export default function View() {}");
     }
     return send(response, 200, "text/html", indexHtml);
@@ -188,7 +188,7 @@ test("Vite health check rejects an unresolved runtime placeholder in the dev cli
     if (url.pathname === "/src/main.tsx") {
       return send(response, 200, "text/javascript", "export default function main() {}");
     }
-    if (url.pathname === "/src/views/ServerWorkspaceView.tsx") {
+    if (url.pathname === "/src/views/ServersView.tsx") {
       return send(response, 200, "text/javascript", "export default function View() {}");
     }
     return send(response, 404, "text/plain", "missing fixture module");

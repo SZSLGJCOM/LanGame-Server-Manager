@@ -4,14 +4,24 @@ use std::collections::HashMap;
 /// rounds retain additional passages from long manuals with their original
 /// relative rank, so callers can still page through every candidate.
 pub(crate) fn diversify_documents(candidates: &mut [(usize, f32, f32)], document_ids: &[String]) {
-    let mut occurrences = HashMap::new();
-    let mut priority = HashMap::new();
-    for (rank, (index, _, _)) in candidates.iter().enumerate() {
-        let occurrence = occurrences.entry(&document_ids[*index]).or_insert(0);
-        priority.insert(*index, (*occurrence, rank));
-        *occurrence += 1;
+    let mut occurrences = HashMap::with_capacity(candidates.len());
+    let mut decorated: Vec<_> = candidates
+        .iter()
+        .copied()
+        .enumerate()
+        .map(|(rank, candidate)| {
+            let occurrence = occurrences
+                .entry(document_ids[candidate.0].as_str())
+                .or_insert(0usize);
+            let key = (*occurrence, rank);
+            *occurrence += 1;
+            (key, candidate)
+        })
+        .collect();
+    decorated.sort_unstable_by_key(|(key, _)| *key);
+    for (slot, (_, candidate)) in candidates.iter_mut().zip(decorated) {
+        *slot = candidate;
     }
-    candidates.sort_by_key(|(index, _, _)| priority[index]);
 }
 
 #[cfg(test)]

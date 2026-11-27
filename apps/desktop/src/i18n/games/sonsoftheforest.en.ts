@@ -2,9 +2,9 @@ import type { MessageCatalog } from "../../i18n-config";
 
 export const EN_US_SONS_OF_THE_FOREST_MESSAGES: MessageCatalog = {
     "sonsoftheforest.settings.sections.room": "Server Identity",
-    "sonsoftheforest.settings.sections.roomDescription": "Server name, slots, and gameplay mode posture.",
+    "sonsoftheforest.settings.sections.roomDescription": "Server name, slots, and gameplay mode settings.",
     "sonsoftheforest.settings.sections.network": "Network",
-    "sonsoftheforest.settings.sections.networkDescription": "LAN posture and network accessibility test behavior.",
+    "sonsoftheforest.settings.sections.networkDescription": "LAN mode and network accessibility test behavior.",
     "sonsoftheforest.settings.sections.world": "World & Custom Mode",
     "sonsoftheforest.settings.sections.worldDescription": "Game mode, save lifecycle, shared world rules and Custom-mode tuning.",
     "sonsoftheforest.settings.sections.access": "Join & Admin",

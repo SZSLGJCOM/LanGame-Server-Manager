@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 
 async fn installed_fixture() -> Fixture {

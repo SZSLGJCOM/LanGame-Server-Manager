@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use app_storage::{StoragePaths, bootstrap_storage_with_paths, list_instances};
 use std::env;
 use std::fs;

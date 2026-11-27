@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 use crate::state::DesktopState;
 use app_core::{InstanceStatus, InstanceSummary};

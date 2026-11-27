@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 
 fn document() -> ConsoleSourceDocument {

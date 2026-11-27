@@ -66,7 +66,7 @@ export const ARK_ASE_RULE_GROUPS: Record<string, ArkGroupSpec[]> = {
     {
       id: "server-posture",
       titleKey: "ark.settings.groups.balance.server-posture.title",
-      fallbackTitle: "Server posture",
+      fallbackTitle: "Server rules",
       layoutClass: "ark-balance-posture",
       keys: [
         "use_singleplayer_settings",
@@ -138,7 +138,7 @@ export const ARK_ASE_RULE_GROUPS: Record<string, ArkGroupSpec[]> = {
     {
       id: "cryopod-rules",
       titleKey: "ark.settings.groups.balance.cryopod-rules.title",
-      fallbackTitle: "Cryopod posture",
+      fallbackTitle: "Cryopod rules",
       layoutClass: "ark-balance-cryopod",
       keys: [
         "enable_cryopod_nerf",
@@ -250,7 +250,7 @@ export const ARK_ASE_RULE_GROUPS: Record<string, ArkGroupSpec[]> = {
     {
       id: "posture",
       titleKey: "ark.settings.groups.engrams.posture.title",
-      fallbackTitle: "Unlock posture",
+      fallbackTitle: "Unlock policy",
       layoutClass: "ark-engrams-posture",
       keys: [
         "auto_unlock_all_engrams",
@@ -370,7 +370,7 @@ export const ARK_ASE_RULE_GROUPS: Record<string, ArkGroupSpec[]> = {
     {
       id: "recipes",
       titleKey: "ark.settings.groups.crafting.recipes.title",
-      fallbackTitle: "Recipe posture",
+      fallbackTitle: "Recipe rules",
       layoutClass: "ark-crafting-recipes",
       keys: [
         "allow_custom_recipes",
@@ -417,7 +417,7 @@ export const ARK_ASE_RULE_GROUPS: Record<string, ArkGroupSpec[]> = {
     {
       id: "game-log",
       titleKey: "ark.settings.groups.logs.game-log.title",
-      fallbackTitle: "Game log posture",
+      fallbackTitle: "Game log settings",
       layoutClass: "ark-logs-game",
       keys: ["server_game_log", "server_game_log_include_tribe_logs"]
     },

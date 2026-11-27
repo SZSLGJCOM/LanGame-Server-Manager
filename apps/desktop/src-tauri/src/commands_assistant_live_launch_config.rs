@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 
 pub(super) fn validate_new_launch_configuration(

@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 
 const LIVE_ORIGINALS: [&str; 2] = [

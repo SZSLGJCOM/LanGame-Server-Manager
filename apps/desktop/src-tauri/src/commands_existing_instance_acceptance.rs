@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 //! Explicit existing-data acceptance. This module never creates a fixture or
 //! changes settings; start/stop retain the application's normal save behavior.
 use super::readiness::SmokeManifest;

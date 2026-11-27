@@ -366,7 +366,7 @@ Ollama 对话入口和调查使用原生 `/api/chat` 接口，单次请求设置
 
 ### 实现与验证
 
-连接检测由 [`assistant_connection.rs`](../apps/desktop/src-tauri/src/assistant_connection.rs) 和 [AI 设置控件](../apps/desktop/src/components/AppAiConnectionCheck.tsx) 实现。原生测试覆盖三个协议的流式通信、结果回传、登记前取消、超时和连接释放；浏览器夹具用合成 IPC 返回值验证配置保存、取消与旧结果失效。忽略运行的 `saved_deepseek_connection_probe` 需要显式设置 `LANGAME_ASSISTANT_LIVE=1` 并已有 DeepSeek 密钥，通过生产传输检测，不读取应用数据。
+连接检测由 [`assistant_connection.rs`](../apps/desktop/src-tauri/src/assistant_connection.rs) 和 [AI 设置控件](../apps/desktop/src/components/AppAiConnectionCheck.tsx) 实现。原生测试覆盖三个协议的流式通信、结果回传、登记前取消、超时和连接释放；浏览器测试用模拟 IPC 返回值验证配置保存、取消与旧结果失效。忽略运行的 `saved_deepseek_connection_probe` 需要显式设置 `LANGAME_ASSISTANT_LIVE=1` 并已有 DeepSeek 密钥，通过生产传输检测，不读取应用数据。
 
 会话和归档由 [`assistant_sessions.rs`](../apps/desktop/src-tauri/src/assistant_sessions.rs) 管理，配合[命令绑定与取消](../apps/desktop/src-tauri/src/commands_assistant_ops/session.rs)、[累计预算](../apps/desktop/src-tauri/src/commands_assistant_ops/run_budget.rs)和[检查点恢复](../apps/desktop/src-tauri/src/commands_assistant_ops/continuation.rs)。[实例工作区](../crates/app-storage/src/instance_workspace.rs)定义通用文件归属与保护规则，[工作区工具](../apps/desktop/src-tauri/src/commands_assistant_ops/workspace_files.rs)和[网络观察](../apps/desktop/src-tauri/src/commands_assistant_ops/workspace_diagnostics.rs)提供有界证据。前端测试覆盖先创建会话再请求、创建或确认期间停止、等待原请求最终返回、保留已完成回执、恢复检查点及禁止上传客户端历史。浏览器测试验证输入和确认控件，不证明原生模型或游戏行为。
 
@@ -376,7 +376,7 @@ Ollama 对话入口和调查使用原生 `/api/chat` 接口，单次请求设置
 
 [新建开服原生场景](../apps/desktop/src-tauri/src/commands_assistant_live_launch_tests.rs)从空的隔离数据库和已安装文件副本开始，在同一开服任务中确认创建、模型配置及真实启动，再探测已加载的世界并停止本次进程。启动前检查实例记录、保存配置及实际启动参数均绑定 `127.0.0.1`，且启动程序精确位于本次授权的库副本或该实例的私有目录。启动前以流式 SHA256 核对可执行文件与脚本包，确认它们匹配已认证来源。生产启动会创建最多七条限于 `127.0.0.1` 的实例入站防火墙规则；测试先确认规则名称不存在，停止后仅删除匹配本次所有权的规则，失败启动同样执行清理。原生端口证据另外记录全部已验证进程的监听；模块严格绑定检查覆盖 Master 游戏端口，不能仅凭保存的绑定设置证明每个 Steam socket 都在回环地址。此场景不确认安装、文件校验或下载，因此不证明外部下载或 SteamCMD 校验和检查已经实测通过。 显式开启的 `assistant_live_saved_deepseek_launches_new_native_dst_server` 通过生产传输使用已保存的 DeepSeek 凭据，将本次验收限制为最多六次分别确认的操作；仍需管理员权限和隔离文件副本，固定脚本服务的证据不计作模型验收。
 
-已有副本如果缺少可信的干净程序及初始程序清单，需先单独进行官方认证。[`native_catalog_preparation` 夹具](../crates/app-storage/tests/native_catalog_preparation.rs)在显式开启后生成全新隔离数据库及设置凭据。使用该隔离 `LOCALAPPDATA`、SteamCMD 和本次游戏副本运行 `install_catalog certify dontstarve`；仅传 `--games-root` 不会隔离桌面数据库。认证可能更新可丢弃副本，只有原生 Steam 校验及完整 depot 文件检查通过后才发布清单。
+已有副本如果缺少可信的干净程序及初始程序清单，需先单独进行官方认证。[`native_catalog_preparation` 测试工具](../crates/app-storage/tests/native_catalog_preparation.rs)在显式开启后生成全新隔离数据库及设置凭据。使用该隔离 `LOCALAPPDATA`、SteamCMD 和本次游戏副本运行 `install_catalog certify dontstarve`；仅传 `--games-root` 不会隔离桌面数据库。认证可能更新可丢弃副本，只有原生 Steam 校验及完整 depot 文件检查通过后才发布清单。
 
 [确定性原生契约场景](../apps/desktop/src-tauri/src/commands_assistant_live_launch_contract_tests.rs) `assistant_live_contract_launches_new_native_dst_server` 使用本机 HTTP 服务先完成需求记录和冻结，再依次返回三步固定操作计划，复用相同的创建、配置、启动、世界探针及清理检查。它仍需明确开启原生验收、管理员权限和已有游戏文件副本，但不需要模型。报告标注为 `scripted-local-contract`；通过只能证明给定计划能够正确执行，不能证明模型能从用户请求生成该计划。
 

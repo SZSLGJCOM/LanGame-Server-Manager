@@ -52,12 +52,15 @@ pub(crate) fn verify_owned_mods(root: &Path) -> Result<(), String> {
     } else {
         None
     };
-    super::super::unreal_world_save::installation::verify_mod_tree(
+    super::super::unreal_world_save::installation::verify_mod_tree_with_player_query(
         &root.join("R5/Binaries/Win64/ue4ss/Mods"),
         owner.as_ref().map(|owner| &owner.files),
         owner
             .as_ref()
             .and_then(|owner| owner.pending_files.as_ref()),
+        Some(include_bytes!(
+            "../../../../../modules/windrose/extensions/LgsmPlayerQuery/Scripts/main.lua"
+        )),
     )
 }
 pub(super) fn validate(root: &Path) -> Result<Vec<File>, String> {

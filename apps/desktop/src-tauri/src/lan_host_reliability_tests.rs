@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 use std::net::SocketAddr;
 use std::sync::mpsc::{self, Receiver};

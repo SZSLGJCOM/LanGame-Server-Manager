@@ -22,8 +22,7 @@ concurrency:
 jobs:
   mirror:
     if: github.repository == 'SZSLGJCOM/LanGame-Server-Manager' && (github.event_name == 'workflow_dispatch' || (!github.event.release.draft && !github.event.release.prerelease))
-    # Standard macOS uses GitHub's macOS cloud, a separate path from Azure.
-    # Verify this path after both Python and curl uploads stalled from Azure.
+    # Run on GitHub-hosted macOS runners for reliable direct outbound connectivity to GitCode.
     runs-on: macos-15
     timeout-minutes: 60
     steps:

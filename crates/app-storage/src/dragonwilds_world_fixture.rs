@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::super::*;
 use std::fs;
 use std::path::PathBuf;

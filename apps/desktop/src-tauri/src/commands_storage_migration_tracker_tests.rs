@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 
 fn status(id: &str, phase: Phase) -> StorageMigrationStatus {

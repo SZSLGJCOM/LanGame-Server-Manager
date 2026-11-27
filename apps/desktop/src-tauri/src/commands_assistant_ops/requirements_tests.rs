@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 
 fn request(settings: Value) -> AssistantTaskRequirements {

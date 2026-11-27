@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use crate::{extract, sources};
 use reqwest::Url;
 

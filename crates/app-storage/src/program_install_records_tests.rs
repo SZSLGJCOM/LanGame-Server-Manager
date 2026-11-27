@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 use crate::{GameInstallSyncRecord, initialize_database, sync_game_installs};
 use sqlx::{SqlitePool, sqlite::SqlitePoolOptions};
@@ -284,7 +286,7 @@ async fn a_missing_library_keeps_its_registered_location_without_becoming_an_ins
     assert!(recorded.owner_instance_id.is_none());
     assert!(matches!(recorded.install_state, InstallState::NotInstalled));
     assert!(
-        crate::storage_db::resolve_module_install_root_from_pool(&f.pool, "game")
+        crate::storage_db::resolve_module_install_root_from_executor(&f.pool, "game")
             .await
             .unwrap()
             .is_none()

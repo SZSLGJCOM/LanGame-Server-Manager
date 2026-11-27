@@ -157,7 +157,7 @@ export function buildModSettingsApplyPlan(
     return emptyApplyPlan("servers.mods.prepareOnly", "Download Mod files without changing their enablement or options.");
   }
   if (selectedIds.length === 0) {
-    return emptyApplyPlan("servers.mods.applySummary.empty", "Select mods from the shelf first.");
+    return emptyApplyPlan("servers.mods.applySummary.empty", "Select mods from the list first.");
   }
   if (moduleId === "dontstarve" && hasDstRawModOverrides(settings)) {
     return emptyApplyPlan("dst.settings.modStatus.rawOverrideWarning", DST_RAW_MOD_WARNING);

@@ -1,7 +1,7 @@
 import { selectLocaleText } from "./i18n";
 import type { BindAddressCandidate } from "./types";
 
-export const DEFAULT_BIND_ADDRESS = "0.0.0.0";
+const DEFAULT_BIND_ADDRESS = "0.0.0.0";
 export const DEFAULT_BIND_ADDRESS_CANDIDATE: BindAddressCandidate = {
   address: DEFAULT_BIND_ADDRESS,
   kind: "all",
@@ -32,12 +32,6 @@ export function normalizeBindAddressCandidates(candidates: BindAddressCandidate[
   return normalized.length ? normalized : [DEFAULT_BIND_ADDRESS_CANDIDATE];
 }
 
-export function resolvePreferredBindIp(candidates: BindAddressCandidate[]) {
-  return normalizeBindAddressCandidates(candidates).find((candidate) => candidate.address === DEFAULT_BIND_ADDRESS)?.address
-    ?? candidates[0]?.address
-    ?? DEFAULT_BIND_ADDRESS;
-}
-
 export function isWildcardBindAddress(address: string | null | undefined) {
   const normalized = String(address ?? "").trim();
   return normalized === "" || normalized === "0.0.0.0" || normalized === "::" || normalized === "[::]";
@@ -52,45 +46,20 @@ function looksLikeIpv4(address: string) {
   return parts.every((part) => /^\d+$/.test(part) && Number(part) >= 0 && Number(part) <= 255);
 }
 
-export function bindAddressCandidateKind(candidate: BindAddressCandidate | null | undefined) {
-  return String(candidate?.kind ?? "").trim().toLowerCase();
-}
-
-export function isOverlayCandidate(candidate: BindAddressCandidate) {
+function isOverlayCandidate(candidate: BindAddressCandidate) {
   return String(candidate.kind ?? "").trim().toLowerCase() === "overlay";
 }
 
-export function isPublicCandidate(candidate: BindAddressCandidate) {
+function isPublicCandidate(candidate: BindAddressCandidate) {
   return String(candidate.kind ?? "").trim().toLowerCase() === "public";
 }
 
-export function isProxyCandidate(candidate: BindAddressCandidate) {
+function isProxyCandidate(candidate: BindAddressCandidate) {
   return String(candidate.kind ?? "").trim().toLowerCase() === "proxy";
 }
 
-export function isLanCandidate(candidate: BindAddressCandidate) {
+function isLanCandidate(candidate: BindAddressCandidate) {
   return String(candidate.kind ?? "").trim().toLowerCase() === "lan";
-}
-
-export function findBindAddressCandidateByKind(candidates: BindAddressCandidate[], kind: string): BindAddressCandidate | null {
-  return candidates.find((candidate) => bindAddressCandidateKind(candidate) === kind) ?? null;
-}
-
-export function bindAddressCandidateLooksLikeProxyTun(candidate: BindAddressCandidate): boolean {
-  const adapterName = String(candidate.adapter_name ?? "").trim();
-  const address = String(candidate.address ?? "").trim();
-  const [first, second] = address.split(".").map((part) => Number(part));
-  return isProxyCandidate(candidate)
-    || (first === 198 && second >= 18 && second <= 19)
-    || /(^|[^a-z])(meta|clash|mihomo|proxy|tun)([^a-z]|$)/i.test(adapterName);
-}
-
-export function formatBindAddressCandidateSummary(candidate: BindAddressCandidate | null, fallback: string): string {
-  if (!candidate) {
-    return fallback;
-  }
-  const adapterName = String(candidate.adapter_name ?? candidate.family_name ?? "").trim();
-  return adapterName ? `${adapterName} ${candidate.address}` : candidate.address;
 }
 
 export function inferBindAddressCandidate(address: string): BindAddressCandidate {

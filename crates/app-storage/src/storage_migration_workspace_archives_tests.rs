@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 //! External archives join the selected workspace without merging archive owners.
 use super::*;
 use crate::storage_migration as migration;

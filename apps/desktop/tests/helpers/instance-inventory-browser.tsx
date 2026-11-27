@@ -73,7 +73,7 @@ Object.assign(globalThis, { __reliabilityFixtureCleanup: async () => {
 async function run() {
   // Bootstrap in the browser host, then substitute only native calls. The
   // entire App, real panel reader, pause policy and selection handling run.
-  await act(async () => { await prepareBrowserLocaleCatalogs(); await import("../../src/views/ServerWorkspaceView"); root.render(<StrictMode><I18nProvider><InstanceSettingsSaveProvider><App />
+  await act(async () => { await prepareBrowserLocaleCatalogs(); await import("../../src/views/ServersView"); root.render(<StrictMode><I18nProvider><InstanceSettingsSaveProvider><App />
   </InstanceSettingsSaveProvider></I18nProvider></StrictMode>); });
   await settleUntil(() => fixture.querySelector(".shell-topnav-badge")?.textContent === "1", "App bootstrap must finish");
   Object.assign(window, { isTauri: true, __TAURI_INTERNALS__: { invoke: async (command: string, args: Record<string, unknown> = {}) => {

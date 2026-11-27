@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use mlua::Lua;
 
 const OBSERVER: &str =

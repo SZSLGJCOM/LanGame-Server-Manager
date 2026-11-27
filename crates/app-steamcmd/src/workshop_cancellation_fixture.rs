@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use std::fs;
 use std::os::windows::io::{AsRawHandle, FromRawHandle, OwnedHandle};
 use std::path::Path;

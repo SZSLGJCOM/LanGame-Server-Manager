@@ -37,7 +37,7 @@ Squad 当前 build 25295557 的 `AdminReloadServerConfig` 只刷新管理员和�
 
 隔离测试使用完整程序副本、新存档、新凭据、本机端口和虚拟 ID，未修改实际实例或真实封禁。Soulmask app 3017310 build 25361728 已验证旧 `unban` 返回 `Not Found` 且不删记录，原生 `usp 1 1/0` 会在上述路径精确增删 Steam 形式及 Epic 复合形式的虚拟账号；原生保存退出、重启后 `lsp` 确认两种账号重新加载，账号黑名单保持启用，再次原生解封只删除指定目标。命令与权限语义另见[原始远程控制说明](https://saraserenity.net/soulmask/remote_console.php)和[权限说明](https://saraserenity.net/soulmask/server_permissions.php)。ARK ASA build 25535041、ASE build 21241282 均已验证 `UnbanPlayer` 实际文件删除、其余记录保留、重启加载后再次精确删除；ASA 原生保存包含到期字段，ASE 完整保留名称中的逗号。原生 `Unbanned` 回复本身不作为成功证据。
 
-Conan、Palworld 的目录和格式由安装包读写函数核对；Necesse、Unturned 核对本机空文件及完整原生读取布局；RimWorld Together 依据官方 `26.8.31.1` 标签源码及程序集。浏览器验收使用生产 React 组件和替代 IPC，截图为构造数据。虚拟账号测试覆盖服务端持久化和原生管理接口，不代表完成 Steam/EOS 客户端认证、真实玩家拒绝重连与解封后加入验收。Project Zomboid 的 SQLite 封禁列表不在本批范围。
+Conan、Palworld 的目录和格式由安装包读写函数核对；Necesse、Unturned 核对本机空文件及完整原生读取布局；RimWorld Together 依据官方 `26.8.31.1` 标签源码及程序集。浏览器验收使用生产 React 组件和替代 IPC，截图为构造数据。虚拟账号测试覆盖服务端持久化和原生管理接口，不代表完成 Steam/EOS 客户端认证、真实玩家拒绝重连与解封后加入验收。Project Zomboid 的 SQLite 封禁列表暂未纳入当前原生封禁列表读取范围。
 
 ## 在线能力与应用访问名单
 

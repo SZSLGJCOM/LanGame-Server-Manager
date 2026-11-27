@@ -85,7 +85,7 @@ function buildPalworldFieldGroups(sectionId: string, fields: GuidedSettingsField
     voiceChatTitle: t("palworld.module.groups.voiceChat", undefined, "Voice chat"),
     servicesInterfacesBody: t("palworld.module.groups.operatorInterfacesDescription", undefined, "REST and game data APIs for server administration."),
     worldTravelTitle: t("palworld.module.groups.travelAndWorldEvents", undefined, "Travel and world events"),
-    worldTravelBody: t("palworld.module.groups.travelRulesAndInvasionPostureShapeTheWorldSFeelImmediately", undefined, "Travel rules and invasion posture shape the world's feel immediately."),
+    worldTravelBody: t("palworld.module.groups.travelRulesAndInvasionPostureShapeTheWorldSFeelImmediately", undefined, "Travel rules and invasion behavior shape the world's feel immediately."),
     worldContinuityTitle: t("palworld.module.groups.continuityAndResets", undefined, "Continuity and resets"),
     worldContinuityBody: t("palworld.module.groups.offlineBehaviorGuildResetsAndHardcoreGuardrailsBelongTogether", undefined, "Offline behavior, guild resets, and hardcore guardrails belong together."),
     worldProgressionTitle: t("palworld.module.groups.globalProgressionRules", undefined, "Global progression rules"),

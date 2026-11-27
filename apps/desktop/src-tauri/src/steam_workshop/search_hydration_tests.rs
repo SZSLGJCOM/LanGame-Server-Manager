@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use serde_json::{Value, json};
 
 use super::tests::{browse_query, page_html, parse};

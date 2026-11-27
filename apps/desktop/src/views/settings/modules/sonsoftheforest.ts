@@ -6,12 +6,12 @@ const SOTF_SECTIONS: GuidedSettingsSection[] = [
   {
     id: "room",
     title: "Server Identity",
-    description: "Server name, slots, and gameplay mode posture."
+    description: "Server name, slots, and gameplay mode settings."
   },
   {
     id: "network",
     title: "Network",
-    description: "LAN posture and network accessibility test behavior."
+    description: "LAN mode and network accessibility test behavior."
   },
   {
     id: "world",
@@ -42,7 +42,7 @@ const SOTF_GROUP_SPECS: Record<string, SotfGroupSpec[]> = {
   network: [
     {
       id: "network-posture",
-      title: "Network Posture",
+      title: "Network settings",
       description: "Network accessibility test behavior.",
       layoutClass: "sotf-network-posture",
       keys: ["skip_network_accessibility_test"]

@@ -25,7 +25,7 @@
   "test_binary_sha256": "3d13b05e1c2c7b94dee17b0d4c4e9fbf86fb5273a99f0b80faeeee3562b18065",
   "source_manifest_sha256": "8f70623b26b8ebff2176dff43553c83480239bc9f24c6c80992b9cf1555208b0",
   "build": {
-    "entry_point": "workspace-managed Cargo wrapper; host paths omitted",
+    "entry_point": "isolated Cargo test runner",
     "entry_point_sha256": "a49fe85bfed0b558354bc5a605e84b5a2f9a30c251c2bc57ff4ddc51503223b2",
     "actual_task_entry_point_sha256": "910f6df183329c9ff55c9f006e8a45b864db0015da4044af4c491f6c84412c2e",
     "task_invocation_audited_at_utc": "2026-11-12T02:41:58.5369276Z",
@@ -226,7 +226,7 @@
       "sha256": "475168f491be02fbbb475e5e4202d9a1962d56fd3761392de0854032c356a871"
     },
     {
-      "name": "native04-invoke-task-cargo.ps1",
+      "name": "native04-cargo-test-runner.ps1",
       "size_bytes": 8097,
       "sha256": "910f6df183329c9ff55c9f006e8a45b864db0015da4044af4c491f6c84412c2e"
     },

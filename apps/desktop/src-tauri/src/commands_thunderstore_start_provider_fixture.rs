@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 //! Test-only provider boundary. It replaces metadata/ZIP delivery, never the
 //! resolver, runtime verification, unpacker, ownership record or publisher.
 use super::*;

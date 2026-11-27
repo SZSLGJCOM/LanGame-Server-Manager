@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 use crate::commands::commands_program_storage::*;
 use app_storage::{StoragePaths, bootstrap_storage_with_paths};

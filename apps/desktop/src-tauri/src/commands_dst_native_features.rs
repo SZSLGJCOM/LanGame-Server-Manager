@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 
 #[path = "commands_dst_native_shadowy_depths_tests.rs"]

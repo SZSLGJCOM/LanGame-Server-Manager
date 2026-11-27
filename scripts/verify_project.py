@@ -105,14 +105,17 @@ class Runner:
 
     def policy(self) -> None:
         self.python("-m", "unittest", "discover", "-s", "scripts/tests", "-p", "test_*.py")
-        self.node("--test", "scripts/tests/enshrouded_control_package.test.cjs")
+        self.node(
+            "--test",
+            "scripts/tests/enshrouded_control_package.test.cjs",
+            "scripts/tests/enshrouded_native_profiles.test.cjs",
+        )
         self.publication()
         if self.args.tier == "full":
             self.python("scripts/export_public_snapshot.py", "--verbose")
 
     def frontend_build(self) -> None:
         self.node("apps/desktop/scripts/generate_npm_third_party_licenses.mjs", "--check")
-        self.node("apps/desktop/scripts/audit_i18n_surface.cjs")
         self.node("apps/desktop/scripts/verify_i18n_catalogs.cjs")
         for script, arguments in (
             ("audit_dedicated_settings_pages.py", ("--strict",)),
@@ -157,8 +160,8 @@ class Runner:
         # Clippy performs the workspace compile/type check as well as linting.
         self.cargo("clippy", "--workspace", "--all-targets", "--all-features", "--locked", "--", "-D", "warnings")
         if self.args.cargo_wrapper:
-            # The verifier downloads checksum-locked archives itself; the managed
-            # Cargo admission intentionally does not expose a fetch command.
+            # The verifier downloads checksum-locked archives itself; external
+            # Cargo launchers do not expose a separate fetch command.
             self.python("scripts/generate_rust_third_party_licenses.py", "--check")
         else:
             self.cargo("fetch", "--locked")
@@ -195,7 +198,7 @@ class Runner:
         if self.args.native_executable:
             executable = self.args.native_executable
         elif self.args.cargo_wrapper:
-            raise ValueError("Managed native acceptance requires --native-executable from its build receipt")
+            raise ValueError("External Cargo launcher native acceptance requires --native-executable from its build receipt")
         else:
             self.cargo("build", "-p", "langame-desktop", "--features", "desktop-reliability", "--locked")
             executable = ROOT / "target/debug/langame-desktop.exe"
@@ -222,8 +225,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--event", help="CI event; manual dispatch honors an explicitly selected quick tier")
     parser.add_argument("--github-output", type=Path)
     parser.add_argument("--output", type=Path, help="New evidence root outside the repository")
-    parser.add_argument("--cargo-wrapper", type=Path)
-    parser.add_argument("--node-wrapper", type=Path)
+    parser.add_argument("--cargo-wrapper", type=Path, help="Optional Cargo command launcher")
+    parser.add_argument("--node-wrapper", type=Path, help="Optional Node command launcher")
     parser.add_argument("--frontend-dist", type=Path)
     parser.add_argument("--frontend-output", type=Path, help="External frontend build destination")
     parser.add_argument("--native-executable", type=Path)

@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 use std::net::{TcpListener, TcpStream};
 use std::sync::atomic::AtomicBool;

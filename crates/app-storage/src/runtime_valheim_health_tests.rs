@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::super::{analyze_runtime_health_with_startup_evidence, read_log_snapshot};
 use super::*;
 use app_core::{ActiveInstanceRun, InstanceStatus};

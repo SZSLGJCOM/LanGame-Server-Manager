@@ -399,7 +399,7 @@ export const ZH_CN_ARK_SURVIVAL_EVOLVED_MESSAGES: MessageCatalog = {
   "ark.settings.sections.rates": "倍率与成长",
   "ark.settings.sections.ratesDescription": "经验、驯服、采集以及水分/食物消耗倍率集中在这里。",
   "ark.settings.sections.balance": "战斗与平衡",
-  "ark.settings.sections.balanceDescription": "资源刷新、堆叠倍率、疾病姿态、飞行规则和战斗倍率集中在这里。",
+  "ark.settings.sections.balanceDescription": "资源刷新、堆叠倍率、疾病机制、飞行规则和战斗倍率集中在这里。",
   "ark.settings.sections.leveling": "角色与生物属性",
   "ark.settings.sections.levelingDescription": "基础属性、每级成长、移动速度升级与属性重置规则。",
   "ark.settings.sections.farming": "农业与资源刷新",

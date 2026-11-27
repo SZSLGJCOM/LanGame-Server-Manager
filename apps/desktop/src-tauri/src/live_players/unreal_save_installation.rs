@@ -353,21 +353,32 @@ pub(super) fn verify_owned_mods(game: Game, root: &Path) -> Result<(), String> {
     } else {
         None
     };
-    verify_mod_tree(
+    let player_query_script = match game {
+        Game::Scum => Some(
+            include_bytes!(
+                "../../../../../modules/scum/extensions/LgsmPlayerQuery/Scripts/main.lua"
+            )
+            .as_slice(),
+        ),
+        _ => None,
+    };
+    verify_mod_tree_with_player_query(
         &game.win64(root).join("ue4ss/Mods"),
         owner.as_ref().map(|owner| &owner.files),
         owner
             .as_ref()
             .and_then(|owner| owner.pending_files.as_ref()),
+        player_query_script,
     )
 }
 
 /// Inspect existing leaves only. Missing leaves can be an interrupted owned
 /// publication or retirement; they cannot cause a foreign mod to be disabled.
-pub(crate) fn verify_mod_tree(
+pub(crate) fn verify_mod_tree_with_player_query(
     mods: &Path,
     files: Option<&BTreeMap<String, String>>,
     pending: Option<&BTreeMap<String, String>>,
+    player_query_script: Option<&[u8]>,
 ) -> Result<(), String> {
     if !exists(mods)? {
         return Ok(());
@@ -375,12 +386,37 @@ pub(crate) fn verify_mod_tree(
     let _mods = pin(mods, false)?;
     for entry in fs::read_dir(mods).map_err(|error| error.to_string())? {
         let entry = entry.map_err(|error| error.to_string())?;
-        if entry.file_name() != "LgsmWorldSave"
-            || !entry
-                .file_type()
-                .map_err(|error| error.to_string())?
-                .is_dir()
+        let is_dir = entry
+            .file_type()
+            .map_err(|error| error.to_string())?
+            .is_dir();
+        if entry.file_name() == "LgsmPlayerQuery"
+            && is_dir
+            && let Some(expected_script) = player_query_script
         {
+            let directory = entry.path();
+            super::retired::inspect_tree(&directory, "", &["Scripts/main.lua", "enabled.txt"])?;
+            for (name, expected_bytes) in [
+                ("Scripts/main.lua", expected_script),
+                ("enabled.txt", b"".as_slice()),
+            ] {
+                let path = directory.join(name);
+                if !exists(&path)? {
+                    continue;
+                }
+                let _parents = pin(
+                    path.parent().ok_or("Invalid owned player-query path.")?,
+                    false,
+                )?;
+                if read(&path, MAX_FILE)? != expected_bytes {
+                    return Err(
+                        "An owned player-query mod was modified; its loader was preserved.".into(),
+                    );
+                }
+            }
+            continue;
+        }
+        if entry.file_name() != "LgsmWorldSave" || !is_dir {
             return Err(
                 "UE4SS contains an operator or unknown mod entry; its loader was preserved.".into(),
             );

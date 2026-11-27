@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 
 const ITEM_ID: &str = "3739491677";

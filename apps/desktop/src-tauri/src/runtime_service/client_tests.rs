@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 use std::future::poll_fn;
 use std::task::Poll;

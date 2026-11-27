@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 
 fn recovery_fixture(root: &Path, minecraft: bool) -> TestResult<PathBuf> {

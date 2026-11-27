@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 use crate::commands::commands_dst_world_state::{DstWorldState, preview_dontstarve_world_start};
 use app_core::StartedProcess;

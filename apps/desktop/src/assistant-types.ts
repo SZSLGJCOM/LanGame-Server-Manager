@@ -50,6 +50,14 @@ export interface AssistantCapsuleModel {
   tone: AssistantSeverity;
 }
 
+export interface AssistantViewModel {
+  closeLabel: string;
+  issues: AssistantIssue[];
+  panelTitle: string;
+  prompts: AssistantPromptCard[];
+  contextPayload: string;
+}
+
 export interface AssistantBuildInput {
   aiSettings: AiSettings;
   locale: string;
@@ -63,7 +71,7 @@ export interface AssistantBuildInput {
   runtimeRefreshIssue: RuntimeRefreshIssue | null;
   selectedInstanceDetails: InstanceDetails | null;
   selectedInstanceId: string | null;
-  selectedModuleId: string | null;
+  selectedModuleId?: string | null;
   selectedInstanceModuleDetails: ModuleDetails | null;
   selectedLaunchPlan: LaunchPlan | null;
   selectedLaunchPlanError: string | null;

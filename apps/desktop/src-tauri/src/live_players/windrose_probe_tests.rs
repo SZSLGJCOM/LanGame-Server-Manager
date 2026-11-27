@@ -1,4 +1,6 @@
+#![cfg(test)]
 #![cfg(windows)]
+
 use super::Game;
 use super::probe_support::run_owned_empty_probe;
 use std::path::PathBuf;

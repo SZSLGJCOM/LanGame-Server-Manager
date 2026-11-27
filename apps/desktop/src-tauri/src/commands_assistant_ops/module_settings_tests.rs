@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 
 pub(super) fn schema_module(schema: Value) -> ModuleDetails {

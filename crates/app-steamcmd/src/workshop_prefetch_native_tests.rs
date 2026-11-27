@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 use crate::workshop_download_cancellation_tests::cancellation_fixture::OwnedProcessTree;
 use crate::{apply_no_window, ps_literal, run_command_capture, run_powershell};

@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 //! Diagnostic native baseline: deliberately bypass automatic save preparation.
 //! This is a test child, never a production startup or manual-save acceptance.
 use super::*;

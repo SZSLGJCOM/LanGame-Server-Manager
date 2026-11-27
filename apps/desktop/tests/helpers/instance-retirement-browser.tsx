@@ -355,7 +355,7 @@ async function run() {
     await Promise.all([
       import("../../src/views/LibraryView"),
       import("../../src/views/library/LibraryDetailPage"),
-      import("../../src/views/ServerWorkspaceView")
+      import("../../src/views/ServersView")
     ]);
   });
   await assertLibraryInstalled("minecraft", "before-delete");

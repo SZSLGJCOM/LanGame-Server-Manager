@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 
 const MOD_INFO: &[u8] = b"<xml><Name value=\"FixtureMod\"/><Version value=\"1.0\"/></xml>";

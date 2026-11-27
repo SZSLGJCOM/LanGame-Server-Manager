@@ -15,7 +15,7 @@ export const ZH_CN_MINECRAFT_MESSAGES: MessageCatalog = {
   "settings.schema.minecraft.use_native_transport.description": "允许使用平台提供的网络优化；Windows 仍使用 Java 网络实现。",
   "settings.schema.minecraft.accepts_transfers.title": "接受玩家跨服转移",
   "settings.schema.minecraft.accepts_transfers.description": "允许玩家通过其他服务器发起的转移连接加入本服。",
-  "minecraft.settings.groups.access-lists.description": "OP、白名单和封禁列表最终会物化成 Minecraft 原生 JSON 文件。",
+  "minecraft.settings.groups.access-lists.description": "OP、白名单和封禁列表保存后会生成 Minecraft 原生 JSON 文件。",
   "minecraft.settings.groups.access-lists.title": "玩家名单",
   "minecraft.settings.groups.eula-auth.description": "原版 Minecraft 会在 EULA 未接受时直接退出；公网服也应保持在线验证。",
   "minecraft.settings.groups.eula-auth.title": "EULA 与正版验证",

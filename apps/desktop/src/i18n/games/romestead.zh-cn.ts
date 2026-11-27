@@ -13,7 +13,7 @@ export const ZH_CN_ROMESTEAD_MESSAGES: MessageCatalog = {
   "romestead.settings.sections.access": "访问",
   "romestead.settings.sections.accessDescription": "服务器命令权限。",
   "romestead.settings.sections.admin": "管理",
-  "romestead.settings.sections.adminDescription": "来自 Romestead 配置面的管理员开关。",
+  "romestead.settings.sections.adminDescription": "Romestead 配置项中的管理员开关。",
   "romestead.settings.sections.performance": "性能",
   "romestead.settings.sections.performanceDescription": "低负载 CPU 占用与服务器线程计时。",
   "romestead.settings.sections.advanced": "高级",

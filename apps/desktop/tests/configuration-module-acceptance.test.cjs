@@ -32,7 +32,10 @@ const {
   resolveGameConfigAcceptanceSelection,
   verifyGameConfigAcceptanceRegistry
 } = require(path.join(desktopRoot, "tests", "helpers", "configuration-module-acceptance.ts"));
-const { listSettingsModuleIds } = require(path.join(
+const {
+  listSettingsModuleIds,
+  resolveSettingsModuleDefinition
+} = require(path.join(
   desktopRoot,
   "src",
   "views",
@@ -371,4 +374,26 @@ test("bundled modules, manifest IDs, schema IDs, presentation registry IDs, and 
   if (process.env.REQUIRE_ALL_GAME_CONFIG_ACCEPTANCE === "1") {
     assert.deepEqual(selectedModuleIds, CANONICAL_GAME_CONFIG_ACCEPTANCE_MODULE_IDS);
   }
+});
+
+test("Rust deep-sea terrain is an opt-in world-generation setting", () => {
+  const schema = JSON.parse(fs.readFileSync(path.join(modulesRoot, "rust", "schema.json"), "utf8"));
+  const field = schema.properties.deep_sea_terrain_everywhere;
+  assert.ok(field, "the deep-sea terrain option must be configurable");
+  assert.equal(field.type, "boolean");
+  assert.equal(field.default, false, "new instances preserve the native terrain behavior");
+  assert.equal(field["x-lsgm-section"], "world");
+  assert.equal(field["x-lsgm-source-key"], "deepsea.terrain_everywhere");
+  assert.equal(field["x-lsgm-player-access-kind"], undefined);
+
+  const rustDefinition = resolveSettingsModuleDefinition("rust");
+  const groups = rustDefinition.buildFieldGroups(
+    "world",
+    [{ key: "deep_sea_terrain_everywhere", ...field }],
+    "en-US",
+    (_key, _parameters, fallback) => fallback ?? ""
+  );
+  assert.equal(groups.length, 1);
+  assert.equal(groups[0].id, "world-generation");
+  assert.deepEqual(groups[0].fields.map(({ key }) => key), ["deep_sea_terrain_everywhere"]);
 });

@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 //! Test-only checkpoint between the formal save and normal shutdown.
 //! Restoring this point prevents shutdown saves from paying the manual-save debt.
 use super::*;

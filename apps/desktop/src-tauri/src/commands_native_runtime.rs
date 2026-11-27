@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 
 #[path = "commands_native_ark_shutdown_observation.rs"]

@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use crate::{
     KnowledgeError, KnowledgeLibrary, KnowledgeSettings, embedding, extract, sources, store,
 };

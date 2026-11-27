@@ -2,10 +2,7 @@ const fs = require("fs");
 const path = require("path");
 const { isLanguageNeutralMessage } = require("./i18n-language-neutral.cjs");
 const { collectTranslationReferences, extractMessagePlaceholders } = require("./i18n-source-references.cjs");
-const {
-  collectCatalogFilesBySuffix
-} = require("./catalog-file-discovery.cjs");
-
+const { collectCatalogFilesBySuffix } = require("./catalog-file-discovery.cjs");
 const { loadEffectiveCatalogs } = require("./i18n-catalog-loader.cjs");
 
 const ROOT = path.resolve(__dirname, "..");
@@ -14,16 +11,13 @@ const GAME_CATALOG_DIRECTORY = "src/i18n/games";
 
 const ENGLISH_GAME_CATALOG_FILES = collectCatalogFilesBySuffix(ROOT, GAME_CATALOG_DIRECTORY, ".en.ts");
 const CHINESE_GAME_CATALOG_FILES = collectCatalogFilesBySuffix(ROOT, GAME_CATALOG_DIRECTORY, ".zh-cn.ts");
+
 function readWorkspaceFile(relativePath) {
   return fs.readFileSync(path.join(ROOT, relativePath), "utf8");
 }
 
 function readRepoFile(relativePath) {
   return fs.readFileSync(path.join(WORKSPACE_ROOT, relativePath), "utf8");
-}
-
-function extractPlaceholders(value) {
-  return extractMessagePlaceholders(value);
 }
 
 function collectSourceFiles(directory) {
@@ -129,6 +123,52 @@ function collectMissingGameCatalogImports(indexFile, catalogFiles) {
     .sort();
 }
 
+function auditCatalogPair(englishCatalog, chineseCatalog, options = {}) {
+  const missing = [...englishCatalog.keys()]
+    .filter((key) => !chineseCatalog.has(key))
+    .sort();
+  const extra = options.checkExtra
+    ? [...chineseCatalog.keys()].filter((key) => !englishCatalog.has(key)).sort()
+    : [];
+  const unreadable = [];
+  const copied = [];
+  const corrupt = [];
+  const mismatchedPlaceholders = [];
+
+  for (const [key, chineseValue] of chineseCatalog) {
+    if (options.onlyKeys && !options.onlyKeys.has(key)) continue;
+    if (!/[\u3400-\u9fff]/u.test(chineseValue) && !isLanguageNeutralMessage(chineseValue)) {
+      unreadable.push(`${key} = ${JSON.stringify(chineseValue)}`);
+    }
+    if (/\?{2,}|\uFFFD/u.test(chineseValue)) {
+      corrupt.push(`${key} = ${JSON.stringify(chineseValue)}`);
+    }
+  }
+
+  for (const [key, englishValue] of englishCatalog) {
+    if (options.onlyKeys && !options.onlyKeys.has(key)) continue;
+    const chineseValue = chineseCatalog.get(key);
+    if (chineseValue === undefined) continue;
+    if (chineseValue === englishValue && !isLanguageNeutralMessage(englishValue)) {
+      copied.push(`${key} = ${JSON.stringify(englishValue)}`);
+    }
+    const enPlaceholders = extractMessagePlaceholders(englishValue);
+    const zhPlaceholders = extractMessagePlaceholders(chineseValue);
+    if (JSON.stringify(enPlaceholders) !== JSON.stringify(zhPlaceholders)) {
+      mismatchedPlaceholders.push(`${key}: en=${JSON.stringify(enPlaceholders)}, zh=${JSON.stringify(zhPlaceholders)}`);
+    }
+  }
+
+  return {
+    missing,
+    extra,
+    unreadable: unreadable.sort(),
+    copied: copied.sort(),
+    corrupt: corrupt.sort(),
+    mismatchedPlaceholders: mismatchedPlaceholders.sort()
+  };
+}
+
 function printMissing(title, entries) {
   if (entries.length === 0) {
     return;
@@ -150,26 +190,20 @@ const {
   englishGames: effectiveEnglishGameCatalog,
   chineseGames: effectiveChineseGameCatalog
 } = loadEffectiveCatalogs();
-const englishKeys = new Set(effectiveEnglishCatalog.keys());
-const explicitChineseKeys = new Set(effectiveChineseCatalog.keys());
 const translationCalls = collectSourceTranslationReferences();
 const schemaTranslationKeys = collectModuleSchemaTranslationKeys();
 
-const missingChineseKeys = [...englishKeys]
-  .filter((key) => !explicitChineseKeys.has(key))
-  .sort();
-
 const missingEnglishKeys = [...translationCalls.keys()]
-  .filter((key) => !englishKeys.has(key))
+  .filter((key) => !effectiveEnglishCatalog.has(key))
   .sort()
   .map((key) => `${key} <- ${translationCalls.get(key)[0]}`);
 
 const missingEnglishSchemaKeys = schemaTranslationKeys
-  .filter((key) => !englishKeys.has(key))
+  .filter((key) => !effectiveEnglishCatalog.has(key))
   .sort();
 
 const missingChineseSchemaKeys = schemaTranslationKeys
-  .filter((key) => !explicitChineseKeys.has(key))
+  .filter((key) => !effectiveChineseCatalog.has(key))
   .sort();
 
 const missingEnglishGameCatalogImports = collectMissingGameCatalogImports(
@@ -182,81 +216,27 @@ const missingChineseGameCatalogImports = collectMissingGameCatalogImports(
   CHINESE_GAME_CATALOG_FILES
 );
 
-const missingEffectiveChineseGameMessages = [...effectiveEnglishGameCatalog.keys()]
-  .filter((key) => !effectiveChineseGameCatalog.has(key))
-  .sort();
+// Final catalog checks cover all unshadowed game entries; audit game catalogs directly
+// only for game-level key parity and entries overridden by outer catalog spreads.
+const shadowedGameKeys = new Set();
+for (const [key, value] of effectiveEnglishGameCatalog) {
+  if (effectiveEnglishCatalog.get(key) !== value) shadowedGameKeys.add(key);
+}
+for (const [key, value] of effectiveChineseGameCatalog) {
+  if (effectiveChineseCatalog.get(key) !== value) shadowedGameKeys.add(key);
+}
 
-const extraEffectiveChineseGameMessages = [...effectiveChineseGameCatalog.keys()]
-  .filter((key) => !effectiveEnglishGameCatalog.has(key))
-  .sort();
-
-const unreadableEffectiveChineseGameMessages = [...effectiveChineseGameCatalog]
-  .filter(([, value]) => !/[\u3400-\u9fff]/u.test(value) && !isLanguageNeutralMessage(value))
-  .map(([key, value]) => `${key} = ${JSON.stringify(value)}`)
-  .sort();
-
-const copiedEnglishGameMessages = [...effectiveEnglishGameCatalog]
-  .filter(([key, value]) => (
-    effectiveChineseGameCatalog.get(key) === value && !isLanguageNeutralMessage(value)
-  ))
-  .map(([key, value]) => `${key} = ${JSON.stringify(value)}`)
-  .sort();
-
-const corruptEffectiveChineseGameMessages = [...effectiveChineseGameCatalog]
-  .filter(([, value]) => /\?{2,}|\uFFFD/u.test(value))
-  .map(([key, value]) => `${key} = ${JSON.stringify(value)}`)
-  .sort();
+const gameAudit = auditCatalogPair(effectiveEnglishGameCatalog, effectiveChineseGameCatalog, {
+  checkExtra: true,
+  onlyKeys: shadowedGameKeys
+});
+const finalAudit = auditCatalogPair(effectiveEnglishCatalog, effectiveChineseCatalog);
 
 const mechanicalDontStarveMessages = [...effectiveChineseGameCatalog]
   .filter(([key, value]) => (
     key.startsWith("dst.") && (/原生配置：\s*[A-Za-z]/u.test(value) || value === "选项")
   ))
   .map(([key, value]) => `${key} = ${JSON.stringify(value)}`)
-  .sort();
-
-const mismatchedGameMessagePlaceholders = [...effectiveEnglishGameCatalog]
-  .filter(([key, englishValue]) => {
-    const chineseValue = effectiveChineseGameCatalog.get(key);
-    return chineseValue !== undefined && (
-      JSON.stringify(extractPlaceholders(englishValue)) !== JSON.stringify(extractPlaceholders(chineseValue))
-    );
-  })
-  .map(([key, englishValue]) => (
-    `${key}: en=${JSON.stringify(extractPlaceholders(englishValue))}, zh=${JSON.stringify(extractPlaceholders(effectiveChineseGameCatalog.get(key)))}`
-  ))
-  .sort();
-
-const missingEffectiveChineseMessages = [...effectiveEnglishCatalog.keys()]
-  .filter((key) => !effectiveChineseCatalog.has(key))
-  .sort();
-
-const unreadableEffectiveChineseMessages = [...effectiveChineseCatalog]
-  .filter(([, value]) => !/[\u3400-\u9fff]/u.test(value) && !isLanguageNeutralMessage(value))
-  .map(([key, value]) => `${key} = ${JSON.stringify(value)}`)
-  .sort();
-
-const copiedEnglishMessages = [...effectiveEnglishCatalog]
-  .filter(([key, value]) => (
-    effectiveChineseCatalog.get(key) === value && !isLanguageNeutralMessage(value)
-  ))
-  .map(([key, value]) => `${key} = ${JSON.stringify(value)}`)
-  .sort();
-
-const corruptEffectiveChineseMessages = [...effectiveChineseCatalog]
-  .filter(([, value]) => /\?{2,}|\uFFFD/u.test(value))
-  .map(([key, value]) => `${key} = ${JSON.stringify(value)}`)
-  .sort();
-
-const mismatchedMessagePlaceholders = [...effectiveEnglishCatalog]
-  .filter(([key, englishValue]) => {
-    const chineseValue = effectiveChineseCatalog.get(key);
-    return chineseValue !== undefined && (
-      JSON.stringify(extractPlaceholders(englishValue)) !== JSON.stringify(extractPlaceholders(chineseValue))
-    );
-  })
-  .map(([key, englishValue]) => (
-    `${key}: en=${JSON.stringify(extractPlaceholders(englishValue))}, zh=${JSON.stringify(extractPlaceholders(effectiveChineseCatalog.get(key)))}`
-  ))
   .sort();
 
 const chineseGameIndexSource = readWorkspaceFile("src/i18n/games/zh-cn.ts");
@@ -270,49 +250,34 @@ if (chineseCatalogSource.includes("...EN_US_MESSAGES")) {
   compatibilityFilterMarkers.push("...EN_US_MESSAGES");
 }
 
-if (
-  missingChineseKeys.length > 0 ||
-  missingEnglishKeys.length > 0 ||
-  missingEnglishSchemaKeys.length > 0 ||
-  missingChineseSchemaKeys.length > 0 ||
-  missingEnglishGameCatalogImports.length > 0 ||
-  missingChineseGameCatalogImports.length > 0 ||
-  missingEffectiveChineseGameMessages.length > 0 ||
-  extraEffectiveChineseGameMessages.length > 0 ||
-  unreadableEffectiveChineseGameMessages.length > 0 ||
-  copiedEnglishGameMessages.length > 0 ||
-  corruptEffectiveChineseGameMessages.length > 0 ||
-  mechanicalDontStarveMessages.length > 0 ||
-  mismatchedGameMessagePlaceholders.length > 0 ||
-  missingEffectiveChineseMessages.length > 0 ||
-  unreadableEffectiveChineseMessages.length > 0 ||
-  copiedEnglishMessages.length > 0 ||
-  corruptEffectiveChineseMessages.length > 0 ||
-  mismatchedMessagePlaceholders.length > 0 ||
-  compatibilityFilterMarkers.length > 0
-) {
-  printMissing("Missing explicit zh-CN messages:", missingChineseKeys);
-  printMissing("Missing en-US messages for translation references:", missingEnglishKeys);
-  printMissing("Missing en-US schema messages:", missingEnglishSchemaKeys);
-  printMissing("Missing zh-CN schema messages:", missingChineseSchemaKeys);
-  printMissing("Game en-US catalog files not imported by src/i18n/games/en-us.ts:", missingEnglishGameCatalogImports);
-  printMissing("Game zh-CN catalog files not imported by src/i18n/games/zh-cn.ts:", missingChineseGameCatalogImports);
-  printMissing("Missing messages from the effective zh-CN game catalog:", missingEffectiveChineseGameMessages);
-  printMissing("Unexpected messages in the effective zh-CN game catalog:", extraEffectiveChineseGameMessages);
-  printMissing("Effective zh-CN game messages without readable Chinese:", unreadableEffectiveChineseGameMessages);
-  printMissing("Effective zh-CN game messages copied from en-US:", copiedEnglishGameMessages);
-  printMissing("Corrupt effective zh-CN game messages:", corruptEffectiveChineseGameMessages);
-  printMissing("Mechanical Don't Starve Together zh-CN messages:", mechanicalDontStarveMessages);
-  printMissing("Game message placeholder mismatches:", mismatchedGameMessagePlaceholders);
-  printMissing("Missing messages from the final zh-CN catalog:", missingEffectiveChineseMessages);
-  printMissing("Final zh-CN messages without readable Chinese:", unreadableEffectiveChineseMessages);
-  printMissing("Final zh-CN messages copied from en-US:", copiedEnglishMessages);
-  printMissing("Corrupt final zh-CN messages:", corruptEffectiveChineseMessages);
-  printMissing("Final message placeholder mismatches:", mismatchedMessagePlaceholders);
-  printMissing("Removed zh-CN compatibility filters were reintroduced:", compatibilityFilterMarkers);
+const checks = [
+  ["Missing en-US messages for translation references:", missingEnglishKeys],
+  ["Missing en-US schema messages:", missingEnglishSchemaKeys],
+  ["Missing zh-CN schema messages:", missingChineseSchemaKeys],
+  ["Game en-US catalog files not imported by src/i18n/games/en-us.ts:", missingEnglishGameCatalogImports],
+  ["Game zh-CN catalog files not imported by src/i18n/games/zh-cn.ts:", missingChineseGameCatalogImports],
+  ["Missing messages from the effective zh-CN game catalog:", gameAudit.missing],
+  ["Unexpected messages in the effective zh-CN game catalog:", gameAudit.extra],
+  ["Shadowed zh-CN game messages without readable Chinese:", gameAudit.unreadable],
+  ["Shadowed zh-CN game messages copied from en-US:", gameAudit.copied],
+  ["Corrupt shadowed zh-CN game messages:", gameAudit.corrupt],
+  ["Shadowed game message placeholder mismatches:", gameAudit.mismatchedPlaceholders],
+  ["Mechanical Don't Starve Together zh-CN messages:", mechanicalDontStarveMessages],
+  ["Missing messages from the final zh-CN catalog:", finalAudit.missing],
+  ["Final zh-CN messages without readable Chinese:", finalAudit.unreadable],
+  ["Final zh-CN messages copied from en-US:", finalAudit.copied],
+  ["Corrupt final zh-CN messages:", finalAudit.corrupt],
+  ["Final message placeholder mismatches:", finalAudit.mismatchedPlaceholders],
+  ["Removed zh-CN compatibility filters were reintroduced:", compatibilityFilterMarkers]
+];
+
+if (checks.some(([, entries]) => entries.length > 0)) {
+  for (const [title, entries] of checks) {
+    printMissing(title, entries);
+  }
   process.exitCode = 1;
 } else {
   console.log(
-    `i18n catalogs verified: ${englishKeys.size} en-US keys, ${explicitChineseKeys.size} explicit zh-CN keys, ${effectiveChineseCatalog.size} final zh-CN messages, ${effectiveChineseGameCatalog.size} effective zh-CN game messages, ${translationCalls.size} translation references, ${schemaTranslationKeys.length} schema keys.`
+    `i18n catalogs verified: ${effectiveEnglishCatalog.size} en-US keys, ${effectiveChineseCatalog.size} final zh-CN messages, ${effectiveChineseGameCatalog.size} effective zh-CN game messages, ${translationCalls.size} translation references, ${schemaTranslationKeys.length} schema keys.`
   );
 }

@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 
 const INSTALLED: &str = r#""AppState" { "appid" "42" "StateFlags" "4" "buildid" "17" "InstalledDepots" { "43" { "manifest" "1" } } }"#;

@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 
 struct StartupRoot(std::path::PathBuf);

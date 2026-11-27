@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 use std::sync::atomic::Ordering;
 use std::time::Duration;

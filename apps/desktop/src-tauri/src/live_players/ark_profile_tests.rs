@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 
 const EOS: &str = "00112233445566778899aabbccddeeff";

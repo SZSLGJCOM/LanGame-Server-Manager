@@ -76,6 +76,10 @@ fn with_instance_memory_percent(
 
 pub(crate) fn extract_instance_player_capacity(settings_json: &str) -> Option<usize> {
     let value: Value = serde_json::from_str(settings_json).ok()?;
+    extract_instance_player_capacity_from_value(&value)
+}
+
+pub(super) fn extract_instance_player_capacity_from_value(value: &Value) -> Option<usize> {
     const PLAYER_CAPACITY_SETTING_KEYS: &[&str] = &["max_players", "max_server_players"];
 
     PLAYER_CAPACITY_SETTING_KEYS
@@ -91,22 +95,7 @@ fn json_usize(value: &Value) -> Option<usize> {
     }
 }
 
-pub(super) fn build_runtime_performance_diagnostic(
-    details: &InstanceDetails,
-    module_policy: Option<&RuntimePerformancePolicy>,
-) -> Option<RuntimeDiagnosticSignal> {
-    details.active_run.as_ref()?;
-    let settings = serde_json::from_str(&details.settings_json).ok()?;
-    let default_policy = RuntimePerformancePolicy::default();
-    let policy = resolve_runtime_performance_policy_for_instance(
-        module_policy.unwrap_or(&default_policy),
-        &settings,
-        &details.summary.id,
-    );
-    Some(runtime_performance_diagnostic_signal(&policy))
-}
-
-fn runtime_performance_diagnostic_signal(
+pub(super) fn runtime_performance_diagnostic_signal(
     policy: &RuntimePerformancePolicy,
 ) -> RuntimeDiagnosticSignal {
     let affinity = policy
@@ -154,16 +143,16 @@ pub(super) fn runtime_performance_state_diagnostic_signal(
     }
 }
 
-pub(super) fn build_runtime_performance_snapshot(
-    state: &tauri::State<'_, DesktopState>,
+pub(super) fn build_runtime_performance_snapshot_with_settings(
+    state: &DesktopState,
     details: &InstanceDetails,
+    settings: &Value,
     module_policy: Option<&RuntimePerformancePolicy>,
 ) -> RuntimePerformanceSnapshot {
-    let settings = serde_json::from_str(&details.settings_json).unwrap_or(Value::Null);
     let default_policy = RuntimePerformancePolicy::default();
     let (policy, preview) = resolve_runtime_performance_policy_with_preview_for_instance(
         module_policy.unwrap_or(&default_policy),
-        &settings,
+        settings,
         &details.summary.id,
     );
 
@@ -429,7 +418,10 @@ pub(super) struct RuntimeRestartCandidate {
 }
 
 pub(super) fn runtime_restart_policy_from_settings(settings_json: &str) -> RuntimeRestartPolicy {
-    let settings = parse_settings_json(settings_json);
+    runtime_restart_policy_from_value(&parse_settings_json(settings_json))
+}
+
+pub(super) fn runtime_restart_policy_from_value(settings: &Value) -> RuntimeRestartPolicy {
     let policy = settings.get("runtime_restart").and_then(Value::as_object);
     RuntimeRestartPolicy {
         enabled: policy
@@ -1264,6 +1256,19 @@ pub(super) fn resolve_player_query_target(
 ) -> Option<(String, u16)> {
     let player_query = player_query?;
     resolve_player_query_target_from_parts(&details.summary.bind_ip, player_query, &details.ports)
+}
+
+pub(super) fn load_single_module_runtime_capability(
+    modules_root: &Path,
+    module_id: &str,
+) -> Result<Option<ModuleRuntimeCapabilities>, String> {
+    Ok(app_modules::discover_module(modules_root, module_id)
+        .map_err(|error| format!("Failed to load module runtime capabilities: {error}"))?
+        .map(|descriptor| ModuleRuntimeCapabilities {
+            player_query: descriptor.runtime.player_query,
+            player_count_source: descriptor.runtime.player_count_source,
+            performance: descriptor.runtime.performance,
+        }))
 }
 
 pub(super) fn load_module_runtime_capability_map(

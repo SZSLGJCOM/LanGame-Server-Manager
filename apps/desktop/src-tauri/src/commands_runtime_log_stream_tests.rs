@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 use crate::state::RuntimeLogStreams;
 use std::cell::{Cell, RefCell};

@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 
 const IDS: [u64; 2] = [9_007_199_254_740_993, u64::MAX];

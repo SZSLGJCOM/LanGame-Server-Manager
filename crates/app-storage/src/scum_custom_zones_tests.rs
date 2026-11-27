@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 use app_core::scum_custom_zones::{ScumNpcVehicleDamage, ScumZoneHandling};
 use sqlx::{Connection, SqliteConnection, sqlite::SqliteConnectOptions};

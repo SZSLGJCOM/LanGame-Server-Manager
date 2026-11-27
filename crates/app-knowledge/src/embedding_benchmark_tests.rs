@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 //! Opt-in comparison probe for externally supplied, public benchmark texts.
 //! This module never downloads a model or discovers any additional input files.
 

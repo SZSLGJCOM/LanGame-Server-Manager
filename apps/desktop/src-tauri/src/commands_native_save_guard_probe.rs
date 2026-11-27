@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 //! Opt-in rejection acceptance for the two games without local player clients.
 //! A rejected preflight is guard evidence, never a save receipt.
 use super::*;

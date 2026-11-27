@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 
 fn equivalent(expected: &Value, observed: &Value) -> bool {

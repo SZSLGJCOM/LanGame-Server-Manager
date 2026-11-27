@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::commands_local_paths::{explorer_directory_argument, local_directory_to_open};
 use std::fs;
 use std::path::{Path, PathBuf};

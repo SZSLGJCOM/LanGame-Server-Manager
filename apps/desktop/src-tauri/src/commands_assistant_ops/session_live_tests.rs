@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 use crate::assistant::{AssistantToolMessage, AssistantToolReply};
 use std::sync::Mutex;

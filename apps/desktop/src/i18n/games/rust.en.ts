@@ -11,7 +11,7 @@ export const EN_US_RUST_MESSAGES: MessageCatalog = {
   "rust.settings.groups.browser-media.title": "Browser media",
   "rust.settings.groups.identity.description": "Name, description, and slot cap are the first Rust browser signals players will compare.",
   "rust.settings.groups.identity.title": "Server identity",
-  "rust.settings.groups.rcon.description": "RCON is the daily operator channel. Keep EAC and remote-console posture explicit before launch.",
+  "rust.settings.groups.rcon.description": "RCON is the daily operator channel. Confirm EAC and remote-console settings before launch.",
   "rust.settings.groups.rcon.title": "Security and RCON",
   "rust.settings.groups.terrain.description": "Level, seed, and world size decide the generated island and its disk and memory pressure.",
   "rust.settings.groups.terrain.title": "Island generation",

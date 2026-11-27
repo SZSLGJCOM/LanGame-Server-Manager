@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 //! One opt-in save through the same declared action used by maintenance/cards.
 //! Transport delivery and pending receipts are never promoted to durable saves.
 use super::*;

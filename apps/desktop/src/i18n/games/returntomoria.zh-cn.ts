@@ -86,7 +86,7 @@ export const ZH_CN_RETURN_TO_MORIA_MESSAGES: MessageCatalog = {
   "settings.schema.returntomoria.difficulty_preset.title": "难度预设",
   "settings.schema.returntomoria.enemy_aggression.description": "敌人攻击的频率以及同时参与攻击的数量。",
   "settings.schema.returntomoria.enemy_aggression.title": "敌人侵略性",
-  "settings.schema.returntomoria.extra_launch_args.description": "原生配置物化后追加的可选启动参数。",
+  "settings.schema.returntomoria.extra_launch_args.description": "生成原生配置文件后追加的可选启动参数。",
   "settings.schema.returntomoria.extra_launch_args.title": "额外启动参数",
   "settings.schema.returntomoria.game_mode.description": "仅在创建新世界时使用的世界类型。",
   "settings.schema.returntomoria.game_mode.title": "世界类型",

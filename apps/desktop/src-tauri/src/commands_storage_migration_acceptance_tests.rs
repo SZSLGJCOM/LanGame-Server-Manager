@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 //! Explicit cross-volume acceptance using disposable roots and production commands.
 //! The mock Tauri shell supplies isolated DesktopState; all storage I/O is real.
 use super::tests::{preserved_backup, tree_snapshot};

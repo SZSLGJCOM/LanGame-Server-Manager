@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 //! Explicit opt-in against an isolated copy of the public Valve runtime. This
 //! proves empty-password token parsing and log privacy, not real-account TOTP.
 use super::*;

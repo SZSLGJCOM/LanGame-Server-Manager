@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 
 fn stdin_dispatch_target() -> app_runtime::RuntimeCommandDispatchTarget {

@@ -50,7 +50,7 @@ repository LICENSE is **CC BY-NC-ND 4.0**, not MIT. Review those restrictions be
 reuse outside private reference. ARK also has separate attribution/noncommercial
 terms recorded in [third-party notices](../THIRD_PARTY_NOTICES.md).
 
-The former seven pending summaries do not become seven verified complete manuals.
+Source-entry verification does not imply complete operator manuals exist for every game.
 Klei's command-line article is published through its reviewed anonymous article API;
 its four forum guides previously passed runtime extraction and indexing as four
 documents and 32 passages. The command-line API's public body is independently
@@ -87,7 +87,7 @@ CC BY-NC-ND 4.0，不能误称 MIT。
 Minecraft Wiki 的 robots 明确禁止包括 AI 搜索在内的多种 AI 抓取代理；其两项来源
 已设置 reference_only，仅保留供人工查阅的链接，不进行后台正文抓取或 RAG 索引。
 
-前版七个待核验项没有变成七份已收录手册：DST 的 Klei 启动参数文章已核实可通过
+部分游戏的公开文档来源仍存在上游限制或缺口：DST 的 Klei 启动参数文章已核实可通过
 正式匿名 API 公开读取；四篇论坛指南首帖此前通过实际运行时提取及索引，生成 4 篇正文
 和 32 个段落。新 API 正文可访问不表示本地索引已经刷新成功。
 ARK Evolved、HumanitZ、Terraria 的 Wiki 正文仍受仅引用用途限制；
@@ -204,7 +204,7 @@ Dragonwilds 使用 Jagex 在游戏官网独立发布的完整开服指南，
 保留其中 2026 年 3 月 / 0.11 的版本限制。Soulmask 新增两篇 2024 年官方保存及权限
 操作说明；其 2026 年跨地图指南指向 Discord，未取得可同步正文，不能据此声称当前完整手册齐全。
 
-Moria 以两个官方服务端目录作为长期入口，本次目录与分页选择器覆盖全部 12 个指南
+Moria 以两个官方服务端目录作为长期入口，已审核的目录与分页选择器覆盖全部 12 个指南
 和 20 个 FAQ。文章页不继续发现链接，排除侧栏普通游戏问答；两个目录内的新增文章
 可在每来源 128 页的预算内自动发现，其他目录仍需复核。目录列表仅用于确认范围，
 不是运维正文或同步成功数量。SteamCMD 详细手册保留独立精确来源并刷新已有正文。
@@ -217,7 +217,7 @@ Rust 列入全部 18 个 Server Hosting 页面及控制台命令页。Abiotic Fa
 Core Keeper 未核实到完整第一方运维手册；Romestead Wiki 未核实发行商推荐关系。
 Romestead 原 Steam 公告返回页面外壳；清单改用 Steam 官方发行商新闻正文，并固定
 选择单篇 0.25.1_4 热修公告，不递归抓取其他新闻，不将其表述为完整运维手册。
-Barotrauma 开发者的独立 Steam 中英文指南本次可读，Wiki 同步返回 HTTP 403；
+Barotrauma 开发者的独立 Steam 中英文指南核验时可读，Wiki 同步返回 HTTP 403；
 Steam 指南发布于 2020-05-20，不能当作已核实的当前完整配置手册。
 
 Run from the repository root / 在仓库根目录运行：

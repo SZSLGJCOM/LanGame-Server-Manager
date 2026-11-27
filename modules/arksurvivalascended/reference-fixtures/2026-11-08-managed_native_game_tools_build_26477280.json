@@ -70,7 +70,7 @@
     "source_files_verified": 4512,
     "test_binary_sha256": "3b6aff6d505e6e8cff903e9a574048729b9fd094d93d7ca6d2e27a5ca1f77ed2",
     "test_binary_bytes": 207773696,
-    "actual_entry_point": "task-scoped invoke-task-cargo.ps1",
+    "actual_entry_point": "isolated Cargo test runner",
     "entry_point_sha256": "3ed87587c3b62d026d90eee052dda4cc725d77cdc8fbff891a65b54989d8bb01",
     "task_only_resource_override": {
       "minimum_build_memory_gib": 12,
@@ -191,9 +191,9 @@
     "verified_assets": 7,
     "prepared_inventory_sha256": "7473cf79bbd3e96fd5d57ab526acdeed0a29bdbda367e5b779bc3a68cab9daa8",
     "receipt_sha256": "fa74bee915b05646148815773076f43fe111c800a24cd21ba6caecacaf719fe6",
-    "plap_anonymous_download": {
+    "secondary_host_anonymous_download": {
       "state": "verified",
-      "host": "PLAP",
+      "host": "secondary Windows host",
       "utc": "2026-11-08T02:38:45Z",
       "url": "https://api.gitcode.com/api/v5/repos/SZSLGJCOM/LanGame-Server-Manager-Releases/releases/ark-tools-dependencies-ase-3.56-asa-2.1/attach_files/AsaApi_2.1.zip/download",
       "bytes": 32203814,

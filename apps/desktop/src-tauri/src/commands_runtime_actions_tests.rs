@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::super::commands_assistant_ops::InstanceRuntimeCommandInput;
 use super::*;
 use serde_json::json;

@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 
 fn adapter(name: &str, received: u64) -> NetworkAdapterRecord {

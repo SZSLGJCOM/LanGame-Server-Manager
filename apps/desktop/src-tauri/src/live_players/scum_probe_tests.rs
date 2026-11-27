@@ -1,3 +1,4 @@
+#![cfg(test)]
 #![cfg(windows)]
 
 use super::{Game, probe_support::run_owned_empty_probe};

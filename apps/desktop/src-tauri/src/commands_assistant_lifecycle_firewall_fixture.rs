@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 //! Test-only replacement for the external Windows Firewall API. Native launch,
 //! program validation, bind verification, stop, and assistant confirmation stay real.
 use super::*;

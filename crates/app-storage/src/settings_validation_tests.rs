@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use crate::settings_validation::{SettingsValidationPhase, collect_settings_schema_diagnostics};
 use crate::settings_value_formats::is_iso_calendar_date;
 use serde_json::{Map, Value, json};

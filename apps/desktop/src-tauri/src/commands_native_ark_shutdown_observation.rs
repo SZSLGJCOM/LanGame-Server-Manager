@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 //! Optional observation after an already failed stop. Never sends a command,
 //! changes the production allowance, or converts the failed stop into success.
 use super::NativeRuntime;

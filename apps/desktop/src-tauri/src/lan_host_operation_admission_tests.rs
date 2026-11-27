@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 use std::sync::Condvar;
 use std::sync::mpsc::{self, Receiver};

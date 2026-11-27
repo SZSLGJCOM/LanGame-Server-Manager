@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::super::api::fixture::{Fixture, Step, step};
 use super::*;
 

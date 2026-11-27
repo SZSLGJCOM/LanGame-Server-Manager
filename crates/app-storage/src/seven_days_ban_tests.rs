@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 use crate::settings_value_formats::is_date_or_local_datetime;
 

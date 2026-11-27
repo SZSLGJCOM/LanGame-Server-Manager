@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 
 fn config(version: &str, policy: Option<&str>, patches: Option<bool>) -> serde_json::Value {

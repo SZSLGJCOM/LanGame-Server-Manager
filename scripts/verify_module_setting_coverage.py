@@ -31,21 +31,9 @@ from verify_module_setting_coverage_server_tabs import validate_server_detail_to
 from verify_module_setting_coverage_typescript import (
     extract_ts_balanced_block,
     extract_ts_braced_block,
-    extract_ts_bracket_block,
-    extract_ts_object_block,
     module_settings_section_ids_from_source,
-    settings_definition_object_block,
     ts_executable_source,
-    ts_const_string_array,
-    ts_group_key_literal_entries,
-    ts_group_key_literals,
-    ts_object_has_property,
-    ts_object_has_string_property,
-    ts_object_keys,
     ts_object_string_values,
-    ts_section_ids_from_array_block,
-    ts_string_literals,
-    ts_string_sequence,
 )
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -1160,16 +1148,6 @@ def module_has_runtime_player_actions(module_toml: dict) -> bool:
     )
 
 
-def module_runtime_player_query_protocol(module_toml: dict) -> str:
-    runtime = module_toml.get("runtime", {})
-    if not isinstance(runtime, dict):
-        return ""
-    player_query = runtime.get("player_query")
-    if not isinstance(player_query, dict):
-        return ""
-    return str(player_query.get("protocol") or "").strip().lower()
-
-
 def runtime_player_action_count(module_toml: dict) -> int:
     runtime = module_toml.get("runtime", {})
     if not isinstance(runtime, dict):
@@ -1464,135 +1442,6 @@ def read_module_settings_source(module_id: str) -> str:
     return module_path.read_text(encoding="utf-8-sig")
 
 
-def module_settings_file_stem(module_id: str) -> str:
-    return MODULE_SETTINGS_FILE_NAMES.get(module_id, module_id)
-
-
-def module_settings_definition_path(module_id: str) -> Path:
-    return (
-        DESKTOP_SRC_DIR
-        / "views"
-        / "settings"
-        / "modules"
-        / f"{module_settings_file_stem(module_id)}.ts"
-    )
-
-
-def module_id_for_settings_file_stem(file_stem: str) -> str:
-    for module_id, mapped_file_stem in MODULE_SETTINGS_FILE_NAMES.items():
-        if mapped_file_stem == file_stem:
-            return module_id
-    return file_stem
-
-
-def validate_settings_module_explicit_schema_keys(module_id: str, source: str) -> list[str]:
-    schema_properties = {
-        key
-        for key, property_def in read_schema_property_defs(module_id).items()
-        if property_def.get("x-lsgm-player-access-kind") not in PLAYER_ACCESS_KINDS
-    }
-    grouped_keys = ts_group_key_literals(source)
-    missing_keys = sorted(schema_properties - grouped_keys)
-    if not missing_keys:
-        return []
-
-    return [
-        f"{module_id}: dedicated settings definition field groups must explicitly place schema field keys: {', '.join(missing_keys)}"
-    ]
-
-
-def validate_settings_module_group_schema_keys(module_id: str, source: str) -> list[str]:
-    schema_properties = read_schema_properties(module_id)
-    group_keys = ts_group_key_literal_entries(source)
-    failures: list[str] = []
-
-    unknown_group_keys = sorted(set(group_keys) - schema_properties)
-    if unknown_group_keys:
-        failures.append(
-            f"{module_id}: dedicated settings definition groups reference unknown schema field keys: {', '.join(unknown_group_keys)}"
-        )
-
-    seen_keys: set[str] = set()
-    duplicate_keys: set[str] = set()
-    for key in group_keys:
-        if key in seen_keys:
-            duplicate_keys.add(key)
-        seen_keys.add(key)
-    if duplicate_keys:
-        failures.append(
-            f"{module_id}: dedicated settings definition groups contain duplicate schema field keys: {', '.join(sorted(duplicate_keys))}"
-        )
-
-    return failures
-
-
-def validate_settings_module_definition_registration(
-    module_id: str, registry_source: str
-) -> list[str]:
-    module_path = module_settings_definition_path(module_id)
-    if not module_path.exists():
-        return [
-            f"{module_id}: missing dedicated frontend settings definition {module_path.relative_to(ROOT).as_posix()}"
-        ]
-
-    source = module_path.read_text(encoding="utf-8-sig")
-    failures: list[str] = []
-    export_match = re.search(
-        r"export\s+const\s+([A-Za-z0-9_]+SettingsDefinition)\s*:\s*SettingsModuleDefinition\s*=",
-        source,
-    )
-    if not export_match:
-        failures.append(
-            f"{module_id}: dedicated settings definition must export a typed *SettingsDefinition constant"
-        )
-        return failures
-
-    export_name = export_match.group(1)
-    definition_block = settings_definition_object_block(source, export_match)
-    if not definition_block:
-        failures.append(
-            f"{module_id}: dedicated settings definition {export_name} must export an object literal"
-        )
-        return failures
-
-    for marker in ("getSections", "buildFieldGroups", "getFieldCopy"):
-        if not ts_object_has_property(definition_block, marker):
-            failures.append(
-                f"{module_id}: dedicated settings definition {export_name} must export {marker}"
-            )
-    for import_path in re.findall(r"from\s+[\"']\./([^\"']+)[\"']", source):
-        imported_stem = Path(import_path).name
-        imported_module_id = module_id_for_settings_file_stem(imported_stem)
-        if imported_module_id in TARGET_MODULE_IDS and imported_module_id != module_id:
-            failures.append(
-                f"{module_id}: dedicated settings definition {export_name} must not import sibling game settings module {import_path!r}; keep game-specific sections/groups in its own file"
-            )
-    if not ts_object_has_string_property(definition_block, "id", module_id):
-        failures.append(
-            f"{module_id}: dedicated settings definition {export_name} does not declare id {module_id!r}"
-        )
-    validation_source = source
-    for relative_path in MODULE_SETTINGS_ADDITIONAL_SOURCES.get(module_id, ()):
-        validation_source = f"{validation_source}\n{read_frontend_file(relative_path)}"
-    failures.extend(validate_settings_module_explicit_schema_keys(module_id, validation_source))
-    failures.extend(validate_settings_module_group_schema_keys(module_id, validation_source))
-
-    file_stem = module_settings_file_stem(module_id)
-    import_marker = f'import {{ {export_name} }} from "./modules/{file_stem}";'
-    if import_marker not in registry_source:
-        failures.append(
-            f"{module_id}: module-registry.ts must import {export_name} from ./modules/{file_stem}"
-        )
-
-    registry_marker = f"[{export_name}.id]: {export_name}"
-    if registry_marker not in registry_source:
-        failures.append(
-            f"{module_id}: module-registry.ts must register {export_name} by its id"
-        )
-
-    return failures
-
-
 def module_schema_sections(module_id: str) -> set[str]:
     source = read_module_settings_source(module_id)
     for relative_path in MODULE_SETTINGS_ADDITIONAL_SOURCES.get(module_id, []):
@@ -1601,11 +1450,6 @@ def module_schema_sections(module_id: str) -> set[str]:
     if module_id == "scum":
         section_ids.update(scum_native_section_ids_from_source(source))
     return GENERIC_SCHEMA_SECTIONS | section_ids
-
-
-def store_copy_has_key(source: str, object_markers: list[str], module_id: str) -> bool:
-    key_pattern = re.compile(rf"^\s*{re.escape(module_id)}\s*:\s*\{{", re.MULTILINE)
-    return any(key_pattern.search(extract_ts_object_block(source, marker)) for marker in object_markers)
 
 
 @cache
@@ -2452,11 +2296,8 @@ def validate_frontend_coverage() -> list[str]:
 
     api_source = read_frontend_file("api.ts")
     types_source = read_frontend_file("types.ts")
-    store_copy_source = read_frontend_file("store-copy.ts")
     servers_view_source = read_frontend_file("views/ServersView.tsx")
-    runtime_surface_source = read_frontend_file("views/servers/RuntimeSurfaceWorkbench.tsx")
     guided_settings_source = read_frontend_file("views/settings/guided-settings.ts")
-    module_registry_source = read_frontend_file("views/settings/module-registry.ts")
     desktop_actions_source = read_frontend_file("hooks/useDesktopActions.ts")
     api_mock_source = "\n".join(
         read_frontend_file(relative_path)

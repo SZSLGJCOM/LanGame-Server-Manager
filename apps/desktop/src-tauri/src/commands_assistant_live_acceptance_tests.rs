@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 
 #[path = "commands_assistant_live_acceptance_fixtures.rs"]

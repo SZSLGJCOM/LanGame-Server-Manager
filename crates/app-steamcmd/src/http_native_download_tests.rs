@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 use crate::InstallCancellation;
 use std::time::Duration;

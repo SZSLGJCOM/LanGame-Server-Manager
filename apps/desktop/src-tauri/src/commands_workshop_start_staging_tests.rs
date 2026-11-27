@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 //! Controlled boundary injections at copy completion and moved-original checks;
 //! no sleep, external account, native server, or global filesystem mutation.
 use super::*;

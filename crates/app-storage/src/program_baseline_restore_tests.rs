@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 use crate::private_runtime_refresh::hash_file;
 use std::path::PathBuf;

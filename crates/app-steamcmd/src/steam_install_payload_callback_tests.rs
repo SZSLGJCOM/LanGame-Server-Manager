@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 
 async fn install_with_callback<C, Fut>(

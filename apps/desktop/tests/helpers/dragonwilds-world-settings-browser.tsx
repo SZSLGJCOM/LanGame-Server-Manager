@@ -190,7 +190,7 @@ function Workspace({ archive }: { archive?: InstanceArchiveDetails }) {
   flushSettings = () => coordinator.flush(instanceId);
   return workspaceVisible ? <ConfigurationWorkspace details={details} moduleDetails={moduleDetails} moduleDetailsError={null}
     onRetryModuleDetails={() => { throw new Error("Unexpected module retry"); }} bindAddressCandidates={[]}
-    runtime={null} launchPlan={null} launchPlanError={null} archive={archive}
+    launchPlanError={null} archive={archive}
     onSave={async (input) => { instanceSettingsWrites.push(structuredClone(input)); throw new Error("World editing must not autosave instance settings"); }} /> : null;
 }
 function check(condition: unknown, description: string): asserts condition {

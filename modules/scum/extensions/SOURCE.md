@@ -37,7 +37,7 @@ Rust 原生启动探针为 `isolated_scum_reads_current_empty_snapshots_and_reje
 
 本地 Steam app `3792580`、build `25247308` 的 `SCUMServer.exe` SHA-256 为 `4ca11449c4c8d3a243c797c719f66e33192eefad53a9c64cca9aac925c9e39ad`。独立的 [实体持久化控制](../control/README.md) 复用经过固定版本验证的 UE4SS；玩家查询脚本仍只读，不调用保存、管理或任意命令。
 
-本次只读 PE 元数据、反汇编与独立空服证据确认：
+只读 PE 元数据、反汇编与独立空服证据确认：
 
 - `/Script/SCUM.ConZPlayerController.SaveState` 的 native thunk RVA `0x26f8f50` 跳转至 `0x1a61780`，保存控制器对应 profile 与个人字段，不能当作全世界接口。
 - `UEntitySystem::AutoSave` 位于 RVA `0x1b94040`，ABI 为 `void(this, bool force)`。正常 tick 的调用点 `0x1bcda4b` 传 false；退出路径 `0x1ba9ac1` 传 true 后再单独设置退出标志。true 分支对全部已注册实体执行持久化检查，取消正常 tick 的时间预算；函数自身不关服。

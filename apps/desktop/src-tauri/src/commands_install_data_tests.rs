@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 use app_modules::ModuleStorageSpec;
 use std::path::PathBuf;

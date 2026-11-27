@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 use std::collections::{BTreeMap, BTreeSet};
 use std::io::{Read, Write};

@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 use crate::process_exit_target::tests::Fixture;
 use std::sync::mpsc;

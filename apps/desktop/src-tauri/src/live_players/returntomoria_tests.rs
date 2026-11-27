@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 
 const NONCE: &str = "1234567890abcdef1234567890abcdef";

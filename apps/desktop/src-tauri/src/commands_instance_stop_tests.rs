@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 use crate::commands::tests::{prepare_fake_registered_program, temp_test_dir};
 use crate::state::RuntimeStartReservationAttempt;

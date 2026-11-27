@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 use crate::commands::commands_runtime_lifecycle::native_console_fixture::{self, INTERRUPTED};
 use std::net::TcpListener;

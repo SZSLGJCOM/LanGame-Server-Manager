@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::manual_runtime_tests::player_snapshot_fixture_instance;
 use super::*;
 use crate::commands::commands_runtime_supervision::assign_process_log_paths_with_stamp;

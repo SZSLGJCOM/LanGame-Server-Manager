@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 use app_core::INSTANCE_CREATION_DEFAULT_BIND_IP;
 

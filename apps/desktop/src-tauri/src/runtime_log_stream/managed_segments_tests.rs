@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 use crate::runtime_log_stream::{RuntimeLogTailState, parse_log_bytes};
 use std::fs;

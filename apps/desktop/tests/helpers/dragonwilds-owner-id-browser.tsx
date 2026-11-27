@@ -50,7 +50,7 @@ function Workspace() {
   const coordinator = useInstanceSettingsSaveCoordinator();
   flushSettings = () => coordinator.flush(details.summary.id);
   return <ConfigurationWorkspace details={details} moduleDetails={moduleDetails}
-    bindAddressCandidates={[]} runtime={null} launchPlan={null} launchPlanError={null}
+    bindAddressCandidates={[]} launchPlanError={null}
     onSave={async (input) => {
       saves.push(structuredClone(input));
       return { ...details, settings_json: input.settings_json };

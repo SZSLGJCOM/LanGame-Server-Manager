@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 
 fn temp_root(label: &str) -> PathBuf {

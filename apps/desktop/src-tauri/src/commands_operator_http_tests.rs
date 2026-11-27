@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::build_operator_http_client;
 use std::time::Duration;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};

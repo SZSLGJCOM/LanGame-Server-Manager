@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 use std::fs;
 use std::path::PathBuf;
@@ -175,6 +177,47 @@ fn unsupported_loader_start_preserves_conflicting_loaders_and_operator_mods() {
             fs::read(fixture.path(".langame-ue4ss-loader.json")).unwrap(),
             owner,
             "{scenario}"
+        );
+    }
+}
+
+#[test]
+fn unsupported_loader_start_retires_proxy_when_owned_player_query_mod_is_present() {
+    for (module, script) in [
+        (
+            "scum",
+            include_bytes!(
+                "../../../../../modules/scum/extensions/LgsmPlayerQuery/Scripts/main.lua"
+            )
+            .as_slice(),
+        ),
+        (
+            "windrose",
+            include_bytes!(
+                "../../../../../modules/windrose/extensions/LgsmPlayerQuery/Scripts/main.lua"
+            )
+            .as_slice(),
+        ),
+    ] {
+        let fixture = Fixture::new(module);
+        let query_dir = fixture.path("ue4ss/Mods/LgsmPlayerQuery/Scripts");
+        fs::create_dir_all(&query_dir).unwrap();
+        fs::write(query_dir.join("main.lua"), script).unwrap();
+        fs::write(fixture.path("ue4ss/Mods/LgsmPlayerQuery/enabled.txt"), b"").unwrap();
+        assert_eq!(
+            fixture.start().unwrap(),
+            StartupState::Unavailable,
+            "{module}"
+        );
+        assert!(!fixture.path(fixture.profile.proxy).exists(), "{module}");
+
+        // Restore proxy and verify tampered LgsmPlayerQuery refuses silent retirement.
+        fixture.publish();
+        fs::write(query_dir.join("main.lua"), b"-- operator modified").unwrap();
+        assert!(fixture.start().is_err(), "{module} tampered");
+        assert!(
+            fixture.path(fixture.profile.proxy).exists(),
+            "{module} tampered"
         );
     }
 }

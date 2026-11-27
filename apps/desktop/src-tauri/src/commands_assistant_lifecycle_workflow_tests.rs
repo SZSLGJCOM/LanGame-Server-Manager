@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 //! Native process acceptance over disposable settings, package and database.
 //! A local console stub exercises LGSM lifecycle through the bundled Necesse
 //! contract, not compatibility with the real game. It binds only owned loopback UDP.

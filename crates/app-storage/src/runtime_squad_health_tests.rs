@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 
 const WORLD_READY: &str = "[2026.10.01-07.14.01:312][  0]LogGameState: Match State Changed from EnteringMap to WaitingToStart";

@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::tests::{TestRoot, icon_atlas, rgba_texture};
 use super::*;
 

@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 
 fn archive_fixture() -> (Fixture, PathBuf, PathBuf) {

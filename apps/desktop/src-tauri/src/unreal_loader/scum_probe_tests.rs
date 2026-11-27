@@ -1,5 +1,6 @@
-//! Explicit preparation of an owned SCUM contract fixture. Never starts a game.
 #![cfg(test)]
+
+//! Explicit preparation of an owned SCUM contract fixture. Never starts a game.
 
 use super::*;
 use std::path::{Component, PathBuf};

@@ -17,7 +17,7 @@ use serde::Deserialize;
 use thiserror::Error;
 
 mod catalog;
-pub use catalog::discover_modules;
+pub use catalog::{discover_module, discover_modules};
 mod startup_readiness;
 
 mod player_list;

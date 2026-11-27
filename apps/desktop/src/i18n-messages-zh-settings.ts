@@ -108,7 +108,7 @@ export const ZH_CN_SETTINGS_MESSAGES: MessageCatalog = {
   "settings.guided.sections.networkDescription": "绑定地址、加入方式和对外网络设置。",
   "settings.guided.sections.worldDescription": "世界生成、难度、游戏规则和分片相关选项。",
   "settings.guided.sections.accessDescription": "管理凭据、权限等级、命令权限与准入策略。",
-  "settings.guided.sections.advancedDescription": "仍然需要直接暴露出来的少见字段。",
+  "settings.guided.sections.advancedDescription": "不常用的底层与高阶参数。",
   "settings.guided.workshop.placeholder": "粘贴 Workshop ID、workshop- 前缀或链接",
   "settings.guided.workshop.add": "添加",
   "settings.guided.workshop.clear": "清空",

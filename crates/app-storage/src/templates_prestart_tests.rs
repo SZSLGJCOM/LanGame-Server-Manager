@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 use crate::instance_settings_lock::acquire_instance_settings_mutation_lock;
 

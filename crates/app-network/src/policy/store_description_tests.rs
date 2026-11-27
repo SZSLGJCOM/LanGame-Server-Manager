@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 
 const PAYLOAD: &str = r#"{"ids":[{"appid":322330}],"context":{"language":"schinese","country_code":"CN"},"data_request":{"include_full_description":true}}"#;

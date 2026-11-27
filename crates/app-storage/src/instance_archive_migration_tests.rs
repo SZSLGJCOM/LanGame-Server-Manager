@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 use crate::startup_sessions::{
     self, NativeStartupSource, StartupSessionReceipt, StartupSessionStatus,

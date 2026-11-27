@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 
 fn delivered_catalog(settings: &str, offset: usize) -> Value {

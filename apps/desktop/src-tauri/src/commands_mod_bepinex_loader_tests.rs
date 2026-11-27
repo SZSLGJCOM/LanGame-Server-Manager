@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 
 const MONO_CONFIG: &[u8] = b"# operator note\r\n[General]\r\nenabled = true\r\ntarget_assembly=BepInEx\\core\\BepInEx.Preloader.dll\r\nredirect_output_log = false\r\n";

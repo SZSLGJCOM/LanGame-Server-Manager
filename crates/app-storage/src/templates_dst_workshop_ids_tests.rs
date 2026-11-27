@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 use crate::settings_validation::{SettingsValidationPhase, collect_settings_schema_diagnostics};
 

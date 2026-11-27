@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use std::io::{Cursor, Read};
 
 use super::{MAGIC, MAX_OUTPUT, read_worker_output};

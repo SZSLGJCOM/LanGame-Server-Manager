@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 
 fn html(text: &str) -> String {

@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 //! Opt-in native acceptance prelude, never a product startup default.
 //! Claim/create/load use the same owned HTTPS commands as the world workbench.
 use std::collections::BTreeMap;

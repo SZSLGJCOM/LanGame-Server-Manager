@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 use crate::{GameInstallSyncRecord, initialize_database, sync_game_installs, sync_modules};
 

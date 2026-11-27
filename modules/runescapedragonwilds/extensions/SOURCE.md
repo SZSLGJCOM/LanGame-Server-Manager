@@ -21,13 +21,13 @@
 
 build `25991736` 的配置来自两个实际 PE 的限定差分：身份工厂、封禁、解封、名单持久化的完整调用体，以及 MatchmakingSubsystem、原生会话状态构造器和 `KnownPlayerList` 访问体，在代码与数据地址重定位外保持原有参数、引用计数和字段布局。该版名单持久化中的两个 image-base 分发表也分别核对，不按统一地址增量推算。独立检查以只读、不可执行的 PE 映射核验两版全部五个入口前缀及未知哈希拒绝。此项是静态兼容证据；该版隔离合成账号的封禁、解封及重启持久化仍需实服验收，不能替代真人断连或认证测试。
 
-同一隔离副本只启用冻结生产控制脚本和原生桥，两次不同请求取得完整空名单，`boot_id` 一致，每次只读原生 probe 均为 ready。布局修正后的生产脚本 SHA-256 为 `d39a41375193abdfd1040b202815ff70edd26e33f8950f540b08a193b520aa6e`；本次独立 MSVC 构建的桥 SHA-256 为 `7ed776ff6724389adbab6caec50d19637eaeddafd97cdec33a7476b494b14e99`。应用内嵌构建可能产生不同 PE 哈希，安装按本次构建记录校验。
+同一隔离副本只启用冻结生产控制脚本和原生桥，两次不同请求取得完整空名单，`boot_id` 一致，每次只读原生 probe 均为 ready。布局修正后的生产脚本 SHA-256 为 `d39a41375193abdfd1040b202815ff70edd26e33f8950f540b08a193b520aa6e`；独立 MSVC 构建的桥 SHA-256 为 `7ed776ff6724389adbab6caec50d19637eaeddafd97cdec33a7476b494b14e99`。应用内嵌构建可能产生不同 PE 哈希，安装按对应构建记录校验。
 
 桥放在 `LgsmPlayerControl/native/`，Lua 用 `package.loadlib` 显式加载。[固定 UE4SS 源码](https://github.com/UE4SS-RE/RE-UE4SS/blob/527a483b63b4dd0104fe1ca1a3934a06b87fcfb2/UE4SS/src/UE4SSProgram.cpp#L1227)仅因 `dlls` 目录存在就将其识别为另一种 C++ Mod；这种 Mod 要求独立生命周期导出。原生桥不使用这个插件 ABI，不能放入 `dlls`，即使留下空目录也会错误尝试安装。修正布局后的隔离生产启动已确认无此生命周期和安装失败日志。
 
 ### 2026-10-25：build 26161880 原生配置
 
-本次只读检查已安装的 app `4019830`：ACF 的 `buildid` 与 `TargetBuildID` 均为 `26161880`，`StateFlags=4`、`UpdateResult=0`；Shipping 大小为 `205138592` 字节，完整 SHA-256 与上表一致。原生桥原先只认识前两版，因而在加载器允许当前版本后仍返回 `module_fingerprint`。本次按当前 PE 的真实入口和调用契约补充独立配置，没有降低哈希或入口字节校验。
+对已安装 app `4019830` 的只读检查确认：ACF 的 `buildid` 与 `TargetBuildID` 均为 `26161880`，`StateFlags=4`、`UpdateResult=0`；Shipping 大小为 `205138592` 字节，完整 SHA-256 与上表一致。原生桥原先只认识前两版，因而在加载器允许当前版本后仍返回 `module_fingerprint`。该版本按对应 PE 的真实入口和调用契约补充独立配置，没有降低哈希或入口字节校验。
 
 | 当前 PE 契约 | RVA |
 | --- | --- |
@@ -39,15 +39,15 @@ build `25991736` 的配置来自两个实际 PE 的限定差分：身份工厂�
 
 完整调用体和原生包装调用方确认：工厂仍接受 `RCX=KnownPlayer`、`RDX=16-byte sret`，复制身份与 `FString`；封禁和解封仍分别接收原有参数，并消费一次拥有的共享引用。类注册、构造器和初始化调用方确认对象大小为 `0x730`、`0x108`、`0x3d0`，子系统 `+0x6c8` 为状态对象、`UObject.Outer +0x20` 与状态 `+8` 指向同一 GameInstance。`GetWorld` 仍通过 `+0x30` 和 `+0x2c0` 取世界，反射属性描述中的世界所属 GameInstance 偏移为 `0x228`。状态会话前置检查仍使用 `+0x388`、`+0x398`。
 
-`KnownPlayerList` 仍位于 Settings `+0xd0`，条目步长为 `88`，封禁标志为条目 `+0x41`。SaveBans 从状态 `+0x298` 的名单生成更新，再由原生路径在标志变化时调用 `SaveConfig`；封禁的离线分支仍需桥显式调用 SaveBans。两个名单 variant 分发表分别位于 `0x92fc038`（共享身份复制）和 `0x9028430`（释放），均按当前指令和目标函数核对。此次未取得旧 Shipping 映像，没有把历史差分结论当作本次逐字节比较结果，也未扩展 build `26087591` 的原生桥范围。
+`KnownPlayerList` 仍位于 Settings `+0xd0`，条目步长为 `88`，封禁标志为条目 `+0x41`。SaveBans 从状态 `+0x298` 的名单生成更新，再由原生路径在标志变化时调用 `SaveConfig`；封禁的离线分支仍需桥显式调用 SaveBans。两个名单 variant 分发表分别位于 `0x92fc038`（共享身份复制）和 `0x9028430`（释放），均按当前指令和目标函数核对。未取得旧 Shipping 映像时，不把历史差分结论当作逐字节比较结果，也未扩展 build `26087591` 的原生桥范围。
 
 回归入口为 [`control/tests`](../control/tests/CMakeLists.txt)，构建目标 `native_profile_tests`，唯一运行参数为当前 Shipping 程序的绝对路径。测试直接编译生产桥的准入和字节检查，以 `SEC_IMAGE_NO_EXECUTE` 只读映射当前文件，核对实际调用目标、类与虚表绑定、布局锚点，以及未知哈希和入口字节变更的拒绝。原代码先失败于 `build_26161880_rejected_by_native_bridge`，加入本配置后通过。MSVC `19.51.36257.0`、Windows SDK `10.0.26100.0` 的 x64 Release 测试与实际 DLL 构建均退出 `0`，保留 `/W4 /WX /guard:cf`。
 
-这是当前包的静态适配与构建证据。本次未执行游戏代码、启动服务器或写入真实安装包及实例；build `26161880` 的封禁、解封、重启持久化和真实玩家断连仍待隔离实服验收。
+以上为该构建的静态适配与编译证据，静态检查阶段未执行游戏代码、启动服务器或写入真实安装包及实例；build `26161880` 的封禁、解封、重启持久化和真实玩家断连仍待隔离实服验收。
 
 ### 2026-11-10：build 26419371 原生配置
 
-1.0.2 专服 build `26419371` 的完整 Shipping SHA-256 为 `f7840d934fccb6f3ca0b01e781abf4463f3718ebb29418985cd9281bbd3a8fb2`。本次从当前 PE 的包装调用方、类注册、构造器和持久化路径独立定位入口，没有由旧版本地址统一平移，也未降低完整哈希和入口字节准入。
+1.0.2 专服 build `26419371` 的完整 Shipping SHA-256 为 `f7840d934fccb6f3ca0b01e781abf4463f3718ebb29418985cd9281bbd3a8fb2`。该版本从对应 PE 的包装调用方、类注册、构造器和持久化路径独立定位入口，没有由旧版本地址统一平移，也未降低完整哈希和入口字节准入。
 
 | 当前 PE 契约 | RVA |
 | --- | --- |
@@ -61,7 +61,7 @@ build `25991736` 的配置来自两个实际 PE 的限定差分：身份工厂�
 
 [`native_profile_tests`](../control/tests/CMakeLists.txt) 先在未增加配置的桥上失败于 `build_26419371_rejected_by_native_bridge`（退出 `1`），补充本版独立配置后通过（退出 `0`）。x64 MSVC Release 构建保留 `/W4 /WX /guard:cf`；测试以 `SEC_IMAGE_NO_EXECUTE` 只读映射，核对真实调用目标、类与虚表绑定、对象尺寸、所有权、世界/会话、条目步长及共享引用释放，并继续拒绝未知哈希和被修改的入口字节。静态检查不执行游戏代码；后续三轮原生封禁复验见下方实服事实。
 
-原生桥现保留四版配置；旧三版的历史证据范围不变，本次没有取得旧二进制逐版重跑。build `26087591` 仍仅在加载器五版准入列表内，不在原生桥范围内。本次生产内嵌 `LgsmPlayerControl.dll` 为 `205824` 字节，SHA-256 `a1267a30b259c7fa2c9addb5c0e0d6d143a7c32cb4e708a736299d04fca432cf`。源码及机器证据见 [本次原生记录](../native-evidence/2026-11-10-public-build-26419371-native.json)。
+原生桥现保留四版配置；旧三版的历史证据范围不变，无需逐版重跑旧二进制。build `26087591` 仍仅在加载器五版准入列表内，不在原生桥范围内。该版生产内嵌 `LgsmPlayerControl.dll` 为 `205824` 字节，SHA-256 `a1267a30b259c7fa2c9addb5c0e0d6d143a7c32cb4e708a736299d04fca432cf`。源码及机器证据见 [2026-11-10 原生记录](../native-evidence/2026-11-10-public-build-26419371-native.json)。
 
 ### 2026-11-14：build 26574459 原生配置与实测
 
@@ -69,13 +69,13 @@ build `25991736` 的配置来自两个实际 PE 的限定差分：身份工厂�
 
 隔离 Windows 测试机以普通权限运行的是冻结源码构建内嵌的 `LgsmPlayerControl.dll`，205824 字节，SHA-256 `74c806dd7e7df7566430a64838772e64963878b295510aa18bff85995c49cc94`。生产准备入口安装该确切 payload；两轮加载器原生启动、完整空名单及停服拒绝通过。合成身份经原生 importer 验证后，三次新进程分别完成一次封禁、一次解封、只读重启检查，内存和 INI 标志一致，所有 owned 进程退出 0，未用强制终止冒充成功。
 
-正式管理流程另外通过四轮正常停止、两个文件的备份恢复、归档中断恢复与数据保留。初次手动请求后观察到新鲜原生保存及文件变化，排除了五分钟定时保存；停服后恢复停服前截取的确切存档，新进程成功加载且没有发送第二次保存来替代验证。产品回执保持 `Requested`。完整边界和源码／产物哈希见[本次原生记录](../native-evidence/2026-11-14-public-build-26574459-native.json)。
+正式管理流程另外通过四轮正常停止、两个文件的备份恢复、归档中断恢复与数据保留。初次手动请求后观察到新鲜原生保存及文件变化，排除了五分钟定时保存；停服后恢复停服前截取的确切存档，新进程成功加载且没有发送第二次保存来替代验证。产品回执保持 `Requested`。完整边界和源码／产物哈希见 [2026-11-14 原生记录](../native-evidence/2026-11-14-public-build-26574459-native.json)。
 
 ### 2026-11-22：build 26670300 原生配置与实测
 
 1.0.2.2 专服 build `26670300`（`++dominion+hotfix-CL-261625`，depot `4019831` manifest `8863145553754696730`，Shipping SHA-256 `5bb9c59d35ac2669b632f3368d64b116173e5fb68f969ca8b6eda2b84f788cf9`）的五个入口依次为 identity factory `0x59aa480`、ban `0x5d71b10`、unban `0x5d709e0`、known players `0x5974b10`、SaveBans `0x5d71200`；两类 singleton 为 `0xbb4e550` / `0xbb3a118`，Matchmaker / state 虚表为 `0x9e103a0` / `0xa1005c0`。92 项独立静态断言核对了包装调用、反射契约、对象尺寸、会话归属、条目布局与共享引用计数；与实机 build `26574459` 相比，八个完整 unwind 函数在归一化外部重定位与两个名单分发表（`0x930b678` / `0x9037a70`）后全部一致。只读 `SEC_IMAGE_NO_EXECUTE` 回归测试同时通过实机 `26670300`、`26574459` 与 `26419371` 三个 EXE，见[2026-11-22 静态记录](../native-evidence/2026-11-22-public-build-26670300-static.json)。
 
-隔离 Windows 测试机普通交互会话随后以冻结源码构建（`native-build-02`，4764 个源码文件）完成完整实服验证：生产加载器两轮原生启动均取得两次完整空名单并拒绝停服进程；唯一内嵌的 `LgsmPlayerControl.dll`（`206336` 字节，SHA-256 `1f8bc0f3b13c503c9016269e6e9e34f0ba3c79098ed4ebaac5420711791e069f`）通过合成 EOS 身份三次新进程实测（`ban` `false->true`、`unban` `true->false`、`verify_unbanned` `false->false`），三个进程树均经原生控制台 `quit` 正常退出 0 且无强制清理。正式管理流程另外通过四轮启停（耗时 `271.69` 秒、4 次 exit 0）、两文件备份恢复、归档中断恢复、数据保留与停前精确手动保存检查点跨重启原生加载（产品回执保持 `Requested`）。完整边界与哈希见[2026-11-22 原生证据](../native-evidence/2026-11-22-public-build-26670300-native.json)与 [evidence.json](evidence.json)。
+隔离 Windows 测试环境以冻结源码构建（4764 个源码文件）完成完整实服验证：生产加载器两轮原生启动均取得两次完整空名单并拒绝停服进程；唯一内嵌的 `LgsmPlayerControl.dll`（`206336` 字节，SHA-256 `1f8bc0f3b13c503c9016269e6e9e34f0ba3c79098ed4ebaac5420711791e069f`）通过合成 EOS 身份三次新进程实测（`ban` `false->true`、`unban` `true->false`、`verify_unbanned` `false->false`），三个进程树均经原生控制台 `quit` 正常退出 0 且无强制清理。正式管理流程另外通过四轮启停（耗时 `271.69` 秒、4 次 exit 0）、两文件备份恢复、归档中断恢复、数据保留与停前精确手动保存检查点跨重启原生加载（产品回执保持 `Requested`）。完整边界与哈希见[2026-11-22 原生证据](../native-evidence/2026-11-22-public-build-26670300-native.json)与 [evidence.json](evidence.json)。
 
 ## 加载器来源
 
@@ -100,7 +100,7 @@ Dragonwilds 专服使用 `version.dll` 加载代理。[作者发布页的 2026-0
 
 [build-proxy.ps1](build-proxy.ps1) 和 [proxy-build/CMakeLists.txt](proxy-build/CMakeLists.txt) 仅提供最小构建入口。32 个必要源文件及固定下载地址在 [proxy-sources.json](proxy-sources.json)；下载后验证 SHA-256 和 Git blob，不修改上游源码，也不编译 UE4SS 核心。依赖为 UE4SS 的 Constructs、File、Helpers、String，以及上游固定的 `fmt 11.2.0`。构建没有 Cargo 步骤，不安装系统工具或更改全局设置。
 
-已验证代理的 17 个导出名称与序号均与 Windows 原 DLL 一致，包括两个系统转发导出。代理使用静态 C++ 运行库，只导入 `KERNEL32.dll`、`USER32.dll` 和 `SHELL32.dll`。不同构建可能因 PE 时间戳或工具链而产生不同哈希；部署应记录实际生成文件及本次构建清单，而不是要求所有机器生成相同二进制。
+已验证代理的 17 个导出名称与序号均与 Windows 原 DLL 一致，包括两个系统转发导出。代理使用静态 C++ 运行库，只导入 `KERNEL32.dll`、`USER32.dll` 和 `SHELL32.dll`。不同构建可能因 PE 时间戳或工具链而产生不同哈希；部署应记录实际生成文件及构建清单，而不是要求所有机器生成相同二进制。
 
 ## 许可边界
 
@@ -118,13 +118,13 @@ RSDWTools/Dev Kit 仅用于发现可观察的游戏 API 线索。本实现不复
 
 三轮 bootstrap 与 Shipping 都经私有桌面的原生控制台 `quit` 正常退出 `0`，均记录世界 teardown 标记，专属 Job 为空且未使用强制清理；停服后再次读取 INI，结果与内存观测一致。最终独立副本的进程残留为 `0`，游戏、查询及 Beacon UDP 端口均已释放。
 
-这些结果覆盖本版新建世界及同版重启中的加载器、完整空名单、合成账号原生封禁/解封和 INI 持久化。没有旧版存档可用于跨版本验证；真实玩家的踢出、被封禁连接拒绝、解封后重连、平台认证和服主权限仍未验收。此处不把空服或合成账号结果扩展为上述行为，也不将其作为自动备份或规则修改的验收。摘要见 [evidence.json](evidence.json) 的本次 `revalidations`，完整机器记录见 [本次原生证据](../native-evidence/2026-11-10-public-build-26419371-native.json)。
+这些结果覆盖本版新建世界及同版重启中的加载器、完整空名单、合成账号原生封禁/解封和 INI 持久化。没有旧版存档可用于跨版本验证；真实玩家的踢出、被封禁连接拒绝、解封后重连、平台认证和服主权限仍未验收。此处不把空服或合成账号结果扩展为上述行为，也不将其作为自动备份或规则修改的验收。摘要见 [evidence.json](evidence.json) 的 `revalidations`，完整机器记录见 [2026-11-10 原生证据](../native-evidence/2026-11-10-public-build-26419371-native.json)。
 
 ### 2026-10-16：自动下载、首次安装及原生重启
 
 当时的自动准备沿用生产 Mod 下载器，历史联网探针成功取得固定官方资产，并通过准确大小、发行包 SHA-256 及三个必要成员的独立哈希校验。
 
-`isolated_dragonwilds_automatic_loader_install_survives_native_restart` 在不带加载器的标记独立副本中调用生产安装器，随后经生产 `spawn_launch_plan` 连续启动两次。两次运行分别取得两个不同请求标识对应的完整空名单，停止后拒绝旧进程；原生生成日志后，安装检查仍保持就绪。测试通过 1 项、失败 0 项，用时 17.21 秒。本次内嵌代理为 448,512 字节，SHA-256 `3244536c75b12db2cb6ba75f62bdd450a677763fdbc01ddf57a6e7cf9bb8fa4e`，仍来自同一固定源码清单。首次启动后游戏从保存的 INI 移除了 `AdminPassword`，重启探针沿用原生保存状态，不重复要求首次夹具的明文字段。
+`isolated_dragonwilds_automatic_loader_install_survives_native_restart` 在不带加载器的标记独立副本中调用生产安装器，随后经生产 `spawn_launch_plan` 连续启动两次。两次运行分别取得两个不同请求标识对应的完整空名单，停止后拒绝旧进程；原生生成日志后，安装检查仍保持就绪。测试通过 1 项、失败 0 项，用时 17.21 秒。对应内嵌代理为 448,512 字节，SHA-256 `3244536c75b12db2cb6ba75f62bdd450a677763fdbc01ddf57a6e7cf9bb8fa4e`，仍来自同一固定源码清单。首次启动后游戏从保存的 INI 移除了 `AdminPassword`，重启探针沿用原生保存状态，不重复要求初始测试配置的明文字段。
 
 构造回归另覆盖已有加载器保留、重复启动、多个安装中断位置、文件及恢复记录篡改、应用重构建、未知游戏版本停用与恢复。原生测试使用回环地址、独立口令和可丢弃副本，未操作用户服务器或实际玩家。上述结果验证下载、安装及空服读取，不代表桌面完整启动队列、多人加入退出、账号认证、备份或存档持久化已验收。
 

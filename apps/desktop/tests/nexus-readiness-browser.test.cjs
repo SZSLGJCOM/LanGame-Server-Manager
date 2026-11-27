@@ -52,7 +52,7 @@ function html() {
       await loaded;
       results.push({ name: "parsing document", hasContent: frame.contentWindow.duringParse.hasContent });
       frame.remove();
-      // PLAP's failed 13762 page had an interactive verification shell with two
+      // Observed Nexus project 13762 verification page had an interactive shell with two
       // body children but no file list. Its identity is observable before any
       // generic visible-content readiness; native must wait as verification.
       const shell = document.createElement("iframe");

@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 use app_storage::managed_console_log::ManagedConsoleLog;
 use std::io::Write;

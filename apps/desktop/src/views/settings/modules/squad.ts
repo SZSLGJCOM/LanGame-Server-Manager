@@ -52,7 +52,7 @@ const SQUAD_GROUP_SPECS: Record<string, SquadGroupSpec[]> = {
     {
       id: "rules",
       title: "Team Rules",
-      description: "Team-change and balance posture used in Server.cfg.",
+      description: "Team-change and balance rules used in Server.cfg.",
       layoutClass: "squad-rules",
       keys: [
         "allow_team_changes",
@@ -71,7 +71,7 @@ const SQUAD_GROUP_SPECS: Record<string, SquadGroupSpec[]> = {
     {
       id: "rotation-mode",
       title: "Rotation Mode",
-      description: "Map rotation mode, randomization, and voting posture from Server.cfg.",
+      description: "Map rotation mode, randomization, and voting rules from Server.cfg.",
       layoutClass: "squad-rotation-mode",
       keys: [
         "map_rotation_mode",

@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 //! Opt-in native acceptance. The caller supplies a sanitized, disposable source
 //! copy; no existing instance, configuration, world, or SDK user context is used.
 use super::*;

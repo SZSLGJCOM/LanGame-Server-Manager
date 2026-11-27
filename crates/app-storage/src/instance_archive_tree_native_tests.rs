@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::TreeNode;
 use std::collections::BTreeSet;
 use std::ffi::{OsStr, OsString};

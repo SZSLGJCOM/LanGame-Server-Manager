@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 //! Independent disposable-world evidence for a Requested Dragonwilds save.
 //! This observation never changes the production receipt to Confirmed.
 use super::*;

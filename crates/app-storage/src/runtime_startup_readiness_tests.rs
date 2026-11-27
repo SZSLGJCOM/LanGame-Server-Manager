@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 
 const NIGHTINGALE_READY: &str = "LogNWXGameMode: OnAllLevelsLoaded: levels finished loading, finished restoring world state and building navigation. Going ready.";

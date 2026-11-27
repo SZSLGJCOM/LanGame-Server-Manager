@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 //! Exercise the optional loader through the following save-startup boundary.
 use super::*;
 use crate::commands::{

@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::install_launch_matrix_tests::seed_installed_package;
 use super::*;
 

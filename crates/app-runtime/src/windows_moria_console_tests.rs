@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 
 fn identity(image: &str, creation_time: u64) -> ProcessIdentity {

@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use crate::{KnowledgeLibrary, Result};
 use std::path::PathBuf;
 use std::sync::{Arc, atomic::AtomicBool};

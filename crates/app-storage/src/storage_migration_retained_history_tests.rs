@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 //! Real file/SQLite migrations in owned fixtures; no default storage is used.
 use super::*;
 use crate::storage_migration as migration;

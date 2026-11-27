@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 //! Guest-only production HTTP downloads, exported separately from cold installs.
 //! The three packages must be downloaded afresh; no installer executes here.
 use super::*;

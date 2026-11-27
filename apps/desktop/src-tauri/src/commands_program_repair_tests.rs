@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 use app_storage::{StoragePaths, bootstrap_storage_with_paths};
 

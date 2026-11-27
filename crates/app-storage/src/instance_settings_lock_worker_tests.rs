@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 
 fn test_paths(root: &std::path::Path) -> StoragePaths {

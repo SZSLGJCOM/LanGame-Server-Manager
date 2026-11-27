@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 
 fn pinned_cache(root: &Directory, sources: Vec<String>, digest: Option<String>) -> MediaCache {

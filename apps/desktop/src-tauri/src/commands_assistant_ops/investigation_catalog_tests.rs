@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::module_settings_tests::schema_module;
 use super::task_tests::task_fixture;
 use super::*;

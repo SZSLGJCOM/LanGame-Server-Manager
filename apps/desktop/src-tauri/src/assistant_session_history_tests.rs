@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::tests::{binding, tool_group};
 use super::*;
 use crate::assistant::AssistantToolReply;

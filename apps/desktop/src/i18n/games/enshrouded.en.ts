@@ -317,7 +317,7 @@ export const EN_US_ENSHROUDED_MESSAGES: MessageCatalog = {
   "enshrouded.settings.groups.moderation": "Moderation",
   "enshrouded.settings.groups.moderationDescription": "Player identities denied by the native ban list.",
   "enshrouded.settings.groups.players": "Players",
-  "enshrouded.settings.groups.playersDescription": "Health, stamina, mana, and player survivability posture.",
+  "enshrouded.settings.groups.playersDescription": "Health, stamina, mana, and player survivability settings.",
   "enshrouded.settings.groups.progression": "Progression",
   "enshrouded.settings.groups.progressionDescription": "Gathering, production, rune, and XP multipliers.",
   "enshrouded.settings.groups.survival": "Survival",

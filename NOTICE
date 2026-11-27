@@ -161,21 +161,19 @@ standalone LanGame brand assets listed above:
 
 * apps/desktop/src/assets/minecraft-cover.png
 
-The maintainer identified this image as an in-house or AI-generated creation
-on 2026-09-30. That records the reported production source; it does not establish
-ownership of depicted Minecraft characters, designs, names or other third-party
-elements. The MIT text below does not license those rights or grant use of the
-LanGame name as someone else's brand. Review the Minecraft Usage Guidelines
-for the intended display and distribution: https://www.minecraft.net/en-us/usage-guidelines
+This file is a first-party placeholder illustration created for the project and
+is not official Mojang artwork; it does not license third-party game elements
+or grant use of the LanGame name as someone else's brand. Review the Minecraft
+Usage Guidelines for the intended display and distribution:
+https://www.minecraft.net/en-us/usage-guidelines
 
 NOT AN OFFICIAL MINECRAFT PRODUCT. NOT APPROVED BY OR ASSOCIATED WITH MOJANG
 OR MICROSOFT.
 
-维护者于 2026-09-30 确认该图为自行制作或 AI 生成。该记录说明制作来源，不证明
-图中 Minecraft 人物、造型、名称等第三方元素属于 LanGame。下方保留的 MIT 授权
-仅覆盖 LanGame 有权授予的部分，不授予第三方权利，也不允许将 LanGame 名称当作
-他人品牌使用。具体展示和分发仍须核对 Minecraft 使用规则。本产品并非 Minecraft
-官方产品，未经 Mojang 或 Microsoft 批准，也不与二者关联。
+该文件为项目自制的默认占位插画，并非 Mojang 官方美术资源，不构成对第三方游戏
+元素的授权，也不允许将 LanGame 名称当作他人品牌使用。具体展示和分发仍须核对
+Minecraft 使用规则。本产品并非 Minecraft 官方产品，未经 Mojang 或 Microsoft
+批准，也不与二者关联。
 
 These project asset lists are separate from the third-party redistribution
 ledger. Listing a path permits build/export selection; it does not prove a

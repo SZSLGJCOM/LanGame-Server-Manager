@@ -138,9 +138,9 @@ For each registry dependency, the Rust inventory provides a version-specific sou
 
 ## Return to Moria 配置事实
 
-[`modules/returntomoria/reference-configs/server-defaults-build-21872765.ini`](modules/returntomoria/reference-configs/server-defaults-build-21872765.ini) 是项目维护的夹具，依据已记录的 `2026-07-13` Steam public build `21872765` 首次启动配置制作，仅保留验证接入所需的 6 个节名和 25 组键值，不含上游解释性注释。规范化不代表重新运行游戏或更新构建的验证日期。
+[`modules/returntomoria/reference-configs/server-defaults-build-21872765.ini`](modules/returntomoria/reference-configs/server-defaults-build-21872765.ini) 是项目维护的测试样本，依据已记录的 `2026-07-13` Steam public build `21872765` 首次启动配置制作，仅保留验证接入所需的 6 个节名和 25 组键值，不含上游解释性注释。规范化不代表重新运行游戏或更新构建的验证日期。
 
-[来源台账](modules/returntomoria/config-sources.toml) 分别记录规范化前样本与当前 LF 换行分发夹具的 SHA-256。前者标识规范化所用的来源样本，不代表游戏最初生成的字节，也不表示仓库分发该文件。操作说明继续以[发行方专服指南](https://www.returntomoria.com/news-updates/dedicated-server)为来源；本记录不授予发行方说明正文、游戏资产、名称或商标的权利。
+[来源台账](modules/returntomoria/config-sources.toml) 分别记录规范化前样本与当前按 LF 换行分发的测试样本的 SHA-256。前者标识规范化所用的来源样本，不代表游戏最初生成的字节，也不表示仓库分发该文件。操作说明继续以[发行方专服指南](https://www.returntomoria.com/news-updates/dedicated-server)为来源；本记录不授予发行方说明正文、游戏资产、名称或商标的权利。
 
 ## 本地多语言向量模型
 

@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 //! Real startup orchestration with isolated storage/state/program leases.
 //! Only public-provider metadata and ZIP delivery are synthetic boundaries.
 use super::*;

@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 //! MSI transport regression only. The fixture has metadata and no action or
 //! installation sequence; the only package opener ignores machine state.
 use super::*;

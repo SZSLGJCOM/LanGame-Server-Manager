@@ -48,7 +48,7 @@
       "--locked",
       "--no-run"
     ],
-    "actual_entry_point": "Standard managed-workstation Cargo wrapper; local path omitted; no task-specific resource override.",
+    "actual_entry_point": "isolated Cargo test runner",
     "actual_entry_point_sha256": "3d4d69868642e10ab39ed39b711b6e9cba2bf00db9c6b9e9e1fd17623f03cf59",
     "resource_binding": "The runner verifies all frozen source files and selects frozen modules and migrations through the isolated storage fixture."
   },

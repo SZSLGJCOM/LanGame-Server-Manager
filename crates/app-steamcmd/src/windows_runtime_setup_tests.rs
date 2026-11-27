@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 use app_runtime::{WindowsRuntimeArchitecture as Architecture, WindowsRuntimeFamily as Family};
 use std::future::Future;

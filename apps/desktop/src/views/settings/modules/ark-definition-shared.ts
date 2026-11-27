@@ -108,7 +108,7 @@ export function buildArkSections(
       description: t(
         "ark.settings.sections.gameplayDescription",
         undefined,
-        "PvE/PvP posture, third person, map markers, voice, and visible room rules."
+        "PvE/PvP mode, third person, map markers, voice, and visible room rules."
       )
     },
     {
@@ -153,7 +153,7 @@ export function buildArkSections(
       description: t(
         "ark.settings.sections.balanceDescription",
         undefined,
-        "Resource respawn, stack size, disease posture, flyer rules, and combat multipliers."
+        "Resource respawn, stack size, disease rules, flyer rules, and combat multipliers."
       )
     },
     {
@@ -234,7 +234,7 @@ export function buildArkSections(
       description: t(
         modsDescriptionKey,
         undefined,
-        "Mod IDs and install posture that LanGame renders into the game-specific mod entry point."
+        "Mod IDs and update settings rendered into the game-specific mod configuration."
       )
     },
     {
@@ -243,7 +243,7 @@ export function buildArkSections(
       description: t(
         "ark.settings.sections.logsDescription",
         undefined,
-        "Game log, tribe log, and admin command echo posture."
+        "Game log, tribe log, and admin command echo settings."
       )
     },
     {

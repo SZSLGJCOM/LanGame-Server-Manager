@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::{citation_url, parse, validate_source_module};
 use crate::{ContentUse, KnowledgeError, KnowledgeLibrary, embedding, extract, sources, store};
 use reqwest::Url;

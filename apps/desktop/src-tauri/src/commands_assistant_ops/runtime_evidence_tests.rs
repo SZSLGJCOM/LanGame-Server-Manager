@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 
 struct RuntimeEvidenceFiles(std::path::PathBuf);

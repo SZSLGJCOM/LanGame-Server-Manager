@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::runtime_action_response_text;
 
 #[test]

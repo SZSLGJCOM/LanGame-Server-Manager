@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 
 const STEAM_METADATA: &str = "steamapps/appmanifest_896660.acf";

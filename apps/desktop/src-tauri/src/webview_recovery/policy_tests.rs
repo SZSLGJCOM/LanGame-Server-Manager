@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 
 fn begin_next(policy: &mut Policy) -> Attempt {

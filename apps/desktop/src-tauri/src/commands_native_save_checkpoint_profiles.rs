@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 //! Fixed native persistence families and reload observations for disposable tests.
 //! The caller owns fixture containment, identity pins and fresh log cursors.
 use app_core::InstanceDetails;

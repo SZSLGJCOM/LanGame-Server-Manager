@@ -12,7 +12,7 @@ const manual = (id, extra = "", url = `${project}?tab=files&file_id=${id}`) =>
   `<a href="${url}" data-action="manual-${id}" ${extra}>Manual download</a>`;
 const main = (...files) => `<section><h2>Main files</h2>${files.join("")}</section>`;
 const slow = (extra = "") => `<button data-action="slow" ${extra}>Slow Download</button>`;
-// PLAP's file 51828 uses this official custom element; its public bundle
+// Observed Nexus file 51828 uses this official custom element; its public bundle
 // attaches an open shadow root and renders the ordinary Slow download button.
 const downloadComponent = (fileId = "88", attributes = "", gameDomain = "/7daystodie") =>
   `<mod-file-download file-id="${fileId}" game-domain="${gameDomain}" user-is-logged-in="true" ${attributes}></mod-file-download>`;
@@ -33,17 +33,17 @@ const legacyRow = (fileId, name, options = {}) => `<dl class="accordion"><dt dat
 const miscListing = (...rows) => modalListing(...rows)
   .replace('id="file-container-main-files"', 'id="file-container-miscellaneous-files"')
   .replace('<h2>Main files</h2>', '<h2>Miscellaneous files</h2>');
-// PLAP's Enshrouded Mod 326 has this site-generated notice in place of Manual.
+// Enshrouded Mod 326 quarantine page renders this site-generated notice in place of Manual.
 const quarantineRow = (fileId = "1948", options = {}) => `<dl class="accordion"><dt data-id="${options.headerId ?? fileId}"></dt>
   <dd data-id="${fileId}" ${options.rowExtra ?? ""}><div class="tabbed-block"><ul class="accordion-downloads">
   <li class="quarantine-notice" ${options.extra ?? ""}><p>${options.notice ?? "This file has been quarantined by our automated safety checks. This could be due to:"}</p>
   <ul><li>Executables and similar file types</li></ul></li></ul></div></dd></dl>`;
-// Public download-gate markup recovered from PLAP's actual 13866 files page.
+// Public download-gate markup observed on Nexus project 13866 files page.
 const guestBanner = '<div id="loggedOutPremiumBanner" class="premium-banner"><span>You have to be logged in to download files</span>'
   + '<a class="btn" href="https://users.nexusmods.com/auth/sign_in" data-action="login">Log in</a>'
   + '<a href="https://users.nexusmods.com/register" data-action="register">Register</a></div>';
 const samples = [
-  // Nexus 147's published Files page uses Miscellaneous files. PLAP observed
+  // Nexus 147's published Files page uses Miscellaneous files with
   // no Main heading and five ordinary Manual links, including older files.
   { name: "sole bound Miscellaneous file excludes old versions when Main is absent",
     body: miscListing(legacyRow("1719", "Shroudforge"))
@@ -191,7 +191,7 @@ const samples = [
   { name: "server hint cannot hide a quarantined Main variant with unknown name", body: modalListing(
     modalRow("88", "1059000088", { name: "Bundle_Server_P" }), quarantineRow()), modal: true,
     clicks: [], state: "blocked", reason: "file_selection" },
-  { name: "PLAP quarantined main file reports the site's actual blocker", body: modalListing(quarantineRow()),
+  { name: "quarantined main file reports the site's actual blocker", body: modalListing(quarantineRow()),
     clicks: [], state: "blocked", reason: "file_quarantined" },
   { name: "explicit quarantined file reports its actual blocker", fileId: "1948", body: modalListing(quarantineRow(), modalRow()), modal: true,
     clicks: [], state: "blocked", reason: "file_quarantined" },
@@ -215,7 +215,7 @@ const samples = [
     clicks: [], afterWait: "blocked" },
   { name: "quarantine notice on a different project is excluded", url: project.replace("2264", "999"), body: modalListing(quarantineRow()),
     clicks: [], state: "blocked", reason: "project_identity" },
-  { name: "PLAP new file row waits for native authorization before Manual", body: modalListing(modalRow()), modal: true,
+  { name: "modern file row waits for native authorization before Manual", body: modalListing(modalRow()), modal: true,
     selection: { fileId: "88", fileUid: "1059000088" }, clicks: ["modal-88"] },
   { name: "new file row can use a normal site anchor", body: modalListing(modalRow()), modal: true, modalAnchor: true,
     selection: { fileId: "88", fileUid: "1059000088" }, clicks: ["modal-88"] },
@@ -270,7 +270,7 @@ const samples = [
   { name: "login is a background blocker", url: "https://users.nexusmods.com/auth/sign_in?redirect=fixture-client-secret", body: slow() + '<input type="password">', clicks: [], state: "blocked", reason: "login" },
   { name: "blank rendering cannot click", rendered: false, body: main(manual("88")), clicks: [], state: "loading" },
   { name: "selected file clicks slow once", url: project + "?file_id=88&tab=files", body: slow(), clicks: ["slow"], phase: "waiting" },
-  { name: "PLAP download component reaches its ordinary shadow button", url: project + "?file_id=88", body: downloadComponent(), shadow: slow(), clicks: ["slow"], phase: "waiting" },
+  { name: "file download component reaches its ordinary shadow button", url: project + "?file_id=88", body: downloadComponent(), shadow: slow(), clicks: ["slow"], phase: "waiting" },
   { name: "bare game domain remains valid", url: project + "?file_id=88", body: downloadComponent("88", "", "7daystodie"), shadow: slow(), clicks: ["slow"], phase: "waiting" },
   { name: "display contents host still exposes its visible download button", url: project + "?file_id=88", body: downloadComponent("88", 'style="display:contents"'), shadow: slow(), clicks: ["slow"], phase: "waiting" },
   { name: "different component file cannot be selected", url: project + "?file_id=88", body: downloadComponent("99"), shadow: slow(), clicks: [], afterWait: "blocked" },
@@ -299,7 +299,7 @@ const samples = [
   { name: "does not choose premium", url: project + "?file_id=88", body: '<button data-action="premium">Fast Download</button>', clicks: [], afterWait: "blocked" },
   { name: "guest countdown is not a download", url: project + "?file_id=88", body: "<p>You must be logged in.</p><p>Your download will start in 5 seconds...</p>", clicks: [], state: "blocked", reason: "login" },
   { name: "download login requirement reports the actual blocker", url: project + "?file_id=88", body: "<p>You must be logged in to download files.</p>", clicks: [], state: "blocked", reason: "login" },
-  { name: "PLAP files-page login wall reports login before selecting a file", extractMetadata: true,
+  { name: "files-page login wall reports login before selecting a file", extractMetadata: true,
     body: '<main><h1>Public project</h1><div class="tabcontent tabcontent-mod-page" role="status">' + guestBanner + main() + '</div></main>',
     clicks: [], state: "blocked", reason: "login" },
   { name: "download gate takes precedence over an available manual link", body: guestBanner + main(manual("88")),

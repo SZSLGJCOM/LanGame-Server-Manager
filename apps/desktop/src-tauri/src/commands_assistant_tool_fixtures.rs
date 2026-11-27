@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::assistant_repair_integration_tests::read_repair_model_request;
 use super::*;
 use tokio::io::AsyncWriteExt;

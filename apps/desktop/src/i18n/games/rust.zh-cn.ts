@@ -11,7 +11,7 @@ export const ZH_CN_RUST_MESSAGES: MessageCatalog = {
   "rust.settings.groups.browser-media.title": "浏览器媒体",
   "rust.settings.groups.identity.description": "名称、描述和人数上限是玩家在 Rust 服务器浏览器里首先比较的信号。",
   "rust.settings.groups.identity.title": "服务器身份",
-  "rust.settings.groups.rcon.description": "RCON 是日常运维通道。启动前请明确 EAC 和远程控制台姿态。",
+  "rust.settings.groups.rcon.description": "RCON 是日常运维通道。启动前请确认 EAC 和远程控制台设置。",
   "rust.settings.groups.rcon.title": "安全与 RCON",
   "rust.settings.groups.terrain.description": "地图类型、种子和世界尺寸决定生成岛屿，以及它对磁盘和内存的压力。",
   "rust.settings.groups.terrain.title": "岛屿生成",

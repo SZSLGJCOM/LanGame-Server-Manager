@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 //! Opt-in Windows Sandbox evidence for the production portable-runtime API.
 //! Uses synthetic game requirement metadata, never proprietary game programs.
 use super::*;

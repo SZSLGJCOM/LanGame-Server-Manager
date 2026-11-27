@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 //! Opt-in export for real Windows Sandbox installs. The host test only writes
 //! production scripts; the separate runner guards every installer to the guest.
 use super::*;

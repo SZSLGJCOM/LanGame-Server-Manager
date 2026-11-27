@@ -68,6 +68,65 @@ fn remember_manifest(source: String, descriptor: &ModuleDescriptor) {
     }
 }
 
+fn load_single_module_dir(module_root: PathBuf) -> Result<ModuleDescriptor, ModuleDiscoveryError> {
+    let manifest_path = module_root.join("module.toml");
+    let source = fs::read_to_string(&manifest_path).map_err(|source| {
+        ModuleDiscoveryError::ReadManifest {
+            path: manifest_path.clone(),
+            source,
+        }
+    })?;
+    // Match the exact source, including its BOM. Directory membership and
+    // schema contents remain fresh observations on every discovery call.
+    if let Some(mut descriptor) = cached_manifest(&module_root, &source) {
+        descriptor.schema_json = read_schema(&module_root)?;
+        descriptor.root = module_root;
+        return Ok(descriptor);
+    }
+    let manifest_text = strip_utf8_bom(source.clone());
+    let manifest =
+        toml::from_str(&manifest_text).map_err(|source| ModuleDiscoveryError::ParseManifest {
+            path: manifest_path,
+            source: Box::new(source),
+        })?;
+    // Preserve syntax errors before schema I/O, and schema I/O errors
+    // before semantic validation, as in uncached discovery.
+    let schema_json = read_schema(&module_root)?;
+    let mut descriptor = descriptor_from_manifest(module_root, manifest_text, manifest)?;
+    remember_manifest(source, &descriptor);
+    descriptor.schema_json = schema_json;
+    Ok(descriptor)
+}
+
+pub fn discover_module(
+    root: impl AsRef<Path>,
+    module_id: &str,
+) -> Result<Option<ModuleDescriptor>, ModuleDiscoveryError> {
+    let root = root.as_ref();
+    if !root.exists() {
+        return Err(ModuleDiscoveryError::MissingDirectory {
+            path: root.to_path_buf(),
+        });
+    }
+    let trimmed = module_id.trim();
+    if !trimmed.is_empty()
+        && trimmed
+            .bytes()
+            .all(|b| b.is_ascii_alphanumeric() || b == b'-' || b == b'_')
+    {
+        let candidate = root.join(trimmed.to_ascii_lowercase());
+        if candidate.is_dir() && candidate.join("module.toml").exists() {
+            let descriptor = load_single_module_dir(candidate)?;
+            if descriptor.summary.id.eq_ignore_ascii_case(trimmed) {
+                return Ok(Some(descriptor));
+            }
+        }
+    }
+    Ok(discover_modules(root)?
+        .into_iter()
+        .find(|descriptor| descriptor.summary.id.eq_ignore_ascii_case(trimmed)))
+}
+
 pub fn discover_modules(
     root: impl AsRef<Path>,
 ) -> Result<Vec<ModuleDescriptor>, ModuleDiscoveryError> {
@@ -90,38 +149,10 @@ pub fn discover_modules(
         if !module_root.is_dir() {
             continue;
         }
-        let manifest_path = module_root.join("module.toml");
-        if !manifest_path.exists() {
+        if !module_root.join("module.toml").exists() {
             continue;
         }
-        let source = fs::read_to_string(&manifest_path).map_err(|source| {
-            ModuleDiscoveryError::ReadManifest {
-                path: manifest_path.clone(),
-                source,
-            }
-        })?;
-        // Match the exact source, including its BOM. Directory membership and
-        // schema contents remain fresh observations on every discovery call.
-        if let Some(mut descriptor) = cached_manifest(&module_root, &source) {
-            descriptor.schema_json = read_schema(&module_root)?;
-            descriptor.root = module_root;
-            descriptors.push(descriptor);
-            continue;
-        }
-        let manifest_text = strip_utf8_bom(source.clone());
-        let manifest = toml::from_str(&manifest_text).map_err(|source| {
-            ModuleDiscoveryError::ParseManifest {
-                path: manifest_path,
-                source: Box::new(source),
-            }
-        })?;
-        // Preserve syntax errors before schema I/O, and schema I/O errors
-        // before semantic validation, as in uncached discovery.
-        let schema_json = read_schema(&module_root)?;
-        let mut descriptor = descriptor_from_manifest(module_root, manifest_text, manifest)?;
-        remember_manifest(source, &descriptor);
-        descriptor.schema_json = schema_json;
-        descriptors.push(descriptor);
+        descriptors.push(load_single_module_dir(module_root)?);
     }
     if descriptors.is_empty() {
         return Err(ModuleDiscoveryError::EmptyCatalog {

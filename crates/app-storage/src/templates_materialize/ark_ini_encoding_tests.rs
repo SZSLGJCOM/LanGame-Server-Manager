@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 
 const TEST_ADMIN_PASSWORD: &str = "ark-encoding-fixture-password";

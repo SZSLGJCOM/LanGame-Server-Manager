@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 //! Read-only admission probes over disposable UUID directories. Ordinary archive
 //! operations must keep inspecting their live roots; only a takeover ignores old tails.
 use super::*;

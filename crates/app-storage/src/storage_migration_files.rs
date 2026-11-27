@@ -119,15 +119,37 @@ fn compare_names(left: &std::ffi::OsStr, right: &std::ffi::OsStr) -> CmpOrdering
         fn compare_ordinal(a: *const u16, an: i32, b: *const u16, bn: i32, ignore_case: i32)
         -> i32;
     }
-    let a = left.encode_wide().collect::<Vec<_>>();
-    let b = right.encode_wide().collect::<Vec<_>>();
-    // Filesystem paths are bounded below i32::MAX by Windows itself.
-    match unsafe { compare_ordinal(a.as_ptr(), a.len() as i32, b.as_ptr(), b.len() as i32, 1) } {
-        1 => CmpOrdering::Less,
-        2 => CmpOrdering::Equal,
-        3 => CmpOrdering::Greater,
-        _ => a.cmp(&b),
+    fn with_wide<R>(value: &std::ffi::OsStr, f: impl FnOnce(&[u16]) -> R) -> R {
+        let mut stack = [0_u16; 128];
+        let mut len = 0_usize;
+        let mut iter = value.encode_wide();
+        while let Some(unit) = iter.next() {
+            if len < stack.len() {
+                stack[len] = unit;
+                len += 1;
+            } else {
+                let mut heap = Vec::with_capacity(256);
+                heap.extend_from_slice(&stack);
+                heap.push(unit);
+                heap.extend(iter);
+                return f(&heap);
+            }
+        }
+        f(&stack[..len])
     }
+    // Filesystem paths are bounded below i32::MAX by Windows itself.
+    with_wide(left, |a| {
+        with_wide(right, |b| {
+            match unsafe {
+                compare_ordinal(a.as_ptr(), a.len() as i32, b.as_ptr(), b.len() as i32, 1)
+            } {
+                1 => CmpOrdering::Less,
+                2 => CmpOrdering::Equal,
+                3 => CmpOrdering::Greater,
+                _ => a.cmp(b),
+            }
+        })
+    })
 }
 
 #[cfg(not(windows))]
@@ -138,10 +160,10 @@ fn compare_names(left: &std::ffi::OsStr, right: &std::ffi::OsStr) -> CmpOrdering
 #[derive(Clone, Debug, Eq)]
 struct PathKey(PathBuf);
 
-impl Ord for PathKey {
-    fn cmp(&self, other: &Self) -> CmpOrdering {
-        let mut left = self.0.components();
-        let mut right = other.0.components();
+impl PathKey {
+    fn cmp_paths(left: &Path, right: &Path) -> CmpOrdering {
+        let mut left = left.components();
+        let mut right = right.components();
         loop {
             match (left.next(), right.next()) {
                 (Some(left), Some(right)) => {
@@ -155,6 +177,12 @@ impl Ord for PathKey {
                 (None, None) => return CmpOrdering::Equal,
             }
         }
+    }
+}
+
+impl Ord for PathKey {
+    fn cmp(&self, other: &Self) -> CmpOrdering {
+        Self::cmp_paths(&self.0, &other.0)
     }
 }
 
@@ -460,14 +488,14 @@ fn hash_reader(
         hasher.update(&buffer[..count]);
         observed(count as u64);
     }
-    Ok(FileDigest {
-        size,
-        sha256: hasher
-            .finalize()
-            .iter()
-            .map(|byte| format!("{byte:02x}"))
-            .collect(),
-    })
+    const HEX: &[u8; 16] = b"0123456789abcdef";
+    let digest = hasher.finalize();
+    let mut sha256 = String::with_capacity(64);
+    for &byte in &digest {
+        sha256.push(HEX[(byte >> 4) as usize] as char);
+        sha256.push(HEX[(byte & 0x0f) as usize] as char);
+    }
+    Ok(FileDigest { size, sha256 })
 }
 
 fn checked_file(
@@ -595,9 +623,9 @@ fn scan_sources(
         }
     }
     plan.directories
-        .sort_by_key(|entry| PathKey(entry.source.clone()));
+        .sort_by(|left, right| PathKey::cmp_paths(&left.source, &right.source));
     plan.files
-        .sort_by_key(|entry| PathKey(entry.source.clone()));
+        .sort_by(|left, right| PathKey::cmp_paths(&left.source, &right.source));
     Ok(plan)
 }
 
@@ -674,12 +702,14 @@ fn inspect_targets(
             }
         }
     }
+    let mut checked_ancestors = BTreeMap::<PathKey, Option<bool>>::new();
     for (key, wanted) in &desired {
         cancelled(cancellation)?;
         let path = &key.0;
         let mut blocked = false;
         for ancestor in path.ancestors().skip(1) {
-            if matches!(desired.get(&PathKey(ancestor.to_owned())), Some(Some(_))) {
+            let ancestor_key = PathKey(ancestor.to_owned());
+            if matches!(desired.get(&ancestor_key), Some(Some(_))) {
                 conflicts.add(path, "A destination ancestor is also mapped as a file.");
                 blocked = true;
             }
@@ -691,18 +721,27 @@ fn inspect_targets(
             {
                 continue;
             }
-            match fs::symlink_metadata(ancestor) {
-                Ok(metadata) if !metadata.is_dir() => {
-                    conflicts.add(path, "A destination ancestor is not a directory.");
-                    blocked = true;
-                }
-                Ok(_) => (),
-                Err(error)
-                    if matches!(
-                        error.kind(),
-                        io::ErrorKind::NotFound | io::ErrorKind::NotADirectory
-                    ) => {}
-                Err(error) => return Err(read_error(ancestor, error)),
+            let is_dir = if let Some(&cached) = checked_ancestors.get(&ancestor_key) {
+                cached
+            } else {
+                let observed = match fs::symlink_metadata(ancestor) {
+                    Ok(metadata) => Some(metadata.is_dir()),
+                    Err(error)
+                        if matches!(
+                            error.kind(),
+                            io::ErrorKind::NotFound | io::ErrorKind::NotADirectory
+                        ) =>
+                    {
+                        None
+                    }
+                    Err(error) => return Err(read_error(ancestor, error)),
+                };
+                checked_ancestors.insert(ancestor_key, observed);
+                observed
+            };
+            if is_dir == Some(false) {
+                conflicts.add(path, "A destination ancestor is not a directory.");
+                blocked = true;
             }
         }
         if blocked {

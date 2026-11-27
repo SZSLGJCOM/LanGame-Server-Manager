@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 
 fn planner_input(prompt: String) -> AssistantExecuteOperationInput {

@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 use crate::instance_archive::test_gate::{self, Point};
 use sqlx::{Connection, SqliteConnection, sqlite::SqliteConnectOptions};

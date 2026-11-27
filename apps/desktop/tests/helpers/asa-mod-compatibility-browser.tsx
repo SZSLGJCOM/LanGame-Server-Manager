@@ -61,7 +61,7 @@ function Workspace() {
       {view === "mods" ? <ModWorkbench details={details} moduleDetails={moduleDetails} launchPlan={null}
         onSaveSettings={onSave} onOpenSettings={(key) => { requestedField = key; view = "settings"; draw(); }} />
         : <ConfigurationWorkspace details={details} moduleDetails={moduleDetails} moduleDetailsError={null}
-          onRetryModuleDetails={() => {}} bindAddressCandidates={[]} runtime={null} launchPlan={null} launchPlanError={null}
+          onRetryModuleDetails={() => {}} bindAddressCandidates={[]} launchPlanError={null}
           requestedFieldKey={requestedField} onFieldNavigationHandled={() => { requestedField = undefined; draw(); }}
           onSave={onSave} />}
     </main>

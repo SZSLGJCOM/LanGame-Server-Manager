@@ -1,5 +1,8 @@
+import codecs
 from contextlib import redirect_stdout
+import hashlib
 import io
+import json
 import os
 import subprocess
 import tempfile
@@ -583,6 +586,232 @@ class TrackedSecretScannerTests(unittest.TestCase):
         self.assertEqual(
             [(finding.line, finding.rule) for finding in findings],
             [(1, "provider-token"), (2, "url-credential")],
+        )
+
+
+class SyntheticUrlCredentialScannerTests(unittest.TestCase):
+    username = "user"
+    redaction_marker = "sec" + "ret"
+    unapproved_value = "SyntheticCredentialValue123"
+
+    def url(self, authority: str, *, scheme: str = "http", username: str | None = None,
+            password: str | None = None) -> str:
+        return (scheme + "://" + (username or self.username) + ":"
+                + (password or self.redaction_marker) + "@" + authority)
+
+    def rules(self, name: str, text: str) -> list[str]:
+        return [finding.rule for finding in scan_payload(Path(name), text.encode())]
+
+    def test_exact_redaction_pair_requires_test_source_http_loopback_and_explicit_port(self):
+        for name in ("test_proxy.py", "proxy.test.cjs", "proxy_tests.rs"):
+            for authority in ("127.0.0.1:80", "localhost:18765", "[::1]:65535"):
+                with self.subTest(name=name, authority=authority):
+                    self.assertEqual(self.rules(name, self.url(authority)), [])
+
+    def test_redaction_pair_in_production_documents_and_configuration_is_still_rejected(self):
+        for name in ("proxy.py", "proxy.ts", "proxy.ini", "README.md", "proxy.test.json"):
+            with self.subTest(name=name):
+                self.assertEqual(self.rules(name, self.url("127.0.0.1:80")), ["url-credential"])
+
+    def test_redaction_pair_does_not_exempt_other_origins_or_schemes(self):
+        for authority in ("example.test:80", "192.0.2.1:80", "127.0.0.1.example.test:80"):
+            with self.subTest(authority=authority):
+                self.assertEqual(self.rules("test_proxy.py", self.url(authority)), ["url-credential"])
+        for scheme in ("https", "postgresql", "redis"):
+            with self.subTest(scheme=scheme):
+                self.assertEqual(self.rules("test_proxy.py", self.url("127.0.0.1:80", scheme=scheme)),
+                                 ["url-credential"])
+
+    def test_missing_or_invalid_ports_do_not_qualify_as_synthetic_fixture(self):
+        for authority in ("127.0.0.1", "127.0.0.1:", "127.0.0.1:0", "127.0.0.1:65536",
+                          "127.0.0.1:invalid", "[::1]:99999"):
+            with self.subTest(authority=authority):
+                self.assertEqual(self.rules("test_proxy.py", self.url(authority)), ["url-credential"])
+
+    def test_nonfixture_usernames_passwords_and_encoded_values_remain_rejected(self):
+        for username, password in (("operator", self.redaction_marker), ("User", self.redaction_marker),
+                                   (self.username, self.unapproved_value),
+                                   (self.username, self.redaction_marker + "-suffix"),
+                                   (self.username, "%73" + self.redaction_marker[1:])):
+            with self.subTest(username=username, password=password):
+                self.assertEqual(self.rules("test_proxy.py", self.url("127.0.0.1:80",
+                                 username=username, password=password)), ["url-credential"])
+
+    def test_safe_fixture_does_not_hide_other_credentials_on_the_same_line(self):
+        safe = self.url("127.0.0.1:80")
+        unsafe = self.url("127.0.0.1:80", password=self.unapproved_value)
+        self.assertEqual(self.rules("test_proxy.py", safe + " " + unsafe), ["url-credential"])
+
+    def test_safe_fixture_does_not_suppress_other_secret_rules(self):
+        safe = self.url("127.0.0.1:80")
+        payload = (safe + '\napi_' + 'key="SyntheticCredentialValue123"\n'
+                   + "gh" + "p_" + "a" * 32 + "\n-----BEGIN " + "PRIVATE KEY-----\n")
+        self.assertEqual(self.rules("test_proxy.py", payload),
+                         ["assigned-secret", "provider-token", "private-key"])
+
+    def test_existing_exact_synthetic_pairs_keep_their_previous_scope(self):
+        for password in ("password", "pass", "fixture"):
+            value = self.url("example.test:443", scheme="https", password=password)
+            with self.subTest(password=password):
+                self.assertEqual(self.rules("test_proxy.py", value), [])
+                self.assertEqual(self.rules("proxy.py", value), ["url-credential"])
+
+
+class SecretScanEncodingTests(unittest.TestCase):
+    def test_utf32_credentials_are_decoded_before_scanning(self):
+        text = "safe first line\napi_" + "key=EncodedCredential123\n"
+        for bom, encoding in (
+            (codecs.BOM_UTF32_LE, "utf-32-le"),
+            (codecs.BOM_UTF32_BE, "utf-32-be"),
+        ):
+            with self.subTest(encoding=encoding):
+                findings = scan_payload(Path("settings.txt"), bom + text.encode(encoding))
+                self.assertEqual(
+                    [(item.line, item.rule) for item in findings],
+                    [(2, "assigned-secret")],
+                )
+
+    def test_utf32_text_without_credentials_passes(self):
+        for encoding in ("utf-32-le", "utf-32-be"):
+            bom = codecs.BOM_UTF32_LE if encoding.endswith("le") else codecs.BOM_UTF32_BE
+            with self.subTest(encoding=encoding):
+                self.assertEqual(
+                    scan_payload(Path("settings.txt"), bom + "name=示例\n".encode(encoding)),
+                    [],
+                )
+
+
+class SecretScanFixtureTests(unittest.TestCase):
+    def test_synthetic_assignment_is_limited_to_test_source(self):
+        payload = ('let text = "server_pass' + 'word=synthetic-fixture\\n";').encode()
+        for name in ("config_documents_tests.rs", "tests.rs", "settings.test.cjs", "test_settings.py"):
+            with self.subTest(path=name):
+                self.assertEqual(scan_payload(Path(name), payload), [])
+        for name in ("settings.rs", "contests.rs", "tests/settings.json", "test_settings.py.txt", "settings.py"):
+            with self.subTest(path=name):
+                self.assertEqual(
+                    [finding.rule for finding in scan_payload(Path(name), payload)],
+                    ["assigned-secret"],
+                )
+
+    def test_only_exact_url_fixture_pair_is_accepted_in_test_source(self):
+        for password in ("password", "pass", "fixture"):
+            with self.subTest(password=password):
+                self._assert_url_fixture_scope(password)
+
+    def _assert_url_fixture_scope(self, password):
+        placeholder = '"https://user:' + password + '@example.com/file"'
+        for name in ("tests.rs", "policy_tests.rs", "policy.test.ts", "test_policy.py"):
+            with self.subTest(path=name):
+                self.assertEqual(scan_payload(Path(name), placeholder.encode()), [])
+                for candidate in (
+                    placeholder.replace("user:", "operator:"),
+                    placeholder.replace(password + "@", password + "-active@"),
+                    placeholder + ' "https://user:' + 'AnotherSecret123@example.com/file"',
+                ):
+                    self.assertEqual(
+                        [finding.rule for finding in scan_payload(Path(name), candidate.encode())],
+                        ["url-credential"],
+                    )
+        for name in ("policy.rs", "contests.rs", "settings.json", "tests/settings.txt", "test_policy.py.txt", "policy.py"):
+            with self.subTest(path=name):
+                self.assertEqual(
+                    [finding.rule for finding in scan_payload(Path(name), placeholder.encode())],
+                    ["url-credential"],
+                )
+
+    def test_short_url_credentials_are_not_ignored(self):
+        for scheme in ("https", "postgresql", "mysql", "redis"):
+            for password in ("x", "1234", "short12"):
+                payload = (scheme + "://operator:" + password + "@example.test/service").encode()
+                with self.subTest(scheme=scheme, password=password):
+                    self.assertEqual(
+                        [item.rule for item in scan_payload(Path("settings.env"), payload)],
+                        ["url-credential"],
+                    )
+
+    def test_synthetic_fixture_does_not_hide_another_credential_on_the_line(self):
+        payload = ('"https://user:' + 'password@example.com/file"; "api_'
+                   + 'key=DifferentSecret123456"').encode()
+        self.assertEqual(
+            [finding.rule for finding in scan_payload(Path("tests.rs"), payload)],
+            ["assigned-secret"],
+        )
+
+    def test_password_only_database_urls_are_scanned(self):
+        for scheme in ("redis", "rediss", "postgresql"):
+            payload = (scheme + "://:" + "1234@example.test/database").encode()
+            with self.subTest(scheme=scheme):
+                self.assertEqual(
+                    [item.rule for item in scan_payload(Path("settings.env"), payload)],
+                    ["url-credential"],
+                )
+
+    def test_native_fixture_digest_requires_its_exact_path_key_and_value(self):
+        digest = hashlib.sha256(b"fixture-server-password").hexdigest().upper()
+        concrete_value = "AnotherConcreteValue123"
+        paths = (
+            Path("modules/rimworld/config-fixtures/2026-09-28-rimworld_together_latest_release_api.json"),
+            Path("docs/game-config-acceptance/rimworld.md"),
+        )
+        for path in paths:
+            with self.subTest(path=path):
+                payload = json.dumps({"Password": digest}).encode()
+                self.assertEqual(scan_payload(path, payload), [])
+                for rejected_path, rejected_payload in (
+                    (Path("private") / path, payload),
+                    (path.with_name("other.json"), payload),
+                    (path, json.dumps({"Password": "A" * 64}).encode()),
+                    (path, json.dumps({"Password": digest, "api_key": concrete_value}).encode()),
+                    (path, json.dumps({"api_key": digest}).encode()),
+                    (path, json.dumps({"ServerPassword": digest}).encode()),
+                    (path, json.dumps({"password": digest}).encode()),
+                ):
+                    self.assertEqual(
+                        [finding.rule for finding in scan_payload(rejected_path, rejected_payload)],
+                        ["assigned-secret"],
+                    )
+
+    def test_known_hash_example_is_limited_to_its_rust_fixture(self):
+        digest = hashlib.sha256(b"abc").hexdigest().upper()
+        payload = json.dumps({"Password": digest}).encode()
+        self.assertEqual(
+            scan_payload(Path("crates/app-storage/src/templates_rimworld_tests.rs"), payload),
+            [],
+        )
+        for path in (
+            "crates/app-storage/src/other_tests.rs",
+            "crates/app-storage/src/templates_rimworld.rs",
+            "docs/game-config-acceptance/rimworld.md",
+        ):
+            with self.subTest(path=path):
+                self.assertEqual(
+                    [finding.rule for finding in scan_payload(Path(path), payload)],
+                    ["assigned-secret"],
+                )
+
+    def test_snapshot_scans_resolve_fixture_scope_against_the_supplied_root(self):
+        digest = hashlib.sha256(b"fixture-server-password").hexdigest().upper()
+        relative = Path("docs/game-config-acceptance/rimworld.md")
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            path = root / relative
+            path.parent.mkdir(parents=True)
+            path.write_text(json.dumps({"Password": digest}), encoding="utf-8")
+            self.assertEqual(scan_paths([path], repository_root=root), [])
+            findings = scan_paths([path], repository_root=root.parent)
+            self.assertEqual([finding.rule for finding in findings], ["assigned-secret"])
+            self.assertEqual(findings[0].path, path)
+
+    def test_python_fixture_does_not_hide_adjacent_concrete_assignments(self):
+        concrete_value = "AnotherConcreteValue123"
+        payload = json.dumps({
+            "password": "synthetic-fixture",
+            "api_key": concrete_value,
+        }).encode()
+        self.assertEqual(
+            [finding.rule for finding in scan_payload(Path("test_settings.py"), payload)],
+            ["assigned-secret"],
         )
 
 

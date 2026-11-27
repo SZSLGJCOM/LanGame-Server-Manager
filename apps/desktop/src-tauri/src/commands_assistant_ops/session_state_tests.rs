@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 use crate::assistant_sessions::AssistantSessionSnapshot;
 use tauri::Manager;

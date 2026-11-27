@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use std::path::Path;
 
 use app_core::{InstanceDetails, LogTailSnapshot};

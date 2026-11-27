@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::intent_tests::intent_input;
 use super::*;
 use crate::assistant_sessions::{AssistantSessionLease, AssistantSessionStore};

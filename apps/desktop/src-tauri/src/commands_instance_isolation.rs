@@ -15,9 +15,6 @@ pub async fn read_instance_isolation(
     let _storage_context_operation =
         state.begin_storage_context_operation("instance isolation inspection")?;
     let storage = state.bootstrap_storage()?;
-    initialize_database(&storage.paths)
-        .await
-        .map_err(|error| error.to_string())?;
     reconcile_runtime_state(&state).await?;
     app_storage::read_instance_isolation(&storage.paths, &input.instance_id)
         .await

@@ -31,22 +31,17 @@ test("storage IPC carries opaque IDs and never falls back to LAN", async () => {
   await api.readInstanceArchiveDetails("archive-preview");
   await api.restoreInstanceArchive("archive-one");
   await api.purgeInstanceArchive("archive-two");
-  await api.scanStorageUsage("scan-one");
-  await api.cancelStorageUsageScan("scan-one");
   assert.deepEqual(JSON.parse(JSON.stringify(calls)), [
     { command: "list_instance_archives" },
     { command: "read_instance_archive_details", args: { input: { archive_id: "archive-preview" } } },
     { command: "restore_instance_archive", args: { input: { archive_id: "archive-one" } } },
-    { command: "purge_instance_archive", args: { input: { archive_id: "archive-two" } } },
-    { command: "scan_storage_usage", args: { input: { scan_id: "scan-one" } } },
-    { command: "cancel_storage_usage_scan", args: { input: { scan_id: "scan-one" } } }
+    { command: "purge_instance_archive", args: { input: { archive_id: "archive-two" } } }
   ]);
   tauri = false;
   assert.equal(api.isStorageManagementAvailable(), false);
   for (const call of [api.listInstanceArchives, () => api.restoreInstanceArchive("a"), () => api.purgeInstanceArchive("a"),
-    () => api.readInstanceArchiveDetails("a"),
-    () => api.scanStorageUsage("s"), () => api.cancelStorageUsageScan("s")]) await assert.rejects(call, /desktop host/);
-  assert.equal(calls.length, 6);
+    () => api.readInstanceArchiveDetails("a")]) await assert.rejects(call, /desktop host/);
+  assert.equal(calls.length, 4);
   lan = false;
   assert.equal(api.isStorageManagementAvailable(), true, "Isolated development preview remains usable");
 });

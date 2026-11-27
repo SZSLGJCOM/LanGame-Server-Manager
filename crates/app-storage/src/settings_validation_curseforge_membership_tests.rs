@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 use crate::settings_validation::{SettingsValidationPhase, validate_settings_against_schema};
 use serde_json::json;

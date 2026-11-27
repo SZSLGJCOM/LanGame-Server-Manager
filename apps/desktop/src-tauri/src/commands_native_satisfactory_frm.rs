@@ -1,5 +1,6 @@
-//! Explicit native SML/FRM proof, independent of the generic smoke probes.
 #![cfg(test)]
+
+//! Explicit native SML/FRM proof, independent of the generic smoke probes.
 use std::collections::BTreeSet;
 use std::fs;
 use std::io::Read;

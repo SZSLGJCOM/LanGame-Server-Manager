@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 use crate::settings_validation::{SettingsValidationPhase, validate_settings_against_schema};
 use crate::storage_db::connect_pool;
@@ -13,47 +15,47 @@ use std::sync::atomic::{AtomicU64, Ordering};
 use std::thread;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
-#[path = "tests_curseforge_membership.rs"]
+#[path = "curseforge_membership_tests.rs"]
 mod curseforge_membership;
 #[path = "settings_validation_tests.rs"]
 mod settings_validation_tests;
-#[path = "tests_workshop_collection_removal.rs"]
+#[path = "workshop_collection_removal_integration_tests.rs"]
 mod workshop_collection_removal;
-#[path = "tests_workshop_collections.rs"]
+#[path = "workshop_collections_tests.rs"]
 mod workshop_collections;
 
-#[path = "tests_retired_config_preservation.rs"]
+#[path = "retired_config_preservation_tests.rs"]
 mod retired_config_preservation_tests;
-#[path = "tests_satisfactory_save.rs"]
+#[path = "satisfactory_save_tests.rs"]
 mod satisfactory_save_tests;
-#[path = "tests_save_policy.rs"]
+#[path = "save_policy_tests.rs"]
 mod save_policy_tests;
 
-#[path = "tests_dst_instance_isolation.rs"]
+#[path = "dst_instance_isolation_tests.rs"]
 mod dst_instance_isolation_tests;
-#[path = "tests_private_runtime_required.rs"]
+#[path = "private_runtime_required_tests.rs"]
 mod private_runtime_required_tests;
 
-#[path = "tests_astroneer_connection.rs"]
+#[path = "astroneer_connection_tests.rs"]
 mod astroneer_connection;
-#[path = "tests_dst_delete_transaction.rs"]
+#[path = "dst_delete_transaction_tests.rs"]
 mod dst_delete_transaction_tests;
-#[path = "tests_instance_autostart.rs"]
+#[path = "instance_autostart_tests.rs"]
 mod instance_autostart_tests;
-#[path = "tests_instance_connections.rs"]
+#[path = "instance_connections_tests.rs"]
 mod instance_connections;
-#[path = "tests_instance_creation_clean.rs"]
+#[path = "instance_creation_clean_tests.rs"]
 mod instance_creation_clean_tests;
-#[path = "tests_instance_creation_isolation.rs"]
+#[path = "instance_creation_isolation_tests.rs"]
 mod instance_creation_isolation_tests;
-#[path = "tests_instance_deletion.rs"]
+#[path = "instance_deletion_tests.rs"]
 mod instance_deletion_tests;
 #[cfg(windows)]
-#[path = "tests_instance_details.rs"]
+#[path = "instance_details_tests.rs"]
 mod instance_details_tests;
-#[path = "tests_instance_mutation_cancellation.rs"]
+#[path = "instance_mutation_cancellation_tests.rs"]
 mod instance_mutation_cancellation_tests;
-#[path = "tests_shared_save.rs"]
+#[path = "shared_save_tests.rs"]
 mod shared_save_tests;
 
 static TEST_COUNTER: AtomicU64 = AtomicU64::new(0);
@@ -1542,8 +1544,6 @@ fn prepare_declared_save_path_environment(root: &Path, descriptor: &ModuleDescri
     fs::create_dir_all(&paths.instances_root).unwrap();
     write_module_descriptor_files(descriptor);
 }
-
-include!("tests/instance_deletion.rs");
 
 #[tokio::test]
 async fn create_instance_allocates_ports_and_writes_config() {
@@ -3130,25 +3130,25 @@ async fn update_instance_rewrites_ports_and_settings() {
     cleanup_root(&root);
 }
 
-#[path = "tests_ark.rs"]
+#[path = "ark_tests.rs"]
 mod ark_tests;
-#[path = "tests_dst_runtime_logs.rs"]
+#[path = "dst_runtime_log_tests.rs"]
 mod dst_runtime_log_tests;
-#[path = "tests_dst_shared_setup.rs"]
+#[path = "dst_shared_setup_tests.rs"]
 mod dst_shared_setup_tests;
-#[path = "tests_game_configs.rs"]
+#[path = "game_config_tests.rs"]
 mod game_config_tests;
-#[path = "tests_generated_secrets.rs"]
+#[path = "generated_secret_tests.rs"]
 mod generated_secret_tests;
-#[path = "tests_native_settings.rs"]
+#[path = "native_settings_tests.rs"]
 mod native_settings_tests;
-#[path = "tests_player_access_integration.rs"]
+#[path = "player_access_integration_tests.rs"]
 mod player_access_integration_tests;
-#[path = "tests_runtime.rs"]
+#[path = "runtime_tests.rs"]
 mod runtime_tests;
-#[path = "tests_sevendaystodie_config.rs"]
+#[path = "sevendaystodie_config_tests.rs"]
 mod sevendaystodie_config_tests;
-#[path = "tests_storage_db.rs"]
+#[path = "storage_db_tests.rs"]
 mod storage_db_tests;
-#[path = "tests_storage_usage.rs"]
+#[path = "storage_usage_integration_tests.rs"]
 mod storage_usage_tests;

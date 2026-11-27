@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 use crate::program_library_retention::{RETAINED_LIBRARY, retained_library_program_source};
 

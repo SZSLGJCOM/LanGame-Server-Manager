@@ -1,53 +1,33 @@
-import type { LibraryPageMode, RuntimeRefreshIssue } from "./app-state";
-import { getAiSettingsStatus, type AiSettings, type AiSettingsMissingField } from "./ai-settings";
+import type { LibraryPageMode } from "./app-state";
+import { getAiSettingsStatus, type AiSettingsMissingField } from "./ai-settings";
 import { assistantIgnoresActivePortPreflight, buildAssistantLaunchIssues, selectedAssistantLaunchPlan } from "./assistant-launch-diagnostics";
+import type {
+  AssistantActionId,
+  AssistantBuildInput,
+  AssistantIssue,
+  AssistantPromptCard,
+  AssistantSeverity,
+  AssistantViewModel
+} from "./assistant-types";
 import type { TranslateFn } from "./i18n";
 import { selectLocaleText } from "./i18n-config";
 import { localizeRuntimeHealthSummary } from "./runtime-health-message";
 import type {
   BootstrapResponse,
-  InstanceDetails,
-  InstanceRuntimeOverview,
-  LaunchPlan,
-  LogTailSnapshot,
   ModuleDetails,
   ServerWorkspaceSection,
-  SteamCmdStatus,
   ViewKey
 } from "./types";
 
-export type AssistantSeverity = "info" | "warning" | "critical";
-
-export type AssistantActionId =
-  | "ensure-storage"
-  | "ensure-steamcmd"
-  | "resume-runtime-refresh"
-  | "view-system"
-  | "open-ai-settings"
-  | "view-library"
-  | "view-servers"
-  | "refresh-launch-preview";
-
-export interface AssistantAction {
-  id: AssistantActionId;
-  label: string;
-}
-
-export interface AssistantIssue {
-  id: string;
-  severity: AssistantSeverity;
-  title: string;
-  detail: string;
-  action?: AssistantAction | null;
-}
-
-export interface AssistantPromptCard {
-  id: string;
-  label: string;
-  preview: string;
-  prompt: string;
-  payload: string;
-}
+export type {
+  AssistantAction,
+  AssistantActionId,
+  AssistantBuildInput,
+  AssistantIssue,
+  AssistantPromptCard,
+  AssistantSeverity,
+  AssistantViewModel
+} from "./assistant-types";
 
 type AssistantPromptCards = [
   AssistantPromptCard,
@@ -55,37 +35,6 @@ type AssistantPromptCards = [
   AssistantPromptCard,
   AssistantPromptCard
 ];
-
-export interface AssistantViewModel {
-  closeLabel: string;
-  issues: AssistantIssue[];
-  panelTitle: string;
-  prompts: AssistantPromptCard[];
-  contextPayload: string;
-}
-
-export interface AssistantBuildInput {
-  aiSettings: AiSettings;
-  locale: string;
-  activeJobsCount: number;
-  activeView: ViewKey;
-  bootstrap: BootstrapResponse;
-  storageReady: boolean;
-  libraryPage: LibraryPageMode;
-  overlayNames: string[];
-  runtimeAutoRefreshPaused: boolean;
-  runtimeRefreshIssue: RuntimeRefreshIssue | null;
-  selectedInstanceDetails: InstanceDetails | null;
-  selectedInstanceId: string | null;
-  selectedInstanceModuleDetails: ModuleDetails | null;
-  selectedLaunchPlan: LaunchPlan | null;
-  selectedLaunchPlanError: string | null;
-  selectedLogDocument: LogTailSnapshot | null;
-  selectedModuleDetails: ModuleDetails | null;
-  selectedRuntime: InstanceRuntimeOverview | null;
-  serverWorkspaceSection: ServerWorkspaceSection;
-  steamCmdStatus: SteamCmdStatus | null;
-}
 
 interface AssistantCopy {
   closeLabel: string;

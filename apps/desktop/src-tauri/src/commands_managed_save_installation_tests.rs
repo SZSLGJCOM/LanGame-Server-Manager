@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 use crate::commands::commands_managed_save_control::{profile, tests::Fixture};
 

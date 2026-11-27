@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 use std::os::windows::fs::OpenOptionsExt;
 use std::path::PathBuf;

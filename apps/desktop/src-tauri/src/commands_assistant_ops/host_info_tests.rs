@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::intent_tests::{intent_input, intent_reply};
 use super::*;
 use crate::assistant::{AssistantToolCall, AssistantToolMessage, AssistantToolReply};

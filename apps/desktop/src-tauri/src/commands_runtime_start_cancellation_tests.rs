@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 
 fn reserve(state: &DesktopState, instance_id: &str, source: &str) -> RuntimeStartReservationLease {

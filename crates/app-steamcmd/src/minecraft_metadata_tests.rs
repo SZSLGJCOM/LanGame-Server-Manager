@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 use crate::http_download::fetch_text_from_candidates;
 use crate::{

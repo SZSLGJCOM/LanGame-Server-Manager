@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::super::*;
 use std::collections::BTreeMap;
 use std::sync::atomic::{AtomicU64, Ordering};

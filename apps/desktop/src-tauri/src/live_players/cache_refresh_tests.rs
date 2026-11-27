@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use std::future::Future;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, Ordering};

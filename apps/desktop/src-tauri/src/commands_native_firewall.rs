@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use std::collections::HashSet;
 use std::fs;
 use std::path::{Component, Path, PathBuf};

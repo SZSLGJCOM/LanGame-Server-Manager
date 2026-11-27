@@ -11,9 +11,6 @@ pub async fn list_instance_save_files(
 ) -> Result<SaveFileListing, String> {
     let _operation = state.begin_storage_context_operation("save file listing")?;
     let storage = state.bootstrap_storage()?;
-    initialize_database(&storage.paths)
-        .await
-        .map_err(|error| error.to_string())?;
     app_storage::list_instance_save_files(&storage.paths, &instance_id, backup_id.as_deref())
         .await
         .map_err(|error| error.to_string())

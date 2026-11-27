@@ -8,9 +8,6 @@ pub async fn read_astroneer_save_catalog(
 ) -> Result<AstroneerSaveCatalog, String> {
     let operation = state.begin_storage_context_operation("ASTRONEER save selection read")?;
     let storage = state.bootstrap_storage()?;
-    initialize_database(&storage.paths)
-        .await
-        .map_err(|error| error.to_string())?;
     spawn_storage_context_task(&operation, async move {
         app_storage::read_astroneer_save_catalog(&storage.paths, &instance_id)
             .await

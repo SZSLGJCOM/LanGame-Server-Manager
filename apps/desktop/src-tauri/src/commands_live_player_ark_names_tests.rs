@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 use crate::live_players::response_codecs;
 

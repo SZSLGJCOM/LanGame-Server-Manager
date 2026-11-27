@@ -1,6 +1,8 @@
+#![cfg(test)]
+#![cfg(windows)]
+
 //! Explicit real-game acceptance. The original installed package is read only;
 //! only the newly copied package and this test's DesktopState may be mutated.
-#![cfg(windows)]
 use super::*;
 use crate::commands::commands_file_mods::manage_manual_mod;
 

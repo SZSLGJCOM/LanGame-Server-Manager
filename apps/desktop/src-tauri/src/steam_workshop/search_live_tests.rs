@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use std::time::{Duration, Instant};
 
 use serde_json::json;

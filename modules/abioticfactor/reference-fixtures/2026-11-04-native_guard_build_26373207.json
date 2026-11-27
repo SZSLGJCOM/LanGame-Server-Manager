@@ -34,7 +34,7 @@
     "method": "Matched PE RSDS to the packaged PDB, located the current functions, reflection data and vtable from PDB symbols, decoded the PE fields and verified the full factory and derived Activate byte hashes against the admitted baseline."
   },
   "native_probe": {
-    "environment": "PLAP Windows, current user's limited token, two isolated LAN-only no-client runs with fresh identities, a hidden console, loopback game binding and an ephemeral join password",
+    "environment": "Secondary Windows host, current user's limited token, two isolated LAN-only no-client runs with fresh identities, a hidden console, loopback game binding and an ephemeral join password",
     "copied_runtime_files": 36,
     "copied_runtime_bytes": 1580406933,
     "ue4ss_archive_sha256": "4f9762f812329a640c8cfa14444c2bb97ecc213b8320bd4c5433383c3eef48f7",

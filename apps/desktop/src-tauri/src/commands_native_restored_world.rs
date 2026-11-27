@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 //! Test-only native content readback after backup/archive/program maintenance.
 //! A ready server is insufficient: the restored bytes and its last saved native
 //! identity must survive startup and be loaded by a new owned process generation.

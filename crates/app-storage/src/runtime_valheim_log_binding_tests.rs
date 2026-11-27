@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::super::super::read_log_snapshot;
 use super::super::observe_for_run_with;
 use super::*;

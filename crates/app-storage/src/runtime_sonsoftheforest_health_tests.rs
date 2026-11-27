@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 
 const READY: &str = "#DSL Dedicated server loaded.";

@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use std::fs::{self, File};
 use std::io::{Read, Write};
 use std::path::{Path, PathBuf};

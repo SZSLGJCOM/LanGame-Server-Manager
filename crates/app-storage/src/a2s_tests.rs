@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 
 fn info_response() -> Vec<u8> {

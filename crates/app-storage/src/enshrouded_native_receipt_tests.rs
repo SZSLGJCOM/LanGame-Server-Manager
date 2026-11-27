@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 
 const TARGET: u64 = 9_007_199_254_740_993;

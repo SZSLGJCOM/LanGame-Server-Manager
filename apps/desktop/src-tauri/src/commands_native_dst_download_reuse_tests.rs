@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 //! Explicit real Steam download and first-instance reuse; no game is started.
 use super::*;
 use std::sync::Arc;

@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 //! Real updater/reqwest/minisign integration; only the HTTP origin is a fixture.
 //! The disposable signing key was discarded. These public vectors sign inert
 //! bytes, never an executable, and no test calls the installer or runtime service.

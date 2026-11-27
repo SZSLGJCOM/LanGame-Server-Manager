@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 //! Bounded comparison of retained bytes and delivered lines. Console contents
 //! stay in memory; receipts contain only aggregate counts and digests.
 use serde::Serialize;

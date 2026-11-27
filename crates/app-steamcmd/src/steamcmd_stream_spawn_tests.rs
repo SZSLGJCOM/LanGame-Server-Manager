@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 //! Invalidate standard input only inside a disposable test worker.
 use super::*;
 use std::ffi::c_void;

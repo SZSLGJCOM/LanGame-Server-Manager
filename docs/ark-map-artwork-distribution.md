@@ -54,7 +54,7 @@ publication-package/
 - GitHub：`https://raw.githubusercontent.com/SZSLGJCOM/LanGame-Server-Manager/master/assets/ark-map-artwork/2026-10-25/<image>`
 - GitCode：`https://api.gitcode.com/api/v5/repos/SZSLGJCOM/LanGame-Server-Manager-Releases/raw/assets/ark-map-artwork/2026-10-25/<image>?ref=main`
 
-这些是准备工具生成的候选链接，其输出的 `published` 始终为 `false`，`remoteValidation` 始终为 `not-performed`，不能当作发布回执。上方“已发布资源”记录已完成的本批发布；远端清单使用 `mirrors` 字段保留仓库入口，客户端另行将 URL 固定到已回读验证的提交。GitCode 使用官方 [raw API](https://docs.gitcode.com/docs/apis/get-api-v-5-repos-owner-repo-raw-path/)；不把 Release 附件返回的临时 CDN 地址写入清单。
+这些是准备工具生成的候选链接，其输出的 `published` 始终为 `false`，`remoteValidation` 始终为 `not-performed`，不能当作发布回执。上方“已发布资源”记录当前已发布的版本目录；远端清单使用 `mirrors` 字段保留仓库入口，客户端另行将 URL 固定到已回读验证的提交。GitCode 使用官方 [raw API](https://docs.gitcode.com/docs/apis/get-api-v-5-repos-owner-repo-raw-path/)；不把 Release 附件返回的临时 CDN 地址写入清单。
 
 候选链接使用分支名，不天然不可变，启用时须改用实际发布提交。发布后不得替换同一版本目录内的字节；更换图片必须建立新版本目录并重新审核 hash、尺寸及坐标。图片缓存和下载校验绑定具体字节身份，不能仅凭文件名、HTTP 200 或 Content-Type 接受响应。
 
@@ -72,4 +72,4 @@ publication-package/
 python -B -m unittest scripts.tests.test_prepare_ark_map_artwork -v
 ```
 
-测试中的手写 JPEG 标记夹具只验证头部探测与打包行为，不是真实可解码图片。测试覆盖尺寸不符、缺损/超限、路径越界、禁止覆盖、Windows 目录联接、来源清单及失败清理；真实符号链接用例在宿主没有创建权限时会明确跳过。
+测试中手写的 JPEG 标记样本只验证头部探测与打包行为，不是真实可解码图片。测试覆盖尺寸不符、缺损/超限、路径越界、禁止覆盖、Windows 目录联接、来源清单及失败清理；真实符号链接用例在宿主没有创建权限时会明确跳过。

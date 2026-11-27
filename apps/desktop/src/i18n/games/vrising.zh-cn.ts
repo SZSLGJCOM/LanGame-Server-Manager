@@ -392,7 +392,7 @@ export const ZH_CN_VRISING_MESSAGES: MessageCatalog = {
     "vrising.settings.groups.rulesDescription": "难度、玩法、PvP 限制、掉落与城堡交互策略。",
     "vrising.settings.groups.schedule": "PvP 日程",
     "vrising.settings.groups.scheduleDescription": "配置平日与周末 PvP 及城堡弱点窗口。",
-    "vrising.settings.groups.survival": "生存姿态",
+    "vrising.settings.groups.survival": "生存规则",
     "vrising.settings.groups.survivalDescription": "控制 AFK 清理、进度起始、掉线惩罚与环境修正。",
     "vrising.settings.groups.time": "时间周期",
     "vrising.settings.groups.timeDescription": "日长与血月节奏共同定义世界时间线。",

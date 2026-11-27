@@ -317,7 +317,7 @@ export const ZH_CN_ENSHROUDED_MESSAGES: MessageCatalog = {
   "enshrouded.settings.groups.moderation": "管理",
   "enshrouded.settings.groups.moderationDescription": "原生封禁列表中的玩家身份。",
   "enshrouded.settings.groups.players": "玩家",
-  "enshrouded.settings.groups.playersDescription": "生命、耐力、法力和玩家生存姿态。",
+  "enshrouded.settings.groups.playersDescription": "生命、耐力、法力和玩家生存属性设置。",
   "enshrouded.settings.groups.progression": "进度",
   "enshrouded.settings.groups.progressionDescription": "采集、生产、符文和经验倍率。",
   "enshrouded.settings.groups.survival": "生存",

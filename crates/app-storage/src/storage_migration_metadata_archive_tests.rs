@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 use crate::instance_archive_store as store;
 use sqlx::sqlite::{SqliteConnectOptions, SqlitePoolOptions};

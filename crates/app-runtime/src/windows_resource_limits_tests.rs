@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 use std::time::{Duration, Instant};
 use windows_sys::Win32::System::JobObjects::{

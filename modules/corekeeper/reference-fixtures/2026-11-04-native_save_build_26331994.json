@@ -29,7 +29,7 @@
     "method": "Read current ECMA-335 metadata and IL without loading the game: ECSManager.QueueNewServerSave returns Boolean and dispatches to SaveSystem.QueueNewSave on ServerWorld. SaveIsPending, WorldsAreLoaded, IsClosing, SerializeWorldDataCD.State, SerializeWorldSystem.LastWorldWrite and the native serialization handlers are present. The other five pinned dependency hashes match the prior release."
   },
   "native_probe": {
-    "environment": "PLAP Windows. The production save extension compiled against the new official SDK with Build-Control.ps1. The game ran under the operator's non-elevated token in isolated program and data directories using a loopback direct connection. Each process reached empty-world readiness and owned both expected UDP ports.",
+    "environment": "Secondary Windows host. The production save extension compiled against the new official SDK with Build-Control.ps1. The game ran under the operator's non-elevated token in isolated program and data directories using a loopback direct connection. Each process reached empty-world readiness and owned both expected UDP ports.",
     "extension_sha256": "0d3b65c10ef9e40422e3f41e1fd9f12fb27b63ce79a34580d212ee40f174538e",
     "cycles": [
       {"world": "new", "status": "rejected", "issue": "world_not_ready", "normal_wm_close_exit": 0},

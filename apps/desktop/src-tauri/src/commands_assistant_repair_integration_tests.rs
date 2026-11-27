@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::assistant_tool_fixtures::{
     assert_native_tool_available, openai_tool_response, serve_requirements_draft,
 };

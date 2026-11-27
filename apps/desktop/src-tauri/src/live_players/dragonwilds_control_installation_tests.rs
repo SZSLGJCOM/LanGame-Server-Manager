@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 
 struct Root(std::path::PathBuf);

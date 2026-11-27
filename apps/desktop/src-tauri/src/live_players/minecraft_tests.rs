@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 
 const NORMAL: &str = include_str!("../../test-data/live-players/minecraft/normal.txt");

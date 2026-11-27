@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 use crate::program_runtime::prepare_shared_program_reference;
 use crate::{

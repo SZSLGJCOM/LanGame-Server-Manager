@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 use ark::removal::{RemoveInput, remove_ark_tools};
 

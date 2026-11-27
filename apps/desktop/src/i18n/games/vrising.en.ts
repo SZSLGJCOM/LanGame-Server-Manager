@@ -392,7 +392,7 @@ export const EN_US_VRISING_MESSAGES: MessageCatalog = {
   "vrising.settings.groups.rulesDescription": "Difficulty, mode, PvP restrictions, loot access and castle interaction policy.",
   "vrising.settings.groups.schedule": "PvP schedule",
   "vrising.settings.groups.scheduleDescription": "Weekday/weekend PvP and castle vulnerability windows.",
-  "vrising.settings.groups.survival": "Survival posture",
+  "vrising.settings.groups.survival": "Survival rules",
   "vrising.settings.groups.survivalDescription": "Inactivity cleanup, progression start, disconnect cleanup, and hazard modifiers.",
   "vrising.settings.groups.time": "Time cycle",
   "vrising.settings.groups.timeDescription": "Day duration and blood moon pacing for the world cycle.",

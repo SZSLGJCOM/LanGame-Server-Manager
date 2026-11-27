@@ -270,13 +270,26 @@ pub(crate) fn eligible_rows(
     rows: Vec<sqlx::sqlite::SqliteRow>,
     catalog: &sources::Catalog,
 ) -> Result<Vec<sqlx::sqlite::SqliteRow>> {
-    let mut eligible = Vec::new();
+    let sources_by_id: HashMap<&str, &sources::Source> = catalog
+        .sources
+        .iter()
+        .map(|source| (source.id.as_str(), source))
+        .collect();
+    let mut checked_urls: HashMap<(String, String), bool> = HashMap::new();
+    let mut eligible = Vec::with_capacity(rows.len());
     for row in rows {
         let source_id: String = row.try_get("source_id")?;
         let url: String = row.try_get("url")?;
-        if catalog.sources.iter().any(|source| {
-            source.id == source_id && reqwest::Url::parse(&url).is_ok_and(|url| source.allows(&url))
-        }) {
+        let allowed = if let Some(&cached) = checked_urls.get(&(source_id.clone(), url.clone())) {
+            cached
+        } else {
+            let decision = sources_by_id
+                .get(source_id.as_str())
+                .is_some_and(|source| reqwest::Url::parse(&url).is_ok_and(|u| source.allows(&u)));
+            checked_urls.insert((source_id, url), decision);
+            decision
+        };
+        if allowed {
             eligible.push(row);
         }
     }

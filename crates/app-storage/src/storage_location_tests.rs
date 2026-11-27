@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::{LOCATION_FILE, MAX_LOCATION_BYTES, StorageError, StoragePaths, resolve_paths};
 use std::fs;
 use std::io;

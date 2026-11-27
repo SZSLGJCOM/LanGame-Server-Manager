@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 //! Owned HTTPS observations for the opt-in two-instance fixture only.
 use std::collections::BTreeSet;
 

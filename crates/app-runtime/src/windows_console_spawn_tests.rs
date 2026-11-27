@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 //! Real isolated processes verify that temporary sender protection cannot leak
 //! into a concurrently created managed game. No storage or real backend is used.
 use super::*;

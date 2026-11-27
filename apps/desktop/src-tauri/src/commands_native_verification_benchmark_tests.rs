@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 //! Opt-in acceptance on owned copies of already downloaded official packages.
 use super::*;
 use app_modules::ModuleDescriptor;

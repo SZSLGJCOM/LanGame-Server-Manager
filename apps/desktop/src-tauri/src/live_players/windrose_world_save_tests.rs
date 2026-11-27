@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 use std::sync::Arc;
 const ID: &str = "1234567890abcdef1234567890abcdef";

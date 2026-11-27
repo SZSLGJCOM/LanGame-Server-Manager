@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use tokio::net::TcpListener;
 
 use super::*;

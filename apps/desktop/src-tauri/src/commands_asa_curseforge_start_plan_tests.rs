@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 use app_core::{InstallState, RuntimePerformancePolicy, RuntimePerformancePolicyPreview};
 use serde_json::{Value, json};

@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 use crate::{InstallDeadline, RETAINED_INSTALL_DATA_MARKER, output_excerpt, run_powershell};
 use std::os::windows::ffi::OsStrExt;

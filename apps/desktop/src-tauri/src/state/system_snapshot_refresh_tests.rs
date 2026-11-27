@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 use crate::state::{TimedCache, spawn_timed_cache_refresh};
 use std::future::{Future, poll_fn};

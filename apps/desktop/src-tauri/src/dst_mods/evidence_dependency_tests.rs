@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::dst_mod_dependency_names;
 use serde_json::{Value, json};
 

@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 use crate::*;
 use std::io::ErrorKind;

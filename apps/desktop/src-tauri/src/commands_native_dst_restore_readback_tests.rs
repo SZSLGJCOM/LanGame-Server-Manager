@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::super::super::{creation, workspace_root};
 use super::*;
 use crate::state::DesktopState;

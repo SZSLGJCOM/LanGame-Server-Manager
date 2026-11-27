@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 //! Real console campaign setup, restricted to the disposable manual-save test.
 //! No game state, save contents, native fields or production protocol is mocked.
 use super::*;

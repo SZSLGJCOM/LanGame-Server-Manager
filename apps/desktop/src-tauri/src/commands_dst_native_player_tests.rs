@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::map_save_checks::write_evidence as write_fresh;
 use super::*;
 use crate::commands::commands_dst_map::{DstMapInput, DstMapSnapshot, read_dontstarve_world_map};

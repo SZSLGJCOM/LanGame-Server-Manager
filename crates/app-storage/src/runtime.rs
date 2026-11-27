@@ -2421,31 +2421,13 @@ fn log_path_has_content(path: &Path) -> bool {
         .unwrap_or(false)
 }
 
-fn read_log_snapshot(source_path: Option<String>, max_lines: usize) -> LogTailSnapshot {
-    let Some(source_path) = source_path else {
-        return LogTailSnapshot {
-            source_path: None,
-            lines: Vec::new(),
-            total_lines: 0,
-            truncated: false,
-            read_error: None,
-        };
-    };
-
-    let path = PathBuf::from(&source_path);
-    let (content, truncated_by_bytes) = match read_log_tail_window(&path, max_lines) {
-        Ok(result) => result,
-        Err(error) => {
-            return LogTailSnapshot {
-                source_path: Some(source_path),
-                lines: Vec::new(),
-                total_lines: 0,
-                truncated: false,
-                read_error: Some(error.to_string()),
-            };
-        }
-    };
-
+fn build_log_snapshot_from_window(
+    source_path: String,
+    content: String,
+    truncated_by_bytes: bool,
+    max_lines: usize,
+    read_error: Option<String>,
+) -> LogTailSnapshot {
     let normalized = content.replace("\r\n", "\n").replace('\r', "\n");
     let normalized = if truncated_by_bytes {
         normalized
@@ -2471,8 +2453,92 @@ fn read_log_snapshot(source_path: Option<String>, max_lines: usize) -> LogTailSn
             .collect(),
         total_lines,
         truncated,
-        read_error: crate::managed_console_log::failure_summary_for_path(&path),
+        read_error,
     }
+}
+
+fn read_log_snapshot_pair(
+    source_path: Option<String>,
+    primary_max_lines: usize,
+    secondary_max_lines: usize,
+) -> (LogTailSnapshot, LogTailSnapshot) {
+    let Some(source_path) = source_path else {
+        let empty = LogTailSnapshot {
+            source_path: None,
+            lines: Vec::new(),
+            total_lines: 0,
+            truncated: false,
+            read_error: None,
+        };
+        return (empty.clone(), empty);
+    };
+
+    let path = PathBuf::from(&source_path);
+    let max_window_lines = primary_max_lines.max(secondary_max_lines).max(1);
+    let (bytes, outer_truncated) = match read_log_tail_bytes(&path, max_window_lines) {
+        Ok(result) => result,
+        Err(error) => {
+            let failed = LogTailSnapshot {
+                source_path: Some(source_path),
+                lines: Vec::new(),
+                total_lines: 0,
+                truncated: false,
+                read_error: Some(error.to_string()),
+            };
+            return (failed.clone(), failed);
+        }
+    };
+    let failure_summary = crate::managed_console_log::failure_summary_for_path(&path);
+    let slice_window = |max_lines: usize| {
+        let limit = log_tail_read_byte_limit(max_lines) as usize;
+        let sub_truncated = outer_truncated || bytes.len() > limit;
+        let start = bytes.len().saturating_sub(limit);
+        build_log_snapshot_from_window(
+            source_path.clone(),
+            String::from_utf8_lossy(&bytes[start..]).into_owned(),
+            sub_truncated,
+            max_lines,
+            failure_summary.clone(),
+        )
+    };
+    (
+        slice_window(primary_max_lines),
+        slice_window(secondary_max_lines),
+    )
+}
+
+fn read_log_snapshot(source_path: Option<String>, max_lines: usize) -> LogTailSnapshot {
+    let Some(source_path) = source_path else {
+        return LogTailSnapshot {
+            source_path: None,
+            lines: Vec::new(),
+            total_lines: 0,
+            truncated: false,
+            read_error: None,
+        };
+    };
+
+    let path = PathBuf::from(&source_path);
+    let (content, truncated_by_bytes) = match read_log_tail_window(&path, max_lines) {
+        Ok(result) => result,
+        Err(error) => {
+            return LogTailSnapshot {
+                source_path: Some(source_path),
+                lines: Vec::new(),
+                total_lines: 0,
+                truncated: false,
+                read_error: Some(error.to_string()),
+            };
+        }
+    };
+    let read_error = crate::managed_console_log::failure_summary_for_path(&path);
+    build_log_snapshot_from_window(
+        source_path,
+        content,
+        truncated_by_bytes,
+        max_lines,
+        read_error,
+    )
 }
 
 pub fn read_log_path_snapshot(source_path: String, max_lines: usize) -> LogTailSnapshot {
@@ -2483,7 +2549,7 @@ pub fn read_log_path_snapshot(source_path: String, max_lines: usize) -> LogTailS
 #[path = "runtime_abiotic_output_tests.rs"]
 mod abiotic_output_tests;
 
-fn read_log_tail_window(path: &Path, max_lines: usize) -> Result<(String, bool), std::io::Error> {
+fn read_log_tail_bytes(path: &Path, max_lines: usize) -> Result<(Vec<u8>, bool), std::io::Error> {
     if let Some(segments) = crate::managed_console_log::open_log_segments(path)? {
         let limit = log_tail_read_byte_limit(max_lines);
         let expired = segments
@@ -2503,7 +2569,7 @@ fn read_log_tail_window(path: &Path, max_lines: usize) -> Result<(String, bool),
             chunks.push(bytes);
         }
         let bytes = chunks.into_iter().rev().flatten().collect::<Vec<_>>();
-        return Ok((String::from_utf8_lossy(&bytes).into_owned(), truncated));
+        return Ok((bytes, truncated));
     }
     let mut file = fs::File::open(path)?;
     let file_len = file.metadata()?.len();
@@ -2516,6 +2582,11 @@ fn read_log_tail_window(path: &Path, max_lines: usize) -> Result<(String, bool),
     }
     file.take(read_limit).read_to_end(&mut bytes)?;
 
+    Ok((bytes, truncated))
+}
+
+fn read_log_tail_window(path: &Path, max_lines: usize) -> Result<(String, bool), std::io::Error> {
+    let (bytes, truncated) = read_log_tail_bytes(path, max_lines)?;
     Ok((String::from_utf8_lossy(&bytes).into_owned(), truncated))
 }
 

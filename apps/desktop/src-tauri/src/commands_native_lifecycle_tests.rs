@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 use crate::commands::commands_satisfactory_world::native_world::NativeWorld;
 use inventory::save_inventory;

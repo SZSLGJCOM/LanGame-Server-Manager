@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 
 struct Scratch(std::path::PathBuf);

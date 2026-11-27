@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 
 pub(super) async fn run_initial<R: tauri::Runtime>(

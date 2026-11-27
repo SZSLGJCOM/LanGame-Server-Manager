@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 use std::future::ready;
 use std::sync::atomic::{AtomicUsize, Ordering};

@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 //! Closed transcript contract for the disposable native lifecycle probe.
 const CONTROL: &str = "[LanGame native control] ";
 

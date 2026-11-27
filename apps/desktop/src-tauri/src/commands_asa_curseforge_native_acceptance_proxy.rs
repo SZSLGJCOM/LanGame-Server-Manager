@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 //! Only the opt-in native acceptance may supply this local diagnostic proxy.
 use std::net::{Ipv4Addr, SocketAddrV4};
 

@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::{creation, inventory};
 use app_core::{InstanceDetails, InstanceProgramMode, InstanceStatus};
 use app_modules::ModuleDescriptor;

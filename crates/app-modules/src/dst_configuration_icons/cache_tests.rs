@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::tests::{TestRoot, fixture_xml};
 use super::*;
 use std::fs;

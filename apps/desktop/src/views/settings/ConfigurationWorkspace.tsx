@@ -6,8 +6,6 @@ import { useI18n } from "../../i18n";
 import type {
   BindAddressCandidate,
   InstanceDetails,
-  InstanceRuntimeOverview,
-  LaunchPlan,
   ModuleDetails,
   SaveInstanceSettingsOptions,
   UpdateInstanceInput
@@ -65,8 +63,6 @@ export interface ConfigurationWorkspaceProps {
   moduleDetailsError: string | null;
   onRetryModuleDetails: () => void;
   bindAddressCandidates: BindAddressCandidate[];
-  runtime: InstanceRuntimeOverview | null;
-  launchPlan: LaunchPlan | null;
   launchPlanError: string | null;
   archive?: InstanceArchiveDetails;
   onSave?(

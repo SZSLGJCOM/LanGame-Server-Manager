@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 
 async fn create_unrelated_instance(fixture: &Fixture) -> String {

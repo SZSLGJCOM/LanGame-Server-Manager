@@ -35,7 +35,7 @@ const UNTURNED_SECTIONS: GuidedSettingsSection[] = [
   {
     id: "world",
     title: "Map & Rules",
-    description: "Map, game mode, perspective, and PvE posture written into Commands.dat."
+    description: "Map, game mode, perspective, and PvE mode written into Commands.dat."
   },
   {
     id: "access",

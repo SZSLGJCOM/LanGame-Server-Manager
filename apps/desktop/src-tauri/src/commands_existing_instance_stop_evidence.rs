@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 //! Stop API success is only one part of acceptance. This external observer can
 //! verify declared process identities, not the backend's private Windows Jobs.
 //! Full-tree graceful exit relies on the tested normal-stop backend contract;

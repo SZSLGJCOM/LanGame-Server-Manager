@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::repair_continuation_tests::{complete_history, request_body};
 use super::*;
 use std::sync::Arc;

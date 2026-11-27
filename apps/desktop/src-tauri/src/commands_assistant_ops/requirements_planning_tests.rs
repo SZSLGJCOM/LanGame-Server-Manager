@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::task_tests::task_fixture;
 use super::*;
 

@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 
 fn reserve_loopback_port_with_remap_room() -> std::io::Result<std::net::TcpListener> {

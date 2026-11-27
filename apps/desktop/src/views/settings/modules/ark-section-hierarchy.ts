@@ -32,7 +32,7 @@ const ARK_PARENT_DOMAINS: readonly ParentDomainSpec[] = [
     titleKey: "ark.settings.parents.worldGameplay",
     descriptionKey: "ark.settings.parents.worldGameplayDescription",
     fallbackTitle: "World & Gameplay",
-    fallbackDescription: "Difficulty, time, PvE or PvP posture, player visibility, and core world rules."
+    fallbackDescription: "Difficulty, time, PvE or PvP mode, player visibility, and core world rules."
   },
   {
     id: "ark-rates-progression",

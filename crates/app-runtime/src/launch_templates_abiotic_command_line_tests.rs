@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 
 // Current public Shipping.exe/PDB: 705106BF-5384-E32D-4A1A-C96EB49D4250, age 1.

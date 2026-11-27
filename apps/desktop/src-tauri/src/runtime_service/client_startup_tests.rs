@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 //! Reconnect against disposable real processes, never the user's service or storage.
 use super::*;
 use std::ffi::{OsStr, OsString};

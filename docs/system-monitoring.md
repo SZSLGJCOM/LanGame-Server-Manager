@@ -26,11 +26,10 @@ continues independently of request deadlines. While waiting on stale or incomple
 readings, the existing status shows Updating and retains the original sample time.
 Fresh readings remain visible; completion or failure clears the updating state.
 
-Development source synchronization and frontend hot reload do not replace a running
-native runtime. After a telemetry contract change, fully exit from the tray on the
-affected workstation, wait for the normal save/stop workflow, and run `start.bat`
-there to rebuild and start the updated backend. Closing the window only hides it;
-launching again while the runtime is alive reuses that runtime.
+Frontend hot reload does not replace a running native runtime. After a telemetry
+contract change, exit from the system tray, wait for the normal save/stop workflow to
+finish, and restart the desktop backend so the updated service loads. Closing the
+window only hides it; launching again while the runtime is alive reuses that runtime.
 
 The existing home-page polling runs every 60 seconds in the foreground and 120 seconds
 when throttled. An observation expires after 180 seconds, including when polling is
@@ -103,9 +102,9 @@ observations, including keyboard interaction and both interface languages.
 原生并发请求等待同一次采集，每次请求最多等待20秒；过期回包最多立即追加一次请求，
 采集任务不因请求等待到期而取消。过期或不完整数据刷新时，原状态位置显示“更新中”，
 保留真实采样时间；新鲜读数继续显示，请求完成或失败后结束更新提示。
-开发源码同步及前端热更新不会替换正在运行的原生后台。采样接口变更后，须在受影响电脑
-从托盘完整退出，等待正常保存与停服流程完成，再运行该电脑的 `start.bat` 编译启动新版后台。
-关闭窗口仅隐藏界面；后台仍运行时重复启动会复用原服务。
+前端热更新不会替换正在运行的原生后台。采样接口变更后，需从系统托盘完整退出，
+等待正常保存与停服流程完成，再重新启动桌面端后台。关闭窗口仅隐藏界面；后台仍
+运行时重复启动会复用原服务。
 首页沿用前台60秒、节流120秒的采样请求间隔；180秒后数据过期，即使刷新暂停或
 请求失败也会独立过期。界面隐藏过期读数并保留最后采集时间，不宣称连续实时监测。
 
